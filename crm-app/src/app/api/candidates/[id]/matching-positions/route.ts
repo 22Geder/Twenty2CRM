@@ -55,8 +55,8 @@ export async function GET(
     
     // חברות מהאפליקציות הקודמות
     const appliedEmployerNames: string[] = candidate.applications
-      .map(app => app.position?.employer?.name?.toLowerCase())
-      .filter((name): name is string => Boolean(name))
+      .map((app: any) => app.position?.employer?.name?.toLowerCase())
+      .filter((name: any): name is string => Boolean(name))
 
     // אם למועמד אין תגיות, נחזיר משרות פעילות כלליות
     if (!candidate.tags || candidate.tags.length === 0) {

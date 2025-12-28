@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  name              String
+  password          String
+  role              String          @default("RECRUITER") // ADMIN, RECRUITER, MANAGER, EMPLOYEE
+  avatar            String?
+  phone             String?
+  departmentId      String?
+  department        Department?     @relation(fields: [departmentId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lastLoginAt       DateTime?
+  active            Boolean         @default(true)
+  
+  // Relations
+  assignedPositions Position[]      @relation("PositionRecruiter")
+  interviewsScheduled Interview[]   @relation("InterviewScheduler")
+  communications    Communication[]
+  notifications     Notification[]
+  activityLogs      ActivityLog[]
+}
+
+model Department {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  users       User[]
+  positions   Position[]
+}
+
+model Employer {
+  id          String     @id @default(uuid())
+  name        String
+  email       String     @unique
+  phone       String?
+  website     String?
+  logo        String?
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  positions   Position[]
+}
+
+model Position {
+  id              String            @id @default(uuid())
+  title           String
+  description     String?
+  requirements    String?
+  location        String?
+  keywords        String?           // JSON array of keywords (max ~30)
+  salaryRange     String?
+  employmentType  String?           // Full-time, Part-time, Contract
+  departmentId    String?
+  department      Department?       @relation(fields: [departmentId], references: [id])
+  employer        Employer          @relation(fields: [employerId], references: [id])
+  employerId      String
+  recruiterId     String?
+  recruiter       User?             @relation("PositionRecruiter", fields: [recruiterId], references: [id])
+  imageUrl        String?
+  active          Boolean           @default(false)
+  ruTitle         String?
+  ruDescription   String?
+  openings        Int               @default(1)
+  priority        Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  closedAt        DateTime?
+  
+  applications    Application[]
+  tags            Tag[]
+  interviews      Interview[]
+}
+
+model Candidate {
+  id            String          @id @default(uuid())
+  name          String
+  email         String?         @unique
+  phone         String?
+  alternatePhone String?
+  resumeUrl     String?
+  linkedinUrl   String?
+  portfolioUrl  String?
+  currentCompany String?
+  currentTitle  String?
+  yearsOfExperience Int?
+  expectedSalary String?
+  noticePeriod  String?
+  address       String?
+  city          String?
+  country       String?
+  skills        String?
+  notes         String?
+  rating        Int?            // 1-5 stars
+  score         Int?            // Overall candidate score 0-100
+  source        String?         // Job board, referral, LinkedIn, etc.
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  applications  Application[]
+  tags          Tag[]
+  documents     Document[]
+  communications Communication[]
+  interviews    Interview[]
+  candidateNotes Note[]
+}
+
+model Application {
+  id            String            @id @default(uuid())
+  candidate     Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateId   String
+  position      Position          @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  positionId    String
+  status        String            @default("NEW") // NEW, SCREENING, PHONE_INTERVIEW, ONSITE_INTERVIEW, OFFER, ACCEPTED, REJECTED, WITHDRAWN
+  stage         String            @default("NEW") // NEW, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED - for Kanban board
+  coverLetter   String?
+  source        String?           // MANUAL, EMAIL_AUTO, LINKEDIN, JOB_BOARD
+  matchScore    Int?              // AI matching score 0-100
+  appliedAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  rejectedAt    DateTime?
+  rejectionReason String?
+  
+  interviews    Interview[]
+  communications Communication[]
+  activityLogs  ActivityLog[]
+  
+  @@unique([candidateId, positionId])
+}
+
+model Interview {
+  id            String        @id @default(uuid())
+  title         String
+  type          String        // PHONE, VIDEO, ONSITE, TECHNICAL, HR
+  scheduledAt   DateTime
+  duration      Int           // in minutes
+  location      String?
+  meetingUrl    String?
+  notes         String?
+  feedback      String?
+  rating        Int?          // 1-5 stars
+  status        String        @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+  position      Position      @relation(fields: [positionId], references: [id])
+  positionId    String
+  candidate     Candidate     @relation(fields: [candidateId], references: [id])
+  candidateId   String
+  scheduler     User          @relation("InterviewScheduler", fields: [schedulerId], references: [id])
+  schedulerId   String
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Communication {
+  id            String        @id @default(uuid())
+  subject       String?
+  body          String
+  type          String        // EMAIL, SMS, CALL, NOTE
+  direction     String        // INBOUND, OUTBOUND
+  
+  candidate     Candidate?    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateId   String?
+  application   Application?  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String?
+  user          User          @relation(fields: [userId], references: [id])
+  userId        String
+  
+  createdAt     DateTime      @default(now())
+}
+
+model Document {
+  id            String        @id @default(uuid())
+  name          String
+  type          String        // RESUME, COVER_LETTER, CERTIFICATE, OTHER
+  url           String
+  size          Int?          // in bytes
+  mimeType      String?
+  
+  candidate     Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateId   String
+  
+  uploadedAt    DateTime      @default(now())
+}
+
+model Notification {
+  id            String            @id @default(uuid())
+  title         String
+  message       String
+  type          String            // EMAIL, SMS, PUSH, SYSTEM
+  read          Boolean           @default(false)
+  data          String?           // JSON data
+  
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  
+  createdAt     DateTime          @default(now())
+}
+
+model ActivityLog {
+  id            String        @id @default(uuid())
+  type          String        // CANDIDATE_APPLIED, STATUS_CHANGED, INTERVIEW_SCHEDULED, INTERVIEW_COMPLETED, NOTE_ADDED, DOCUMENT_UPLOADED, EMAIL_SENT, OFFER_SENT
+  description   String
+  metadata      String?       // JSON metadata
+  
+  user          User?         @relation(fields: [userId], references: [id])
+  userId        String?
+  application   Application?  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String?
+  
+  createdAt     DateTime      @default(now())
+}
+
+model Tag {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  color       String?
+  type        String?     // SKILL, CATEGORY, etc.
+  category    String?     // general, skill, department, etc.
+  
+  candidates  Candidate[]
+  positions   Position[]
+  
+  createdAt   DateTime    @default(now())
+}
+
+model EmailTemplate {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  subject     String
+  body        String
+  type        String      // APPLICATION_RECEIVED, INTERVIEW_INVITE, REJECTION, OFFER, etc.
+  variables   String?     // JSON array of available variables
+  active      Boolean     @default(true)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model MessageTemplate {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  subject     String?     // For emails
+  body        String
+  type        String      // SMS, EMAIL, WHATSAPP
+  category    String?     // REJECTION, INTERVIEW_INVITE, FOLLOW_UP, OFFER, GENERAL
+  variables   String?     // JSON array: ["candidateName", "positionTitle", "companyName"]
+  active      Boolean     @default(true)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Reminder {
+  id            String      @id @default(uuid())
+  title         String
+  description   String?
+  dueDate       DateTime
+  completed     Boolean     @default(false)
+  priority      String      @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  type          String      // FOLLOW_UP, INTERVIEW, CALL, EMAIL, GENERAL
+  
+  candidateId   String?
+  positionId    String?
+  userId        String
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  completedAt   DateTime?
+}
+
+model Note {
+  id            String      @id @default(uuid())
+  content       String
+  type          String      @default("GENERAL") // GENERAL, INTERVIEW_FEEDBACK, PHONE_SCREEN, REFERENCE_CHECK
+  isPrivate     Boolean     @default(false)
+  
+  candidate     Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateId   String
+  userId        String      // Who created the note
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}

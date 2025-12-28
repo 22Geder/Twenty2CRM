@@ -22,6 +22,7 @@ import {
   Link as LinkIcon
 } from "lucide-react"
 import Link from "next/link"
+import { MatchingPositionsList } from "@/components/matching-positions-list"
 
 interface CandidateDetailsProps {
   params: Promise<{
@@ -619,6 +620,11 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Matching Positions Section */}
+      <div className="mt-8">
+        <MatchingPositionsList candidateId={candidateId} candidateName={candidate?.name} />
       </div>
     </div>
   )

@@ -211,6 +211,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 🚫 בדיקה: האם המועמד עבד בחברה זו בעבר
+    const employerName = position.employer.name.toLowerCase()
+    const candidateCompany = candidate.currentCompany?.toLowerCase() || ''
+    
+    if (candidateCompany && (
+      employerName.includes(candidateCompany) || 
+      candidateCompany.includes(employerName)
+    )) {
+      return NextResponse.json(
+        { 
+          error: `❌ לא ניתן לשלוח - ${candidate.name} כבר עבד/ה ב-${position.employer.name}`,
+          workedAtCompanyBefore: true 
+        },
+        { status: 400 }
+      )
+    }
+
     // בדיקת הגדרות SMTP
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
       return NextResponse.json(

@@ -6,12 +6,6 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import mammoth from 'mammoth';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 // Helper to extract text from PDF
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {

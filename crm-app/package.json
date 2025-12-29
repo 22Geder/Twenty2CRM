@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:network": "next dev -H 0.0.0.0",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build && node copy-standalone.js",
-    "start": "next start -p ${PORT:-8080}",
+    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "start:network": "next start -H 0.0.0.0",
     "lint": "eslint",
     "db:push": "prisma db push",

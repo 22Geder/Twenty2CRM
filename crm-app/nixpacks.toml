@@ -5,7 +5,11 @@ nixPkgs = ["nodejs_22", "openssl"]
 cmds = ["npm ci"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "npm run build",
+  "cp -r public .next/standalone/crm-app/ || true",
+  "cp -r .next/static .next/standalone/crm-app/.next/ || true"
+]
 
 [start]
-cmd = "npm start"
+cmd = "cd .next/standalone/crm-app && PORT=${PORT:-8080} node server.js"

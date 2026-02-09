@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -76,6 +76,7 @@ model Position {
   ruDescription   String?
   openings        Int               @default(1)
   priority        Int               @default(0)
+  aiProfile       String?           // JSON profile from Gemini analysis
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   closedAt        DateTime?
@@ -107,6 +108,13 @@ model Candidate {
   rating        Int?            // 1-5 stars
   score         Int?            // Overall candidate score 0-100
   source        String?         // Job board, referral, LinkedIn, etc.
+  hiredAt       DateTime?
+  employmentType String?        // PERMANENT, TEMP, PLACEMENT
+  employmentStatus String?      // ACTIVE, ENDED
+  employmentEndAt DateTime?
+  isSelfEmployed Boolean        @default(false)
+  resume        String?
+  aiProfile     String?         // JSON profile from Gemini analysis
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   
@@ -282,6 +290,16 @@ model Reminder {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   completedAt   DateTime?
+}
+
+model SmartMatchingFeedback {
+  id                String      @id @default(uuid())
+  candidateName     String
+  jobTitle          String
+  initialScore      Int
+  hiringOutcome     Boolean
+  reason            String?
+  createdAt         DateTime    @default(now())
 }
 
 model Note {

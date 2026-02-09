@@ -24,6 +24,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    const { hasResumeKeywords } = await import('@/lib/resume-keywords')
+    const isResumeEmail = hasResumeKeywords(subject, text, html, cvAttachment.filename)
+    if (!isResumeEmail) {
+      return NextResponse.json({
+        message: 'No resume keywords found',
+        status: 'ignored'
+      })
+    }
+
     // נתח את המייל וקורות החיים באמצעות AI
     const analysis: any = await analyzeCV(text || html, cvAttachment)
 

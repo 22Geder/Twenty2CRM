@@ -35,11 +35,18 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
+        const previousLoginAt = user.lastLoginAt
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        })
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          lastLoginAt: previousLoginAt,
         }
       }
     })
@@ -51,6 +58,7 @@ export const authOptions: NextAuthOptions = {
           ...token,
           id: user.id,
           role: (user as any).role,
+          lastLoginAt: (user as any).lastLoginAt || null,
         }
       }
       return token
@@ -63,6 +71,7 @@ export const authOptions: NextAuthOptions = {
             ...session.user,
             id: token.id as string,
             role: token.role as string,
+            lastLoginAt: token.lastLoginAt as string | null,
           }
         }
       }

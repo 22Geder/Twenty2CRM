@@ -4,13 +4,18 @@ import { google } from 'googleapis'
 import * as fs from 'fs'
 import * as path from 'path'
 
-// מערכת פולינג - בודק מיילים כל X דקות עם Service Account
+// סריקת כל המיילים ההיסטוריים - לרוץ פעם אחת בהתחלה
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { emailAddress = '22geder@gmail.com' } = body
+    const { 
+      maxEmails = 500, // מספר מקסימלי של מיילים לסרוק
+      daysBack = 90    // כמה ימים אחורה לסרוק
+    } = body
 
     const { resumeKeywords } = await import('@/lib/resume-keywords')
+
+    console.log(`🔍 Starting historical email scan: ${maxEmails} emails, ${daysBack} days back`)
 
     // התחברות ל-Gmail API דרך Service Account
     const keyPath = path.join(process.cwd(), 'service-account-key.json')
@@ -32,51 +37,72 @@ export async function POST(request: NextRequest) {
 
     const gmail = google.gmail({ version: 'v1', auth })
 
-    // בדיקת מיילים חדשים (פחות מ-1 שעה)
-    const oneHourAgo = Math.floor((Date.now() - 60 * 60 * 1000) / 1000)
+    // חישוב תאריך מהעבר
+    const dateFilter = new Date()
+    dateFilter.setDate(dateFilter.getDate() - daysBack)
+    const timestamp = Math.floor(dateFilter.getTime() / 1000)
+
+    // בדיקת מיילים עם attachments בעבר X ימים
     const response = await gmail.users.messages.list({
       userId: 'me',
-      q: `after:${oneHourAgo} has:attachment`
+      maxResults: maxEmails,
+      q: `after:${timestamp} has:attachment`
     })
 
     const messageIds = response.data.messages || []
-    console.log(`Found ${messageIds.length} emails with attachments`)
+    console.log(`Found ${messageIds.length} emails with attachments from last ${daysBack} days`)
 
     // עיבוד כל מייל
     const processedEmails = []
+    
     for (const message of messageIds) {
-      const msg = await gmail.users.messages.get({
-        userId: 'me',
-        id: message.id!,
-        format: 'full'
-      })
+      try {
+        const msg = await gmail.users.messages.get({
+          userId: 'me',
+          id: message.id!,
+          format: 'full'
+        })
 
-      const result = await processResumeEmail(msg.data, resumeKeywords)
-      if (result.success) {
-        processedEmails.push(result)
+        const result = await processHistoricalEmail(msg.data, resumeKeywords)
+        if (result.success) {
+          processedEmails.push(result)
+        }
+      } catch (error) {
+        console.error(`Error processing message ${message.id}:`, error)
       }
     }
 
     return NextResponse.json({
       success: true,
-      emailsChecked: messageIds.length,
+      emailsScanned: messageIds.length,
       candidatesCreated: processedEmails.length,
       results: processedEmails
     })
 
   } catch (error) {
-    console.error('Email polling error:', error)
+    console.error('Historical scan error:', error)
     return NextResponse.json(
-      { error: 'Failed to check emails', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Historical scan failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-// עיבוד מייל עם קורות חיים
-async function processResumeEmail(emailData: any, resumeKeywords: string[]) {
+// חילוץ תוכן המייל
+function getEmailBody(message: any): string {
+  let body = ''
+  const part = message.payload?.parts?.[0] || message.payload
+  
+  if (part.body?.data) {
+    body = Buffer.from(part.body.data, 'base64').toString('utf-8')
+  }
+  
+  return body
+}
+
+// עיבוד מייל היסטורי
+async function processHistoricalEmail(emailData: any, resumeKeywords: string[]) {
   try {
-    // חילוץ מידע מהמייל
     const headers = emailData.payload?.headers || []
     const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'ללא נושא'
     const from = headers.find((h: any) => h.name === 'From')?.value || 'unknown'
@@ -118,8 +144,8 @@ async function processResumeEmail(emailData: any, resumeKeywords: string[]) {
         currentTitle: candidateInfo.title,
         skills: candidateInfo.skills,
         city: candidateInfo.city,
-        source: 'EMAIL_AUTO',
-        notes: `נקלט אוטומטית מאימייל ב-${new Date().toLocaleDateString('he-IL')}\n\nנושא: ${subject}\n\nמ: ${from}`,
+        source: 'EMAIL_HISTORICAL',
+        notes: `נקלט מסריקה היסטורית ב-${new Date().toLocaleDateString('he-IL')}\n\nנושא: ${subject}\n\nמ: ${from}`,
         resumeUrl: null
       }
     })
@@ -148,25 +174,13 @@ async function processResumeEmail(emailData: any, resumeKeywords: string[]) {
     }
 
   } catch (error) {
-    console.error('Error processing email:', error)
+    console.error('Error processing historical email:', error)
     return {
       success: false,
       reason: 'Processing error',
       error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
-}
-
-// חילוץ תוכן המייל
-function getEmailBody(message: any): string {
-  let body = ''
-  const part = message.payload?.parts?.[0] || message.payload
-  
-  if (part.body?.data) {
-    body = Buffer.from(part.body.data, 'base64').toString('utf-8')
-  }
-  
-  return body
 }
 
 // חילוץ מידע מתוכן המייל

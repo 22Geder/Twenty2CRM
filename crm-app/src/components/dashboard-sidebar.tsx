@@ -23,7 +23,10 @@ import {
   KanbanSquare,
   History,
   FileEdit,
-  Bell
+  Bell,
+  UserCheck,
+  RefreshCw,
+  Sparkles
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -31,7 +34,9 @@ import { Twenty2JobsLogoFull } from "@/components/logo"
 
 const navigation = [
   { name: "לוח בקרה", href: "/dashboard", icon: LayoutDashboard },
+  { name: "🎯 לוח גיוס 2טו-גדר", href: "/dashboard/recruitment-board", icon: Sparkles },
   { name: "מועמדים", href: "/dashboard/candidates", icon: Users },
+  { name: "מועמדים שגוייסו", href: "/dashboard/hired", icon: UserCheck },
   { name: "משרות", href: "/dashboard/positions", icon: Briefcase },
   { name: "🎯 פייפליין Kanban", href: "/dashboard/kanban", icon: KanbanSquare },
   { name: "📋 היסטוריית פעילות", href: "/dashboard/activity", icon: History },
@@ -39,7 +44,9 @@ const navigation = [
   { name: "⏰ תזכורות", href: "/dashboard/reminders", icon: Bell },
   { name: "העלאה מפייסבוק", href: "/dashboard/facebook-import", icon: Facebook },
   { name: "בוט פרסום קבוצות", href: "/dashboard/job-posting-bot", icon: Send },
+  { name: "⚡ סורק מיילים אוטומטי", href: "/dashboard/email-auto-scanner", icon: RefreshCw },
   { name: "קליטת מיילים אוטומטית", href: "/dashboard/gmail-auto", icon: Inbox },
+  { name: "🔧 הגדרת Gmail API", href: "/dashboard/gmail-setup", icon: Settings },
   { name: "מיילים אוטומטיים", href: "/dashboard/email-auto", icon: Mail },
   { name: "התאמה חכמה", href: "/dashboard/smart-matching", icon: Brain },
   { name: "ראיונות", href: "/dashboard/interviews", icon: Calendar },

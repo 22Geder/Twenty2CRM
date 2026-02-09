@@ -59,7 +59,19 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
     notes: "",
     rating: "",
     source: "",
+    hiredAt: "",
+    employmentType: "",
+    employmentStatus: "",
+    employmentEndAt: "",
+    isSelfEmployed: false,
   })
+
+  const toDateInputValue = (value?: string) => {
+    if (!value) return ""
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ""
+    return date.toISOString().split("T")[0]
+  }
 
   useEffect(() => {
     params.then(p => {
@@ -101,6 +113,11 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         notes: data.notes || "",
         rating: data.rating?.toString() || "",
         source: data.source || "",
+        hiredAt: toDateInputValue(data.hiredAt),
+        employmentType: data.employmentType || "",
+        employmentStatus: data.employmentStatus || "",
+        employmentEndAt: toDateInputValue(data.employmentEndAt),
+        isSelfEmployed: Boolean(data.isSelfEmployed),
       })
     } catch (err: any) {
       setError(err.message)
@@ -110,6 +127,13 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -163,6 +187,62 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
     }
   }
 
+  const normalizePhoneForWhatsApp = (phone: string) => {
+    const digits = phone.replace(/\D/g, "")
+    if (digits.startsWith("972")) return digits
+    if (digits.startsWith("0")) return `972${digits.slice(1)}`
+    return digits
+  }
+
+  const getDocByType = (type: string) => {
+    return candidate?.documents?.find((doc: any) => doc.type === type)
+  }
+
+  const uploadDocument = async (type: string, file: File) => {
+    const form = new FormData()
+    form.append("file", file)
+    form.append("type", type)
+
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/documents`, {
+        method: "POST",
+        body: form,
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to upload document")
+      }
+
+      await fetchCandidate()
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleEndEmployment = async () => {
+    if (!confirm("לסיים עבודה למועמד הזה?")) return
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employmentStatus: "ENDED",
+          employmentEndAt: new Date().toISOString(),
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to update candidate")
+      }
+
+      await fetchCandidate()
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-8">
@@ -206,6 +286,10 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
               <Button variant="outline" onClick={() => setEditing(true)}>
                 <Edit className="ml-2 h-4 w-4" />
                 ערוך
+              </Button>
+              <Button variant="secondary" onClick={handleEndEmployment}>
+                <Briefcase className="ml-2 h-4 w-4" />
+                סיום עבודה
               </Button>
               <Button variant="destructive" onClick={handleDelete}>
                 <Trash2 className="ml-2 h-4 w-4" />
@@ -305,6 +389,21 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                     <Label htmlFor="address">כתובת</Label>
                     <Input id="address" name="address" value={formData.address} onChange={handleChange} />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="isSelfEmployed"
+                      name="isSelfEmployed"
+                      type="checkbox"
+                      checked={formData.isSelfEmployed}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isSelfEmployed: e.target.checked,
+                        })
+                      }
+                    />
+                    <Label htmlFor="isSelfEmployed">עוסק/ת - לא למחוק לעולם</Label>
+                  </div>
                 </>
               ) : (
                 <div className="grid gap-3">
@@ -330,6 +429,12 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span>מקור: {candidate.source}</span>
+                    </div>
+                  )}
+                  {candidate.isSelfEmployed && (
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-emerald-600" />
+                      <span className="text-emerald-700">עוסק/ת - מוגן ממחיקה</span>
                     </div>
                   )}
                 </div>
@@ -435,6 +540,87 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>קליטה לעבודה</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {editing ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="hiredAt">תאריך גיוס</Label>
+                      <Input
+                        id="hiredAt"
+                        name="hiredAt"
+                        type="date"
+                        value={formData.hiredAt}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="employmentType">סוג העסקה</Label>
+                      <select
+                        id="employmentType"
+                        name="employmentType"
+                        value={formData.employmentType}
+                        onChange={handleSelectChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">בחר</option>
+                        <option value="PERMANENT">קבוע</option>
+                        <option value="TEMP">זמני</option>
+                        <option value="PLACEMENT">השמה</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="employmentStatus">סטטוס</Label>
+                      <select
+                        id="employmentStatus"
+                        name="employmentStatus"
+                        value={formData.employmentStatus}
+                        onChange={handleSelectChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">בחר</option>
+                        <option value="ACTIVE">פעיל</option>
+                        <option value="ENDED">הסתיים</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="employmentEndAt">סיום עבודה</Label>
+                      <Input
+                        id="employmentEndAt"
+                        name="employmentEndAt"
+                        type="date"
+                        value={formData.employmentEndAt}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="grid gap-3 text-sm">
+                  {candidate.hiredAt && (
+                    <p><strong>תאריך גיוס:</strong> {new Date(candidate.hiredAt).toLocaleDateString("he-IL")}</p>
+                  )}
+                  {candidate.employmentType && (
+                    <p><strong>סוג העסקה:</strong> {candidate.employmentType === "PERMANENT" ? "קבוע" : candidate.employmentType === "TEMP" ? "זמני" : "השמה"}</p>
+                  )}
+                  {candidate.employmentStatus && (
+                    <p><strong>סטטוס:</strong> {candidate.employmentStatus === "ACTIVE" ? "פעיל" : "הסתיים"}</p>
+                  )}
+                  {candidate.employmentEndAt && (
+                    <p><strong>סיום עבודה:</strong> {new Date(candidate.employmentEndAt).toLocaleDateString("he-IL")}</p>
+                  )}
+                  {!candidate.hiredAt && <p className="text-muted-foreground">לא הוגדר תאריך גיוס</p>}
                 </div>
               )}
             </CardContent>
@@ -601,6 +787,112 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
               </CardContent>
             </Card>
           )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>מסמכי גיוס</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <p className="font-medium">טופס 101</p>
+                    {getDocByType("FORM_101") ? (
+                      <a
+                        href={getDocByType("FORM_101").url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        הצג טופס
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">לא הועלה</span>
+                    )}
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) uploadDocument("FORM_101", file)
+                    }}
+                    className="max-w-[220px]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <p className="font-medium">הסכם עבודה</p>
+                    {getDocByType("EMPLOYMENT_CONTRACT") ? (
+                      <a
+                        href={getDocByType("EMPLOYMENT_CONTRACT").url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        הצג הסכם
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">לא הועלה</span>
+                    )}
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) uploadDocument("EMPLOYMENT_CONTRACT", file)
+                    }}
+                    className="max-w-[220px]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <p className="font-medium">הסכם זמני / עובד השמה</p>
+                    {getDocByType("TEMP_CONTRACT") ? (
+                      <a
+                        href={getDocByType("TEMP_CONTRACT").url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        הצג הסכם
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">לא הועלה</span>
+                    )}
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) uploadDocument("TEMP_CONTRACT", file)
+                    }}
+                    className="max-w-[220px]"
+                  />
+                </div>
+              </div>
+
+              {candidate.phone && (getDocByType("EMPLOYMENT_CONTRACT") || getDocByType("TEMP_CONTRACT")) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const doc = getDocByType("EMPLOYMENT_CONTRACT") || getDocByType("TEMP_CONTRACT")
+                    if (!doc) return
+                    const phone = normalizePhoneForWhatsApp(candidate.phone)
+                    const message = `שלום ${candidate.name}, מצורף ההסכם שלך: ${doc.url}`
+                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+                    window.open(url, "_blank")
+                  }}
+                >
+                  שלח הסכם בוואטסאפ
+                </Button>
+              )}
+            </CardContent>
+          </Card>
 
           {candidate.applications && candidate.applications.length > 0 && (
             <Card>

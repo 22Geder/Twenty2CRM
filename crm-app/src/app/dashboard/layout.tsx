@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50" dir="rtl">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100" dir="rtl">
       <TopNavbar />
       <main className="flex-1 overflow-y-auto">
         {children}

@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       notes,
       rating,
       source,
+      isSelfEmployed,
     } = body
 
     // Validation
@@ -143,6 +144,7 @@ export async function POST(request: NextRequest) {
         notes,
         rating: rating ? parseInt(rating) : null,
         source,
+        isSelfEmployed: Boolean(isSelfEmployed),
       },
     })
 

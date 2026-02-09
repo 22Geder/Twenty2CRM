@@ -53,16 +53,12 @@ async function checkForNewEmails() {
 // עיבוד מייל עם קורות חיים
 async function processResumeEmail(emailData: any) {
   try {
-    // זהה מילות מפתח בנושא או תוכן
-    const resumeKeywords = [
-      'קורות חיים', 'קוח', 'קח', 'CV', 'resume', 
-      'מועמדות', 'משרה', 'עבודה', 'מחפש עבודה',
-      'מעוניין במשרה', 'רוצה לעבוד'
-    ]
-    
-    const isResumeEmail = resumeKeywords.some(keyword => 
-      emailData.subject?.toLowerCase().includes(keyword.toLowerCase()) ||
-      emailData.body?.toLowerCase().includes(keyword.toLowerCase())
+    const { hasResumeKeywords } = await import('@/lib/resume-keywords')
+
+    const isResumeEmail = hasResumeKeywords(
+      emailData.subject,
+      emailData.body,
+      emailData.attachments?.[0]?.filename
     )
 
     if (!isResumeEmail) {

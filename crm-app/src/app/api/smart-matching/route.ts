@@ -2,6 +2,120 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import {
+  analyzeResumeWithGemini,
+  analyzeJobDescriptionWithGemini,
+  calculateMatchScoreWithGemini,
+  improveMatchingWithFeedback,
+} from "@/lib/gemini-ai"
+
+/**
+ * GET /api/smart-matching/matches?candidateId=X
+ * מחזיר התאמות אוטומטיות למועמד מול כל המשרות במערכת
+ */
+export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const searchParams = request.nextUrl.searchParams
+  const candidateId = searchParams.get("candidateId")
+
+  if (!candidateId) {
+    return NextResponse.json({ error: "Missing candidateId" }, { status: 400 })
+  }
+
+  try {
+    // קבל את המועמד
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      include: { tags: true },
+    })
+
+    if (!candidate) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 })
+    }
+
+    // קבל את כל המשרות הפעילות
+    const positions = await prisma.position.findMany({
+      where: { active: true },
+      include: { employer: true },
+    })
+
+    if (positions.length === 0) {
+      return NextResponse.json({
+        candidateName: candidate.name,
+        matches: [],
+        message: "No active positions available",
+      })
+    }
+
+    // ניתוח קורות חיים של המועמד (אם עדיין לא נעשה)
+    let candidateProfile = candidate.aiProfile as any
+
+    if (!candidateProfile) {
+      candidateProfile = await analyzeResumeWithGemini(candidate.resume || "")
+      // שמור את הפרופיל
+      await prisma.candidate.update({
+        where: { id: candidateId },
+        data: { aiProfile: candidateProfile as any },
+      })
+    }
+
+    // עבור כל משרה, חשב התאמה
+    const matches = []
+
+    for (const position of positions) {
+      try {
+        // ניתוח תיאור המשרה (אם עדיין לא נעשה)
+        let jobProfile = position.aiProfile as any
+
+        if (!jobProfile) {
+          jobProfile = await analyzeJobDescriptionWithGemini(position.description || "")
+          // שמור את הפרופיל
+          await prisma.position.update({
+            where: { id: position.id },
+            data: { aiProfile: jobProfile as any },
+          })
+        }
+
+        // חשב ניקוד התאמה
+        const matchResult = await calculateMatchScoreWithGemini(candidateProfile, jobProfile)
+
+        matches.push({
+          positionId: position.id,
+          positionTitle: position.title,
+          employerName: position.employer?.name,
+          matchScore: matchResult.score,
+          reasoning: matchResult.reasoning,
+          matchedSkills: matchResult.matchedSkills,
+          missingSkills: matchResult.missingSkills,
+          experienceFit: matchResult.experienceFit,
+        })
+      } catch (error) {
+        console.error(`Error matching candidate ${candidateId} with position ${position.id}:`, error)
+      }
+    }
+
+    // מיין לפי ניקוד התאמה (הגבוה ביותר קודם)
+    matches.sort((a, b) => b.matchScore - a.matchScore)
+
+    return NextResponse.json({
+      candidateName: candidate.name,
+      candidateTags: candidate.tags.map((t) => t.name),
+      totalMatches: matches.length,
+      topMatches: matches.slice(0, 10),
+      allMatches: matches,
+    })
+  } catch (error) {
+    console.error("Error in smart matching:", error)
+    return NextResponse.json(
+      { error: "Error performing smart matching" },
+      { status: 500 }
+    )
+  }
+}
 
 // POST /api/smart-matching - התאמה חכמה מועמד למשרות
 export async function POST(request: NextRequest) {
@@ -21,7 +135,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // שלב 1: קבל פרטי מועמד
+    // קבל את המועמד
     const candidate = await prisma.candidate.findUnique({
       where: { id: candidateId },
       include: {
@@ -41,10 +155,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // שלב 2: נתח קורות חיים וזהה כישורים
+    // ניתוח קורות חיים בעזרת Gemini
     let detectedSkills: string[] = []
-    if (resumeText) {
-      detectedSkills = analyzeResumeForSkills(resumeText)
+    if (resumeText || candidate.resume) {
+      const profile = await analyzeResumeWithGemini(resumeText || candidate.resume || "")
+      detectedSkills = profile.tags
       
       // הוסף תגיות חדשות למועמד
       const existingTags = await prisma.tag.findMany({
@@ -84,26 +199,74 @@ export async function POST(request: NextRequest) {
           tags: {
             connect: allTags.map(tag => ({ id: tag.id }))
           },
-          skills: detectedSkills.join(', ')
+          aiProfile: profile as any
         }
       })
     }
 
-    // שלב 3: חפש משרות מתאימות
-    const candidateSkills = candidate.tags.map(tag => tag.name).concat(detectedSkills)
-    const matchingPositions = await findMatchingPositions(candidate, candidateSkills)
+    // קבל את כל המשרות הפעילות
+    const positions = await prisma.position.findMany({
+      where: { active: true },
+      include: {
+        tags: true,
+        employer: true,
+        applications: {
+          where: {
+            candidateId: candidateId
+          }
+        }
+      }
+    })
 
-    // שלב 4: צור מועמדויות אוטומטיות למשרות מתאימות
+    // סנן משרות שהמועמד כבר התמודד עליהן
+    const availablePositions = positions.filter(pos => pos.applications.length === 0)
+
+    // חשב התאמות לכל משרה זמינה
+    const matches = []
+    for (const position of availablePositions) {
+      try {
+        let candidateProfile = candidate.aiProfile as any
+        if (!candidateProfile) {
+          candidateProfile = await analyzeResumeWithGemini(candidate.resume || "")
+        }
+
+        let jobProfile = position.aiProfile as any
+        if (!jobProfile) {
+          jobProfile = await analyzeJobDescriptionWithGemini(position.description || "")
+          await prisma.position.update({
+            where: { id: position.id },
+            data: { aiProfile: jobProfile as any }
+          })
+        }
+
+        const matchResult = await calculateMatchScoreWithGemini(candidateProfile, jobProfile)
+        
+        matches.push({
+          position,
+          score: matchResult.score,
+          matchedSkills: matchResult.matchedSkills,
+          reasoning: matchResult.reasoning
+        })
+      } catch (error) {
+        console.log(`Skip matching for position ${position.id}`)
+      }
+    }
+
+    // מיין לפי ניקוד התאמה
+    matches.sort((a, b) => b.score - a.score)
+
+    // צור מועמדויות אוטומטיות למשרות הטובות ביותר (75% התאמה ומעלה)
     const createdApplications = []
-    for (const match of matchingPositions.slice(0, 3)) { // רק 3 המשרות הטובות ביותר
-      if (match.score >= 50) { // רק אם יש התאמה של 50% או יותר
+    for (const match of matches.slice(0, 5)) {
+      if (match.score >= 75) {
         try {
           const application = await prisma.application.create({
             data: {
               candidateId,
               positionId: match.position.id,
               status: "NEW",
-              coverLetter: generateAutoMatchCoverLetter(candidate, match.position, match.matchedSkills)
+              matchScore: match.score,
+              coverLetter: `התאמה אוטומטית - ${Math.round(match.score)}% התאמה\n\nכישורים תואמים: ${match.matchedSkills.join(", ")}`
             },
             include: {
               position: {
@@ -115,7 +278,6 @@ export async function POST(request: NextRequest) {
           })
           createdApplications.push(application)
         } catch (error) {
-          // מועמדות כבר קיימת, תתעלם
           console.log(`Application already exists for candidate ${candidateId} and position ${match.position.id}`)
         }
       }
@@ -125,14 +287,15 @@ export async function POST(request: NextRequest) {
       success: true,
       candidateId,
       detectedSkills,
-      matchingPositions: matchingPositions.length,
+      matchingPositions: matches.length,
       autoApplications: createdApplications.length,
       applications: createdApplications,
-      topMatches: matchingPositions.slice(0, 5).map(match => ({
+      topMatches: matches.slice(0, 5).map(match => ({
+        positionId: match.position.id,
         position: match.position.title,
         employer: match.position.employer?.name,
         score: Math.round(match.score),
-        matchedSkills: match.matchedSkills
+        matchedSkills: match.matchedSkills.slice(0, 3)
       }))
     })
 
@@ -145,138 +308,54 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// נתח קורות חיים וזהה כישורים
-function analyzeResumeForSkills(resumeText: string): string[] {
-  const skillsDatabase = [
-    // טכנולוגיות
-    "React", "Angular", "Vue.js", "JavaScript", "TypeScript", "Node.js", "Python", "Java", "C#", "PHP",
-    "HTML", "CSS", "SCSS", "MongoDB", "MySQL", "PostgreSQL", "Redis", "Docker", "Kubernetes", "AWS",
-    "Azure", "GCP", "Git", "Jenkins", "Linux", "Windows Server", "Nginx", "Apache", "GraphQL", "REST API",
-    
-    // כישורים רכים בעברית
-    "ניהול", "מנהיגות", "עבודת צוות", "תקשורת", "פתרון בעיות", "יצירתיות", "ארגון", "תכנון",
-    "מכירות", "שיווק", "שירות לקוחות", "משא ומתן", "הצגה", "הדרכה", "ליווי", "פיתוח עסקי",
-    
-    // כישורים טכניים בעברית
-    "פיתוח", "תכנות", "בדיקות", "QA", "DevOps", "מסדי נתונים", "אבטחת מידע", "רשתות", "אנליטיקה"
-  ]
-
-  const text = resumeText.toLowerCase()
-  const detectedSkills: string[] = []
-
-  for (const skill of skillsDatabase) {
-    if (text.includes(skill.toLowerCase())) {
-      detectedSkills.push(skill)
-    }
+/**
+ * PATCH /api/smart-matching/feedback
+ * שיפור מתמשך של התאמות בהתאם לתוצאות הגיוס
+ */
+export async function PATCH(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  return [...new Set(detectedSkills)] // הסר כפילויות
-}
+  try {
+    const body = await request.json()
+    const { feedback } = body
 
-// מצא משרות מתאימות
-async function findMatchingPositions(candidate: any, skills: string[]) {
-  const activePositions = await prisma.position.findMany({
-    where: {
-      active: true
-    },
-    include: {
-      tags: true,
-      employer: true,
-      applications: {
-        where: {
-          candidateId: candidate.id
-        }
-      }
-    }
-  })
-
-  // סנן משרות שהמועמד כבר התמודד עליהן
-  const availablePositions = activePositions.filter(pos => pos.applications.length === 0)
-
-  const matches = availablePositions.map(position => {
-    let score = 0
-    let matchedSkills: string[] = []
-
-    // התאמת כישורים (70% מהציון)
-    const positionSkills = position.tags.map(tag => tag.name)
-    for (const skill of skills) {
-      if (positionSkills.some(pSkill => pSkill.toLowerCase().includes(skill.toLowerCase()))) {
-        score += 20
-        matchedSkills.push(skill)
-      }
+    if (!Array.isArray(feedback)) {
+      return NextResponse.json({ error: "Missing feedback array" }, { status: 400 })
     }
 
-    // התאמת ניסיון (20% מהציון)
-    if (candidate.yearsOfExperience) {
-      const requiredExperience = extractRequiredExperience(position.requirements || '')
-      if (requiredExperience <= candidate.yearsOfExperience) {
-        score += Math.min(20, candidate.yearsOfExperience * 3)
-      }
+    // שיפור התאמות בהתאם לתוצאות
+    const improvements = await improveMatchingWithFeedback(feedback)
+
+    // שמור את השיפורים כהיסטוריה
+    try {
+      await prisma.smartMatchingFeedback.createMany({
+        data: feedback.map((f) => ({
+          candidateName: f.candidateName,
+          jobTitle: f.jobTitle,
+          initialScore: f.initialScore,
+          hiringOutcome: f.hiringOutcome,
+          reason: f.reason,
+        })),
+      })
+    } catch (e) {
+      // אם הטבלה לא קיימת, תתעלם
+      console.log("SmartMatchingFeedback table not available")
     }
 
-    // התאמת כותרת תפקיד (10% מהציון)
-    if (candidate.currentTitle && position.title) {
-      const titleSimilarity = calculateTitleSimilarity(candidate.currentTitle, position.title)
-      score += titleSimilarity * 10
-    }
-
-    return {
-      position,
-      score: Math.min(100, score),
-      matchedSkills
-    }
-  })
-
-  return matches
-    .filter(match => match.score > 0)
-    .sort((a, b) => b.score - a.score)
-}
-
-// חלץ דרישות ניסיון מטקסט הדרישות
-function extractRequiredExperience(requirements: string): number {
-  const numbers = requirements.match(/(\d+)\s*(?:שנ|year)/gi)
-  if (numbers && numbers.length > 0) {
-    return parseInt(numbers[0])
+    return NextResponse.json({
+      message: "Feedback recorded successfully",
+      improvements,
+    })
+  } catch (error) {
+    console.error("Error recording feedback:", error)
+    return NextResponse.json(
+      { error: "Error recording feedback" },
+      { status: 500 }
+    )
   }
-  return 0
-}
-
-// חשב דמיון בין כותרות תפקיד
-function calculateTitleSimilarity(title1: string, title2: string): number {
-  const words1 = title1.toLowerCase().split(/\s+/)
-  const words2 = title2.toLowerCase().split(/\s+/)
-  
-  let commonWords = 0
-  for (const word of words1) {
-    if (words2.some(w => w.includes(word) || word.includes(w))) {
-      commonWords++
-    }
-  }
-  
-  return commonWords / Math.max(words1.length, words2.length)
-}
-
-// צור מכתב מוטיבציה אוטומטי
-function generateAutoMatchCoverLetter(candidate: any, position: any, matchedSkills: string[]): string {
-  return `
-שלום,
-
-אני ${candidate.name}, מתעניין/ת בתפקיד ${position.title} ב${position.employer?.name}.
-
-בעל/ת ${candidate.yearsOfExperience || 'מספר'} שנות ניסיון כ${candidate.currentTitle || 'מקצוען/ית'}.
-
-הכישורים שלי המתאימים לתפקיד:
-${matchedSkills.map(skill => `• ${skill}`).join('\n')}
-
-אשמח להזדמנות לפגישה.
-
-תודה,
-${candidate.name}
-${candidate.phone || ''}
-${candidate.email}
-
-** מכתב זה נוצר אוטומטית על ידי מערכת ההתאמה החכמה **
-`.trim()
 }
 
 // קבל צבע רנדומלי לתגית

@@ -99,6 +99,11 @@ export async function PUT(
       notes,
       rating,
       source,
+      hiredAt,
+      employmentType,
+      employmentStatus,
+      employmentEndAt,
+      isSelfEmployed,
     } = body
 
     // Check if candidate exists
@@ -149,6 +154,11 @@ export async function PUT(
         notes,
         rating: rating ? parseInt(rating) : null,
         source,
+        hiredAt: hiredAt ? new Date(hiredAt) : null,
+        employmentType: employmentType || null,
+        employmentStatus: employmentStatus || null,
+        employmentEndAt: employmentEndAt ? new Date(employmentEndAt) : null,
+        isSelfEmployed: typeof isSelfEmployed === "boolean" ? isSelfEmployed : undefined,
       },
       include: {
         applications: {
@@ -192,6 +202,13 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Candidate not found" },
         { status: 404 }
+      )
+    }
+
+    if (candidate.isSelfEmployed) {
+      return NextResponse.json(
+        { error: "Self-employed candidates cannot be deleted" },
+        { status: 403 }
       )
     }
 

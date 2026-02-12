@@ -19,10 +19,20 @@ import {
   FileText,
   Trash2,
   Edit,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Maximize2,
+  Loader2,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Building2,
+  Star
 } from "lucide-react"
 import Link from "next/link"
 import { MatchingPositionsList } from "@/components/matching-positions-list"
+import { DualMatchingView } from "@/components/dual-matching-view"
+import { AdvancedMatchingView } from "@/components/advanced-matching-view"
+import { SmartAIMatching } from "@/components/smart-ai-matching"
 
 interface CandidateDetailsProps {
   params: Promise<{
@@ -38,6 +48,12 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const [showResumeModal, setShowResumeModal] = useState(false)  // 🆕 מודל להגדלת קורות חיים
+  const [analyzing, setAnalyzing] = useState(false)  // 🆕 ניתוח AI
+  const [analysisResult, setAnalysisResult] = useState<any>(null)  // 🆕 תוצאות ניתוח
+  const [employers, setEmployers] = useState<any[]>([])  // 🆕 רשימת מעסיקים
+  const [candidateStatus, setCandidateStatus] = useState<'new' | 'in-process' | 'hired' | 'rejected'>('new')  // 🆕 סטטוס מועמד
+  const [statusSaving, setStatusSaving] = useState(false)  // 🆕 שומר סטטוס
   
   const [formData, setFormData] = useState({
     name: "",
@@ -64,6 +80,8 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
     employmentStatus: "",
     employmentEndAt: "",
     isSelfEmployed: false,
+    resume: "",  // טקסט קורות חיים מקורי
+    hiredToEmployerId: "",  // 🆕 לאיזה מעסיק התקבל
   })
 
   const toDateInputValue = (value?: string) => {
@@ -84,6 +102,22 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       fetchCandidate()
     }
   }, [candidateId])
+
+  // 🆕 טעינת רשימת מעסיקים
+  useEffect(() => {
+    const fetchEmployers = async () => {
+      try {
+        const response = await fetch('/api/employers')
+        if (response.ok) {
+          const data = await response.json()
+          setEmployers(data.employers || data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching employers:', error)
+      }
+    }
+    fetchEmployers()
+  }, [])
 
   const fetchCandidate = async () => {
     try {
@@ -118,7 +152,23 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         employmentStatus: data.employmentStatus || "",
         employmentEndAt: toDateInputValue(data.employmentEndAt),
         isSelfEmployed: Boolean(data.isSelfEmployed),
+        resume: data.resume || "",
+        hiredToEmployerId: data.hiredToEmployerId || "",
       })
+      
+      // 🆕 קביעת סטטוס מועמד
+      if (data.hiredAt) {
+        setCandidateStatus('hired')
+      } else if (data.applications && data.applications.length > 0) {
+        const hasRejected = data.applications.every((app: any) => app.status === 'REJECTED')
+        if (hasRejected) {
+          setCandidateStatus('rejected')
+        } else {
+          setCandidateStatus('in-process')
+        }
+      } else {
+        setCandidateStatus('new')
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -217,6 +267,81 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       await fetchCandidate()
     } catch (err: any) {
       setError(err.message)
+    }
+  }
+
+  // 🚀 ניתוח AI מהיר של קורות חיים
+  const runAnalysis = async () => {
+    if (!candidate?.resume) return
+    
+    setAnalyzing(true)
+    setAnalysisResult(null)
+    
+    try {
+      const response = await fetch('/api/ultra-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          candidateId,
+          resumeText: candidate.resume 
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setAnalysisResult(data)
+      }
+    } catch (error) {
+      console.error('Analysis error:', error)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  // 🆕 עדכון סטטוס מועמד מהיר
+  const updateCandidateStatus = async (newStatus: 'new' | 'in-process' | 'hired' | 'rejected', employerId?: string) => {
+    setStatusSaving(true)
+    try {
+      const updateData: any = {}
+      
+      if (newStatus === 'hired') {
+        updateData.hiredAt = new Date().toISOString()
+        updateData.employmentStatus = 'ACTIVE'
+        if (employerId) {
+          updateData.hiredToEmployerId = employerId
+        }
+      } else if (newStatus === 'rejected') {
+        updateData.hiredAt = null
+        updateData.hiredToEmployerId = null
+        updateData.employmentStatus = null
+      } else if (newStatus === 'in-process') {
+        updateData.hiredAt = null
+        updateData.hiredToEmployerId = null
+        updateData.employmentStatus = null
+      } else {
+        // new
+        updateData.hiredAt = null
+        updateData.hiredToEmployerId = null
+        updateData.employmentStatus = null
+      }
+      
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to update status")
+      }
+
+      setCandidateStatus(newStatus)
+      await fetchCandidate()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setStatusSaving(false)
     }
   }
 
@@ -319,6 +444,97 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
           <CardContent className="pt-6 text-red-600">{error}</CardContent>
         </Card>
       )}
+
+      {/* 🆕 כרטיס סטטוס מועמד */}
+      <Card className="mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            📊 סטטוס מועמד
+            {statusSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-4">
+            {/* כפתורי סטטוס */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={candidateStatus === 'new' ? 'default' : 'outline'}
+                className={candidateStatus === 'new' ? 'bg-orange-500 hover:bg-orange-600' : 'hover:bg-orange-100'}
+                onClick={() => updateCandidateStatus('new')}
+                disabled={statusSaving}
+              >
+                <Star className="h-4 w-4 ml-1" />
+                חדש
+              </Button>
+              <Button
+                size="sm"
+                variant={candidateStatus === 'in-process' ? 'default' : 'outline'}
+                className={candidateStatus === 'in-process' ? 'bg-blue-500 hover:bg-blue-600' : 'hover:bg-blue-100'}
+                onClick={() => updateCandidateStatus('in-process')}
+                disabled={statusSaving}
+              >
+                <Clock className="h-4 w-4 ml-1" />
+                בתהליך
+              </Button>
+              <Button
+                size="sm"
+                variant={candidateStatus === 'hired' ? 'default' : 'outline'}
+                className={candidateStatus === 'hired' ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-green-100'}
+                onClick={() => {
+                  const employerId = formData.hiredToEmployerId || ''
+                  updateCandidateStatus('hired', employerId || undefined)
+                }}
+                disabled={statusSaving}
+              >
+                <CheckCircle className="h-4 w-4 ml-1" />
+                התקבל
+              </Button>
+              <Button
+                size="sm"
+                variant={candidateStatus === 'rejected' ? 'default' : 'outline'}
+                className={candidateStatus === 'rejected' ? 'bg-red-500 hover:bg-red-600' : 'hover:bg-red-100'}
+                onClick={() => updateCandidateStatus('rejected')}
+                disabled={statusSaving}
+              >
+                <XCircle className="h-4 w-4 ml-1" />
+                לא התקבל
+              </Button>
+            </div>
+
+            {/* בחירת מעסיק (מוצג רק אם נבחר "התקבל") */}
+            {candidateStatus === 'hired' && (
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">לאן התקבל:</span>
+                <select
+                  value={formData.hiredToEmployerId}
+                  onChange={(e) => {
+                    setFormData({...formData, hiredToEmployerId: e.target.value})
+                    if (e.target.value) {
+                      updateCandidateStatus('hired', e.target.value)
+                    }
+                  }}
+                  className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">בחר מעסיק...</option>
+                  {employers.map((emp: any) => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* הצגת מעסיק שנבחר */}
+            {candidate.hiredToEmployerId && (
+              <Badge variant="secondary" className="bg-green-100 text-green-700 border border-green-300">
+                <Building2 className="h-3 w-3 ml-1" />
+                {employers.find((e: any) => e.id === candidate.hiredToEmployerId)?.name || 'מעסיק'}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
@@ -653,6 +869,166 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* קורות חיים - קישור */}
+          {candidate.resumeUrl && (
+            <Card className="border-blue-300 bg-blue-50/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-blue-700">
+                  <FileText className="h-5 w-5" />
+                  קורות חיים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <a
+                    href={candidate.resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 bg-white rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+                  >
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-700">צפה בקורות חיים</span>
+                  </a>
+                  {candidate.resumeUrl.includes("drive.google.com") && (
+                    <p className="text-xs text-blue-600">📁 שמור ב-Google Drive</p>
+                  )}
+                  {candidate.resumeUrl.includes("/uploads/resumes/") && (
+                    <p className="text-xs text-green-600">✓ שמור במערכת</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* טקסט קורות חיים המקורי */}
+          {candidate.resume && (
+            <Card className="border-green-300 bg-green-50/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-green-700">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    📄 טקסט קורות חיים
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={runAnalysis}
+                      disabled={analyzing}
+                      className="bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100"
+                    >
+                      {analyzing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+                          מנתח...
+                        </>
+                      ) : (
+                        <>
+                          🧠 נתח AI
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowResumeModal(true)}
+                      className="text-green-600 hover:text-green-800 hover:bg-green-100"
+                      title="הגדל"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* תוצאות ניתוח AI */}
+                {analysisResult && (
+                  <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <h4 className="font-bold text-purple-700 mb-2 flex items-center gap-2">
+                      🧠 ניתוח AI
+                    </h4>
+                    {analysisResult.analysis?.personalInfo && (
+                      <div className="text-sm space-y-1 mb-3">
+                        <p><strong>שם:</strong> {analysisResult.analysis.personalInfo.fullName || '-'}</p>
+                        <p><strong>טלפון:</strong> {analysisResult.analysis.personalInfo.phone || '-'}</p>
+                        <p><strong>עיר:</strong> {analysisResult.analysis.personalInfo.city || '-'}</p>
+                        <p><strong>תפקיד:</strong> {analysisResult.analysis.workExperience?.currentTitle || '-'}</p>
+                        <p><strong>שנות ניסיון:</strong> {analysisResult.analysis.workExperience?.totalYears || '-'}</p>
+                      </div>
+                    )}
+                    {analysisResult.analysis?.skills && (
+                      <div className="flex flex-wrap gap-1">
+                        {[...(analysisResult.analysis.skills.technical || []), ...(analysisResult.analysis.skills.professional || [])].slice(0, 10).map((skill: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    {analysisResult.analysis?.matchedTags && analysisResult.analysis.matchedTags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <span className="text-xs text-purple-600 font-bold">תגיות:</span>
+                        {analysisResult.analysis.matchedTags.map((tag: string, i: number) => (
+                          <Badge key={i} variant="outline" className="text-xs border-purple-300">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="bg-white rounded-lg border border-green-200 p-3 max-h-[400px] overflow-y-auto">
+                  <pre className="text-xs text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                    {candidate.resume}
+                  </pre>
+                </div>
+                <p className="text-xs text-green-600 mt-2">✓ הטקסט שהועלה בזמן הכנסת המועמד</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 🆕 מודל להצגת קורות חיים בגדול */}
+          {showResumeModal && candidate.resume && (
+            <div 
+              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+              onClick={() => setShowResumeModal(false)}
+            >
+              <div 
+                className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-4 border-b bg-green-50 rounded-t-2xl">
+                  <h2 className="text-xl font-bold text-green-700 flex items-center gap-2">
+                    <FileText className="h-6 w-6" />
+                    📄 קורות חיים - {candidate.name}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowResumeModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6">
+                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                    {candidate.resume}
+                  </pre>
+                </div>
+                <div className="p-4 border-t bg-gray-50 rounded-b-2xl">
+                  <Button
+                    onClick={() => setShowResumeModal(false)}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    סגור
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>סטטיסטיקות</CardTitle>
@@ -810,15 +1186,32 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                       <span className="text-muted-foreground">לא הועלה</span>
                     )}
                   </div>
-                  <Input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) uploadDocument("FORM_101", file)
-                    }}
-                    className="max-w-[220px]"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) uploadDocument("FORM_101", file)
+                      }}
+                      className="max-w-[180px]"
+                    />
+                    {candidate.phone && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-green-50 border-green-300 hover:bg-green-100 text-green-700"
+                        onClick={() => {
+                          const phone = normalizePhoneForWhatsApp(candidate.phone)
+                          const message = `שלום ${candidate.name}, בבקשה מלא/י את טופס 101 בקישור הבא:\nhttps://tpz.link/tgjkn\n\nתודה!`
+                          const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+                          window.open(url, "_blank")
+                        }}
+                      >
+                        📲 שלח ב-WhatsApp
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -914,7 +1307,17 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         </div>
       </div>
 
-      {/* Matching Positions Section */}
+      {/* סריקה חכמה V3 - ראשונית! */}
+      <div className="mt-8">
+        <SmartAIMatching 
+          candidateId={candidateId}
+          onSendToEmployer={(positionId) => {
+            router.push(`/dashboard/send-candidate?candidateId=${candidateId}&positionId=${positionId}`)
+          }}
+        />
+      </div>
+
+      {/* רשימת משרות מתאימות - לפי תגיות */}
       <div className="mt-8">
         <MatchingPositionsList candidateId={candidateId} candidateName={candidate?.name} />
       </div>

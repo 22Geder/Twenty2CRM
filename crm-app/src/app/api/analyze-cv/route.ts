@@ -259,7 +259,7 @@ function detectTags(text: string): string[] {
 // ניתוח עם Gemini AI
 async function analyzeWithGemini(cvText: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     const prompt = `אתה מומחה HR ישראלי. נתח את קורות החיים הבאים וחלץ מידע מדויק.
 
@@ -397,3 +397,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'שגיאה בניתוח קורות החיים' }, { status: 500 });
   }
 }
+
+

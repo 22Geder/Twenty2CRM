@@ -8,6 +8,21 @@ import {
   calculateMatchScoreWithGemini,
   improveMatchingWithFeedback,
 } from "@/lib/gemini-ai"
+import { 
+  findMatchingTags, 
+  getUniqueCategories, 
+  calculateTagMatchScore,
+  findRelatedCategories,
+  RECRUITMENT_TAGS,
+  type MatchedTag 
+} from "@/lib/recruitment-tags"
+import {
+  analyzeResumeDeep,
+  analyzePositionDeep,
+  calculateAdvancedMatch,
+  type DeepResumeAnalysis,
+  type DeepPositionAnalysis
+} from "@/lib/advanced-matching"
 
 /**
  * GET /api/smart-matching/matches?candidateId=X
@@ -52,46 +67,91 @@ export async function GET(request: NextRequest) {
     }
 
     // ניתוח קורות חיים של המועמד (אם עדיין לא נעשה)
-    let candidateProfile = candidate.aiProfile as any
+    let candidateProfile: any = null
+    try {
+      if (candidate.aiProfile) {
+        candidateProfile = JSON.parse(candidate.aiProfile as string)
+      }
+    } catch (e) {
+      candidateProfile = null
+    }
 
     if (!candidateProfile) {
       candidateProfile = await analyzeResumeWithGemini(candidate.resume || "")
       // שמור את הפרופיל
       await prisma.candidate.update({
         where: { id: candidateId },
-        data: { aiProfile: candidateProfile as any },
+        data: { aiProfile: JSON.stringify(candidateProfile) },
       })
     }
 
     // עבור כל משרה, חשב התאמה
     const matches = []
 
+    // 🆕 Calculate candidate's recruitment tags once
+    const candidateText = `${candidate.name} ${candidate.currentTitle || ''} ${candidate.skills || ''} ${candidate.resume || ''}`
+    const candidateRecruitmentTags = findMatchingTags(candidateText)
+    const candidateCategories = getUniqueCategories(candidateRecruitmentTags)
+    const candidateTagKeywords = candidateRecruitmentTags.map(t => t.keyword)
+
     for (const position of positions) {
       try {
         // ניתוח תיאור המשרה (אם עדיין לא נעשה)
-        let jobProfile = position.aiProfile as any
+        let jobProfile: any = null
+        try {
+          if (position.aiProfile) {
+            jobProfile = JSON.parse(position.aiProfile as string)
+          }
+        } catch (e) {
+          jobProfile = null
+        }
 
         if (!jobProfile) {
           jobProfile = await analyzeJobDescriptionWithGemini(position.description || "")
           // שמור את הפרופיל
           await prisma.position.update({
             where: { id: position.id },
-            data: { aiProfile: jobProfile as any },
+            data: { aiProfile: JSON.stringify(jobProfile) },
           })
         }
 
+        // 🆕 Calculate position's recruitment tags
+        const positionText = `${position.title} ${position.description || ''} ${position.requirements || ''}`
+        const positionRecruitmentTags = findMatchingTags(positionText)
+        const positionCategories = getUniqueCategories(positionRecruitmentTags)
+        const positionTagKeywords = positionRecruitmentTags.map(t => t.keyword)
+
+        // 🆕 Calculate tag-based match score
+        const tagMatch = calculateTagMatchScore(candidateTagKeywords, positionTagKeywords)
+        
         // חשב ניקוד התאמה
         const matchResult = await calculateMatchScoreWithGemini(candidateProfile, jobProfile)
+
+        // 🆕 Combine AI score with tag score (weight: 70% AI, 30% tags)
+        const combinedScore = Math.round(
+          (matchResult.score * 0.7) + (tagMatch.score * 0.3)
+        )
+
+        // 🆕 Check for category match bonus
+        const categoryOverlap = candidateCategories.filter(c => positionCategories.includes(c))
+        const categoryBonus = categoryOverlap.length > 0 ? 5 : 0
 
         matches.push({
           positionId: position.id,
           positionTitle: position.title,
           employerName: position.employer?.name,
-          matchScore: matchResult.score,
+          matchScore: Math.min(100, combinedScore + categoryBonus),
           reasoning: matchResult.reasoning,
           matchedSkills: matchResult.matchedSkills,
           missingSkills: matchResult.missingSkills,
           experienceFit: matchResult.experienceFit,
+          // 🆕 Add tag-based matching info
+          tagMatchScore: tagMatch.score,
+          matchedTags: tagMatch.matchedTags,
+          missingTags: tagMatch.missingTags,
+          candidateCategories,
+          positionCategories,
+          categoryOverlap,
         })
       } catch (error) {
         console.error(`Error matching candidate ${candidateId} with position ${position.id}:`, error)
@@ -104,6 +164,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       candidateName: candidate.name,
       candidateTags: candidate.tags.map((t) => t.name),
+      // 🆕 Add recruitment tags info
+      candidateRecruitmentTags: candidateRecruitmentTags,
+      candidateCategories: candidateCategories,
+      relatedCategories: findRelatedCategories(candidateCategories),
       totalMatches: matches.length,
       topMatches: matches.slice(0, 10),
       allMatches: matches,
@@ -199,7 +263,7 @@ export async function POST(request: NextRequest) {
           tags: {
             connect: allTags.map(tag => ({ id: tag.id }))
           },
-          aiProfile: profile as any
+          aiProfile: JSON.stringify(profile)
         }
       })
     }
@@ -225,17 +289,31 @@ export async function POST(request: NextRequest) {
     const matches = []
     for (const position of availablePositions) {
       try {
-        let candidateProfile = candidate.aiProfile as any
+        let candidateProfile: any = null
+        try {
+          if (candidate.aiProfile) {
+            candidateProfile = JSON.parse(candidate.aiProfile as string)
+          }
+        } catch (e) {
+          candidateProfile = null
+        }
         if (!candidateProfile) {
           candidateProfile = await analyzeResumeWithGemini(candidate.resume || "")
         }
 
-        let jobProfile = position.aiProfile as any
+        let jobProfile: any = null
+        try {
+          if (position.aiProfile) {
+            jobProfile = JSON.parse(position.aiProfile as string)
+          }
+        } catch (e) {
+          jobProfile = null
+        }
         if (!jobProfile) {
           jobProfile = await analyzeJobDescriptionWithGemini(position.description || "")
           await prisma.position.update({
             where: { id: position.id },
-            data: { aiProfile: jobProfile as any }
+            data: { aiProfile: JSON.stringify(jobProfile) }
           })
         }
 

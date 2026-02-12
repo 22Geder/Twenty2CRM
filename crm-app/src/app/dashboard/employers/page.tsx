@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Plus, Search, Building2, Phone, Mail, Globe, Briefcase,
-  X, Save, Tag
+  X, Save, Tag, ChevronRight
 } from "lucide-react"
 
 interface Employer {
@@ -210,23 +210,24 @@ export default function EmployersModernPage() {
       {/* Premium Employers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEmployers.map((employer) => (
-          <Card key={employer.id} className="group p-6 hover:shadow-2xl hover:shadow-[#FF8C00]/20 transition-all duration-500 hover:-translate-y-2 border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#FF8C00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF8C00] to-[#E65100] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            
-            <div className="relative flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF8C00]/30">
-                  <Building2 className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-xl text-slate-800 group-hover:text-[#FF8C00] transition-colors">{employer.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    נוצר {new Date(employer.createdAt).toLocaleDateString('he-IL')}
-                  </p>
+          <Link key={employer.id} href={`/dashboard/employers/${employer.id}`}>
+            <Card className="group p-6 hover:shadow-2xl hover:shadow-[#FF8C00]/20 transition-all duration-500 hover:-translate-y-2 border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative cursor-pointer">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF8C00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF8C00] to-[#E65100] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              <div className="relative flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF8C00]/30">
+                    <Building2 className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl text-slate-800 group-hover:text-[#FF8C00] transition-colors">{employer.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      נוצר {new Date(employer.createdAt).toLocaleDateString('he-IL')}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
             {employer.description && (
               <p className="text-sm text-slate-500 mb-4 line-clamp-2 relative">
@@ -267,17 +268,13 @@ export default function EmployersModernPage() {
                   {employer._count?.positions || 0} משרות
                 </Badge>
               </div>
-              <Link href={`/dashboard/positions?employer=${employer.id}`}>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="border-[#00A8A8]/50 text-[#00A8A8] hover:bg-[#00A8A8]/10 hover:border-[#00A8A8]"
-                >
-                  צפה במשרות
-                </Button>
-              </Link>
+              <span className="text-[#00A8A8] text-sm font-medium flex items-center gap-1">
+                לחץ לצפייה בפרטים
+                <ChevronRight className="h-4 w-4" />
+              </span>
             </div>
           </Card>
+          </Link>
         ))}
       </div>
 

@@ -47,6 +47,11 @@ interface MatchingPosition {
   isBlocked: boolean
   blockedByPreviousEmployer: boolean
   blockedByApplication: boolean
+  aiStrengths?: string[]
+  aiWeaknesses?: string[]
+  aiRecommendation?: string
+  locationMatch?: boolean
+  shouldProceed?: boolean
   scoreBreakdown?: {
     tags: number
     partial: number
@@ -85,13 +90,59 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
   const fetchMatchingPositions = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/candidates/${candidateId}/matching-positions`)
+      // שימוש ב-V3 API עם Gemini AI
+      const response = await fetch('/api/ai-match-v3', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId })
+      })
       if (!response.ok) {
         throw new Error("Failed to fetch matching positions")
       }
       const data = await response.json()
-      setPositions(data.positions || [])
-      setTotalCount(data.totalCount || 0)
+      
+      // המרת התוצאות לפורמט של הקומפוננטה
+      const formattedPositions = (data.matches || []).map((match: any) => ({
+        id: match.positionId,
+        title: match.positionTitle,
+        location: match.location,
+        salaryRange: null,
+        employmentType: null,
+        active: true,
+        createdAt: new Date().toISOString(),
+        employer: {
+          id: '',
+          name: match.employerName,
+          email: null
+        },
+        tags: [],
+        matchingTags: [],
+        matchScore: match.score,
+        hasApplied: false,
+        isBlocked: false,
+        blockedByPreviousEmployer: false,
+        blockedByApplication: false,
+        aiStrengths: match.strengths || [],
+        aiWeaknesses: match.weaknesses || [],
+        aiRecommendation: match.recommendation || '',
+        locationMatch: match.locationMatch || false,
+        shouldProceed: match.shouldProceed || false,
+        scoreBreakdown: {
+          tags: 0,
+          partial: 0,
+          experience: 0,
+          rating: 0,
+          location: match.locationMatch ? 25 : 0,
+          title: 0,
+          freshness: 0,
+          contact: 0,
+          resume: 0,
+          linkedin: 0,
+        },
+      }))
+      
+      setPositions(formattedPositions)
+      setTotalCount(data.totalScanned || formattedPositions.length)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -164,8 +215,8 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
 
   const getMatchScoreColor = (score: number) => {
     if (score >= 80) return "bg-green-500 text-white"
-    if (score >= 60) return "bg-blue-500 text-white"
-    if (score >= 40) return "bg-yellow-500 text-white"
+    if (score >= 60) return "bg-teal-500 text-white"
+    if (score >= 40) return "bg-orange-400 text-white"
     return "bg-gray-500 text-white"
   }
 
@@ -180,8 +231,10 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-500 mb-3" />
+            <p className="text-sm text-gray-600 font-medium">🚀 סריקה מהירה במקביל...</p>
+            <p className="text-xs text-gray-400 mt-1">בודק 5 משרות במקביל</p>
           </div>
         </CardContent>
       </Card>
@@ -207,12 +260,12 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
             <span>משרות מתאימות</span>
           </div>
           <Badge variant="secondary" className="font-bold text-base px-3">
-            {totalCount}
+            {totalCount} נבדקו
           </Badge>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
-          מיון חכם לפי 10 פרמטרים
+          🤖 סריקת Gemini AI - בודק את כל המשרות
         </p>
       </CardHeader>
 
@@ -298,23 +351,48 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
                 </div>
 
                 {/* Score Breakdown */}
-                {showScoreDetails === position.id && position.scoreBreakdown && (
+                {showScoreDetails === position.id && (
                   <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-xs font-semibold mb-2 text-blue-900">
-                      פירוט ציון התאמה:
+                      🤖 ניתוח AI - {position.aiRecommendation || 'לא זמין'}
                     </p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>תגיות: {position.scoreBreakdown.tags}/40</div>
-                      <div>התאמה חלקית: {position.scoreBreakdown.partial}/10</div>
-                      <div>ניסיון: {position.scoreBreakdown.experience}/15</div>
-                      <div>דירוג: {position.scoreBreakdown.rating}/10</div>
-                      <div>מיקום: {position.scoreBreakdown.location}/5</div>
-                      <div>תואר: {position.scoreBreakdown.title}/10</div>
-                      <div>עדכניות: {position.scoreBreakdown.freshness}/5</div>
-                      <div>קשר: {position.scoreBreakdown.contact}/2</div>
-                      <div>קו"ח: {position.scoreBreakdown.resume}/2</div>
-                      <div>LinkedIn: {position.scoreBreakdown.linkedin}/1</div>
-                    </div>
+                    
+                    {position.aiStrengths && position.aiStrengths.length > 0 && (
+                      <div className="mb-2">
+                        <p className="text-xs font-semibold text-green-700 flex items-center gap-1 mb-1">
+                          <CheckCircle className="h-3 w-3" /> יתרונות:
+                        </p>
+                        <ul className="text-xs space-y-0.5 mr-4">
+                          {position.aiStrengths.map((s: string, i: number) => (
+                            <li key={i} className="text-gray-700">• {s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {position.aiWeaknesses && position.aiWeaknesses.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-orange-700 flex items-center gap-1 mb-1">
+                          <AlertCircle className="h-3 w-3" /> חסרונות:
+                        </p>
+                        <ul className="text-xs space-y-0.5 mr-4">
+                          {position.aiWeaknesses.map((w: string, i: number) => (
+                            <li key={i} className="text-gray-700">• {w}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {position.locationMatch && (
+                      <p className="text-xs text-blue-600 font-medium mt-2">📍 מיקום מתאים למועמד!</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Location Match Badge */}
+                {position.locationMatch && !showScoreDetails && (
+                  <div className="mb-2">
+                    <Badge className="bg-blue-100 text-blue-700 text-xs">📍 מיקום קרוב</Badge>
                   </div>
                 )}
 

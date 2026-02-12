@@ -1,0 +1,552 @@
+/**
+ * תגיות גיוס מקצועיות - מילון מקיף לתיוג אוטומטי והתאמה חכמה
+ * 
+ * כל קטגוריה מכילה:
+ * - positive: מילות מפתח שמצביעות על התאמה לתחום
+ * - negative: מילות מפתח שיכולות להצביע על חוסר התאמה (אופציונלי)
+ * - color: צבע לתצוגה ויזואלית
+ * - icon: אייקון מייצג
+ */
+
+export interface TagCategory {
+  positive: string[];
+  negative: string[];
+  color: string;
+  icon: string;
+  displayName: string;
+}
+
+export type RecruitmentTagsType = {
+  [key: string]: TagCategory;
+};
+
+export const RECRUITMENT_TAGS: RecruitmentTagsType = {
+  "WMS_Logistics": {
+    displayName: "WMS ולוגיסטיקה ממוחשבת",
+    positive: [
+      "WMS", "אופטימיזציית מחסן", "איש מערכות מידע", "דוחות מלאי", "הפצה",
+      "טיפול בהחזרות", "לוגיסטיקה ממוחשבת", "ליקוט", "מחסנאות ממוחשבת",
+      "מחסנאי ממוחשב", "מלקטים", "מערכות ERP", "מערכות מידע",
+      "מערכות ניהול לוגיסטיות", "מערכת WMS", "ניהול הפצה",
+      "ניהול כניסות ויציאות", "ניהול ליקוטים", "ניהול מחסן ממוחשב",
+      "ניהול מלאי", "ניהול מלאי בזמן אמת", "ניהול מרכז לוגיסטי",
+      "ניהול משטחים", "ניהול שרשרת אספקה", "ניהול תנועות מלאי",
+      "סידור מחסן", "סידור מכולות", "ספירת מלאי", "עיבוד נתוני מחסן",
+      "קבלת סחורה", "רישום סחורות", "שילוב ERP עם WMS", "תכנון מסלולי ליקוט"
+    ],
+    negative: [],
+    color: "#00A8A8",
+    icon: "📦"
+  },
+  
+  "Maintenance": {
+    displayName: "אחזקה ותחזוקה",
+    positive: [
+      "PLC", "איש אחזקה", "הנדסאי מכונות", "חשמלאי מוסמך", "טכנאי מכונות",
+      "טכנולוגיות אחזקה", "כלי עבודה", "מנהל אחזקה", "מערכות מיזוג",
+      "עבודה בגובה", "ריתוך", "שירות לקוחות", "תחזוקה אלקטרו-מכנית",
+      "תחזוקה מונעת", "תחזוקה מכנית", "תחזוקה שוטפת", "תחזוקת מבנים",
+      "תיקון תקלות"
+    ],
+    negative: [],
+    color: "#FF8C00",
+    icon: "🔧"
+  },
+  
+  "Electromechanics": {
+    displayName: "אלקטרומכניקה",
+    positive: [
+      "אלקטרומכניות", "טכנאי אלקטרוניקה ומכונות", "טכנאי התקנות אלקטרומכניות",
+      "טכנאי חשמל מכני", "טכנאי מכני–חשמלי", "טכנאי מערכות אוטומציה",
+      "טכנאי רובוטיקה", "טכנאי תעשייה וחשמל", "מהנדס מערכת אלקטרומכן",
+      "מכונאי אחזקה חשמלית", "מכונאי חשמל", "מפעיל מכונות אלקטר",
+      "מתקין מערכות אלקטרומכניות"
+    ],
+    negative: [],
+    color: "#9C27B0",
+    icon: "⚡"
+  },
+  
+  "Safety": {
+    displayName: "בטיחות",
+    positive: [
+      "CSP", "ISO 45001", "OSHA", "בטיחות בדרכים", "בטיחות תעסוקתית",
+      "הדרכות בטיחות", "הנדסת בטיחות", "הערכת סיכונים", "זיהוי מפגעים",
+      "חומרים מסוכנים", "חוקי בטיחות", "ממונה בטיחות", "מנהל בטיחות",
+      "ניהול חירום", "ניהול סיכונים", "עזרה ראשונה", "תחקיר אירועים",
+      "תכנית בטיחות", "תקנות הבטיחות", "תקני בטיחות"
+    ],
+    negative: [],
+    color: "#F44336",
+    icon: "🛡️"
+  },
+  
+  "HighTech": {
+    displayName: "היי-טק ותוכנה",
+    positive: [
+      "Agile", "Big Data", "C#", "Cloud Computing", "DevOps", "Full Stack",
+      "Java", "JavaScript", "Machine Learning", "Python", "SQL", "Scrum",
+      "אבטחת מידע", "הנדסת מחשבים", "מדעי המחשב", "מהנדס תוכנה",
+      "מתכנת", "ניהול פרויקטים", "סייבר", "פיתוח מערכות", "React",
+      "Angular", "Vue", "Node.js", "TypeScript", "PHP", "Ruby", "Go",
+      "AWS", "Azure", "GCP", "Docker", "Kubernetes", "Git", "CI/CD",
+      "MongoDB", "PostgreSQL", "MySQL", "Redis", "REST API", "GraphQL",
+      "Microservices", "Backend", "Frontend", "QA", "בדיקות תוכנה"
+    ],
+    negative: [],
+    color: "#2196F3",
+    icon: "💻"
+  },
+  
+  "Practical_Engineering": {
+    displayName: "הנדסאות",
+    positive: [
+      "AutoCAD", "CAD", "CNC", "PLC", "SolidWorks", "ביצוע בדיקות",
+      "הנדסאי אלקטרוניקה", "הנדסאי בניין", "הנדסאי חשמל", "הנדסאי מכונות",
+      "הנדסאי תוכנה", "הנדסת תעשייה וניהול", "טכנאי מוסמך", "כישורים טכניים",
+      "פתרון תקלות", "קריאת שרטוטים", "שירות טכני", "תחזוקה מונעת",
+      "תחזוקת מערכות", "תכנון וייצור"
+    ],
+    negative: [],
+    color: "#607D8B",
+    icon: "📐"
+  },
+  
+  "Electrician": {
+    displayName: "חשמל",
+    positive: [
+      "PLC", "UPS", "אחזקת מערכות", "בדיקות תקופתיות", "בקרת מבנה",
+      "גנרטורים", "התקנת מערכות חשמל", "חמשלאי", "חשמל", "חשמל מבנים",
+      "חשמל תעשייתי", "חשמלאי", "חשמלאי בודק", "חשמלאי מוסמך",
+      "חשמלאי ראשי", "ידע טכני", "לוחות חשמל", "לוחות פיקוד",
+      "מערכות בקרה", "מתח גבוה", "מתח נמוך", "מתח פיקוד",
+      "עבודה לפי נהלים ותקנים", "עבודות גובה", "פתרון תקלות",
+      "קריאת שרטוטים", "רישיון חשמל", "תאורה", "תחזוקה מונעת",
+      "תיעוד עבודות חשמל", "תקלות חשמל", "תקן חשמל", "תקשורת ובקרה"
+    ],
+    negative: [],
+    color: "#FFC107",
+    icon: "🔌"
+  },
+  
+  "Mechanic_Technician": {
+    displayName: "מכונאות וטכנאות",
+    positive: [
+      "אבחון תקלות", "הנדסאי מכונות", "הסמכת חשמלאי רכב", "טיפול במכונות",
+      "טכנאי מכונאי", "טכנולוג מכונות", "יכולת טכנית", "כלי עבודה",
+      "מכונאות רכב", "מכטרוניקה", "מכניקה עדינה", "מערכות הידראוליות",
+      "מערכות פיקוד ובקרה", "עבודה בצוות", "פתרון בעיות",
+      "קריאת שרטוטים", "רישיון טכנאי", "תחזוקה מונעת",
+      "תיקון רכיבים מכניים", "תעודת מכונאי"
+    ],
+    negative: [],
+    color: "#795548",
+    icon: "🔩"
+  },
+  
+  "Consulting": {
+    displayName: "ייעוץ ופיתוח ארגוני",
+    positive: [
+      "Power BI", "אסטרטגיה", "אקסל מתקדם", "יועץ ארגוני", "יועץ עסקי",
+      "ייעוץ ניהולי", "מוטיבציה ואוטודידקטיות", "מיומנויות בינאישיות",
+      "ממשל תאגידי", "ניהול שינויים", "ניתוח מערכות מידע", "ניתוח נתונים",
+      "פיתוח מנהיגות", "פתרון בעיות", "שיפור תהליכים",
+      "תואר ראשון במנהל עסקים", "תואר ראשון בפסיכולוגיה",
+      "תואר שני במנהל עסקים", "תואר שני בפסיכולוגיה ארגונית",
+      "תעודת יועץ ארגוני"
+    ],
+    negative: [],
+    color: "#673AB7",
+    icon: "💡"
+  },
+  
+  "General_Office_Admin": {
+    displayName: "מנהלה ומשרד",
+    positive: [
+      "ERP", "ISO 9001", "Microsoft Office", "SAP", "אדמיניסטרציה",
+      "אחזקת מתקנים", "איש מכירות", "בק אופיס", "Back Office",
+      "הנדסת תעשיה וניהול", "יועץ מכירות", "כושר סדר וארגון",
+      "מוקדן מכירות", "מוקדן", "מוקדנית", "מזכירה", "מזכירה רפואית",
+      "מכירות אונליין", "אי-קומרס", "מכירות ביטוח",
+      "מכירות בשפה הרוסית", "מכירות בשפה האנגלית",
+      "מכירות בתחום הסלולר", "מכירות בתחום הרכב", "מכירות פרונטליות",
+      "מכירות ציוד", "מכירות תעשייה", "מנהל אזור", "מנהל ייצור",
+      "מנהל לוגיסטיקה", "מנהל מחלקה", "מנהל מכירות", "מנהל משרד",
+      "מנהל עבודה", "מנהל פרויקט", "מנהל צוות", "מנהל שירות",
+      "מנהל תפעול", "עובדי משרד", "ניהול אדמיניסטרטיבי", "ניהול איכות",
+      "ניהול בכיר", "ניהול יומן", "ניהול לקוחות", "ניהול מלאי",
+      "ניהול משמרת", "ניהול משרד", "ניהול עובדים", "ניהול פרויקטים",
+      "ניהול קו ייצור", "ניהול תיקי לקוחות", "נציג טלמרקטינג",
+      "נציג טלפוני", "נציג מכירות", "נציג מכירות טלפוני",
+      "נציגי מכירות בדיגיטל", "נציגת שירות", "סוכן מכירות",
+      "סוכני שטח", "עבודה בצוות", "עבודה עם מחשב", "עוזרת אישית",
+      "פקיד", "פקידה", "פקיד/ה טכנית", "פקיד/ה כללית",
+      "פקיד/ה משפטית", "פקיד/ת ביטוח", "פקיד/ת גבייה",
+      "פקיד/ת הדרכה", "פקיד/ת הנהלת חשבונות", "פקיד/ת ייבוא וייצוא",
+      "פקיד/ת כוח אדם", "פקיד/ת לוגיסטיקה", "פקיד/ת מוקד",
+      "פקיד/ת מחשוב", "פקיד/ת מכירות", "פקיד/ת משאבי אנוש",
+      "פקיד/ת קבלה", "פקיד/ת קופות", "פקיד/ת רכש", "פקיד/ת שירות",
+      "פקיד/ת שכר", "פקיד/ת תפעול", "פקידת קבלה", "קלדן", "קלדנית",
+      "ראש צוות", "רכזת אדמיניסטרטיבית", "שיטות LEAN", "שימור לקוחות",
+      "שיפור תהליכים", "שירות ותמיכה טכנית", "שירות לקוחות",
+      "שליטה באופיס", "שרשרת אספקה", "תחזוקה מונעת", "תיאום פגישות",
+      "תכנון ובקרה", "תמיכה אדמיניסטרטיבית", "תעודת טכנאי", "תפעול מחסן"
+    ],
+    negative: [],
+    color: "#9E9E9E",
+    icon: "🏢"
+  },
+  
+  "Drivers": {
+    displayName: "נהגים והובלה",
+    positive: [
+      "נהג ג'", "נהג הסעות", "נהג הפצה", "נהג חלוקה", "נהג יומי",
+      "נהג לילה", "נהג מונית", "נהג מלגזה", "נהג מעל 15 טון",
+      "נהג משאית", "נהג עם ניסיון", "נהג עם רישיון ב'",
+      "נהג רישיון מעל ג'", "נהג רכב כבד", "נהג רכב מסחרי",
+      "נהג רכב פרטי", "נהג שליחויות", "נהג תעשייתי",
+      "נהגים למפעלים", "נהגים לחברות הפצה", "נהג ב'",
+      "רישיון מלגזה", "רישיון נהיגה", "רישיון C1", "רישיון D",
+      "ADR", "הובלה", "משלוחים", "חלוקה"
+    ],
+    negative: [],
+    color: "#3F51B5",
+    icon: "🚛"
+  },
+  
+  "Logistics_Operations": {
+    displayName: "לוגיסטיקה ותפעול",
+    positive: [
+      "אורז הזמנות", "אורז לייבוא/ייצוא", "אורז סחורה", "אחראי מלאי",
+      "אחראי ספירות מלאי", "בודק סחורה", "לוגיסטיקן תפעול",
+      "מוביל פנים מפעלי", "מחסן ממוחשב", "מחסנאי", "מחסנאי חלפים",
+      "מחסנאי טכני", "מלגזן", "מלקט", "מלקט אונליין", "מנהל לוגיסטיקה",
+      "מנהל מחסן", "מסדר סחורה", "מפעיל מלגזה", "מקטיין",
+      "תכנון מק\"טים", "מתפעל הזמנות", "נהג חלוקה", "נציג תיאום אספקות",
+      "עובד ZEBRA", "מסופון", "עובד מחסן", "עובד משמרת מחסן",
+      "עובד רמפה", "פקיד לוגיסטיקה", "קולט סחורה", "קופאי מחסן"
+    ],
+    negative: [],
+    color: "#00BCD4",
+    icon: "📋"
+  },
+  
+  "Engineer": {
+    displayName: "הנדסה",
+    positive: [
+      "BI", "CAD", "Demand Planning", "ERP", "Forecast", "KPI", "Lean",
+      "MATLAB", "SAP", "SCM", "SolidWorks", "WMS", "אוטומציה",
+      "אופטימיזציה", "אלקטרוניקה", "אנליזה", "בקרת איכות",
+      "הנדסת מערכת", "הנדסת תעשייה וניהול", "חיזוי צריכה", "ייצור",
+      "לוגיסטיקה", "מהנדס", "מהנדס חשמל", "מהנדס מכונות",
+      "מהנדס תוכנה", "מהנדס/ת תפעול", "ממשקים פנים ארגוניים",
+      "מצוינות תפעולית", "ניהול מחסן", "ניהול מלאי",
+      "ניהול סיכונים לוגיסטיים", "ניהול פרויקטים", "ניהול רכש",
+      "ניתוח נתונים", "ניתוח שיטות עבודה", "סחר ולוגיסטיקה",
+      "סימולציה", "פיתוח מוצרים", "פיתוח מערכות", "פריוריטי",
+      "רישוי מקצועי", "תהליכי הפצה", "תואר בהנדסה",
+      "תחבורה והפצה", "תיעוד תהליכים", "תכן מכני", "תכנון מערכות",
+      "תכנון קווי אספקה", "תכנון שרשרת אספקה", "תכנון תחזיות"
+    ],
+    negative: [],
+    color: "#4CAF50",
+    icon: "🔬"
+  },
+  
+  "Warehouse_Worker": {
+    displayName: "עבודת מחסן",
+    positive: [
+      "אחריות", "אמינות", "הגעה עצמאית", "ליקוט", "ללא ניסיון",
+      "מחסן", "מחסן לוגיסטי", "מחסנאי", "מחסנאי ממוחשב", "מלגזה",
+      "מערכת ERP", "משרה מלאה", "ניסיון במחסן", "סביבת עבודה דינמית",
+      "סדר וארגון", "סידור סחורה", "ספירות מלאי", "עבודה במשמרות",
+      "עבודה זמנית", "עבודה קבועה", "עבודה מיידית", "עבודה פיזית",
+      "עבודה תחת לחץ", "צוות", "קבלה והוצאה של סחורה",
+      "קריאת ברקודים", "רישום תעודות משלוח", "רישיון מלגזה",
+      "רישיון נהיגה", "שכר מתגמלת", "תנאים טובים"
+    ],
+    negative: [],
+    color: "#8BC34A",
+    icon: "📦"
+  },
+  
+  "Kitchen_Staff": {
+    displayName: "מטבח וקייטרינג",
+    positive: [
+      "אחראי פס חם", "אחראי פס קר", "בישול תעשייתי", "הגשת אוכל",
+      "הכנת אוכל", "הכנת מנות", "טבח", "טבח בית מלון",
+      "טבח למוסד ציבורי", "טבח למסעדה", "טבח מוסדי", "טבח פס חם",
+      "טבח פס קר", "מטבח מוסדי", "סיוע במטבח", "עבודה בחדר אוכל",
+      "עבודה במטבח", "עבודה במסעדה", "עבודה בקפטריה",
+      "עבודות פס חם", "עבודות פס קר", "עובדי קייטרינג",
+      "עובדים לפס חם", "עובדים לפס קר", "עוזר טבח", "פס חם",
+      "פס חם במטבח", "פס קר במטבח", "פס קר עובדי מטבח",
+      "קייטרינג פס חם", "קייטרינג פס קר", "תחזוקת מטבח"
+    ],
+    negative: [],
+    color: "#FF5722",
+    icon: "🍳"
+  },
+  
+  "Training_Courses": {
+    displayName: "הדרכה והכשרה",
+    positive: [
+      "EdTech", "MOOC", "Storyline", "הדרכה מקוונת", "הנחיית קבוצות",
+      "לומדה", "למידה דיגיטלית", "למידה מרחוק", "מעצב למידה",
+      "מפתח הדרכה", "מפתח לומדות", "ניהול קורסים", "עיצוב גרפי",
+      "עיצוב הוראה", "פיתוח תוכן", "פלטפורמות למידה", "קורסי אונליין",
+      "קורסים מתוקשבים", "שיטות הוראה", "תעודת הוראה"
+    ],
+    negative: [],
+    color: "#E91E63",
+    icon: "📚"
+  },
+  
+  "Vehicle_Automotive": {
+    displayName: "רכב ומוסכים",
+    positive: [
+      "איש שטח", "סוכן רכב", "בוחן רכב", "חשמלאי רכב", "יועץ שירות",
+      "מאבחן תקלות", "מחסנאי מוסך", "מכונאי רכב", "מנהל מוסך",
+      "מתקין אביזרים לרכב", "נהג רכב גרר", "נהג רכב השכרה",
+      "נציג טרייד אין", "נציג מכירות רכבים", "נציג מסירת רכב חדש",
+      "נציג שירות בתחום הרכב", "עובד מכון רישוי", "עוזר מכונאי",
+      "פחח רכב", "צבעי רכב", "שוטף רכבים"
+    ],
+    negative: [],
+    color: "#37474F",
+    icon: "🚗"
+  },
+  
+  "Cleaning": {
+    displayName: "ניקיון ותחזוקת מבנים",
+    positive: [
+      "ניקיון", "עובד ניקיון", "עובדת ניקיון", "מנקה", "ניקיון משרדים",
+      "ניקיון תעשייתי", "שירותי ניקיון", "אחזקת מבנים", "מתחזק מבנים",
+      "גינון", "גנן", "שמירה על ניקיון", "חומרי ניקיון"
+    ],
+    negative: [],
+    color: "#00E676",
+    icon: "🧹"
+  },
+  
+  "Security": {
+    displayName: "אבטחה ושמירה",
+    positive: [
+      "מאבטח", "שומר", "אבטחה", "קב\"ט", "קצין ביטחון", "סדרן",
+      "פיקוח", "אבטחת מוסדות", "שמירה", "בטחון", "חמוש",
+      "רישיון נשק", "תעודת מאבטח"
+    ],
+    negative: [],
+    color: "#263238",
+    icon: "🛡️"
+  },
+  
+  "Production": {
+    displayName: "ייצור ותעשייה",
+    positive: [
+      "עובד ייצור", "מפעיל מכונה", "מפעיל קו ייצור", "עובד תעשייה",
+      "טכנאי ייצור", "מנהל ייצור", "QC", "בקרת איכות", "אריזה",
+      "מכונות CNC", "מכונות אוטומטיות", "קו ייצור", "משמרות",
+      "עבודה במפעל", "תעשייה קלה", "תעשייה כבדה"
+    ],
+    negative: [],
+    color: "#546E7A",
+    icon: "🏭"
+  },
+  
+  "Healthcare": {
+    displayName: "רפואה ובריאות",
+    positive: [
+      "אח", "אחות", "אחות מוסמכת", "מטפל", "מטפלת", "סיעוד",
+      "פיזיותרפיה", "ריפוי בעיסוק", "רוקח", "רוקחת", "רפואה",
+      "בית חולים", "קליניקה", "מרפאה", "חדר מיון", "טיפול נמרץ",
+      "רופא", "רופאה", "פרמדיק", "חובש"
+    ],
+    negative: [],
+    color: "#EF5350",
+    icon: "🏥"
+  },
+  
+  "Finance_Accounting": {
+    displayName: "כספים וחשבונאות",
+    positive: [
+      "חשבונאות", "הנהלת חשבונות", "רואה חשבון", "חשב", "מנהל כספים",
+      "בקר", "בקרת", "תקציב", "דוחות כספיים", "מס הכנסה", "מע\"מ",
+      "ביטוח לאומי", "שכר", "משכורות", "Excel מתקדם", "חשבשבת",
+      "פריוריטי", "SAP", "כלכלן", "כלכלנית", "אנליסט כספי"
+    ],
+    negative: [],
+    color: "#7E57C2",
+    icon: "💰"
+  },
+  
+  "HR_Recruitment": {
+    displayName: "משאבי אנוש וגיוס",
+    positive: [
+      "משאבי אנוש", "HR", "גיוס", "מגייס", "מגייסת", "גיוס עובדים",
+      "ראיונות עבודה", "מיון מועמדים", "רווחה", "פיתוח ארגוני",
+      "הדרכה", "שכר ותנאים", "חוק עבודה", "יחסי עבודה"
+    ],
+    negative: [],
+    color: "#AB47BC",
+    icon: "👥"
+  }
+};
+
+/**
+ * Get all positive keywords as a flat array
+ */
+export function getAllPositiveKeywords(): string[] {
+  const keywords: string[] = [];
+  for (const category of Object.values(RECRUITMENT_TAGS)) {
+    keywords.push(...category.positive);
+  }
+  return [...new Set(keywords)]; // Remove duplicates
+}
+
+/**
+ * Find matching tags in text
+ * Returns array of { category, keyword, color, icon }
+ */
+export interface MatchedTag {
+  category: string;
+  categoryDisplayName: string;
+  keyword: string;
+  color: string;
+  icon: string;
+}
+
+export function findMatchingTags(text: string): MatchedTag[] {
+  const matches: MatchedTag[] = [];
+  const textLower = text.toLowerCase();
+  const foundKeywords = new Set<string>();
+
+  for (const [categoryKey, category] of Object.entries(RECRUITMENT_TAGS)) {
+    for (const keyword of category.positive) {
+      const keywordLower = keyword.toLowerCase();
+      
+      // Check if keyword exists in text and wasn't already found
+      if (textLower.includes(keywordLower) && !foundKeywords.has(keywordLower)) {
+        foundKeywords.add(keywordLower);
+        matches.push({
+          category: categoryKey,
+          categoryDisplayName: category.displayName,
+          keyword: keyword,
+          color: category.color,
+          icon: category.icon
+        });
+      }
+    }
+  }
+
+  return matches;
+}
+
+/**
+ * Get unique categories from matched tags
+ */
+export function getUniqueCategories(matches: MatchedTag[]): string[] {
+  return [...new Set(matches.map(m => m.category))];
+}
+
+/**
+ * Calculate match score between candidate tags and position tags/requirements
+ * Returns score 0-100
+ */
+export function calculateTagMatchScore(
+  candidateTags: string[],
+  positionRequirements: string[]
+): { score: number; matchedTags: string[]; missingTags: string[] } {
+  const candidateTagsLower = new Set(candidateTags.map(t => t.toLowerCase()));
+  const positionReqsLower = positionRequirements.map(r => r.toLowerCase());
+  
+  const matchedTags: string[] = [];
+  const missingTags: string[] = [];
+  
+  for (const req of positionRequirements) {
+    const reqLower = req.toLowerCase();
+    if (candidateTagsLower.has(reqLower)) {
+      matchedTags.push(req);
+    } else {
+      // Check if any candidate tag contains the requirement or vice versa
+      let found = false;
+      for (const candTag of candidateTags) {
+        const candTagLower = candTag.toLowerCase();
+        if (candTagLower.includes(reqLower) || reqLower.includes(candTagLower)) {
+          matchedTags.push(req);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        missingTags.push(req);
+      }
+    }
+  }
+  
+  const score = positionRequirements.length > 0 
+    ? Math.round((matchedTags.length / positionRequirements.length) * 100)
+    : 0;
+  
+  return { score, matchedTags, missingTags };
+}
+
+/**
+ * Find related tags/categories
+ * If candidate has WMS tags, suggest related logistics tags etc.
+ */
+export function findRelatedCategories(categories: string[]): string[] {
+  const relations: Record<string, string[]> = {
+    "WMS_Logistics": ["Logistics_Operations", "Warehouse_Worker", "Drivers"],
+    "Logistics_Operations": ["WMS_Logistics", "Warehouse_Worker", "Drivers"],
+    "Warehouse_Worker": ["Logistics_Operations", "WMS_Logistics", "Drivers"],
+    "Maintenance": ["Electromechanics", "Electrician", "Mechanic_Technician"],
+    "Electromechanics": ["Maintenance", "Electrician", "Engineer"],
+    "Electrician": ["Maintenance", "Electromechanics", "Engineer"],
+    "Mechanic_Technician": ["Maintenance", "Vehicle_Automotive", "Electromechanics"],
+    "HighTech": ["Engineer", "Consulting"],
+    "Engineer": ["HighTech", "Practical_Engineering", "Production"],
+    "Practical_Engineering": ["Engineer", "Maintenance", "Production"],
+    "General_Office_Admin": ["Finance_Accounting", "HR_Recruitment", "Consulting"],
+    "Kitchen_Staff": ["Cleaning", "Production"],
+    "Drivers": ["Logistics_Operations", "Warehouse_Worker"],
+    "Vehicle_Automotive": ["Mechanic_Technician", "Drivers"],
+    "Safety": ["Maintenance", "Production", "Engineer"],
+    "Security": ["General_Office_Admin"],
+    "Production": ["Engineer", "Warehouse_Worker", "Maintenance"],
+    "Healthcare": ["General_Office_Admin", "Consulting"],
+    "Finance_Accounting": ["General_Office_Admin", "Consulting"],
+    "HR_Recruitment": ["General_Office_Admin", "Consulting"]
+  };
+  
+  const related = new Set<string>();
+  for (const category of categories) {
+    if (relations[category]) {
+      relations[category].forEach(r => related.add(r));
+    }
+  }
+  
+  // Remove original categories
+  categories.forEach(c => related.delete(c));
+  
+  return Array.from(related);
+}
+
+/**
+ * Get category info by key
+ */
+export function getCategoryInfo(categoryKey: string): TagCategory | null {
+  return RECRUITMENT_TAGS[categoryKey] || null;
+}
+
+/**
+ * Get all categories as array for select/dropdown
+ */
+export function getAllCategories(): Array<{ key: string; displayName: string; icon: string; color: string }> {
+  return Object.entries(RECRUITMENT_TAGS).map(([key, value]) => ({
+    key,
+    displayName: value.displayName,
+    icon: value.icon,
+    color: value.color
+  }));
+}

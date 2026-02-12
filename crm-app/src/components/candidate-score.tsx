@@ -121,8 +121,8 @@ export default function CandidateScore({
           <div
             className={`h-3 rounded-full transition-all ${
               score >= 80 ? 'bg-green-500' :
-              score >= 60 ? 'bg-blue-500' :
-              score >= 40 ? 'bg-yellow-500' :
+              score >= 60 ? 'bg-teal-500' :
+              score >= 40 ? 'bg-orange-400' :
               score >= 20 ? 'bg-orange-500' : 'bg-red-500'
             }`}
             style={{ width: `${score}%` }}

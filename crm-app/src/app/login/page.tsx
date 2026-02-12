@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Lock, User, LogIn, UserPlus, Globe, Sparkles } from "lucide-react"
+import Image from "next/image"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,7 +37,9 @@ export default function LoginPage() {
 
         if (!response.ok) {
           const data = await response.json()
-          throw new Error(data.error || "Registration failed")
+          setIsLoading(false)
+          setError(data.error || "Registration failed")
+          return
         }
 
         // Auto login after registration
@@ -47,11 +50,13 @@ export default function LoginPage() {
         })
 
         if (result?.error) {
+          setIsLoading(false)
           setError(result.error)
-        } else {
-          router.push("/dashboard")
-          router.refresh()
+          return
         }
+        
+        router.push("/dashboard")
+        router.refresh()
       } else {
         // Login existing user
         const result = await signIn("credentials", {
@@ -61,16 +66,17 @@ export default function LoginPage() {
         })
 
         if (result?.error) {
+          setIsLoading(false)
           setError("אימייל או סיסמה שגויים")
-        } else {
-          router.push("/dashboard")
-          router.refresh()
+          return
         }
+        
+        router.push("/dashboard")
+        router.refresh()
       }
     } catch (error: any) {
-      setError(error.message || "משהו השתבש")
-    } finally {
       setIsLoading(false)
+      setError(error.message || "משהו השתבש")
     }
   }
 
@@ -101,62 +107,17 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* לוגו פרימיום */}
         <div className="text-center mb-10 animate-fade-in">
-          {/* לוגו SVG */}
-          <div className="relative mx-auto w-32 h-32 mb-6">
-            {/* Network Globe */}
-            <svg viewBox="0 0 120 120" className="w-full h-full drop-shadow-2xl">
-              {/* Network Lines */}
-              <g stroke="#7CB342" strokeWidth="1.5" fill="none" opacity="0.7">
-                <circle cx="60" cy="60" r="50"/>
-                <circle cx="60" cy="60" r="38"/>
-                <circle cx="60" cy="60" r="26"/>
-                <ellipse cx="60" cy="60" rx="50" ry="20"/>
-                <ellipse cx="60" cy="60" rx="20" ry="50"/>
-              </g>
-              
-              {/* Network Dots */}
-              <g fill="#7CB342">
-                {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
-                  <circle 
-                    key={i}
-                    cx={60 + 50 * Math.cos(angle * Math.PI / 180)} 
-                    cy={60 + 50 * Math.sin(angle * Math.PI / 180)}
-                    r="4"
-                    className="animate-pulse"
-                    style={{ animationDelay: `${i * 0.2}s` }}
-                  />
-                ))}
-              </g>
-              
-              {/* Numbers 22 */}
-              <text x="28" y="72" fill="url(#tealGrad)" fontSize="38" fontWeight="bold" fontFamily="Arial, sans-serif">2</text>
-              <text x="58" y="72" fill="url(#orangeGrad)" fontSize="38" fontWeight="bold" fontFamily="Arial, sans-serif">2</text>
-              
-              {/* Gradients */}
-              <defs>
-                <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#00D4D4"/>
-                  <stop offset="100%" stopColor="#00A8A8"/>
-                </linearGradient>
-                <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#FFB347"/>
-                  <stop offset="100%" stopColor="#FF8C00"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            
-            {/* Orange Arc */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-24 h-2 bg-gradient-to-r from-transparent via-[#FF8C00] to-transparent rounded-full"></div>
+          {/* לוגו תמונה אמיתית */}
+          <div className="relative mx-auto mb-6 flex justify-center">
+            <Image 
+              src="/logo.jpeg" 
+              alt="Twenty22Jobs Logo" 
+              width={280}
+              height={120}
+              className="drop-shadow-2xl"
+              priority
+            />
           </div>
-          
-          {/* שם המותג */}
-          <h1 className="text-5xl font-black mb-2 tracking-tight">
-            <span className="text-[#00D4D4]">Twenty</span>
-            <span className="bg-gradient-to-r from-[#00D4D4] to-[#00A8A8] bg-clip-text text-transparent">2</span>
-            <span className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] bg-clip-text text-transparent">2</span>
-            <span className="text-[#FF8C00]">Jobs</span>
-          </h1>
-          <p className="text-slate-400 text-lg font-medium">-המרכז לעובדים ולמעסיקים בישראל-</p>
           
           {/* תג CRM */}
           <div className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-[#00A8A8]/20 to-[#FF8C00]/20 px-4 py-2 rounded-full border border-[#00A8A8]/30">

@@ -5,6 +5,10 @@ import { prisma } from '@/lib/prisma';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import mammoth from 'mammoth';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTag } from '@/lib/recruitment-tags';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Helper to extract text from PDF
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
@@ -26,6 +30,52 @@ async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
     return result.value;
   } catch (error) {
     console.error('Error parsing DOCX:', error);
+    return '';
+  }
+}
+
+// 🆕 OCR - Extract text from image using Gemini Vision
+async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<string> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    
+    // Convert buffer to base64
+    const base64Data = buffer.toString('base64');
+    
+    const prompt = `אתה מומחה ב-OCR לקורות חיים בעברית ואנגלית.
+    
+נתח את התמונה הזו שהיא קורות חיים ותחלץ את כל הטקסט.
+
+התמקד במיוחד ב:
+1. שם מלא
+2. מספר טלפון (בפורמט ישראלי 05X-XXX-XXXX)
+3. כתובת אימייל
+4. עיר מגורים
+5. ניסיון תעסוקתי
+6. השכלה
+7. כישורים ומיומנויות
+8. רישיונות (נהיגה, מלגזה וכו')
+
+החזר את הטקסט המלא כפי שהוא מופיע בקורות החיים.
+אל תדלג על מידע - חלץ הכל!`;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: base64Data
+        }
+      }
+    ]);
+    
+    const response = result.response;
+    const text = response.text();
+    
+    console.log('🖼️ OCR extracted text length:', text.length);
+    return text;
+  } catch (error) {
+    console.error('Error extracting text from image with Gemini Vision:', error);
     return '';
   }
 }
@@ -216,6 +266,17 @@ function analyzeCVText(text: string): any {
     }
   }
 
+  // 🆕 Find professional recruitment tags using the new system
+  const recruitmentTags = findMatchingTags(text);
+  const professionalCategories = getUniqueCategories(recruitmentTags);
+  
+  // Add matched keywords to allTags
+  for (const tag of recruitmentTags) {
+    if (!allTags.includes(tag.keyword)) {
+      allTags.push(tag.keyword);
+    }
+  }
+
   return {
     name: name || 'לא זוהה',
     email: email || 'לא זוהה',
@@ -225,7 +286,10 @@ function analyzeCVText(text: string): any {
     skills: skills.length > 0 ? skills : ['לא זוהו'],
     experience: experience || 'לא זוהה',
     matchedPositions: matchedPositions.length > 0 ? matchedPositions : ['ללא התאמה אוטומטית'],
-    tags: allTags.filter(Boolean) // Return all extracted tags
+    tags: allTags.filter(Boolean),
+    // 🆕 New recruitment tags data
+    recruitmentTags: recruitmentTags,
+    professionalCategories: professionalCategories
   };
 }
 
@@ -302,14 +366,25 @@ export async function POST(request: NextRequest) {
     // Extract text based on file type
     let text = '';
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const mimeType = file.type;
 
     if (fileExtension === 'pdf') {
       text = await extractTextFromPDF(buffer);
     } else if (fileExtension === 'docx' || fileExtension === 'doc') {
       text = await extractTextFromDOCX(buffer);
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(fileExtension || '')) {
+      // 🆕 OCR for images using Gemini Vision
+      console.log('🖼️ Processing image with OCR:', file.name);
+      text = await extractTextFromImage(buffer, mimeType || 'image/jpeg');
+      if (!text) {
+        return NextResponse.json(
+          { error: 'לא הצלחנו לקרוא את התמונה. נסה תמונה באיכות גבוהה יותר או קובץ PDF' },
+          { status: 400 }
+        );
+      }
     } else {
       return NextResponse.json(
-        { error: 'Unsupported file type. Use PDF or DOCX' },
+        { error: 'סוג קובץ לא נתמך. השתמש ב-PDF, DOCX או תמונה (JPG, PNG)' },
         { status: 400 }
       );
     }
@@ -357,6 +432,7 @@ export async function POST(request: NextRequest) {
           yearsOfExperience,
           skills: skills.length ? skills.join(', ') : null,
           resumeUrl,
+          resume: text,  // 🆕 שמירת טקסט קורות חיים המקורי
           source: 'UPLOAD',
           notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name}`,
         },
@@ -368,6 +444,7 @@ export async function POST(request: NextRequest) {
           yearsOfExperience: yearsOfExperience ?? undefined,
           skills: skills.length ? skills.join(', ') : undefined,
           resumeUrl,
+          resume: text,  // 🆕 עדכון טקסט קורות חיים
         },
         select: { id: true },
       });
@@ -389,6 +466,7 @@ export async function POST(request: NextRequest) {
             yearsOfExperience,
             skills: skills.length ? skills.join(', ') : undefined,
             resumeUrl,
+            resume: text,  // 🆕 עדכון טקסט קורות חיים
           },
           select: { id: true },
         });
@@ -408,6 +486,7 @@ export async function POST(request: NextRequest) {
             yearsOfExperience,
             skills: skills.length ? skills.join(', ') : null,
             resumeUrl,
+            resume: text,  // 🆕 שמירת טקסט קורות חיים המקורי
             source: 'UPLOAD',
             notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name} (ללא אימייל)`,
           },
@@ -422,10 +501,22 @@ export async function POST(request: NextRequest) {
     if (candidateId && Array.isArray(candidateData?.tags)) {
       const tagMap = new Map<string, string>();
 
+      // 🆕 First, process recruitment tags with their professional categories
+      if (Array.isArray(candidateData.recruitmentTags)) {
+        for (const rtag of candidateData.recruitmentTags as MatchedTag[]) {
+          if (rtag.keyword && rtag.category) {
+            tagMap.set(rtag.keyword, rtag.category);
+          }
+        }
+      }
+
       // Process all extracted tags from analyzeCVText
       for (const tag of candidateData.tags) {
         if (typeof tag === 'string' && tag.trim() && tag !== 'לא זוהה') {
           const tagName = tag.trim();
+          
+          // Skip if already categorized by recruitment tags
+          if (tagMap.has(tagName)) continue;
           
           // Categorize tags intelligently
           let category = 'general';
@@ -497,6 +588,110 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 🆕 AUTO-MATCHING: חיפוש משרות מתאימות אוטומטית
+    let matchingPositions: any[] = [];
+    let aiAnalysis: any = null;
+    
+    if (candidateId && text.length > 100) {
+      try {
+        console.log('🔍 Starting auto-matching for candidate:', candidateId);
+        
+        // קריאת כל המשרות הפתוחות
+        const activePositions = await prisma.position.findMany({
+          where: { active: true },
+          include: {
+            employer: true,
+            tags: true
+          }
+        });
+
+        // תחומים מילות מפתח
+        const INDUSTRY_KEYWORDS: Record<string, string[]> = {
+          'לוגיסטיקה': ['מחסן', 'לוגיסטיקה', 'ליקוט', 'הפצה', 'שינוע', 'מלגזן', 'נהג'],
+          'אוטומוטיב': ['רכב', 'מכונאי', 'מוסך', 'צמיגים', 'מכירות רכב'],
+          'מכירות': ['מכירות', 'נציג מכירות', 'sales', 'B2B', 'שטח'],
+          'שירות לקוחות': ['שירות', 'מוקד', 'תמיכה', 'call center'],
+          'בנקאות': ['בנק', 'בנקאות', 'פיננסי', 'אשראי', 'טלר'],
+          'הייטק': ['תכנות', 'פיתוח', 'software', 'QA', 'DevOps'],
+          'מזון': ['מזון', 'מסעדה', 'מטבח', 'שף', 'טבח'],
+          'ייצור': ['ייצור', 'מפעל', 'תעשייה', 'אריזה'],
+          'ניהול': ['מנהל', 'ניהול', 'team leader', 'ראש צוות'],
+          'משרדי': ['אדמיניסטרציה', 'מזכירות', 'office', 'קבלה']
+        };
+
+        // זיהוי תחומים של המועמד
+        const lowText = text.toLowerCase();
+        const detectedIndustries: string[] = [];
+        
+        for (const [industry, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
+          let count = 0;
+          for (const kw of keywords) {
+            if (lowText.includes(kw.toLowerCase())) count++;
+          }
+          if (count > 0) detectedIndustries.push(industry);
+        }
+
+        // חישוב ציון התאמה לכל משרה
+        const scoredPositions = activePositions.map(pos => {
+          let score = 0;
+          const positionText = `${pos.title} ${pos.description || ''} ${pos.requirements || ''}`.toLowerCase();
+          
+          // התאמת תחום
+          for (const industry of detectedIndustries) {
+            const keywords = INDUSTRY_KEYWORDS[industry] || [];
+            const matchCount = keywords.filter(kw => positionText.includes(kw.toLowerCase())).length;
+            if (matchCount > 0) score += matchCount * 15;
+          }
+
+          // התאמת תגיות
+          const positionTags = pos.tags.map(t => t.name.toLowerCase());
+          for (const tag of positionTags) {
+            if (lowText.includes(tag)) score += 10;
+          }
+
+          // התאמת עיר
+          const cities = ['תל אביב', 'חיפה', 'ירושלים', 'באר שבע', 'אשדוד', 'נתניה'];
+          for (const city of cities) {
+            if (lowText.includes(city) && positionText.includes(city)) score += 15;
+          }
+
+          return {
+            id: pos.id,
+            title: pos.title,
+            employer: pos.employer?.name || 'חברה',
+            location: pos.location,
+            score
+          };
+        })
+        .filter(p => p.score > 20) // רק משרות עם ציון מינימלי
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5); // עד 5 משרות מובילות
+
+        matchingPositions = scoredPositions;
+        
+        // שמירת הניתוח ב-aiProfile של המועמד
+        if (scoredPositions.length > 0) {
+          aiAnalysis = {
+            detectedIndustries,
+            topMatches: scoredPositions,
+            analyzedAt: new Date().toISOString()
+          };
+
+          await prisma.candidate.update({
+            where: { id: candidateId },
+            data: {
+              aiProfile: JSON.stringify(aiAnalysis)
+            }
+          });
+        }
+
+        console.log(`✅ Auto-matching complete: ${scoredPositions.length} positions found for ${name}`);
+      } catch (matchError) {
+        console.error('Auto-matching error:', matchError);
+        // Don't fail the upload if matching fails
+      }
+    }
+
     // Return extracted data
     return NextResponse.json({
       success: true,
@@ -505,7 +700,13 @@ export async function POST(request: NextRequest) {
       candidate: candidateData,
       candidateId,
       createdCandidate,
-      extractedText: text.substring(0, 500) // First 500 chars for preview
+      extractedText: text.substring(0, 500), // First 500 chars for preview
+      // 🆕 Add recruitment tags info
+      recruitmentTags: candidateData.recruitmentTags || [],
+      professionalCategories: candidateData.professionalCategories || [],
+      // 🆕 Add auto-matching results
+      matchingPositions,
+      aiAnalysis
     });
 
   } catch (error) {
@@ -516,3 +717,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+

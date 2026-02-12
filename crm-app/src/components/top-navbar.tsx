@@ -17,7 +17,7 @@ const navigationItems = [
     icon: LayoutDashboard,
   },
   {
-    name: "לוח גיוס",
+    name: "הכנסת מועמד",
     href: "/dashboard/recruitment-board",
     icon: Sparkles,
     badge: "AI",

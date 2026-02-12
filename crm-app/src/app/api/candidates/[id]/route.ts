@@ -104,6 +104,7 @@ export async function PUT(
       employmentStatus,
       employmentEndAt,
       isSelfEmployed,
+      resume,  // טקסט קורות חיים מקורי
     } = body
 
     // Check if candidate exists
@@ -159,6 +160,7 @@ export async function PUT(
         employmentStatus: employmentStatus || null,
         employmentEndAt: employmentEndAt ? new Date(employmentEndAt) : null,
         isSelfEmployed: typeof isSelfEmployed === "boolean" ? isSelfEmployed : undefined,
+        resume: resume || undefined,  // שמירת טקסט קורות חיים
       },
       include: {
         applications: {

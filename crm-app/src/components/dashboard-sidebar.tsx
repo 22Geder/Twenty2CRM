@@ -30,16 +30,17 @@ import {
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Twenty2JobsLogoFull } from "@/components/logo"
+import { Twenty2JobsLogoFull, Twenty2JobsLogoImage } from "@/components/logo"
 
 const navigation = [
   { name: "לוח בקרה", href: "/dashboard", icon: LayoutDashboard },
-  { name: "🎯 לוח גיוס 2טו-גדר", href: "/dashboard/recruitment-board", icon: Sparkles },
+  { name: "🎯 הכנסת מועמד למערכת", href: "/dashboard/recruitment-board", icon: Sparkles },
   { name: "מועמדים", href: "/dashboard/candidates", icon: Users },
   { name: "מועמדים שגוייסו", href: "/dashboard/hired", icon: UserCheck },
   { name: "משרות", href: "/dashboard/positions", icon: Briefcase },
   { name: "🎯 פייפליין Kanban", href: "/dashboard/kanban", icon: KanbanSquare },
-  { name: "📋 היסטוריית פעילות", href: "/dashboard/activity", icon: History },
+  { name: "� שליחה המונית", href: "/dashboard/bulk-broadcast", icon: Send },
+  { name: "�📋 היסטוריית פעילות", href: "/dashboard/activity", icon: History },
   { name: "📝 תבניות הודעות", href: "/dashboard/templates", icon: FileEdit },
   { name: "⏰ תזכורות", href: "/dashboard/reminders", icon: Bell },
   { name: "העלאה מפייסבוק", href: "/dashboard/facebook-import", icon: Facebook },
@@ -64,15 +65,9 @@ export function DashboardSidebar() {
   return (
     <div className="flex h-full w-72 flex-col gap-y-5 border-l bg-white shadow-2xl">
       {/* Header with Logo */}
-      <div className="flex h-20 items-center px-6 border-b bg-gradient-to-l from-orange-100 via-teal-50 to-white">
+      <div className="flex h-24 items-center px-6 border-b bg-gradient-to-l from-orange-100 via-teal-50 to-white">
         <Link href="/dashboard" className="transition-transform hover:scale-105">
-          <div className="flex items-center gap-2">
-            <div className="text-2xl font-bold">
-              <span className="text-teal-600">Twenty</span>
-              <span className="text-orange-500">2</span>
-              <span className="text-teal-600">Jobs</span>
-            </div>
-          </div>
+          <Twenty2JobsLogoImage className="h-14 w-auto" width={180} height={56} />
         </Link>
       </div>
       
@@ -87,14 +82,14 @@ export function DashboardSidebar() {
                   className={cn(
                     "group flex gap-x-3 rounded-xl p-3 text-sm font-semibold leading-6 transition-all duration-200 items-center",
                     isActive
-                      ? "bg-gradient-to-l from-blue-500 to-blue-600 text-white shadow-lg transform scale-[1.02]"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      ? "bg-gradient-to-l from-teal-500 to-teal-600 text-white shadow-lg transform scale-[1.02]"
+                      : "text-gray-700 hover:bg-teal-50 hover:text-teal-600"
                   )}
                 >
                   <item.icon 
                     className={cn(
                       "h-5 w-5 shrink-0 transition-all",
-                      isActive ? "text-white" : "text-gray-500 group-hover:text-blue-600"
+                      isActive ? "text-white" : "text-gray-500 group-hover:text-teal-600"
                     )} 
                     aria-hidden="true" 
                   />
@@ -124,11 +119,11 @@ export function DashboardSidebar() {
       </nav>
       
       {/* Footer */}
-      <div className="px-6 py-4 border-t bg-gradient-to-l from-blue-50 to-white">
+      <div className="px-6 py-4 border-t bg-gradient-to-l from-teal-50 to-white">
         <p className="text-xs text-gray-500 text-center">
           © 2025 Twenty2Jobs
           <br />
-          <span className="text-blue-600 font-semibold">מערכת ניהול גיוס</span>
+          <span className="text-teal-600 font-semibold">מערכת ניהול גיוס</span>
         </p>
       </div>
     </div>

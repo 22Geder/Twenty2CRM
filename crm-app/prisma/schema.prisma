@@ -115,6 +115,8 @@ model Candidate {
   isSelfEmployed Boolean        @default(false)
   resume        String?
   aiProfile     String?         // JSON profile from Gemini analysis
+  unsubscribed  Boolean         @default(false)  // האם ביקש הסרה מרשימות התפוצה
+  unsubscribedAt DateTime?      // מתי ביקש הסרה
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   

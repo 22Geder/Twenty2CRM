@@ -45,7 +45,10 @@ export default function NewPositionPage() {
       const response = await fetch("/api/employers")
       if (response.ok) {
         const data = await response.json()
-        setEmployers(data.employers || [])
+        // Handle both array response and { employers: [] } response
+        const employersList = Array.isArray(data) ? data : (data.employers || [])
+        setEmployers(employersList)
+        console.log("Fetched employers:", employersList.length)
       }
     } catch (err) {
       console.error("Failed to fetch employers:", err)
@@ -57,7 +60,9 @@ export default function NewPositionPage() {
       const response = await fetch("/api/departments")
       if (response.ok) {
         const data = await response.json()
-        setDepartments(data.departments || [])
+        // Handle both array response and { departments: [] } response
+        const departmentsList = Array.isArray(data) ? data : (data.departments || [])
+        setDepartments(departmentsList)
       }
     } catch (err) {
       console.error("Failed to fetch departments:", err)

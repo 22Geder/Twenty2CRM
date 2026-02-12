@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,9 +20,22 @@ import {
   Award,
   Eye,
   Bot,
-  Loader2
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Filter
 } from 'lucide-react'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
+
+interface Application {
+  id: string
+  status: string
+  position: {
+    id: string
+    title: string
+  }
+}
 
 interface Candidate {
   id: string
@@ -36,6 +50,8 @@ interface Candidate {
   city: string | null
   skills: string | null
   createdAt: string
+  hiredAt: string | null
+  applications: Application[]
   tags: Array<{ id: string; name: string; color: string }>
   _count: {
     applications: number
@@ -44,6 +60,8 @@ interface Candidate {
 }
 
 export default function CandidatesPageModern() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,9 +69,50 @@ export default function CandidatesPageModern() {
   const [filters, setFilters] = useState<any>({})
   const [matchingCandidate, setMatchingCandidate] = useState<string | null>(null)
   const [matchResults, setMatchResults] = useState<any>(null)
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all')
+
+  // Helper function to determine candidate status
+  const getCandidateStatus = (candidate: Candidate): 'hired' | 'rejected' | 'in-process' | 'new' => {
+    if (candidate.hiredAt) return 'hired'
+    if (candidate.applications && candidate.applications.length > 0) {
+      const hasHired = candidate.applications.some(app => app.status === 'HIRED')
+      if (hasHired) return 'hired'
+      const allRejected = candidate.applications.every(app => app.status === 'REJECTED')
+      if (allRejected) return 'rejected'
+      return 'in-process'
+    }
+    return 'new'
+  }
 
   useEffect(() => {
+    const urlStatus = searchParams.get('status')
+    if (urlStatus && urlStatus !== statusFilter) {
+      setStatusFilter(urlStatus)
+    }
+  }, [searchParams])
+
+  // 🆕 טעינה ורענון אוטומטי
+  useEffect(() => {
     fetchCandidates()
+    
+    // רענון בכל פוקוס על החלון (כשחוזרים מדף אחר)
+    const handleFocus = () => {
+      fetchCandidates()
+    }
+    window.addEventListener('focus', handleFocus)
+    
+    // רענון כשמתקבל אירוע storage (מטאב אחר)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'lastCandidateAdded') {
+        fetchCandidates()
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('storage', handleStorage)
+    }
   }, [])
 
   useEffect(() => {
@@ -66,7 +125,7 @@ export default function CandidatesPageModern() {
 
   useEffect(() => {
     applyFilters()
-  }, [filters, search, candidates])
+  }, [filters, search, candidates, statusFilter])
 
   const fetchCandidates = async () => {
     try {
@@ -82,8 +141,18 @@ export default function CandidatesPageModern() {
     }
   }
 
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus)
+    router.push(`/dashboard/candidates?status=${newStatus}`)
+  }
+
   const applyFilters = () => {
     let result = [...candidates]
+
+    // סינון לפי סטטוס (התקבל/לא התקבל/בתהליך)
+    if (statusFilter && statusFilter !== 'all') {
+      result = result.filter(c => getCandidateStatus(c) === statusFilter)
+    }
 
     // חיפוש טקסט
     if (search) {
@@ -258,6 +327,57 @@ export default function CandidatesPageModern() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-2 bg-white rounded-xl p-2 shadow-lg border border-slate-200">
+        <Filter className="h-5 w-5 text-slate-400 mr-2" />
+        <span className="text-sm text-slate-500 ml-2">סינון לפי סטטוס:</span>
+        <Button
+          variant={statusFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleStatusFilterChange('all')}
+          className={statusFilter === 'all' ? 'bg-slate-800 text-white' : 'hover:bg-slate-100'}
+        >
+          <Users className="h-4 w-4 ml-1" />
+          הכל ({candidates.length})
+        </Button>
+        <Button
+          variant={statusFilter === 'in-process' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleStatusFilterChange('in-process')}
+          className={statusFilter === 'in-process' ? 'bg-[#2196F3] text-white hover:bg-[#1976D2]' : 'hover:bg-[#2196F3]/10 text-[#2196F3] border-[#2196F3]/30'}
+        >
+          <Clock className="h-4 w-4 ml-1" />
+          בתהליך ({candidates.filter(c => getCandidateStatus(c) === 'in-process').length})
+        </Button>
+        <Button
+          variant={statusFilter === 'hired' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleStatusFilterChange('hired')}
+          className={statusFilter === 'hired' ? 'bg-[#7CB342] text-white hover:bg-[#689F38]' : 'hover:bg-[#7CB342]/10 text-[#7CB342] border-[#7CB342]/30'}
+        >
+          <CheckCircle className="h-4 w-4 ml-1" />
+          התקבל ({candidates.filter(c => getCandidateStatus(c) === 'hired').length})
+        </Button>
+        <Button
+          variant={statusFilter === 'rejected' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleStatusFilterChange('rejected')}
+          className={statusFilter === 'rejected' ? 'bg-[#F44336] text-white hover:bg-[#D32F2F]' : 'hover:bg-[#F44336]/10 text-[#F44336] border-[#F44336]/30'}
+        >
+          <XCircle className="h-4 w-4 ml-1" />
+          לא התקבל ({candidates.filter(c => getCandidateStatus(c) === 'rejected').length})
+        </Button>
+        <Button
+          variant={statusFilter === 'new' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleStatusFilterChange('new')}
+          className={statusFilter === 'new' ? 'bg-[#FF8C00] text-white hover:bg-[#E65100]' : 'hover:bg-[#FF8C00]/10 text-[#FF8C00] border-[#FF8C00]/30'}
+        >
+          <Star className="h-4 w-4 ml-1" />
+          חדש ({candidates.filter(c => getCandidateStatus(c) === 'new').length})
+        </Button>
+      </div>
 
       {/* Advanced Filters */}
       <AdvancedCandidateFilters onFilterChange={setFilters} />

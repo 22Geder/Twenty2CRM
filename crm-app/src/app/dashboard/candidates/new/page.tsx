@@ -1,19 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowRight, Save, X } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ArrowRight, Save, X, Loader2, Sparkles, CheckCircle, Zap } from "lucide-react"
 import Link from "next/link"
 
 export default function NewCandidatePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [extracting, setExtracting] = useState(false)
+  const [extracted, setExtracted] = useState(false)
   const [error, setError] = useState("")
+  const [extractedTags, setExtractedTags] = useState<string[]>([])
+  const extractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -35,7 +40,7 @@ export default function NewCandidatePage() {
     notes: "",
     rating: "",
     source: "",
-    resumeText: "", // הוסף שדה טקסט קורות חיים
+    resumeText: "",
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -44,6 +49,104 @@ export default function NewCandidatePage() {
       [e.target.name]: e.target.value,
     })
   }
+
+  // פונקציה לחילוץ נתונים מקורות חיים
+  const extractFromResume = useCallback(async (text: string) => {
+    if (text.length < 20) return;
+    
+    setExtracting(true);
+    setExtracted(false);
+    
+    try {
+      const response = await fetch('/api/extract-cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      
+      if (response.ok) {
+        const { data } = await response.json();
+        
+        // מילוי אוטומטי של כל השדות
+        setFormData(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          email: data.email || prev.email,
+          phone: data.phone || prev.phone,
+          alternatePhone: data.alternatePhone || prev.alternatePhone,
+          city: data.city || prev.city,
+          address: data.address || prev.address,
+          country: data.country || prev.country,
+          currentTitle: data.currentTitle || prev.currentTitle,
+          currentCompany: data.currentCompany || prev.currentCompany,
+          skills: data.skills || prev.skills,
+          yearsOfExperience: data.yearsOfExperience || prev.yearsOfExperience,
+          expectedSalary: data.expectedSalary || prev.expectedSalary,
+        }));
+        
+        // שמירת תגיות
+        if (data.tags && data.tags.length > 0) {
+          setExtractedTags(data.tags);
+        }
+        
+        setExtracted(true);
+      }
+    } catch (error) {
+      console.error('Extraction error:', error);
+    } finally {
+      setExtracting(false);
+    }
+  }, []);
+
+  // טיפול בהדבקת/שינוי קורות חיים - עם debounce מתוקן + פסטה מיידית
+  const handleResumeTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setFormData(prev => ({ ...prev, resumeText: newText }));
+    
+    // בטל timeout קודם
+    if (extractionTimeoutRef.current) {
+      clearTimeout(extractionTimeoutRef.current);
+    }
+    
+    // חילוץ אוטומטי אם הטקסט ארוך מספיק
+    if (newText.length >= 50) {
+      // Debounce מתוקן - המתנה קצרה של 300ms
+      extractionTimeoutRef.current = setTimeout(() => {
+        extractFromResume(newText);
+      }, 300);
+    } else {
+      setExtracted(false);
+      setExtractedTags([]);
+    }
+  };
+
+  // טיפול בפיסטה מיידית - חילוץ ישר ללא המתנה
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (pastedText && pastedText.length >= 50) {
+      // ביטול timeout קודם
+      if (extractionTimeoutRef.current) {
+        clearTimeout(extractionTimeoutRef.current);
+      }
+      // חילוץ מיידי בפיסטה!
+      setTimeout(() => {
+        const fullText = formData.resumeText + pastedText;
+        extractFromResume(fullText);
+      }, 50);
+    }
+  }, [formData.resumeText, extractFromResume]);
+
+  // ניקוי timeout בעת יציאה מהקומפוננטה
+  useEffect(() => {
+    return () => {
+      if (extractionTimeoutRef.current) {
+        clearTimeout(extractionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // האם יש קורות חיים (מבטל חובת שדות)
+  const hasResume = formData.resumeText.trim().length >= 50;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,7 +159,11 @@ export default function NewCandidatePage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          resume: formData.resumeText,  // שליחת הטקסט לשמירה כ-resume
+          extractedTags: extractedTags   // 🆕 שליחת תגיות שחולצו
+        }),
       })
 
       if (!response.ok) {
@@ -65,6 +172,17 @@ export default function NewCandidatePage() {
       }
 
       const candidate = await response.json()
+
+      // 🆕 עדכון רשימת מועמדים - שליחת אירוע לכל המערכת
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('candidates-updated'))
+        // 🆕 שמירה ב-localStorage לסנכרון בין טאבים
+        localStorage.setItem('lastCandidateAdded', JSON.stringify({
+          id: candidate.id,
+          name: candidate.name,
+          timestamp: Date.now()
+        }))
+      }
 
       // אם יש טקסט קורות חיים, בצע התאמה חכמה אוטומטית
       if (formData.resumeText.trim()) {
@@ -82,6 +200,9 @@ export default function NewCandidatePage() {
         }
       }
 
+      // 🆕 הודעת הצלחה 
+      alert(`✅ המועמד "${candidate.name}" נוסף בהצלחה!`)
+      
       router.push(`/dashboard/candidates/${candidate.id}`)
     } catch (err: any) {
       setError(err.message)
@@ -126,26 +247,32 @@ export default function NewCandidatePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">שם מלא *</Label>
+                <Label htmlFor="name">
+                  שם מלא {!hasResume && <span className="text-red-500">*</span>}
+                </Label>
                 <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  required
+                  required={!hasResume}
                   placeholder="שם פרטי ושם משפחה"
+                  className={formData.name && extracted ? "border-green-400 bg-green-50" : ""}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">אימייל *</Label>
+                <Label htmlFor="email">
+                  אימייל {!hasResume && <span className="text-red-500">*</span>}
+                </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
+                  required={!hasResume}
                   placeholder="email@example.com"
+                  className={formData.email && extracted ? "border-green-400 bg-green-50" : ""}
                 />
               </div>
             </div>
@@ -159,6 +286,7 @@ export default function NewCandidatePage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="050-1234567"
+                  className={formData.phone && extracted ? "border-green-400 bg-green-50" : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -182,6 +310,7 @@ export default function NewCandidatePage() {
                   value={formData.city}
                   onChange={handleChange}
                   placeholder="תל אביב"
+                  className={formData.city && extracted ? "border-green-400 bg-green-50" : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -244,6 +373,7 @@ export default function NewCandidatePage() {
                   value={formData.currentTitle}
                   onChange={handleChange}
                   placeholder="כותרת התפקיד"
+                  className={formData.currentTitle && extracted ? "border-green-400 bg-green-50" : ""}
                 />
               </div>
             </div>
@@ -258,6 +388,7 @@ export default function NewCandidatePage() {
                   value={formData.yearsOfExperience}
                   onChange={handleChange}
                   placeholder="5"
+                  className={formData.yearsOfExperience && extracted ? "border-green-400 bg-green-50" : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -283,26 +414,73 @@ export default function NewCandidatePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="resumeText">📄 טקסט קורות חיים (להתאמה אוטומטית)</Label>
+              <Label htmlFor="resumeText" className="text-lg font-bold flex items-center gap-2">
+                📄 טקסט קורות חיים (מומלץ!)
+                {extracting && (
+                  <span className="flex items-center gap-1 text-blue-600 text-sm font-normal">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    מחלץ נתונים...
+                  </span>
+                )}
+                {extracted && !extracting && (
+                  <span className="flex items-center gap-1 text-green-600 text-sm font-normal">
+                    <CheckCircle className="h-4 w-4" />
+                    נתונים חולצו!
+                  </span>
+                )}
+              </Label>
               <Textarea
                 id="resumeText"
                 name="resumeText"
                 value={formData.resumeText}
-                onChange={handleChange}
+                onChange={handleResumeTextChange}
+                onPaste={handlePaste}
                 placeholder={`העתק והדבק את תוכן קורות החיים כאן...
 
 לדוגמה:
 יונתן כהן
+054-1234567
+yonatan@email.com
+תל אביב
 מפתח Full Stack עם 5 שנות ניסיון
 מומחה ב: React, Node.js, Python, AWS
 ניסיון בפיתוח אפליקציות web ומובייל
-עבד בחברות היי-טק מובילות`}
-                rows={8}
-                className="resize-none"
+עבד בחברות: גוגל ישראל, מיקרוסופט`}
+                rows={10}
+                className={`resize-none ${hasResume ? 'border-green-400 bg-green-50' : ''}`}
               />
-              <p className="text-sm text-blue-600 font-medium">
-                🤖 המערכת תזהה כישורים אוטומטית ותמצא משרות מתאימות
-              </p>
+              
+              {/* תגיות שחולצו */}
+              {extractedTags.length > 0 && (
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <p className="text-sm text-purple-700 font-bold mb-2 flex items-center gap-1">
+                    <Sparkles className="h-4 w-4" />
+                    תגיות שזוהו אוטומטית:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {extractedTags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {hasResume ? (
+                <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
+                  <p className="text-sm text-green-700 font-bold">
+                    ✅ מעולה! הנתונים חולצו אוטומטית - אין צורך למלא שדות חובה!
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    השדות שמולאו מסומנים בירוק. לחץ "שמור מועמד" להמשך.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-blue-600 font-medium">
+                  🤖 הדבק קורות חיים והמערכת תזהה הכל אוטומטית ותבטל שדות חובה!
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -314,6 +492,7 @@ export default function NewCandidatePage() {
                 onChange={handleChange}
                 placeholder="רשום מיומנויות מופרדות בפסיקים: React, Node.js, Python..."
                 rows={3}
+                className={formData.skills && extracted ? "border-green-400 bg-green-50" : ""}
               />
             </div>
           </CardContent>
@@ -404,13 +583,20 @@ export default function NewCandidatePage() {
               ביטול
             </Button>
           </Link>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="min-w-[200px]">
             {loading ? (
-              "שומר..."
+              formData.resumeText.trim() ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">🤖</span>
+                  מנתח קורות חיים...
+                </span>
+              ) : (
+                "שומר..."
+              )
             ) : (
               <>
                 <Save className="ml-2 h-4 w-4" />
-                שמור מועמד
+                {formData.resumeText.trim() ? "🚀 נתח ושמור" : "שמור מועמד"}
               </>
             )}
           </Button>

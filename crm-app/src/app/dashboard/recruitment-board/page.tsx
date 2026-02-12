@@ -689,6 +689,60 @@ function matchJobs(candidate: CandidateDetails, jobs: Job[]): JobMatch[] {
     .sort((a, b) => b.score - a.score);
 }
 
+// ==================== DUAL LAYER ANALYSIS TYPES ====================
+interface DualLayerResult {
+  candidateCard: {
+    fullName: string
+    city: string
+    age: string
+    phone: string
+    email: string
+    hotTags: string[]
+    currentTitle: string
+    yearsExperience: number
+    detectedIndustry: string[]
+  }
+  bestMatch: {
+    positionId: string
+    positionTitle: string
+    employerName: string
+    location: string
+    weightedScore: number
+    matchReason: string
+    dualAnalysis: {
+      technicalMatch: {
+        score: number
+        matched: string[]
+        missing: string[]
+        explanation: string
+      }
+      aiLogicMatch: {
+        score: number
+        explanation: string
+        relevanceAssessment: string
+      }
+    }
+    prosCons: {
+      pros: string[]
+      cons: string[]
+    }
+    recommendation: {
+      shouldProceed: boolean
+      summaryForEmployer: string
+    }
+  } | null
+  topMatches: Array<{
+    positionId: string
+    positionTitle: string
+    employerName: string
+    location: string
+    score: number
+    matchReason: string
+  }>
+  analysisTimestamp: string
+  message?: string
+}
+
 // ==================== MAIN COMPONENT ====================
 export default function RecruitmentBoard() {
   const [tab, setTab] = useState<'ai' | 'jobs' | 'employers' | 'info'>('ai');
@@ -703,8 +757,12 @@ export default function RecruitmentBoard() {
   const [toast, setToast] = useState('');
   const [stats, setStats] = useState<DashboardStats>({ totalCandidates: 0, totalPositions: 0, activePositions: 0, totalApplications: 0 });
   
+  // Dual Layer Analysis State
+  const [dualLayerResult, setDualLayerResult] = useState<DualLayerResult | null>(null);
+  const [dualLayerLoading, setDualLayerLoading] = useState(false);
+  
   // Employers & Custom Jobs
-  const [employers, setEmployers] = useState<Employer[]>(DEFAULT_EMPLOYERS);
+  const [employers, setEmployers] = useState<Employer[]>([]);
   const [customJobs, setCustomJobs] = useState<CustomJob[]>([]);
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddEmployer, setShowAddEmployer] = useState(false);
@@ -713,6 +771,36 @@ export default function RecruitmentBoard() {
   const [newJob, setNewJob] = useState({ title: '', location: '', employerId: '', salary: '', requirements: '', notes: '' });
   // New Employer Form
   const [newEmployer, setNewEmployer] = useState({ name: '', email: '', phone: '', company: '', notes: '' });
+
+  // Fetch employers from database
+  const fetchEmployers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/employers');
+      if (res.ok) {
+        const data = await res.json();
+        // Transform database employers to match local Employer interface
+        const dbEmployers = Array.isArray(data) ? data : (data.employers || []);
+        const transformedEmployers: Employer[] = dbEmployers.map((emp: any) => ({
+          id: emp.id,
+          name: emp.name,
+          email: emp.email || '',
+          phone: emp.phone || '',
+          company: emp.description || emp.name,
+          notes: emp.description || '',
+        }));
+        // Merge with defaults (keeping database as source of truth)
+        const existingIds = new Set(transformedEmployers.map(e => e.email));
+        const defaultsToKeep = DEFAULT_EMPLOYERS.filter(e => !existingIds.has(e.email) && e.email !== '');
+        setEmployers([...transformedEmployers, ...defaultsToKeep]);
+      } else {
+        // Fallback to defaults if API fails
+        setEmployers(DEFAULT_EMPLOYERS);
+      }
+    } catch (e) {
+      console.log('Could not fetch employers, using defaults');
+      setEmployers(DEFAULT_EMPLOYERS);
+    }
+  }, []);
 
   // Fetch stats from API
   const fetchStats = useCallback(async () => {
@@ -734,7 +822,8 @@ export default function RecruitmentBoard() {
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    fetchEmployers();
+  }, [fetchStats, fetchEmployers]);
 
   const regions = [
     { id: 'all', name: 'הכל' },
@@ -768,14 +857,19 @@ export default function RecruitmentBoard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: c.name, email: c.email || null, phone: c.phone || null,
-          city: c.city || null, skills: c.tags.map(t => t.label).join(', '),
-          notes: `תגיות: ${c.tags.map(t => t.label).join(', ')}`, source: 'AI-Agent',
+          name: c.name, 
+          email: c.email || null, 
+          phone: c.phone || null,
+          city: c.city || null, 
+          skills: c.tags.map(t => t.label).join(', '),
+          notes: `תגיות: ${c.tags.map(t => t.label).join(', ')}`, 
+          source: 'AI-Agent-Board',
+          resume: cvText,  // 🆕 שליחת קורות חיים לניתוח ULTRA
         }),
       });
       if (res.ok) { 
         setSaved(true); 
-        showToast(`✓ ${c.name} נשמר במערכת`);
+        showToast(`✓ ${c.name} נשמר במערכת עם ניתוח ULTRA`);
         // Refresh stats after saving
         await fetchStats();
       }
@@ -850,6 +944,36 @@ export default function RecruitmentBoard() {
     }
     
     setLoading(false);
+    
+    // 🤖 הפעל ניתוח Dual-Layer מתקדם עם Gemini
+    await runDualLayerAnalysis();
+  };
+
+  // 🎯 ניתוח התאמה כפול (Dual-Layer) - מנוע ה-AI הבכיר
+  const runDualLayerAnalysis = async () => {
+    if (!cvText.trim() || cvText.length < 50) return;
+    
+    setDualLayerLoading(true);
+    try {
+      const response = await fetch('/api/analyze-cv-dual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cvText }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDualLayerResult(data);
+        showToast('🤖 ניתוח AI מתקדם הושלם!');
+      } else {
+        const err = await response.json();
+        console.error('Dual-layer analysis error:', err);
+      }
+    } catch (error) {
+      console.error('Dual-layer analysis failed:', error);
+    } finally {
+      setDualLayerLoading(false);
+    }
   };
 
   const clear = () => {
@@ -857,6 +981,7 @@ export default function RecruitmentBoard() {
     setCandidate(null);
     setMatches([]);
     setSaved(false);
+    setDualLayerResult(null);
   };
 
   // ==================== RENDER ====================
@@ -874,7 +999,7 @@ export default function RecruitmentBoard() {
         <div className="w-full px-10 py-8">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-2xl">
+              <div className="w-20 h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-2xl">
                 <span className="text-white text-4xl font-black">22</span>
               </div>
               <div>
@@ -885,8 +1010,8 @@ export default function RecruitmentBoard() {
 
             {/* Stats Bar */}
             <div className="flex items-center gap-8">
-              <div className="bg-blue-50 px-10 py-5 rounded-2xl text-center min-w-[160px]">
-                <div className="text-5xl font-black text-blue-600">{stats.totalCandidates}</div>
+              <div className="bg-teal-50 px-10 py-5 rounded-2xl text-center min-w-[160px]">
+                <div className="text-5xl font-black text-teal-600">{stats.totalCandidates}</div>
                 <div className="text-slate-600 text-lg font-medium">מועמדים</div>
               </div>
               <div className="bg-green-50 px-10 py-5 rounded-2xl text-center min-w-[160px]">
@@ -913,7 +1038,7 @@ export default function RecruitmentBoard() {
                 onClick={() => setTab(t.id as typeof tab)}
                 className={`px-12 py-6 rounded-2xl font-bold text-2xl transition-all ${
                   tab === t.id
-                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30'
+                    ? 'bg-teal-600 text-white shadow-xl shadow-teal-500/30'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -944,6 +1069,9 @@ export default function RecruitmentBoard() {
                   onChange={e => setCvText(e.target.value)}
                   placeholder={`הדבק כאן את קורות החיים...
 
+💡 טיפ: אפשר גם להעלות קובץ PDF, Word או תמונה!
+   לחץ על "העלאת קבצים" בתפריט הצדדי
+
 דוגמה:
 
 יוסי כהן
@@ -957,14 +1085,14 @@ yossi@email.com
 
 השכלה:
 - תואר ראשון בכלכלה`}
-                  className="w-full h-[450px] p-8 border-2 border-slate-200 rounded-2xl text-xl leading-relaxed resize-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                  className="w-full h-[450px] p-8 border-2 border-slate-200 rounded-2xl text-xl leading-relaxed resize-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all"
                 />
 
                 <div className="flex gap-5 mt-8">
                   <button
                     onClick={analyze}
                     disabled={loading || !cvText.trim()}
-                    className="flex-1 py-7 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 transition-all"
+                    className="flex-1 py-7 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-2xl font-bold text-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 transition-all"
                   >
                     {loading ? '⏳ מנתח...' : '🔍 נתח ומצא משרות'}
                   </button>
@@ -1009,7 +1137,7 @@ yossi@email.com
                   </div>
 
                   {/* Quick Actions - WhatsApp & Email */}
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-8 mb-10">
+                  <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-2xl p-8 mb-10">
                     <h3 className="text-xl font-bold text-slate-700 mb-5">📲 פעולות מהירות</h3>
                     <div className="flex flex-wrap gap-4">
                       {candidate.phone && (
@@ -1025,7 +1153,7 @@ yossi@email.com
                       {candidate.email && (
                         <a
                           href={getEmailLink(candidate.email, `בנוגע לקורות החיים שלך`, `שלום ${candidate.name},\n\nקיבלתי את קורות החיים שלך ואשמח לדבר איתך על הזדמנויות תעסוקה.\n\nבברכה,\nטוונטי טו ג'ובס`)}
-                          className="flex items-center gap-3 bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg"
+                          className="flex items-center gap-3 bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg"
                         >
                           <span className="text-2xl">📧</span> שלח מייל למועמד
                         </a>
@@ -1048,7 +1176,7 @@ yossi@email.com
                       value={candidateNotes}
                       onChange={e => setCandidateNotes(e.target.value)}
                       placeholder="הוסף הערות על המועמד..."
-                      className="w-full h-32 p-5 border-2 border-slate-200 rounded-xl text-lg resize-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                      className="w-full h-32 p-5 border-2 border-slate-200 rounded-xl text-lg resize-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
                     />
                   </div>
 
@@ -1126,6 +1254,263 @@ yossi@email.com
                 </div>
               )}
 
+              {/* 🤖 DUAL-LAYER ANALYSIS - ניתוח התאמה כפול */}
+              {dualLayerLoading && (
+                <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-3xl shadow-2xl p-10 text-white text-center">
+                  <div className="animate-spin w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-6"></div>
+                  <h3 className="text-3xl font-black mb-2">🤖 מנוע AI בפעולה...</h3>
+                  <p className="text-teal-100 text-xl">מבצע ניתוח התאמה כפול (Dual-Layer Matching)</p>
+                </div>
+              )}
+
+              {dualLayerResult && (
+                <div className="space-y-8">
+                  {/* הודעה אם אין התאמות */}
+                  {dualLayerResult.message && !dualLayerResult.bestMatch && (
+                    <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-8 text-center">
+                      <div className="text-6xl mb-4">⚠️</div>
+                      <h3 className="text-2xl font-bold text-yellow-700 mb-2">לא נמצאו משרות מתאימות</h3>
+                      <p className="text-yellow-600 text-lg">{dualLayerResult.message}</p>
+                      {dualLayerResult.candidateCard.detectedIndustry?.length > 0 && (
+                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                          {dualLayerResult.candidateCard.detectedIndustry.map((ind, i) => (
+                            <span key={i} className="bg-yellow-200 text-yellow-800 px-4 py-2 rounded-full font-bold">
+                              {ind}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* כרטיס מועמד מורחב */}
+                  <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl shadow-2xl p-10 text-white">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 bg-teal-500 rounded-2xl flex items-center justify-center text-3xl">🎯</div>
+                      <div>
+                        <h3 className="text-3xl font-black">כרטיס מועמד - {dualLayerResult.candidateCard.fullName}</h3>
+                        <p className="text-slate-400">ניתוח AI מתקדם מבית 2טו-גדר</p>
+                      </div>
+                    </div>
+
+                    {/* תחומים שזוהו */}
+                    {dualLayerResult.candidateCard.detectedIndustry?.length > 0 && (
+                      <div className="mb-6 p-4 bg-teal-500/20 rounded-xl border border-teal-400">
+                        <div className="text-teal-300 mb-2 text-sm font-bold">🎯 תחומים שזוהו אצל המועמד:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {dualLayerResult.candidateCard.detectedIndustry.map((ind, i) => (
+                            <span key={i} className="bg-teal-500 text-white px-4 py-2 rounded-full font-bold text-lg">
+                              {ind}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-4 gap-6 mb-8">
+                      <div className="bg-white/10 rounded-xl p-5">
+                        <div className="text-slate-400 text-sm mb-1">📍 עיר</div>
+                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.city}</div>
+                      </div>
+                      <div className="bg-white/10 rounded-xl p-5">
+                        <div className="text-slate-400 text-sm mb-1">🎂 גיל</div>
+                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.age}</div>
+                      </div>
+                      <div className="bg-white/10 rounded-xl p-5">
+                        <div className="text-slate-400 text-sm mb-1">📱 נייד</div>
+                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.phone}</div>
+                      </div>
+                      <div className="bg-white/10 rounded-xl p-5">
+                        <div className="text-slate-400 text-sm mb-1">⏰ ניסיון</div>
+                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.yearsExperience} שנים</div>
+                      </div>
+                    </div>
+
+                    {/* תגיות חמות */}
+                    <div>
+                      <div className="text-slate-400 mb-4 text-lg">🔥 תגיות חמות (Skills):</div>
+                      <div className="flex flex-wrap gap-3">
+                        {dualLayerResult.candidateCard.hotTags.map((tag, i) => (
+                          <span key={i} className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-bold text-lg shadow-lg">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* המשרה הנבחרת */}
+                  {dualLayerResult.bestMatch && (
+                    <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                      {/* כותרת המשרה */}
+                      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-8 text-white">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-teal-200 mb-2">🎯 המשרה הנבחרת:</div>
+                            <h4 className="text-4xl font-black">{dualLayerResult.bestMatch.positionTitle}</h4>
+                            <p className="text-teal-100 text-xl mt-2">🏢 {dualLayerResult.bestMatch.employerName} | 📍 {dualLayerResult.bestMatch.location}</p>
+                            {dualLayerResult.bestMatch.matchReason && (
+                              <p className="text-teal-200 mt-3 bg-white/10 rounded-lg px-4 py-2 inline-block">
+                                ✨ {dualLayerResult.bestMatch.matchReason}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <div className="text-7xl font-black">{dualLayerResult.bestMatch.weightedScore}%</div>
+                            <div className="text-teal-200 text-lg">ציון התאמה משוקלל</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ניתוח התאמה כפול */}
+                      <div className="p-8">
+                        <h5 className="text-2xl font-black text-slate-800 mb-6">⚖️ ניתוח התאמה כפול (Dual Analysis)</h5>
+                        
+                        <div className="grid grid-cols-2 gap-8 mb-8">
+                          {/* התאמה טכנית */}
+                          <div className="bg-blue-50 rounded-2xl p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <span className="text-3xl">🔧</span>
+                              <div>
+                                <h6 className="text-xl font-bold text-blue-800">התאמה טכנית (Tags)</h6>
+                                <div className={`text-3xl font-black ${dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score >= 70 ? 'text-green-600' : dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
+                                  {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score}%
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <div>
+                                <div className="text-sm text-blue-600 mb-1 font-medium">✅ מתאים:</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.matched.map((m, i) => (
+                                    <span key={i} className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">{m}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-blue-600 mb-1 font-medium">❌ חסר:</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.missing.map((m, i) => (
+                                    <span key={i} className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">{m}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-blue-700 text-sm mt-3">{dualLayerResult.bestMatch.dualAnalysis.technicalMatch.explanation}</p>
+                            </div>
+                          </div>
+
+                          {/* התאמה לוגית AI */}
+                          <div className="bg-purple-50 rounded-2xl p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <span className="text-3xl">🧠</span>
+                              <div>
+                                <h6 className="text-xl font-bold text-purple-800">התאמה לוגית (AI Logic)</h6>
+                                <div className={`text-3xl font-black ${dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score >= 70 ? 'text-green-600' : dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
+                                  {dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score}%
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <p className="text-purple-700">{dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.explanation}</p>
+                              <div className="bg-purple-100 rounded-xl p-4 text-purple-800 text-sm">
+                                <strong>הערכה מעמיקה:</strong> {dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.relevanceAssessment}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* מאזן הכוחות 5 מול 5 */}
+                        <h5 className="text-2xl font-black text-slate-800 mb-6">⚔️ מאזן הכוחות (5 מול 5)</h5>
+                        
+                        <div className="grid grid-cols-2 gap-8 mb-8">
+                          {/* יתרונות */}
+                          <div className="bg-green-50 rounded-2xl p-6">
+                            <h6 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
+                              <span className="text-2xl">✅</span> למה מתאים (Pros)
+                            </h6>
+                            <ul className="space-y-3">
+                              {dualLayerResult.bestMatch.prosCons.pros.map((pro, i) => (
+                                <li key={i} className="flex items-start gap-3 text-green-700">
+                                  <span className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
+                                  <span>{pro}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* חסרונות/סיכונים */}
+                          <div className="bg-red-50 rounded-2xl p-6">
+                            <h6 className="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
+                              <span className="text-2xl">⚠️</span> חסרונות/סיכונים (Cons)
+                            </h6>
+                            <ul className="space-y-3">
+                              {dualLayerResult.bestMatch.prosCons.cons.map((con, i) => (
+                                <li key={i} className="flex items-start gap-3 text-red-700">
+                                  <span className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
+                                  <span>{con}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
+                        {/* שורה תחתונה - המלצה */}
+                        <div className={`rounded-2xl p-8 ${dualLayerResult.bestMatch.recommendation.shouldProceed ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-orange-500 to-red-500'} text-white`}>
+                          <div className="flex items-center gap-4 mb-4">
+                            <span className="text-5xl">{dualLayerResult.bestMatch.recommendation.shouldProceed ? '✅' : '⚠️'}</span>
+                            <div>
+                              <h6 className="text-2xl font-black">שורה תחתונה</h6>
+                              <p className="text-xl opacity-90">
+                                המלצה: {dualLayerResult.bestMatch.recommendation.shouldProceed ? 'להעביר לשלב הבא!' : 'לשקול בזהירות'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="bg-white/20 rounded-xl p-5">
+                            <p className="text-lg leading-relaxed">{dualLayerResult.bestMatch.recommendation.summaryForEmployer}</p>
+                          </div>
+                          
+                          {/* כפתור שליחה למעסיק */}
+                          <div className="mt-6 flex gap-4">
+                            <a
+                              href={`mailto:?subject=מועמד מתאים: ${dualLayerResult.candidateCard.fullName} - ${dualLayerResult.bestMatch.positionTitle}&body=${encodeURIComponent(`שלום,\n\nרציתי להציג בפניכם מועמד מתאים למשרה:\n\n📋 פרטי המועמד:\n• שם: ${dualLayerResult.candidateCard.fullName}\n• טלפון: ${dualLayerResult.candidateCard.phone}\n• עיר: ${dualLayerResult.candidateCard.city}\n• ניסיון: ${dualLayerResult.candidateCard.yearsExperience} שנים\n• כישורים: ${dualLayerResult.candidateCard.hotTags.join(', ')}\n\n🎯 ציון התאמה: ${dualLayerResult.bestMatch.weightedScore}%\n\n📝 סיכום:\n${dualLayerResult.bestMatch.recommendation.summaryForEmployer}\n\nבברכה,\nטוונטי טו ג'ובס`)}`}
+                              className="flex-1 py-4 bg-white hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-lg text-center transition-all flex items-center justify-center gap-2"
+                            >
+                              <span className="text-2xl">📧</span> שלח למעסיק במייל
+                            </a>
+                            {dualLayerResult.candidateCard.phone && (
+                              <a
+                                href={getWhatsAppLink(dualLayerResult.candidateCard.phone, `שלום ${dualLayerResult.candidateCard.fullName}! 👋\n\nקיבלתי את קורות החיים שלך ומצאתי משרה שיכולה להתאים לך מאוד:\n\n🎯 ${dualLayerResult.bestMatch.positionTitle}\n🏢 ${dualLayerResult.bestMatch.employerName}\n📍 ${dualLayerResult.bestMatch.location}\n\nהציון שלך במערכת: ${dualLayerResult.bestMatch.weightedScore}%! 🌟\n\nאשמח לספר לך עוד ולתאם ראיון.\n\nטוונטי טו ג'ובס 🚀`)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 py-4 bg-green-400 hover:bg-green-300 text-green-900 rounded-xl font-bold text-lg text-center transition-all flex items-center justify-center gap-2"
+                              >
+                                <span className="text-2xl">💬</span> הודע למועמד בוואטסאפ
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* משרות מתאימות נוספות */}
+                  {dualLayerResult.topMatches && dualLayerResult.topMatches.length > 0 && (
+                    <div className="bg-slate-100 rounded-3xl p-8">
+                      <h5 className="text-xl font-bold text-slate-700 mb-4">📋 משרות מתאימות נוספות:</h5>
+                      <div className="grid grid-cols-3 gap-4">
+                        {dualLayerResult.topMatches.filter(m => m.positionId !== dualLayerResult.bestMatch?.positionId).slice(0, 3).map((match, i) => (
+                          <div key={i} className="bg-white rounded-xl p-5 shadow">
+                            <div className="text-2xl font-black text-teal-600 mb-2">{match.score}%</div>
+                            <div className="font-bold text-slate-800">{match.positionTitle}</div>
+                            <div className="text-sm text-slate-500">{match.employerName} | {match.location}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Matches - עד 15 משרות */}
               {matches.length > 0 && (
                 <div className="bg-white rounded-3xl shadow-xl p-10">
@@ -1134,7 +1519,7 @@ yossi@email.com
                       🎯 {matches.length >= 15 ? '15 המשרות המתאימות ביותר' : `משרות מתאימות (${matches.length})`}
                     </h2>
                     {candidate?.city && (
-                      <span className="bg-blue-100 text-blue-700 px-6 py-3 rounded-xl font-bold text-lg">
+                      <span className="bg-teal-100 text-teal-700 px-6 py-3 rounded-xl font-bold text-lg">
                         📍 לפי מגורים: {candidate.city}
                       </span>
                     )}
@@ -1146,9 +1531,9 @@ yossi@email.com
                         key={m.job.id}
                         className={`p-8 rounded-2xl border-3 transition-all hover:shadow-lg ${
                           i === 0 ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-400 ring-4 ring-green-100' :
-                          i < 3 && m.score >= 70 ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400' :
+                          i < 3 && m.score >= 70 ? 'bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-400' :
                           m.score >= 60 ? 'bg-green-50 border-green-300' :
-                          m.score >= 50 ? 'bg-blue-50 border-blue-300' :
+                          m.score >= 50 ? 'bg-teal-50 border-teal-300' :
                           'bg-slate-50 border-slate-200'
                         }`}
                       >
@@ -1161,7 +1546,7 @@ yossi@email.com
                                 </span>
                               )}
                               {i === 1 && m.score >= 60 && (
-                                <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-lg px-5 py-2 rounded-full font-bold">
+                                <span className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-lg px-5 py-2 rounded-full font-bold">
                                   🥈 מקום שני
                                 </span>
                               )}
@@ -1171,7 +1556,7 @@ yossi@email.com
                                 </span>
                               )}
                               {i > 2 && i < 5 && m.score >= 50 && (
-                                <span className="bg-blue-600 text-white text-lg px-5 py-2 rounded-full font-bold">
+                                <span className="bg-teal-600 text-white text-lg px-5 py-2 rounded-full font-bold">
                                   ⭐ מומלץ
                                 </span>
                               )}
@@ -1194,7 +1579,7 @@ yossi@email.com
                           </div>
                           <div className={`text-center px-8 py-6 rounded-2xl text-white min-w-[130px] shadow-xl ${
                             i === 0 ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
-                            m.score >= 60 ? 'bg-green-600' : m.score >= 40 ? 'bg-blue-600' : 'bg-slate-500'
+                            m.score >= 60 ? 'bg-green-600' : m.score >= 40 ? 'bg-teal-600' : 'bg-slate-500'
                           }`}>
                             <div className="text-5xl font-black">{m.score}%</div>
                             <div className="text-lg opacity-80">התאמה</div>
@@ -1205,9 +1590,9 @@ yossi@email.com
                   </div>
 
                   {matches.length > 15 && (
-                    <div className="mt-8 text-center bg-blue-50 rounded-2xl p-6">
-                      <p className="text-blue-700 text-xl font-bold">📋 יש עוד {matches.length - 15} משרות מתאימות במערכת!</p>
-                      <p className="text-blue-500 text-lg mt-2">עבור ללשונית "משרות" לראות את כל המשרות</p>
+                    <div className="mt-8 text-center bg-teal-50 rounded-2xl p-6">
+                      <p className="text-teal-700 text-xl font-bold">📋 יש עוד {matches.length - 15} משרות מתאימות במערכת!</p>
+                      <p className="text-teal-500 text-lg mt-2">עבור ללשונית "משרות" לראות את כל המשרות</p>
                     </div>
                   )}
                 </div>
@@ -1369,7 +1754,7 @@ yossi@email.com
                         </a>
                         <a
                           href={getEmailLink(job.employer.email, `בנוגע למשרה: ${job.title}`)}
-                          className="flex-1 bg-blue-500 text-white text-center py-3 rounded-lg font-bold hover:bg-blue-600"
+                          className="flex-1 bg-teal-500 text-white text-center py-3 rounded-lg font-bold hover:bg-teal-600"
                         >
                           📧 מייל
                         </a>
@@ -1388,7 +1773,7 @@ yossi@email.com
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="🔍 חיפוש לפי תפקיד או מיקום..."
-                  className="flex-1 px-8 py-6 border-2 border-slate-200 rounded-2xl text-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="flex-1 px-8 py-6 border-2 border-slate-200 rounded-2xl text-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
                 />
                 <div className="flex gap-3">
                   {regions.map(r => (
@@ -1396,7 +1781,7 @@ yossi@email.com
                       key={r.id}
                       onClick={() => setRegion(r.id)}
                       className={`px-6 py-4 rounded-xl font-bold text-lg transition-all ${
-                        region === r.id ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        region === r.id ? 'bg-teal-600 text-white shadow-lg' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                     >
                       {r.name}
@@ -1422,7 +1807,7 @@ yossi@email.com
                   <p className="text-slate-500 text-lg mb-4">{job.client}</p>
                   <div className="flex flex-wrap gap-3 mb-5">
                     <span className="bg-slate-100 px-5 py-3 rounded-xl text-slate-700 text-lg">📍 {job.location}</span>
-                    {job.jobCode && <span className="bg-blue-100 text-blue-700 px-5 py-3 rounded-xl text-lg">{job.jobCode}</span>}
+                    {job.jobCode && <span className="bg-teal-100 text-teal-700 px-5 py-3 rounded-xl text-lg">{job.jobCode}</span>}
                     {job.branchType && (
                       <span className={`px-5 py-3 rounded-xl text-lg ${job.branchType === 'continuous' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
                         {job.branchType === 'continuous' ? 'רצוף' : 'מפוצל'}
@@ -1511,19 +1896,46 @@ yossi@email.com
                 </div>
                 <div className="flex gap-4">
                   <button
-                    onClick={() => {
-                      if (!newEmployer.name || !newEmployer.company || !newEmployer.email || !newEmployer.phone) {
-                        showToast('נא למלא את כל השדות הנדרשים');
+                    onClick={async () => {
+                      if (!newEmployer.name || !newEmployer.company || !newEmployer.email) {
+                        showToast('נא למלא שם, חברה ואימייל');
                         return;
                       }
-                      const employer: Employer = {
-                        id: Date.now().toString(),
-                        ...newEmployer
-                      };
-                      setEmployers([employer, ...employers]);
-                      setNewEmployer({ name: '', email: '', phone: '', company: '', notes: '' });
-                      setShowAddEmployer(false);
-                      showToast(`✓ המעסיק "${employer.company}" נוסף בהצלחה`);
+                      try {
+                        // Save to database
+                        const res = await fetch('/api/employers', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            name: newEmployer.company,
+                            email: newEmployer.email,
+                            phone: newEmployer.phone,
+                            description: `${newEmployer.name}${newEmployer.notes ? ' - ' + newEmployer.notes : ''}`
+                          })
+                        });
+                        
+                        if (res.ok) {
+                          const savedEmployer = await res.json();
+                          // Add to local state
+                          const employer: Employer = {
+                            id: savedEmployer.id,
+                            name: newEmployer.name,
+                            email: newEmployer.email,
+                            phone: newEmployer.phone,
+                            company: newEmployer.company,
+                            notes: newEmployer.notes
+                          };
+                          setEmployers([employer, ...employers]);
+                          setNewEmployer({ name: '', email: '', phone: '', company: '', notes: '' });
+                          setShowAddEmployer(false);
+                          showToast(`✓ המעסיק "${employer.company}" נשמר במערכת בהצלחה`);
+                        } else {
+                          const error = await res.json();
+                          showToast(`❌ שגיאה: ${error.error || 'לא ניתן לשמור'}`);
+                        }
+                      } catch (e) {
+                        showToast('❌ שגיאה בשמירת המעסיק');
+                      }
                     }}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-10 py-4 rounded-xl font-bold text-lg"
                   >
@@ -1576,7 +1988,7 @@ yossi@email.com
                     </a>
                     <a
                       href={getEmailLink(emp.email)}
-                      className="flex-1 bg-blue-500 text-white text-center py-3 rounded-xl font-bold hover:bg-blue-600 transition-all"
+                      className="flex-1 bg-teal-500 text-white text-center py-3 rounded-xl font-bold hover:bg-teal-600 transition-all"
                     >
                       📧 מייל
                     </a>
@@ -1618,7 +2030,7 @@ yossi@email.com
                   <div className="space-y-4">
                     {BANKING_GENERAL_REQUIREMENTS.teller.requirements.map((r, i) => (
                       <div key={i} className="bg-slate-50 p-5 rounded-xl flex items-center gap-4">
-                        <span className="text-blue-600 text-xl">✓</span> <span className="text-lg">{r}</span>
+                        <span className="text-teal-600 text-xl">✓</span> <span className="text-lg">{r}</span>
                       </div>
                     ))}
                   </div>
@@ -1647,7 +2059,7 @@ yossi@email.com
                   <div className="space-y-4">
                     {BANKING_GENERAL_REQUIREMENTS.banker.requirements.map((r, i) => (
                       <div key={i} className="bg-slate-50 p-5 rounded-xl flex items-center gap-4">
-                        <span className="text-blue-600 text-xl">✓</span> <span className="text-lg">{r}</span>
+                        <span className="text-teal-600 text-xl">✓</span> <span className="text-lg">{r}</span>
                       </div>
                     ))}
                   </div>
@@ -1673,11 +2085,11 @@ yossi@email.com
               <div className="grid grid-cols-2 gap-8">
                 <div className="bg-white/10 p-8 rounded-2xl">
                   <div className="text-slate-400 mb-3 text-lg">קו"ח לסמדר:</div>
-                  <div className="text-2xl font-mono text-blue-400">orpazsm@gmail.com</div>
+                  <div className="text-2xl font-mono text-teal-400">orpazsm@gmail.com</div>
                 </div>
                 <div className="bg-white/10 p-8 rounded-2xl">
                   <div className="text-slate-400 mb-3 text-lg">מערכת הגיוס:</div>
-                  <div className="text-2xl font-mono text-blue-400">umtb-hr@cvwebmail.com</div>
+                  <div className="text-2xl font-mono text-teal-400">umtb-hr@cvwebmail.com</div>
                 </div>
               </div>
             </div>

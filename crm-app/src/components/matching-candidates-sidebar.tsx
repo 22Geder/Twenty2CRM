@@ -21,7 +21,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Info,
-  Briefcase
+  Briefcase,
+  CheckSquare,
+  Square
 } from "lucide-react"
 import Link from "next/link"
 
@@ -78,6 +80,7 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [showScoreDetails, setShowScoreDetails] = useState<string | null>(null)
   const [sendingToEmployer, setSendingToEmployer] = useState<string | null>(null)
+  const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (positionId) {
@@ -190,15 +193,42 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
     return 'התאמה חלקית'
   }
 
+  // בחירת/ביטול בחירת מועמד
+  const toggleCandidateSelection = (candidateId: string) => {
+    const newSelected = new Set(selectedCandidates)
+    if (newSelected.has(candidateId)) {
+      newSelected.delete(candidateId)
+    } else {
+      newSelected.add(candidateId)
+    }
+    setSelectedCandidates(newSelected)
+  }
+
+  // בחר את כל המועמדים
+  const selectAllCandidates = () => {
+    setSelectedCandidates(new Set(candidates.map(c => c.id)))
+  }
+
+  // בטל את כל הבחירות
+  const deselectAllCandidates = () => {
+    setSelectedCandidates(new Set())
+  }
+
   const sendWhatsAppToAll = async () => {
-    const candidatesWithPhone = candidates.filter(c => c.phone)
+    // אם יש מועמדים נבחרים, שלח רק להם
+    const targetCandidates = selectedCandidates.size > 0 
+      ? candidates.filter(c => selectedCandidates.has(c.id))
+      : candidates
+    
+    const candidatesWithPhone = targetCandidates.filter(c => c.phone)
     
     if (candidatesWithPhone.length === 0) {
       alert("אין מועמדים עם מספר טלפון")
       return
     }
 
-    if (!confirm(`האם לשלוח SMS ל-${candidatesWithPhone.length} מועמדים?`)) {
+    const messagePrefix = selectedCandidates.size > 0 ? `(מתוך ${selectedCandidates.size} נבחרים)` : '(כל המועמדים)'
+    if (!confirm(`האם לשלוח SMS ל-${candidatesWithPhone.length} מועמדים ${messagePrefix}?`)) {
       return
     }
 
@@ -235,14 +265,20 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
   }
 
   const sendEmailToAll = async () => {
-    const candidatesWithEmail = candidates.filter(c => c.email)
+    // אם יש מועמדים נבחרים, שלח רק להם
+    const targetCandidates = selectedCandidates.size > 0 
+      ? candidates.filter(c => selectedCandidates.has(c.id))
+      : candidates
+    
+    const candidatesWithEmail = targetCandidates.filter(c => c.email)
     
     if (candidatesWithEmail.length === 0) {
       alert("אין מועמדים עם כתובת אימייל")
       return
     }
 
-    if (!confirm(`האם לשלוח מייל ל-${candidatesWithEmail.length} מועמדים?`)) {
+    const messagePrefix = selectedCandidates.size > 0 ? `(מתוך ${selectedCandidates.size} נבחרים)` : '(כל המועמדים)'
+    if (!confirm(`האם לשלוח מייל ל-${candidatesWithEmail.length} מועמדים ${messagePrefix}?`)) {
       return
     }
 
@@ -351,9 +387,38 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
             מיון חכם לפי 10 פרמטרים
         </p>
         
+        {/* כפתורי בחירה */}
+        {candidates.length > 0 && (
+          <div className="flex items-center gap-2 mt-4 mb-2">
+            <Button 
+              onClick={selectAllCandidates}
+              variant="outline"
+              size="sm"
+              className="text-xs px-2 py-1 h-7"
+            >
+              <CheckSquare className="h-3 w-3 ml-1" />
+              בחר הכל
+            </Button>
+            <Button 
+              onClick={deselectAllCandidates}
+              variant="outline"
+              size="sm"
+              className="text-xs px-2 py-1 h-7"
+            >
+              <Square className="h-3 w-3 ml-1" />
+              בטל בחירה
+            </Button>
+            {selectedCandidates.size > 0 && (
+              <Badge className="bg-blue-500 text-white">
+                {selectedCandidates.size} נבחרו
+              </Badge>
+            )}
+          </div>
+        )}
+        
         {/* כפתורי שליחה המונית */}
         {candidates.length > 0 && (
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2">
             <Button 
               onClick={sendWhatsAppToAll}
               variant="outline"
@@ -369,7 +434,7 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
               ) : (
                 <>
                   <Send className="h-4 w-4 ml-2" />
-                  שלח SMS לכולם
+                  {selectedCandidates.size > 0 ? `SMS (${selectedCandidates.size})` : 'SMS לכולם'}
                 </>
               )}
             </Button>
@@ -388,7 +453,7 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
               ) : (
                 <>
                   <Mail className="h-4 w-4 ml-2" />
-                  שלח מייל לכולם
+                  {selectedCandidates.size > 0 ? `מייל (${selectedCandidates.size})` : 'מייל לכולם'}
                 </>
               )}
             </Button>
@@ -427,57 +492,77 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
         ) : (
           <div className="divide-y">
             {candidates.map((candidate) => (
-              <div key={candidate.id} className="p-4 hover:bg-gray-50 transition-colors">
+              <div 
+                key={candidate.id} 
+                className={`p-4 transition-colors ${selectedCandidates.has(candidate.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}
+              >
                 <div className="space-y-3">
-                  {/* Header with Match Score */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <Link 
-                        href={`/dashboard/candidates/${candidate.id}`}
-                        className="font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 text-base"
-                      >
-                        {candidate.name}
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Link>
-                      {candidate.currentTitle && (
-                        <p className="text-sm text-gray-600 mt-0.5 font-medium">
-                          {candidate.currentTitle}
-                        </p>
+                  {/* Checkbox and Header with Match Score */}
+                  <div className="flex items-start gap-3">
+                    {/* Checkbox */}
+                    <button 
+                      onClick={() => toggleCandidateSelection(candidate.id)}
+                      className={`mt-1 flex-shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        selectedCandidates.has(candidate.id) 
+                          ? 'bg-blue-500 border-blue-500 text-white' 
+                          : 'border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {selectedCandidates.has(candidate.id) && (
+                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
                       )}
-                      {candidate.yearsOfExperience && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          ניסיון: {candidate.yearsOfExperience} שנים
-                        </p>
+                    </button>
+                    
+                    <div className="flex items-start justify-between gap-2 flex-1">
+                      <div className="flex-1 min-w-0">
+                        <Link 
+                          href={`/dashboard/candidates/${candidate.id}`}
+                          className="font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 text-base"
+                        >
+                          {candidate.name}
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                        {candidate.currentTitle && (
+                          <p className="text-sm text-gray-600 mt-0.5 font-medium">
+                            {candidate.currentTitle}
+                          </p>
+                        )}
+                        {candidate.yearsOfExperience && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            ניסיון: {candidate.yearsOfExperience} שנים
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Match Score Badge - גדול וברור */}
+                      {candidate.matchScore > 0 && (
+                        <div className="flex flex-col items-center">
+                          <div 
+                            className={`${getMatchScoreColor(candidate.matchScore)} rounded-lg px-3 py-2 text-center border-2 min-w-[70px]`}
+                          >
+                            <div className="text-2xl font-bold leading-none">
+                              {candidate.matchScore}%
+                            </div>
+                            <div className="text-[10px] font-medium mt-0.5">
+                              התאמה
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs mt-1 px-1"
+                            onClick={() => setShowScoreDetails(
+                              showScoreDetails === candidate.id ? null : candidate.id
+                            )}
+                          >
+                            <Info className="h-3 w-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    
-                    {/* Match Score Badge - גדול וברור */}
-                    {candidate.matchScore > 0 && (
-                      <div className="flex flex-col items-center">
-                        <div 
-                          className={`${getMatchScoreColor(candidate.matchScore)} rounded-lg px-3 py-2 text-center border-2 min-w-[70px]`}
-                        >
-                          <div className="text-2xl font-bold leading-none">
-                            {candidate.matchScore}%
-                          </div>
-                          <div className="text-[10px] font-medium mt-0.5">
-                            התאמה
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 text-xs mt-1 px-1"
-                          onClick={() => setShowScoreDetails(
-                            showScoreDetails === candidate.id ? null : candidate.id
-                          )}
-                        >
-                          <Info className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
-
                   {/* Score Breakdown - פירוט הציון */}
                   {showScoreDetails === candidate.id && candidate.scoreBreakdown && (
                     <div className="bg-blue-50 rounded-lg p-3 text-xs space-y-1">

@@ -38,12 +38,12 @@ const TAGS = [
 ]
 
 const DEPARTMENTS = [
-  { name: 'הייטק', code: 'TECH', description: 'משרות פיתוח, מערכות מידע ו-IT' },
-  { name: 'בנקאות', code: 'BANK', description: 'טלרים, בנקאים, משכנתאות' },
-  { name: 'לוגיסטיקה', code: 'LOG', description: 'מחסנים, הפצה, נהגים, מלגזנים' },
-  { name: 'מכירות', code: 'SALES', description: 'מכירות שטח, טלמרקטינג, חנויות' },
-  { name: 'שירות לקוחות', code: 'CS', description: 'מוקדים, תמיכה טכנית' },
-  { name: 'רכב', code: 'AUTO', description: 'אולמות תצוגה, יועצי שירות' },
+  { name: 'הייטק', description: 'משרות פיתוח, מערכות מידע ו-IT' },
+  { name: 'בנקאות', description: 'טלרים, בנקאים, משכנתאות' },
+  { name: 'לוגיסטיקה', description: 'מחסנים, הפצה, נהגים, מלגזנים' },
+  { name: 'מכירות', description: 'מכירות שטח, טלמרקטינג, חנויות' },
+  { name: 'שירות לקוחות', description: 'מוקדים, תמיכה טכנית' },
+  { name: 'רכב', description: 'אולמות תצוגה, יועצי שירות' },
 ]
 
 // All positions organized by employer
@@ -216,7 +216,7 @@ export async function GET() {
     // 3. Create departments
     for (const dept of DEPARTMENTS) {
       await prisma.department.upsert({
-        where: { code: dept.code },
+        where: { name: dept.name },
         update: dept,
         create: dept,
       })
@@ -251,7 +251,7 @@ export async function GET() {
             data: {
               ...position,
               employerId: employer.id,
-              status: 'ACTIVE'
+              active: true
             },
           })
           totalPositions++

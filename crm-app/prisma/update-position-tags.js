@@ -2,10 +2,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
- * עדכון תגיות (tags) למשרות רכב - תוספת תגיות מכירות בעברית
+ * עדכון keywords למשרות רכב - תוספת תגיות מכירות בעברית
+ * שדה tags הוא relation לטבלה נפרדת, לכן משתמשים ב-keywords שזה JSON string
  */
 async function main() {
-  console.log('🚗 מעדכן תגיות מכירות למשרות רכב...\n');
+  console.log('🚗 מעדכן keywords למשרות רכב...\n');
   
   // משרות רכב שצריכות תגיות מכירות
   const automotivePositions = await prisma.position.findMany({
@@ -38,14 +39,15 @@ async function main() {
   console.log(`📦 נמצאו ${automotivePositions.length} משרות רכב\n`);
   
   // תגיות מכירה בעברית
-  const salesTags = [
+  const salesKeywords = [
     'מכירות', 'איש מכירות', 'אשת מכירות', 'נציג מכירות', 'סוכן מכירות',
     'מכירות פרונטליות', 'יעדים', 'עמלות', 'בונוסים', 'סגירת עסקאות',
-    'משא ומתן', 'שכנוע', 'יחסי לקוחות', 'שירות לקוחות'
+    'משא ומתן', 'שכנוע', 'יחסי לקוחות', 'שירות לקוחות', 'ניסיון במכירות',
+    'יכולת מכירה', 'דרייב מכירות', 'מכירן', 'מכירנית'
   ];
   
   // תגיות רכב בעברית
-  const automotiveTags = [
+  const automotiveKeywords = [
     'רכב', 'עולם הרכב', 'אולם תצוגה', 'סוכנות רכב',
     'טרייד אין', 'מימון רכב', 'ליסינג', 'נסיעת מבחן', 'מסירת רכב'
   ];
@@ -54,12 +56,12 @@ async function main() {
   
   for (const position of automotivePositions) {
     try {
-      // מפענחים את התגיות הקיימות
-      let currentTags = [];
+      // מפענחים את ה-keywords הקיימים
+      let currentKeywords = [];
       try {
-        currentTags = position.tags ? JSON.parse(position.tags) : [];
+        currentKeywords = position.keywords ? JSON.parse(position.keywords) : [];
       } catch {
-        currentTags = [];
+        currentKeywords = [];
       }
       
       // בודקים אם זו משרת מכירות
@@ -77,25 +79,22 @@ async function main() {
       // בודקים אם זו משרה ניהולית
       const isManagement = position.title.includes('מנהל');
       
-      // מוסיפים תגיות מתאימות
-      const newTags = new Set(currentTags);
+      // מוסיפים keywords מתאימים
+      const newKeywords = new Set(currentKeywords);
       
-      // תגיות רכב לכולם
-      automotiveTags.forEach(tag => newTags.add(tag));
+      // keywords רכב לכולם
+      automotiveKeywords.forEach(kw => newKeywords.add(kw));
       
       if (isSales || isManagement) {
-        // תגיות מכירה
-        salesTags.forEach(tag => newTags.add(tag));
-        newTags.add('ניסיון במכירות');
-        newTags.add('יכולת מכירה');
-        newTags.add('דרייב מכירות');
+        // keywords מכירה
+        salesKeywords.forEach(kw => newKeywords.add(kw));
       }
       
       if (isReception) {
-        newTags.add('קבלת לקוחות');
-        newTags.add('שירות לקוחות');
-        newTags.add('ייצוגיות');
-        newTags.add('יחסי ציבור');
+        newKeywords.add('קבלת לקוחות');
+        newKeywords.add('שירות לקוחות');
+        newKeywords.add('ייצוגיות');
+        newKeywords.add('יחסי ציבור');
       }
       
       // מוסיפים את המותג הרלוונטי
@@ -103,29 +102,29 @@ async function main() {
       const employerName = position.employer?.name || '';
       
       if (titleLower.includes('geely') || titleLower.includes("ג'ילי") || employerName.includes('UNION')) {
-        newTags.add('GEELY');
-        newTags.add("ג'ילי");
-        newTags.add('יוניון');
+        newKeywords.add('GEELY');
+        newKeywords.add("ג'ילי");
+        newKeywords.add('יוניון');
       }
       if (titleLower.includes('לקסוס') || titleLower.includes('lexus')) {
-        newTags.add('לקסוס');
-        newTags.add('פרימיום');
+        newKeywords.add('לקסוס');
+        newKeywords.add('פרימיום');
       }
       if (titleLower.includes('טויוטה') || titleLower.includes('toyota')) {
-        newTags.add('טויוטה');
+        newKeywords.add('טויוטה');
       }
       if (titleLower.includes('gac') || employerName.includes('GAC')) {
-        newTags.add('GAC');
-        newTags.add('גאק');
+        newKeywords.add('GAC');
+        newKeywords.add('גאק');
       }
       
-      // עדכון
+      // עדכון keywords
       await prisma.position.update({
         where: { id: position.id },
-        data: { tags: JSON.stringify([...newTags]) }
+        data: { keywords: JSON.stringify([...newKeywords]) }
       });
       
-      console.log(`✅ ${position.employer?.name || 'לא ידוע'} | ${position.title} | ${newTags.size} תגיות`);
+      console.log(`✅ ${position.employer?.name || 'לא ידוע'} | ${position.title} | ${newKeywords.size} keywords`);
       updated++;
       
     } catch (error) {
@@ -133,7 +132,7 @@ async function main() {
     }
   }
   
-  console.log(`\n🎉 עודכנו ${updated} משרות עם תגיות מכירות בעברית!`);
+  console.log(`\n🎉 עודכנו ${updated} משרות עם keywords מכירות בעברית!`);
 }
 
 main()

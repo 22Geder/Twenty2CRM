@@ -169,14 +169,43 @@ async function analyzeMatchV3(candidate: any, position: any, candidateCity: stri
   // בדיקת התאמת מיקום - עם מאגר כל היישובים בישראל!
   const locationMatch = !!(candidateCity && positionLocality && areLocationsNearby(candidateCity, positionLocality))
 
-  // הכנת טקסט לAI - קצר יותר לזריזות
-  const candidateText = `${candidate.name}|${candidate.currentTitle||''}|${candidate.city||''}|${candidate.yearsOfExperience||0}שנים|${candidate.skills||''}`
-  const positionText = `${position.title}|${position.employer?.name||''}|${position.location||''}|${position.tags?.map((t:any)=>t.name).join(',')}`
+  // 🔥 הכנת מידע מלא על המועמד כולל קורות חיים!
+  const resumeText = candidate.resume || ''
+  const hasResume = resumeText.trim().length > 50
+  const candidateTags = candidate.tags?.map((t: any) => t.name).join(', ') || ''
+  const positionTags = position.tags?.map((t: any) => t.name).join(', ') || ''
 
-  const prompt = `התאמת מועמד למשרה. החזר JSON בלבד.
-מועמד: ${candidateText}
-משרה: ${positionText}
-{"score":0-100,"strengths":["יתרון"],"weaknesses":["חיסרון"],"recommendation":"קצר","shouldProceed":true/false}`
+  const prompt = `אתה מגייס מקצועי. נתח התאמה ספציפית.
+
+👤 מועמד: ${candidate.name}
+• תפקיד נוכחי: ${candidate.currentTitle || 'לא צוין'}
+• חברה: ${candidate.currentCompany || 'לא צוין'}
+• עיר: ${candidate.city || 'לא צוין'}
+• ניסיון: ${candidate.yearsOfExperience || 'לא צוין'} שנים
+• כישורים: ${candidate.skills || 'לא צוין'}
+• תגיות: ${candidateTags || 'לא צוין'}
+${hasResume ? `📄 קורות חיים:\n${resumeText.substring(0, 2000)}` : '❌ אין קורות חיים'}
+
+💼 משרה: ${position.title}
+• מעסיק: ${position.employer?.name || 'לא צוין'}
+• מיקום: ${position.location || 'לא צוין'}
+• דרישות: ${position.requirements || 'לא צוין'}
+• תגיות: ${positionTags || 'לא צוין'}
+
+התאמת מיקום: ${locationMatch ? '✅ קרוב' : '❌ מרוחק'}
+
+החזר JSON:
+{
+  "score": ציון 0-100 מדויק,
+  "strengths": ["יתרון ספציפי מהמידע", "יתרון ספציפי מהמידע"],
+  "weaknesses": ["חיסרון ספציפי", "חיסרון ספציפי"],
+  "recommendation": "המלצה קצרה",
+  "shouldProceed": true/false
+}
+
+כללים: 1) אל תמציא - אם אין מידע, ציין זאת 2) ציון נמוך אם אין קורות חיים 3) בדוק התאמה אמיתית
+
+JSON בלבד:`
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
@@ -193,9 +222,12 @@ async function analyzeMatchV3(candidate: any, position: any, candidateCity: stri
     // חישוב ציון סופי עם בונוס מיקום
     let finalScore = analysis.score || 0
     if (locationMatch) {
-      finalScore = Math.min(100, finalScore + 25)
-    } else if (analysis.locationBonus) {
-      finalScore = Math.min(100, finalScore + analysis.locationBonus)
+      finalScore = Math.min(100, finalScore + 15)
+    }
+
+    // הפחתת ציון אם אין קורות חיים
+    if (!hasResume) {
+      finalScore = Math.max(30, finalScore - 20)
     }
 
     return {

@@ -50,12 +50,16 @@ interface EmailPreview {
     id: string
     title: string
     location: string | null
+    contactEmail?: string | null     // 📧 מייל ספציפי למשרה
+    contactName?: string | null       // 📧 שם איש קשר
   }
   employer: {
     id: string
     name: string
-    email: string
+    email: string | null
   }
+  targetEmail?: string    // 📧 המייל שנבחר לשליחה
+  targetName?: string     // 📧 השם שנבחר לפניה
 }
 
 // 📧 ממשק למיילים קודמים
@@ -141,6 +145,14 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   const [sendingEmail, setSendingEmail] = useState(false)
   const [previousEmails, setPreviousEmails] = useState<PreviousEmail[]>([])
   const [showPreviousEmails, setShowPreviousEmails] = useState(false)
+  
+  // 📧 State לבחירת מייל יעד
+  const [selectedEmail, setSelectedEmail] = useState("")
+  const [selectedName, setSelectedName] = useState("")
+  const [customEmail, setCustomEmail] = useState("")
+  const [customName, setCustomName] = useState("")
+  const [saveEmailToPosition, setSaveEmailToPosition] = useState(true)
+  const [showEmailSelector, setShowEmailSelector] = useState(false)
 
   // 📱 WhatsApp Helpers
   const normalizePhoneForWhatsApp = (phone: string): string => {
@@ -340,6 +352,16 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       setEditedSubject(data.preview.subject)
       setEditedPoints([...data.preview.matchingPoints])
       
+      // 📧 הגדרת המייל הנבחר - עדיפות ל-contactEmail אם קיים
+      const primaryEmail = data.preview.targetEmail || data.preview.position.contactEmail || data.preview.employer.email
+      const primaryName = data.preview.targetName || data.preview.position.contactName || data.preview.employer.name
+      setSelectedEmail(primaryEmail || '')
+      setSelectedName(primaryName || '')
+      setCustomEmail('')
+      setCustomName('')
+      setSaveEmailToPosition(true)
+      setShowEmailSelector(false)
+      
       // 📧 שמירת מיילים קודמים
       setPreviousEmails(data.previousEmails || [])
       setShowPreviousEmails(false)
@@ -357,6 +379,15 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   const sendEmailWithPreview = async () => {
     if (!emailPreview) return
 
+    // 📧 קביעת המייל הסופי לשליחה
+    const finalEmail = customEmail || selectedEmail
+    const finalName = customName || selectedName
+    
+    if (!finalEmail) {
+      alert('❌ יש לבחור או להזין מייל יעד')
+      return
+    }
+
     try {
       setSendingEmail(true)
       
@@ -368,6 +399,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
           positionId: emailPreview.position.id,
           customSubject: editedSubject,
           customMatchingPoints: editedPoints,
+          targetEmail: finalEmail,               // 📧 המייל שנבחר
+          targetName: finalName,                 // 📧 השם שנבחר
+          saveEmailToPosition: saveEmailToPosition && (customEmail || selectedEmail !== emailPreview.position.contactEmail),
         }),
       })
 
@@ -377,7 +411,11 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
         throw new Error(data.error || "Failed to send candidate")
       }
 
-      alert(`✅ המייל נשלח בהצלחה!\n\nנשלח ל: ${data.employerEmail}`)
+      let successMsg = `✅ המייל נשלח בהצלחה!\n\nנשלח ל: ${data.employerEmail}`
+      if (data.emailSavedToPosition) {
+        successMsg += '\n\n💾 המייל נשמר למשרה זו'
+      }
+      alert(successMsg)
       setShowEmailModal(false)
       setEmailPreview(null)
       await fetchMatchingPositions()
@@ -746,12 +784,126 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* פרטי הנמען */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm text-gray-500 mb-1">נשלח אל:</div>
-                <div className="font-medium text-gray-800">
-                  {emailPreview.employer.name} ({emailPreview.employer.email})
+              {/* 📧 בחירת מייל יעד */}
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    📧 מייל לשליחה:
+                  </div>
+                  <button
+                    onClick={() => setShowEmailSelector(!showEmailSelector)}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {showEmailSelector ? 'סגור' : 'שנה מייל'}
+                  </button>
                 </div>
+                
+                {/* מייל נבחר נוכחי */}
+                <div className="font-medium text-gray-800">
+                  {selectedName && <span>{selectedName} - </span>}
+                  <span className="text-blue-700">{customEmail || selectedEmail}</span>
+                </div>
+                
+                {/* בוחר מייל מורחב */}
+                {showEmailSelector && (
+                  <div className="mt-3 space-y-3 pt-3 border-t border-blue-200">
+                    {/* אפשרויות מייל קיימות */}
+                    <div className="space-y-2">
+                      {/* מייל איש קשר של המשרה */}
+                      {emailPreview.position.contactEmail && (
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-100 cursor-pointer transition">
+                          <input
+                            type="radio"
+                            name="emailOption"
+                            checked={selectedEmail === emailPreview.position.contactEmail && !customEmail}
+                            onChange={() => {
+                              setSelectedEmail(emailPreview.position.contactEmail || '')
+                              setSelectedName(emailPreview.position.contactName || '')
+                              setCustomEmail('')
+                              setCustomName('')
+                            }}
+                            className="accent-blue-600"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-800">
+                              {emailPreview.position.contactName || 'איש קשר'} 
+                              <Badge variant="secondary" className="mr-2 bg-green-100 text-green-700 text-xs">נשמר למשרה</Badge>
+                            </div>
+                            <div className="text-xs text-gray-500">{emailPreview.position.contactEmail}</div>
+                          </div>
+                        </label>
+                      )}
+                      
+                      {/* מייל המעסיק */}
+                      {emailPreview.employer.email && emailPreview.employer.email !== emailPreview.position.contactEmail && (
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-100 cursor-pointer transition">
+                          <input
+                            type="radio"
+                            name="emailOption"
+                            checked={selectedEmail === emailPreview.employer.email && !customEmail}
+                            onChange={() => {
+                              setSelectedEmail(emailPreview.employer.email || '')
+                              setSelectedName(emailPreview.employer.name)
+                              setCustomEmail('')
+                              setCustomName('')
+                            }}
+                            className="accent-blue-600"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-800">{emailPreview.employer.name}</div>
+                            <div className="text-xs text-gray-500">{emailPreview.employer.email}</div>
+                          </div>
+                        </label>
+                      )}
+                      
+                      {/* מייל חדש/אחר */}
+                      <label className="flex items-start gap-2 p-2 rounded-lg hover:bg-blue-100 cursor-pointer transition">
+                        <input
+                          type="radio"
+                          name="emailOption"
+                          checked={!!customEmail}
+                          onChange={() => {
+                            setCustomEmail(customEmail || '')
+                          }}
+                          className="accent-blue-600 mt-1"
+                        />
+                        <div className="flex-1 space-y-2">
+                          <div className="text-sm font-medium text-gray-800">מייל אחר:</div>
+                          <Input
+                            placeholder="הזן מייל..."
+                            value={customEmail}
+                            onChange={(e) => setCustomEmail(e.target.value)}
+                            className="text-sm text-left"
+                            dir="ltr"
+                          />
+                          <Input
+                            placeholder="שם איש קשר (אופציונלי)"
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                      </label>
+                    </div>
+                    
+                    {/* שמירת המייל למשרה */}
+                    {(customEmail || selectedEmail !== emailPreview.position.contactEmail) && (
+                      <label className="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <input
+                          type="checkbox"
+                          checked={saveEmailToPosition}
+                          onChange={(e) => setSaveEmailToPosition(e.target.checked)}
+                          className="accent-yellow-600"
+                        />
+                        <span className="text-sm text-yellow-800">
+                          💾 שמור מייל זה למשרה (לשליחות עתידיות)
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                )}
+                
                 <div className="text-sm text-gray-500 mt-2">עבור המשרה:</div>
                 <div className="font-medium text-gray-800">{emailPreview.position.title}</div>
               </div>

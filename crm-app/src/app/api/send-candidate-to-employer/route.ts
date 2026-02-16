@@ -33,18 +33,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Candidate not found" }, { status: 404 })
     }
 
-    // שליפת פרטי המשרה והמעסיק
+    // שליפת פרטי המשרה והמעסיק (כולל שדות חדשים)
     const position = await prisma.position.findUnique({
       where: { id: positionId },
-      include: { employer: true, tags: true },
+      include: { 
+        employer: true, 
+        tags: true 
+      },
     })
 
     if (!position) {
       return NextResponse.json({ error: "Position not found" }, { status: 404 })
     }
 
-    if (!position.employer?.email) {
-      return NextResponse.json({ error: "Employer email not found" }, { status: 400 })
+    // בדיקה שיש לפחות מייל אחד (של המעסיק או של איש הקשר)
+    const hasEmail = position.employer?.email || (position as any).contactEmail
+    if (!hasEmail) {
+      return NextResponse.json({ error: "No email found for this position" }, { status: 400 })
     }
 
     // 📧 שליפת היסטוריית מיילים קודמים למשרה זו
@@ -57,6 +62,11 @@ export async function GET(request: NextRequest) {
     // יצירת משפטי התאמה אוטומטיים
     const matchingPoints = analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
     const emailSubject = `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
+
+    // 📧 בחירת המייל הראשי - עדיפות ל-contactEmail של המשרה
+    const positionAny = position as any
+    const primaryEmail = positionAny.contactEmail || position.employer?.email
+    const primaryName = positionAny.contactName || position.employer?.name
 
     return NextResponse.json({
       success: true,
@@ -79,12 +89,17 @@ export async function GET(request: NextRequest) {
           id: position.id,
           title: position.title,
           location: position.location,
+          contactEmail: positionAny.contactEmail,   // 📧 מייל ספציפי למשרה
+          contactName: positionAny.contactName,     // 📧 שם איש קשר
         },
         employer: {
-          id: position.employer.id,
-          name: position.employer.name,
-          email: position.employer.email,
-        }
+          id: position.employer?.id,
+          name: position.employer?.name,
+          email: position.employer?.email,      // מייל המעסיק הראשי
+        },
+        // 📧 המייל ואיש הקשר הנבחרים
+        targetEmail: primaryEmail,
+        targetName: primaryName,
       },
       // 📧 היסטוריית מיילים קודמים
       previousEmails: previousEmails.map((email: { id: string; candidateName: string; subject: string; matchingPoints: string; sentAt: Date }) => ({
@@ -264,8 +279,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // קבלת נתונים - כולל משפטי התאמה מותאמים אישית (אופציונלי)
-    const { candidateId, positionId, customMatchingPoints, customSubject } = await request.json()
+    // קבלת נתונים - כולל משפטי התאמה מותאמים אישית (אופציונלי) ומייל יעד
+    const { 
+      candidateId, 
+      positionId, 
+      customMatchingPoints, 
+      customSubject,
+      targetEmail,      // 📧 המייל שאליו לשלוח (אופציונלי)
+      targetName,       // 📧 שם איש הקשר (אופציונלי)
+      saveEmailToPosition  // 📧 האם לשמור את המייל למשרה
+    } = await request.json()
 
     if (!candidateId || !positionId) {
       return NextResponse.json(
@@ -289,7 +312,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // שליפת פרטי המשרה והמעסיק
+    // שליפת פרטי המשרה והמעסיק (כולל מייל איש קשר)
     const position = await prisma.position.findUnique({
       where: { id: positionId },
       include: {
@@ -305,11 +328,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!position.employer?.email) {
+    // 📧 קביעת המייל לשליחה - עדיפות למייל שנבחר, אחר כך contactEmail, ולבסוף מייל המעסיק
+    const positionAny = position as any
+    const emailToSend = targetEmail || positionAny.contactEmail || position.employer?.email
+    const nameToAddress = targetName || positionAny.contactName || position.employer?.name
+
+    if (!emailToSend) {
       return NextResponse.json(
-        { error: "Employer email not found" },
+        { error: "No email address available for this position" },
         { status: 400 }
       )
+    }
+
+    // 📧 אם נבחר לשמור את המייל למשרה ויש מייל חדש
+    if (saveEmailToPosition && targetEmail && targetEmail !== positionAny.contactEmail) {
+      await prisma.position.update({
+        where: { id: positionId },
+        data: {
+          contactEmail: targetEmail,
+          contactName: targetName || positionAny.contactName,
+        } as any
+      })
+      console.log(`📧 Updated position ${positionId} contactEmail to ${targetEmail}`)
     }
 
     // 🚫 בדיקה: האם המועמד עבד בחברה זו בעבר
@@ -564,7 +604,7 @@ export async function POST(request: NextRequest) {
           
           <div class="content">
             <div class="greeting">
-              שלום ${position.employer.name},
+              שלום ${nameToAddress},
             </div>
             
             <div class="intro">
@@ -668,14 +708,14 @@ export async function POST(request: NextRequest) {
       .map((point: string, i: number) => `${i + 1}. ${point}`)
       .join('\n\n')
 
-    // שליחת המייל
+    // שליחת המייל - למייל שנבחר (contactEmail או מייל המעסיק)
     const mailOptions: any = {
       from: `"${process.env.SMTP_FROM_NAME || 'צוות הגיוס'}" <${process.env.SMTP_USER}>`,
-      to: position.employer.email,
+      to: emailToSend,  // 📧 שימוש במייל היעד שנבחר
       subject: emailSubject,
       html: emailHTML,
       text: `
-שלום ${position.employer.name},
+שלום ${nameToAddress},
 
 מצאנו מועמד/ת מצוין/ת למשרה: ${position.title}
 
@@ -714,9 +754,9 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
         candidateName: candidate.name,
         positionId,
         positionTitle: position.title,
-        employerId: position.employer.id,
-        employerName: position.employer.name,
-        employerEmail: position.employer.email,
+        employerId: position.employer?.id || '',
+        employerName: position.employer?.name || nameToAddress || '',
+        employerEmail: emailToSend,  // 📧 שמירת המייל שאליו נשלח בפועל
         subject: emailSubject,
         matchingPoints: JSON.stringify(matchingPoints),
       }
@@ -724,10 +764,12 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
 
     return NextResponse.json({
       success: true,
-      message: `המייל נשלח בהצלחה ל-${position.employer.email}`,
-      employerEmail: position.employer.email,
+      message: `המייל נשלח בהצלחה ל-${emailToSend}`,
+      employerEmail: emailToSend,
+      recipientName: nameToAddress,
       candidateName: candidate.name,
-      matchingPoints
+      matchingPoints,
+      emailSavedToPosition: saveEmailToPosition && targetEmail ? true : false
     })
 
   } catch (error: any) {

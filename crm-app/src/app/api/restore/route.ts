@@ -10,7 +10,7 @@ const EMPLOYERS = [
   { name: 'בנק מזרחי טפחות', email: 'orpazsm@gmail.com', phone: '050-1234567', description: 'בנק מזרחי טפחות - מרחבים: מרכז, דן, יהודה, LIVE, דרום, צפון, שרון. איש קשר: סמדר אורפז' },
   { name: 'קבוצת UNION', email: 'union@union.co.il', phone: '', description: '🔥 לקסוס, טויוטה, Geely, GAC. בונוס 1,000 ₪ H&M למגייס!' },
   { name: 'YES', email: 'yes@yes.co.il', phone: '', description: '🎯 חטיבת לקוחות עסקיים, מוקדי מכירות ושירות. נשר, ב"ש, כפר סבא. בונוסים עד 10K!' },
-  { name: 'סלע לוגיסטיקה', email: 'sela@sela.co.il', phone: '', description: '📦 מחסנים והפצה. אשדוד, בית שמש, חפץ חיים. שכר 38-55 ₪/שעה.' },
+  { name: 'סלע לוגיסטיקה', email: 'pninit@selabonded.co.il', phone: '', description: '📦 מחסנים והפצה. אשדוד, בית שמש, חפץ חיים, בני דרום, מבקיעים. פנינית רויטמן (סלע) | דנה שפירו (לוגיסטים). שכר 38-50 ₪/שעה.' },
   { name: 'לוגיסטיקר', email: 'logisticar@logisticar.co.il', phone: '', description: '🚛 מחסנים, הפצה, נהגים. בית שמש, לוד, אשדוד, בית חיליקה. שכר 40-60 ₪/שעה.' },
   { name: 'א.ד.ר לוגיסטיקה', email: 'adr@adr.co.il', phone: '', description: '🎁 בית שמש, אירפורט סיטי, מודיעין. בונוס התמדה 1,000 ₪ חודשי!' },
   { name: 'אושפיר', email: 'oshpir@oshpir.co.il', phone: '', description: '🚢 שילוח בינלאומי - חיפה. מתאם/ת יבוא + מתאם/ת יצוא.' },
@@ -59,7 +59,19 @@ const DEPARTMENTS = [
 ]
 
 // All positions organized by employer
-const POSITIONS: Record<string, Array<{title: string, location: string, description: string, requirements: string, salaryRange: string, priority: number}>> = {
+const POSITIONS: Record<string, Array<{
+  title: string
+  location: string
+  description: string
+  requirements: string
+  salaryRange: string
+  priority: number
+  workHours?: string
+  benefits?: string
+  transportation?: string
+  contactName?: string
+  contactEmail?: string
+}>> = {
   'בנק מזרחי טפחות': [
     { title: 'טלר בסניף חצרות יפו', location: 'תל אביב - יפו', description: 'סניף רצוף, תקן קבוע. מענק התמדה מוגדל 13,000 ₪.', requirements: 'תודעת שירות גבוהה, עדיפות לתואר בכלכלה/מנה"ס, ניסיון בשירות/מכירה - יתרון', salaryRange: '8,200 ₪ חודשי, 9,500 ₪ שנתי', priority: 1 },
     { title: 'טלר בסניף קרית עתידים - דחוף!!!', location: 'תל אביב - רמת החייל', description: 'דחוף!!! טלר יחיד בסניף. סניף רצוף, תקן קבוע.', requirements: 'זמינות מיידית לעבודה - ללא אילוצים! יכולות גבוהות נדרשות.', salaryRange: '8,200 ₪ + מענק 13,000 ₪', priority: 3 },
@@ -123,21 +135,177 @@ const POSITIONS: Record<string, Array<{title: string, location: string, descript
     { title: 'אחראי/ת תיק לקוח עסקי', location: 'כפר סבא', description: 'מוקד קטן ואיכותי (7 תקנים). סביבה צעירה ודינמית.', requirements: 'ניסיון של שנה לפחות בתפקידי שירות ו/או מכירה', salaryRange: '6,500 ₪ + בונוס עד 2,500 ₪. ממוצע 8.5K', priority: 1 },
   ],
   'סלע לוגיסטיקה': [
-    { title: 'מלגזן היגש - בני דרום', location: 'בני דרום', description: 'עבודה על היגש וליקוטים. ארוחות. הסעה מאשדוד ואשקלון.', requirements: 'רישיון על מלגזה - חובה, ניסיון על מלגזת היגש - חובה', salaryRange: '47 ₪/שעה', priority: 1 },
-    { title: 'פקיד/ה מחסן - בני דרום', location: 'בני דרום', description: 'ניהול מערך אדמיניסטרטיבי של המחסן. ארוחות.', requirements: 'יכולת ניהול שיחה ברוסית - חובה!, ניסיון קודם בתפקיד דומה', salaryRange: '42 ₪/שעה', priority: 1 },
-    { title: 'פקיד/ה מלאי - חפץ חיים', location: 'חפץ חיים', description: 'הכנסת סחורה למערכות, פקידת מלאי. ארוחות חמות.', requirements: 'שליטה ביישומי מחשב - חובה, שליטה באקסל - חובה', salaryRange: '45 ₪/שעה', priority: 1 },
-    { title: 'מלקט/ת - אשדוד', location: 'אשדוד', description: 'המדע 2. ליקוט סחורה והכנת הזמנות. ארוחות.', requirements: 'נכונות למשרה מלאה, ראש גדול, עבודה עם מסופון', salaryRange: '38 ₪/שעה', priority: 1 },
-    { title: 'מלגזן לילה - אשדוד', location: 'אשדוד', description: 'המדע 2. עבודות מלגזה כלליות.', requirements: 'רישיון למלגזה - חובה, נכונות לעבודה פיזית', salaryRange: '48 ₪/שעה', priority: 1 },
-    { title: 'מלגזן היגש - אשדוד', location: 'אשדוד', description: 'המדע 2. ארוחות.', requirements: 'רישיון למלגזה - חובה, ניסיון על מלגזת היגש', salaryRange: '47 ₪/שעה', priority: 1 },
-    { title: 'בקר/ית סחורה - אשדוד', location: 'אשדוד', description: 'המתכת 5. בדיקת סחורה מול תעודות. משמרת בוקר. ארוחות.', requirements: 'אחריות ורצינות, עבודה עם מסופון', salaryRange: '40 ₪/שעה', priority: 1 },
-    { title: 'בקר/ית הזמנות - בית שמש', location: 'בית שמש', description: 'בדיקת הזמנות לפני הפצה. ארוחות.', requirements: 'אחריות ורצינות, עבודה עם מסופון - חובה', salaryRange: '42 ₪/שעה', priority: 1 },
-    { title: 'נציג/ת שירות לקוחות - אשדוד', location: 'אשדוד', description: 'המדע 2. תיאום מועדי אספקה. ארוחות.', requirements: 'ניסיון במוקד שירות - יתרון, תודעת שירות', salaryRange: '38 ₪/שעה', priority: 1 },
-    { title: 'רפרנט/ית שטח - בית שמש', location: 'בית שמש', description: 'אזור תעשייה הר טוב. ניהול מערך נהגים. תפקיד ניהולי.', requirements: 'ניסיון בתפעול מערך הפצה - חובה, אסרטיביות - חובה', salaryRange: '50 ₪/שעה', priority: 2 },
-    { title: 'סדרן/ית הפצה - אשדוד', location: 'אשדוד', description: 'המדע 2. ניהול קבלנים, הכנת קווי הפצה. שכר גלובלי גבוה.', requirements: 'ניסיון מוכח בתכנון קווי הפצה רבים - חובה', salaryRange: '13,000 ₪', priority: 3 },
-    { title: 'רפרנט/ית שטח - אשדוד', location: 'אשדוד', description: 'המדע 2. ניהול מערך נהגים. תפקיד במטה.', requirements: 'ניסיון עבודה במערך הפצה - חובה', salaryRange: '50 ₪/שעה', priority: 2 },
-    { title: 'רפרנט/ית שטח - מבקיעים', location: 'מבקיעים', description: 'ניהול מערך נהגים, פתרון תקלות. משמרת בוקר.', requirements: 'ניסיון עבודה במערך הפצה - חובה', salaryRange: '50 ₪/שעה', priority: 2 },
-    { title: 'נציג/ת לקוח - אשדוד', location: 'אשדוד', description: 'המדע 2. טיפול בהזמנות, סריקת תעודות. ארוחות.', requirements: 'ניסיון בתחום הלוגיסטיקה - חובה', salaryRange: '42 ₪/שעה', priority: 1 },
-    { title: 'אחמ"ש/ית מוקד - אשדוד', location: 'אשדוד', description: 'המדע 2. ניהול משמרת. תפקיד ניהולי, שכר גבוה מאוד.', requirements: 'ניסיון קודם כאחמ"ש ממוקד שירות לקוחות - חובה', salaryRange: '55 ₪/שעה', priority: 3 },
+    // ----- משרות פנינית רויטמן (סלע) -----
+    { 
+      title: 'מלגזן היגש - בני דרום', 
+      location: 'בני דרום', 
+      description: 'עבודה על הגש וליקוטים',
+      requirements: 'רישיון מלגזה - חובה, ניסיון על הגש ורצון לעבוד',
+      salaryRange: '47 ₪/שעה', 
+      priority: 2,
+      workHours: '08:00-17:00',
+      benefits: 'ארוחות חמות, הסעה מאשקלון ואשדוד',
+      transportation: 'הסעה מאשקלון ואשדוד',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'פקיד/ה - בני דרום', 
+      location: 'בני דרום', 
+      description: 'ניהול כל המערך האדמיניסטרטיבי של המחסן בשילוב של עבודה משרדית ועבודה בשטח: בקרה על קליטת סחורה והפצתה, ניהול מלאי שוטף, קליטת עובדים חדשים, טיפול בנוכחות העובדים, אדמיניסטרציה שוטפת',
+      requirements: 'נדרשת שליטה בשפה הרוסית - חובה, ניסיון קודם בתפקיד דומה - חובה, ניסיון במערכת WMS - יתרון, עבודה באקסל - חובה, ניידות - חובה',
+      salaryRange: '42 ₪/שעה', 
+      priority: 2,
+      workHours: '08:00-17:00',
+      benefits: 'ארוחות חמות',
+      transportation: 'הגעה עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'פקיד/ה - חפץ חיים', 
+      location: 'חפץ חיים', 
+      description: 'בקרה על קליטת סחורה והפצתה, ניהול מלאי שוטף, קליטת עובדים חדשים, טיפול בנוכחות העובדים, אדמיניסטרציה שוטפת. העבודה מחולקת בין עבודה על המחשב ובין עשייה פיזית ברצפת המרלו"ג',
+      requirements: 'ניסיון קודם בתפקיד דומה - חובה, ניסיון במערכת WMS - יתרון, עבודה באקסל - חובה, ניידות - חובה',
+      salaryRange: '45 ₪/שעה', 
+      priority: 2,
+      workHours: '08:00-17:00',
+      benefits: 'ארוחות חמות',
+      transportation: 'עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'מלקט/ת - אשדוד המדע 2', 
+      location: 'אשדוד - המדע 2', 
+      description: 'ליקוט סחורה והכנת הזמנות, עבודה עם מסופון',
+      requirements: 'נכונות למשרה מלאה, ראש גדול, ניסיון בליקוט - יתרון',
+      salaryRange: '38 ₪/שעה', 
+      priority: 1,
+      workHours: '08:00-17:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'מחסנאי/ת לילה - אשדוד המדע 2', 
+      location: 'אשדוד - המדע 2', 
+      description: 'עבודות מחסן כלליות - הזזת קרונים, שרינקים ועוד',
+      requirements: 'נכונות לעבודה פיזית',
+      salaryRange: '42 ₪/שעה', 
+      priority: 1,
+      workHours: '16:30-01:30',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'מלגזן היגש - אשדוד המדע 2', 
+      location: 'אשדוד - המדע 2', 
+      description: 'ניסיון על מלגזת היגש / נכונות ללמוד עבודה על מלגזת היגש. נכונות לירידה מהמלגזה וביצוע משימות נוספות במחסן',
+      requirements: 'רישיון למלגזה - חובה',
+      salaryRange: '47 ₪/שעה', 
+      priority: 2,
+      workHours: '08:00-17:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'בקר/ית - סלע ישן אשדוד', 
+      location: 'אשדוד - סלע ישן, המתכת 5', 
+      description: 'בקר סחורה על רמפות ההפצה, עבודה מול נהגים, בדיקת סחורה אל מול תעודות היציאה וסריקת המוצרים',
+      requirements: 'בקרת סחורה על ידי סריקת המוצרים עם מסופון, אנחנו מחפשים עובדים אחראים ורציניים',
+      salaryRange: '40 ₪/שעה', 
+      priority: 1,
+      workHours: '06:00-12:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    { 
+      title: 'בקר/ית - בית שמש הר טוב', 
+      location: 'בית שמש - אזור תעשייה הר טוב', 
+      description: 'בקרה ובדיקה של ההזמנות לפני ההפצה. בדיקה מוקפדת של פריטים לפני העמסתם למשאיות. הבדיקה מתבצעת עם מסופון לפי מק"ט על הפריט ומול ההזמנה',
+      requirements: 'אחריות ורצינות, עבודה עם מסופון - חובה, דיוק ותשומת לב לפרטים קטנים, יכולת עבודה תחת לחץ',
+      salaryRange: '42 ₪/שעה', 
+      priority: 2,
+      workHours: '06:30-15:30/16:00 או 11:00/12:00-20:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'פנינית רויטמן',
+      contactEmail: 'pninit@selabonded.co.il'
+    },
+    // ----- משרות דנה שפירו (לוגיסטים) -----
+    { 
+      title: 'נציג/ת שירות לקוחות - לוגיסטים אשדוד', 
+      location: 'אשדוד - המדע 2 (לוגיסטים)', 
+      description: 'תיאום מועדי אספקה, מענה לפניות לקוחות בטלפון ובכתב',
+      requirements: 'ניסיון במוקד שירות - יתרון',
+      salaryRange: '38 ₪/שעה', 
+      priority: 1,
+      workHours: '13:00/14:00-20:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'דנה שפירו',
+      contactEmail: 'dana@logistim.co.il'
+    },
+    { 
+      title: 'רפרנט/ית שטח - לוגיסטים בית שמש', 
+      location: 'בית שמש - אזור תעשייה הר טוב (לוגיסטים)', 
+      description: 'תפקיד שטח - ניהול מערך נהגים, טיפול בתעודות חתומות, פתרון תקלות בהעמסה ונזקים, דיווח על אי אספקות',
+      requirements: 'ניסיון בתפעול מערך הפצה - חובה, יכולת רתימת עובדים, יכולת התנהלות עם חשבוניות ומסמכים מרובים, סדר וארגון, אסרטיביות - חובה, ניידות - חובה',
+      salaryRange: '50 ₪/שעה', 
+      priority: 2,
+      workHours: '06:00-15:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'דנה שפירו',
+      contactEmail: 'dana@logistim.co.il'
+    },
+    { 
+      title: 'סדרן הפצה - לוגיסטים אשדוד/בית שמש', 
+      location: 'אשדוד המדע 2 / בית שמש הר טוב (לוגיסטים)', 
+      description: 'ניהול קבלנים, הכנת קווי הפצה, מעקב הובלות ועמידה בזמנים, טיפול בהעמסה והחזרות, הנפקת דוחות, מענה שוטף לפניות הנהגים',
+      requirements: 'ניסיון מוכח בתכנון קווי הפצה רבים - חובה, חשיבה לוגית ופתרון בעיות, תפקוד מעולה תחת לחץ, ניידות - חובה',
+      salaryRange: '13,000 ₪/חודש', 
+      priority: 3,
+      workHours: '06:00-16:00',
+      benefits: 'ארוחות. תקן אחד באשדוד ותקן אחד בבית שמש',
+      transportation: 'עצמאית',
+      contactName: 'דנה שפירו',
+      contactEmail: 'dana@logistim.co.il'
+    },
+    { 
+      title: 'רפרנט/ית שטח - לוגיסטים מבקיעים', 
+      location: 'מבקיעים (לוגיסטים)', 
+      description: 'תפקיד שטח - ניהול מערך נהגים, טיפול בתעודות חתומות, פתרון תקלות בהעמסה ונזקים, דיווח על אי אספקות',
+      requirements: 'ניסיון עבודה במערך הפצה - חובה, ניסיון קודם בתפקיד בק אופיס לוגיסטי - חובה, אחריות סדר וארגון - חובה, יכולת עבודה בכמה ממשקים במקביל, תודעת שירות מעולה, נכונות לעבודה בשעות נוספות',
+      salaryRange: '50 ₪/שעה', 
+      priority: 2,
+      workHours: '05:00-14:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'דנה שפירו',
+      contactEmail: 'dana@logistim.co.il'
+    },
+    { 
+      title: 'נציג/ת לקוח - לוגיסטים אשדוד', 
+      location: 'אשדוד - המדע 2 (לוגיסטים)', 
+      description: 'טיפול בהזמנות, סריקת תעודות, טיפול במלאים והזנת נתונים במערכת',
+      requirements: 'ניסיון בתחום הלוגיסטיקה - חובה, שליטה ביישומי אופיס - חובה',
+      salaryRange: '42 ₪/שעה', 
+      priority: 1,
+      workHours: '08:00-17:00',
+      benefits: 'ארוחות',
+      transportation: 'עצמאית',
+      contactName: 'דנה שפירו',
+      contactEmail: 'dana@logistim.co.il'
+    },
   ],
   'לוגיסטיקר': [
     { title: 'מלקטים למחסן - בית שמש - דחוף!', location: 'בית שמש', description: 'חובה ניידות - דחוף!', requirements: 'ניסיון בלוגיסטיקה - יתרון משמעותי, רישיון מלגזה - יתרון', salaryRange: '40 ₪/שעה', priority: 3 },

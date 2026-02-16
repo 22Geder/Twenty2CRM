@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
 cmds = [
@@ -12,4 +12,4 @@ cmds = [
 ]
 
 [start]
-cmd = "npx next start -H 0.0.0.0 -p $PORT"
+cmd = "npm start"

@@ -8,24 +8,20 @@ import bcrypt from 'bcryptjs'
 
 const EMPLOYERS = [
   { name: 'בנק מזרחי טפחות', email: 'orpazsm@gmail.com', phone: '050-1234567', description: 'בנק מזרחי טפחות - מרחבים: מרכז, דן, יהודה, LIVE, דרום, צפון, שרון. איש קשר: סמדר אורפז' },
-  { name: 'קבוצת UNION', email: 'union@union.co.il', phone: '', description: '🔥 לקסוס, טויוטה, Geely. בונוס 1,000 ₪ H&M למגייס!' },
+  { name: 'קבוצת UNION', email: 'union@union.co.il', phone: '', description: '🔥 לקסוס, טויוטה, Geely, GAC. בונוס 1,000 ₪ H&M למגייס!' },
   { name: 'YES', email: 'yes@yes.co.il', phone: '', description: '🎯 חטיבת לקוחות עסקיים, מוקדי מכירות ושירות. נשר, ב"ש, כפר סבא. בונוסים עד 10K!' },
   { name: 'סלע לוגיסטיקה', email: 'sela@sela.co.il', phone: '', description: '📦 מחסנים והפצה. אשדוד, בית שמש, חפץ חיים. שכר 38-55 ₪/שעה.' },
   { name: 'לוגיסטיקר', email: 'logisticar@logisticar.co.il', phone: '', description: '🚛 מחסנים, הפצה, נהגים. בית שמש, לוד, אשדוד, בית חיליקה. שכר 40-60 ₪/שעה.' },
   { name: 'א.ד.ר לוגיסטיקה', email: 'adr@adr.co.il', phone: '', description: '🎁 בית שמש, אירפורט סיטי, מודיעין. בונוס התמדה 1,000 ₪ חודשי!' },
   { name: 'אושפיר', email: 'oshpir@oshpir.co.il', phone: '', description: '🚢 שילוח בינלאומי - חיפה. מתאם/ת יבוא + מתאם/ת יצוא.' },
-  { name: 'חברת GAC', email: 'gac@gac.co.il', phone: '03-1234567', description: '🚗 יבואן רכב סיני מוביל - מותגי GAC.' },
+  { name: 'חברת GAC', email: 'gac@gac.co.il', phone: '03-1234567', description: '🚗 יבואן רכב סיני מוביל - מותגי GAC. אולמות תצוגה ברחבי הארץ.' },
   { name: 'אפרייט', email: 'upright@upright.co.il', phone: '', description: '🏗️ ייצור טלסקופיות ומלגזות. מודיעין עילית.' },
-  { name: 'לאשינג חיפה', email: 'lashing@lashing.co.il', phone: '', description: '🚢 עבודות עגינה בנמל חיפה.' }
+  { name: 'לאשינג חיפה', email: 'lashing@lashing.co.il', phone: '', description: '🚢 עבודות עגינה בנמל חיפה.' },
+  { name: 'אופרייט - יד ראשונה', email: 'liatg@opl.co.il', phone: '', description: '🚘 מכירת רכבים וליסינג פרטי. סניפים: גלילות, חולון. עמלות גבוהות!' }
 ]
 
 const TAGS = [
-  { name: 'JavaScript', color: '#f7df1e', category: 'skill', type: 'SKILL' },
-  { name: 'TypeScript', color: '#3178c6', category: 'skill', type: 'SKILL' },
-  { name: 'React', color: '#61dafb', category: 'skill', type: 'SKILL' },
-  { name: 'Node.js', color: '#339933', category: 'skill', type: 'SKILL' },
-  { name: 'Python', color: '#3776ab', category: 'skill', type: 'SKILL' },
-  { name: 'SQL', color: '#cc2927', category: 'skill', type: 'SKILL' },
+  // תגיות תעסוקה
   { name: 'לוגיסטיקה', color: '#f97316', category: 'industry', type: 'CATEGORY' },
   { name: 'מחסנים', color: '#84cc16', category: 'industry', type: 'CATEGORY' },
   { name: 'נהגים', color: '#3b82f6', category: 'industry', type: 'CATEGORY' },
@@ -33,8 +29,24 @@ const TAGS = [
   { name: 'מכירות', color: '#ef4444', category: 'industry', type: 'CATEGORY' },
   { name: 'שירות לקוחות', color: '#06b6d4', category: 'industry', type: 'CATEGORY' },
   { name: 'רכב', color: '#f59e0b', category: 'industry', type: 'CATEGORY' },
+  { name: 'מלגזן', color: '#10b981', category: 'skill', type: 'SKILL' },
+  { name: 'WMS', color: '#6366f1', category: 'skill', type: 'SKILL' },
+  { name: 'אקסל', color: '#22c55e', category: 'skill', type: 'SKILL' },
+  { name: 'אנגלית', color: '#ec4899', category: 'skill', type: 'SKILL' },
+  { name: 'ניסיון ניהולי', color: '#a855f7', category: 'skill', type: 'SKILL' },
+  { name: 'רישיון נהיגה', color: '#14b8a6', category: 'skill', type: 'SKILL' },
+  // תגיות סטטוס מועמדים
   { name: 'מועמד מועדף', color: '#fbbf24', category: 'status', type: 'CATEGORY' },
   { name: 'דחיפות גבוהה', color: '#ef4444', category: 'status', type: 'CATEGORY' },
+  { name: 'זמין מיידית', color: '#22c55e', category: 'status', type: 'CATEGORY' },
+  { name: 'בתהליך', color: '#3b82f6', category: 'status', type: 'CATEGORY' },
+  { name: 'חדש במערכת', color: '#8b5cf6', category: 'status', type: 'CATEGORY' },
+  // תגיות מיקום
+  { name: 'מרכז', color: '#0ea5e9', category: 'location', type: 'CATEGORY' },
+  { name: 'צפון', color: '#06b6d4', category: 'location', type: 'CATEGORY' },
+  { name: 'דרום', color: '#f97316', category: 'location', type: 'CATEGORY' },
+  { name: 'ירושלים', color: '#a855f7', category: 'location', type: 'CATEGORY' },
+  { name: 'שרון', color: '#84cc16', category: 'location', type: 'CATEGORY' },
 ]
 
 const DEPARTMENTS = [
@@ -163,6 +175,9 @@ const POSITIONS: Record<string, Array<{title: string, location: string, descript
     { title: 'נציג/ת מכירות רכב - GAC ראשון לציון', location: 'ראשון לציון', description: 'אולם תצוגה מודרני של יבואן רכב סיני מוביל. עמלות גבוהות.', requirements: 'ייצוגיות גבוהה, תודעת שירות מצוינת, רישיון נהיגה - חובה', salaryRange: '8,000-18,000 ₪ כולל עמלות', priority: 2 },
     { title: 'נציג/ת קבלה - GAC ראשון לציון', location: 'ראשון לציון', description: 'אולם תצוגה מודרני. קבלת לקוחות, תיאום פגישות.', requirements: 'ייצוגיות גבוהה מאוד, תודעת שירות מצוינת', salaryRange: '7,000-9,000 ₪', priority: 1 },
     { title: 'יועץ/ת שירות - GAC ראשון לציון', location: 'ראשון לציון', description: 'אולם תצוגה מודרני. ליווי לקוחות, טיפולים ושירות. הכשרה מלאה.', requirements: 'ניסיון בשירות לקוחות - חובה, יכולת מכירתית', salaryRange: '8,000-12,000 ₪', priority: 2 },
+    { title: 'מנהל/ת אולם תצוגה - GAC אשדוד', location: 'אשדוד', description: 'גיוס וניהול נציג מכירות + הכשרה. עמידה ביעדי מכירות. שירות חדשני ללקוחות. שיתופי פעולה לגיוס לקוחות עסקיים.', requirements: 'ניסיון ניהולי קודם - חובה! ניסיון מעולם הרכב - יתרון משמעותי. שליטה באקסל, PowerPoint. אנגלית ברמה גבוהה.', salaryRange: '12,000 ₪ בסיס + בונוסים + רכב צמוד', priority: 3 },
+    { title: 'נציג/ת מכירות - GAC רעננה', location: 'רעננה', description: 'נציג מכירות רכב באולם תצוגה GAC. עבודה מול לקוחות פרטיים ועסקיים. הצגת רכבי GAC. ליווי לקוחות בתהליך הרכישה וסגירת עסקאות.', requirements: 'ניסיון במכירות - יתרון. יחסי אנוש מצוינים. יכולת עבודה ביעדים. כושר שכנוע. ניסיון ברכב - יתרון משמעותי.', salaryRange: '8,000-15,000 ₪ + עמלות', priority: 2 },
+    { title: 'נציג/ת נסיעות מבחן - GAC', location: 'מרכז', description: 'ליווי לקוחות בנסיעות מבחן. הסברה מקצועית על הרכב והטכנולוגיות. מתן חוויית נהיגה מעולה ללקוח. עבודה בשיתוף עם צוות המכירות.', requirements: 'רישיון נהיגה בתוקף - חובה! יחסי אנוש מצוינים. ידע ברכבים - יתרון. סבלנות ותקשורת טובה. ייצוגיות.', salaryRange: '7,000-9,000 ₪', priority: 1 },
   ],
   'אפרייט': [
     { title: 'פקיד/ת רכש - מודיעין עילית', location: 'מודיעין עילית', description: 'עבודה מול ספקים, הזמנת חומרים. תנאים מצוינים.', requirements: 'ניסיון ברכש - יתרון, שליטה באקסל - חובה', salaryRange: '9,000-11,000 ₪', priority: 1 },
@@ -172,6 +187,11 @@ const POSITIONS: Record<string, Array<{title: string, location: string, descript
   ],
   'לאשינג חיפה': [
     { title: 'עובד/ת עגינה - נמל חיפה', location: 'חיפה - נמל', description: 'עבודות עגינה בנמל חיפה. עבודה לפי קריאה מהנמל.', requirements: 'כושר גופני טוב - חובה!, נכונות לעבודה פיזית מאומצת', salaryRange: '50-70 ₪/שעה + תוספות', priority: 1 },
+  ],
+  'אופרייט - יד ראשונה': [
+    { title: 'איש/אשת מכירות - יד ראשונה גלילות', location: 'גלילות', description: 'מחלקת יד ראשונה - מכירת רכבים ללקוחות פרטיים. ייעוץ וליווי לקוחות בתהליך הרכישה. עמידה ביעדי מכירות. שירות לקוחות מצוין. ממוצע מכירות: 15-18 רכבים בחודש. הגנת שכר 8,000 ₪ ב-3 חודשים ראשונים!', requirements: 'ניסיון במכירות - יתרון. יכולת עבודה בצוות. שירותיות ויחסי אנוש מעולים. נכונות לעבודה בימי שישי. רישיון נהיגה - יתרון.', salaryRange: '8,000-15,000 ₪ (עמלה 640 ₪ לרכב)', priority: 2 },
+    { title: 'איש/אשת תפעול - סניף גלילות', location: 'גלילות', description: 'תחזוקת האתר והרכבים. עבודה מול לקוחות. סידור המגרש. הכנת רכבים לפני בדיקה, טיפולים וטסטים. סיוע במכירות ומסירת רכבים.', requirements: 'רישיון נהיגה בתוקף - חובה! ידע והבנה טכנית בתחום הרכב - יתרון. יכולת עבודה פיזית. אחריות ודייקנות. שירותיות.', salaryRange: '6,000-7,000 ₪ + פרמיות (25-45 ₪ לרכב)', priority: 1 },
+    { title: 'איש/אשת מכירות ליסינג פרטי - חולון', location: 'חולון', description: 'קבלת לידים חמים וביצוע שיחות טלפוניות. עסקאות ליסינג פרטי. ניהול משא ומתן עם לקוחות. בניית פתרונות מכירה מותאמים אישית. קליטה ישירה לחברה! ללא ימי שישי! * אין עבודה מהבית.', requirements: 'ניסיון במכירות טלפוניות - יתרון. יכולות משא ומתן. שירותיות ויחסי אנוש מעולים. יכולת עמידה ביעדים.', salaryRange: '9,000-12,000 ₪', priority: 2 },
   ]
 }
 
@@ -179,14 +199,10 @@ export async function GET() {
   try {
     console.log('🔧 Starting data restoration...')
     
-    // Check if already seeded (has positions)
+    // Allow force restore with ?force=true parameter
+    // Otherwise skip if already has more than 100 positions
     const existingPositions = await prisma.position.count()
-    if (existingPositions > 10) {
-      return NextResponse.json({ 
-        message: 'Database already has data',
-        positions: existingPositions 
-      })
-    }
+    console.log(`📊 Existing positions: ${existingPositions}`)
 
     // 1. Create/Update Admin user
     const adminPassword = await bcrypt.hash('Admin123!', 10)
@@ -247,16 +263,34 @@ export async function GET() {
 
       for (const position of positions) {
         try {
-          await prisma.position.create({
-            data: {
-              ...position,
-              employerId: employer.id,
-              active: true
-            },
+          // Check if position exists
+          const existing = await prisma.position.findFirst({
+            where: { title: position.title, employerId: employer.id }
           })
+          
+          if (existing) {
+            // Update existing position
+            await prisma.position.update({
+              where: { id: existing.id },
+              data: {
+                ...position,
+                employerId: employer.id,
+                active: true
+              }
+            })
+          } else {
+            // Create new position
+            await prisma.position.create({
+              data: {
+                ...position,
+                employerId: employer.id,
+                active: true
+              },
+            })
+          }
           totalPositions++
         } catch (e) {
-          // Position might already exist, skip
+          console.log(`⚠️ Error with position: ${position.title}`, e)
         }
       }
     }

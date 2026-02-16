@@ -141,7 +141,7 @@ ${positionText}
 - היה ישיר וברור`
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
     const result = await model.generateContent(prompt)
     const text = result.response.text()
     

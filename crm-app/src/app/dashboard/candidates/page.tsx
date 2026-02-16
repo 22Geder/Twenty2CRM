@@ -129,7 +129,8 @@ export default function CandidatesPageModern() {
 
   const fetchCandidates = async () => {
     try {
-      const response = await fetch('/api/candidates')
+      // 🆕 טעינת כל המועמדים (בלי פגינציה)
+      const response = await fetch('/api/candidates?limit=10000')
       if (response.ok) {
         const data = await response.json()
         setCandidates(data.candidates || [])

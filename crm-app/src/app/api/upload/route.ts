@@ -37,7 +37,7 @@ async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
 // 🆕 OCR - Extract text from image using Gemini Vision
 async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');

@@ -45,6 +45,11 @@ export async function GET(
           orderBy: { createdAt: "desc" },
         },
         tags: true,
+        inProcessPosition: {  // 🆕 מביא את פרטי המשרה שהמועמד בתהליך בה
+          include: {
+            employer: true,
+          },
+        },
       },
     })
 
@@ -105,6 +110,9 @@ export async function PUT(
       employmentEndAt,
       isSelfEmployed,
       resume,  // טקסט קורות חיים מקורי
+      hiredToEmployerId,  // 🆕 לאיזה מעסיק התקבל
+      inProcessPositionId,  // 🆕 באיזו משרה המועמד בתהליך
+      inProcessAt,  // 🆕 מתי נכנס לתהליך
     } = body
 
     // Check if candidate exists
@@ -161,6 +169,9 @@ export async function PUT(
         employmentEndAt: employmentEndAt ? new Date(employmentEndAt) : null,
         isSelfEmployed: typeof isSelfEmployed === "boolean" ? isSelfEmployed : undefined,
         resume: resume || undefined,  // שמירת טקסט קורות חיים
+        hiredToEmployerId: hiredToEmployerId || null,  // 🆕 לאיזה מעסיק התקבל
+        inProcessPositionId: inProcessPositionId !== undefined ? (inProcessPositionId || null) : undefined,  // 🆕 באיזו משרה בתהליך
+        inProcessAt: inProcessAt !== undefined ? (inProcessAt ? new Date(inProcessAt) : null) : undefined,  // 🆕 מתי נכנס לתהליך
       },
       include: {
         applications: {

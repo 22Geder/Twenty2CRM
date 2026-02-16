@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `
 אתה מומחה בניתוח קורות חיים בעברית. נתח את קורות החיים הבאים וחלץ את כל המידע.

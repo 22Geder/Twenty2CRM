@@ -262,7 +262,7 @@ export default function NewCandidatePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  אימייל {!hasResume && <span className="text-red-500">*</span>}
+                  אימייל
                 </Label>
                 <Input
                   id="email"
@@ -270,7 +270,6 @@ export default function NewCandidatePage() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required={!hasResume}
                   placeholder="email@example.com"
                   className={formData.email && extracted ? "border-green-400 bg-green-50" : ""}
                 />

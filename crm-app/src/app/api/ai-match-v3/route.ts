@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { 
+  normalizeLocality, 
+  extractLocalityFromAddress, 
+  areLocationsNearby,
+  getNearbyLocalities,
+  ALL_LOCALITIES,
+  TOTAL_LOCALITIES
+} from "@/lib/israel-locations"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -38,16 +46,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ matches: [], message: "אין משרות פעילות" })
     }
 
-    // מיקום המועמד
-    const candidateCity = (candidate.city || '').trim().toLowerCase()
+    // 🗺️ מיקום המועמד - עם נרמול מאגר יישובים מלא!
+    const rawCandidateCity = (candidate.city || '').trim()
+    const candidateCity = normalizeLocality(rawCandidateCity)
+    const candidateCityExtracted = extractLocalityFromAddress(rawCandidateCity)
+    const finalCandidateCity = candidateCityExtracted || candidateCity
+    
+    console.log(`🗺️ מועמד: ${candidate.name}, עיר גולמית: "${rawCandidateCity}", מנורמל: "${finalCandidateCity}"`)
     
     // מיון ראשוני לפי מיקום - משרות קרובות למועמד קודם!
     const sortedPositions = positions.sort((a, b) => {
-      const locA = (a.location || '').toLowerCase()
-      const locB = (b.location || '').toLowerCase()
+      const locA = extractLocalityFromAddress(a.location || '') || normalizeLocality(a.location || '')
+      const locB = extractLocalityFromAddress(b.location || '') || normalizeLocality(b.location || '')
       
-      const matchA = candidateCity && (locA.includes(candidateCity) || candidateCity.includes(locA.split(' ')[0]))
-      const matchB = candidateCity && (locB.includes(candidateCity) || candidateCity.includes(locB.split(' ')[0]))
+      const matchA = finalCandidateCity && areLocationsNearby(finalCandidateCity, locA)
+      const matchB = finalCandidateCity && areLocationsNearby(finalCandidateCity, locB)
       
       if (matchA && !matchB) return -1
       if (!matchA && matchB) return 1
@@ -60,12 +73,12 @@ export async function POST(request: Request) {
       if (!position) {
         return NextResponse.json({ error: "משרה לא נמצאה" }, { status: 404 })
       }
-      const result = await analyzeMatchV3(candidate, position, candidateCity)
+      const result = await analyzeMatchV3(candidate, position, finalCandidateCity)
       return NextResponse.json(result)
     }
 
-    // 🚀 סריקה מהירה במקביל - 5 משרות בו-זמנית!
-    const BATCH_SIZE = 5
+    // 🚀 סריקה מהירה במקביל - 8 משרות בו-זמנית! (שודרג מ-5)
+    const BATCH_SIZE = 8
     const matches: any[] = []
     
     for (let i = 0; i < sortedPositions.length; i += BATCH_SIZE) {
@@ -100,7 +113,9 @@ export async function POST(request: Request) {
       matches: relevantMatches,
       notRelevant: notRelevant.length,
       totalScanned: positions.length,
-      candidateCity: candidate.city || 'לא צוין'
+      candidateCity: candidate.city || 'לא צוין',
+      normalizedCity: finalCandidateCity,
+      locationDatabase: TOTAL_LOCALITIES // מספר היישובים במאגר
     })
 
   } catch (error) {
@@ -110,14 +125,12 @@ export async function POST(request: Request) {
 }
 
 async function analyzeMatchV3(candidate: any, position: any, candidateCity: string) {
-  const positionLocation = (position.location || '').toLowerCase()
+  // 🗺️ נרמול מיקום המשרה עם מאגר יישובים מלא!
+  const rawPositionLocation = position.location || ''
+  const positionLocality = extractLocalityFromAddress(rawPositionLocation) || normalizeLocality(rawPositionLocation)
   
-  // בדיקת התאמת מיקום
-  const locationMatch = candidateCity && positionLocation && (
-    positionLocation.includes(candidateCity) || 
-    candidateCity.includes(positionLocation.split(' ')[0]) ||
-    areNearbyLocations(candidateCity, positionLocation)
-  )
+  // בדיקת התאמת מיקום - עם מאגר כל היישובים בישראל!
+  const locationMatch = !!(candidateCity && positionLocality && areLocationsNearby(candidateCity, positionLocality))
 
   // הכנת טקסט לAI - קצר יותר לזריזות
   const candidateText = `${candidate.name}|${candidate.currentTitle||''}|${candidate.city||''}|${candidate.yearsOfExperience||0}שנים|${candidate.skills||''}`
@@ -129,7 +142,7 @@ async function analyzeMatchV3(candidate: any, position: any, candidateCity: stri
 {"score":0-100,"strengths":["יתרון"],"weaknesses":["חיסרון"],"recommendation":"קצר","shouldProceed":true/false}`
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
     const result = await model.generateContent(prompt)
     const text = result.response.text()
     
@@ -153,6 +166,10 @@ async function analyzeMatchV3(candidate: any, position: any, candidateCity: stri
       positionTitle: position.title,
       employerName: position.employer?.name || 'לא צוין',
       location: position.location || 'לא צוין',
+      description: position.description || '',
+      requirements: position.requirements || '',
+      salaryRange: position.salaryRange || '',
+      employmentType: position.employmentType || '',
       score: finalScore,
       locationMatch,
       strengths: analysis.strengths || [],
@@ -177,15 +194,14 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   const strengths: string[] = []
   const weaknesses: string[] = []
 
-  // בונוס מיקום - 25 נקודות!
+  // בונוס מיקום - 25 נקודות! (משתמש במאגר יישובים מלא)
   if (locationMatch) {
     score += 25
     strengths.push(`📍 מיקום מתאים: ${candidate.city || 'לא צוין'}`)
   } else if (candidate.city && position.location) {
-    // בדיקה נוספת למיקום קרוב
-    const candidateCityLower = candidate.city.toLowerCase()
-    const positionLocationLower = position.location.toLowerCase()
-    if (candidateCityLower.includes(positionLocationLower) || positionLocationLower.includes(candidateCityLower)) {
+    // בדיקה נוספת למיקום קרוב עם המאגר המלא
+    const positionLocality = extractLocalityFromAddress(position.location) || normalizeLocality(position.location)
+    if (areLocationsNearby(candidateCity, positionLocality)) {
       score += 20
       strengths.push(`מיקום קרוב: ${position.location}`)
     } else {
@@ -290,6 +306,10 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     positionTitle: position.title,
     employerName: position.employer?.name || 'לא צוין',
     location: position.location || 'לא צוין',
+    description: position.description || '',
+    requirements: position.requirements || '',
+    salaryRange: position.salaryRange || '',
+    employmentType: position.employmentType || '',
     score,
     locationMatch,
     strengths: strengths.slice(0, 5),
@@ -327,6 +347,10 @@ function createErrorMatch(position: any) {
     positionTitle: position.title,
     employerName: position.employer?.name || 'לא צוין',
     location: position.location || 'לא צוין',
+    description: position.description || '',
+    requirements: position.requirements || '',
+    salaryRange: position.salaryRange || '',
+    employmentType: position.employmentType || '',
     score: 0,
     locationMatch: false,
     strengths: [],
@@ -336,27 +360,6 @@ function createErrorMatch(position: any) {
   }
 }
 
-// בדיקת ערים קרובות בישראל
-function areNearbyLocations(city1: string, city2: string): boolean {
-  const nearbyGroups = [
-    ['תל אביב', 'רמת גן', 'גבעתיים', 'בני ברק', 'חולון', 'בת ים', 'רמת השרון', 'הרצליה', 'פתח תקווה'],
-    ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מודיעין'],
-    ['חיפה', 'קריית אתא', 'קריית ביאליק', 'קריית מוצקין', 'קריית ים', 'נשר'],
-    ['באר שבע', 'אופקים', 'נתיבות', 'דימונה'],
-    ['אשדוד', 'אשקלון', 'קרית גת'],
-    ['נתניה', 'כפר סבא', 'רעננה', 'הוד השרון', 'הרצליה'],
-    ['ראשון לציון', 'נס ציונה', 'רחובות', 'יבנה'],
-    ['פתח תקווה', 'ראש העין', 'כפר קאסם', 'יהוד'],
-    ['עפולה', 'נצרת', 'נוף הגליל', 'מגדל העמק']
-  ]
-
-  for (const group of nearbyGroups) {
-    const c1Match = group.some(c => city1.includes(c) || c.includes(city1))
-    const c2Match = group.some(c => city2.includes(c) || c.includes(city2))
-    if (c1Match && c2Match) return true
-  }
-  
-  return false
-}
+// 🗺️ פונקציות מיקום הועברו ל-lib/israel-locations.ts עם מאגר יישובים מלא של ישראל!
 
 

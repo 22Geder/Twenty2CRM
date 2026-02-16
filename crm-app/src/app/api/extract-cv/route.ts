@@ -57,17 +57,60 @@ function extractFromCVText(text: string): {
   const phone = phoneMatches && phoneMatches[0] ? phoneMatches[0].replace(/[\-\s]/g, '') : '';
   const alternatePhone = phoneMatches && phoneMatches[1] ? phoneMatches[1].replace(/[\-\s]/g, '') : '';
 
-  // חילוץ שם (בדרך כלל שורה ראשונה)
+  // חילוץ שם משופר - מזהה שמות בעברית ואנגלית
   let name = '';
-  for (const line of lines.slice(0, 5)) {
-    const cleanLine = line.trim();
-    if (cleanLine.length > 3 && cleanLine.length < 50 && !cleanLine.includes('@') && !cleanLine.match(/\d{5,}/)) {
+  
+  // מילים שלא יכולות להיות שמות
+  const notNames = [
+    'קורות חיים', 'resume', 'cv', 'curriculum', 'vitae', 'פרטים אישיים',
+    'personal', 'details', 'info', 'information', 'contact', 'about',
+    'ניסיון תעסוקתי', 'השכלה', 'education', 'experience', 'work', 'מיומנויות',
+    'skills', 'summary', 'objective', 'תקציר', 'מטרה', 'פרופיל', 'profile'
+  ];
+  
+  // חיפוש שם לפי תבניות נפוצות
+  const namePatterns = [
+    /(?:שם[:\s]+|name[:\s]+)([א-ת\s]{2,30}|[A-Za-z\s]{2,40})/i,
+    /^([א-ת]{2,15}\s+[א-ת]{2,15})$/m,  // שם פרטי + משפחה בעברית
+    /^([A-Z][a-z]+\s+[A-Z][a-z]+)$/m,   // First Last in English
+  ];
+  
+  for (const pattern of namePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const possibleName = match[1].trim();
+      const isNotName = notNames.some(n => possibleName.toLowerCase().includes(n.toLowerCase()));
+      if (!isNotName && possibleName.length > 3) {
+        name = possibleName;
+        break;
+      }
+    }
+  }
+  
+  // אם לא נמצא, נסה בשורות הראשונות
+  if (!name) {
+    for (const line of lines.slice(0, 8)) {
+      const cleanLine = line.trim();
+      // דלג על שורות קצרות מדי או ארוכות מדי
+      if (cleanLine.length < 3 || cleanLine.length > 50) continue;
+      // דלג על שורות עם אימייל או מספרים רבים
+      if (cleanLine.includes('@') || /\d{5,}/.test(cleanLine)) continue;
+      // דלג על מילים שלא יכולות להיות שמות
+      if (notNames.some(n => cleanLine.toLowerCase().includes(n.toLowerCase()))) continue;
+      
       const words = cleanLine.split(/\s+/);
-      if (words.length >= 1 && words.length <= 4) {
+      // שם טיפוסי הוא 2-4 מילים
+      if (words.length >= 2 && words.length <= 4) {
         // בדיקה שזה לא מספר טלפון
-        if (!/^0\d/.test(cleanLine)) {
-          name = cleanLine;
-          break;
+        if (!/^0\d/.test(cleanLine) && !/^\d/.test(cleanLine)) {
+          // וודא שכל המילים מתחילות באות גדולה או בעברית
+          const looksLikeName = words.every(w => 
+            /^[א-ת]/.test(w) || /^[A-Z]/.test(w)
+          );
+          if (looksLikeName) {
+            name = cleanLine;
+            break;
+          }
         }
       }
     }

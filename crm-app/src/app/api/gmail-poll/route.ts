@@ -185,10 +185,34 @@ function extractInfoFromEmail(emailData: any) {
   const phoneMatch = emailData.body?.match(phoneRegex)
   const phone = phoneMatch ? phoneMatch[0].replace(/[-\s]/g, '') : null
 
-  // חילוץ שם
-  const nameRegex = /(?:שם:|שלום,?\s+|מצורף קורות חיים של\s+|אני\s+)([א-ת\s]{2,30})/
-  const nameMatch = emailData.body?.match(nameRegex)
-  const name = nameMatch ? nameMatch[1].trim() : extractNameFromEmail(candidateEmail)
+  // חילוץ שם משופר
+  let name = ''
+  
+  // תבניות לחילוץ שם מגוף המייל
+  const namePatterns = [
+    /(?:שם[:\s]+|name[:\s]+)([א-ת\s]{2,30}|[A-Za-z\s]{2,40})/i,
+    /(?:שלום,?\s+|מצורף קורות חיים של\s+|אני\s+|קוראים לי\s+)([א-ת\s]{2,30})/i,
+    /^([א-ת]{2,15}\s+[א-ת]{2,15})$/m,  // שם פרטי + משפחה בעברית
+    /^([A-Z][a-z]+\s+[A-Z][a-z]+)$/m,   // First Last in English
+  ]
+  
+  for (const pattern of namePatterns) {
+    const match = emailData.body?.match(pattern) || text.match(pattern)
+    if (match && match[1]) {
+      const possibleName = match[1].trim()
+      // וודא שזה לא מילים שלא יכולות להיות שם
+      const notNames = ['קורות חיים', 'resume', 'cv', 'ניסיון', 'השכלה']
+      if (!notNames.some(n => possibleName.toLowerCase().includes(n.toLowerCase()))) {
+        name = possibleName
+        break
+      }
+    }
+  }
+  
+  // fallback לאימייל
+  if (!name) {
+    name = extractNameFromEmail(candidateEmail)
+  }
 
   // חילוץ עיר
   const cities = [

@@ -4,6 +4,106 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 
+// 🔍 GET - תצוגה מקדימה של המייל לפני שליחה
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const candidateId = searchParams.get('candidateId')
+    const positionId = searchParams.get('positionId')
+
+    if (!candidateId || !positionId) {
+      return NextResponse.json(
+        { error: "candidateId and positionId are required" },
+        { status: 400 }
+      )
+    }
+
+    // שליפת פרטי המועמד
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      include: { tags: true },
+    })
+
+    if (!candidate) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 })
+    }
+
+    // שליפת פרטי המשרה והמעסיק
+    const position = await prisma.position.findUnique({
+      where: { id: positionId },
+      include: { employer: true, tags: true },
+    })
+
+    if (!position) {
+      return NextResponse.json({ error: "Position not found" }, { status: 404 })
+    }
+
+    if (!position.employer?.email) {
+      return NextResponse.json({ error: "Employer email not found" }, { status: 400 })
+    }
+
+    // 📧 שליפת היסטוריית מיילים קודמים למשרה זו
+    const previousEmails = await prisma.employerEmailHistory.findMany({
+      where: { positionId },
+      orderBy: { sentAt: 'desc' },
+      take: 10, // עד 10 מיילים אחרונים
+    })
+
+    // יצירת משפטי התאמה אוטומטיים
+    const matchingPoints = analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
+    const emailSubject = `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
+
+    return NextResponse.json({
+      success: true,
+      preview: {
+        subject: emailSubject,
+        matchingPoints,
+        candidate: {
+          id: candidate.id,
+          name: candidate.name,
+          email: candidate.email,
+          phone: candidate.phone,
+          city: candidate.city,
+          currentTitle: candidate.currentTitle,
+          currentCompany: candidate.currentCompany,
+          yearsOfExperience: candidate.yearsOfExperience,
+          resumeUrl: candidate.resumeUrl,
+          tags: candidate.tags.map(t => t.name),
+        },
+        position: {
+          id: position.id,
+          title: position.title,
+          location: position.location,
+        },
+        employer: {
+          id: position.employer.id,
+          name: position.employer.name,
+          email: position.employer.email,
+        }
+      },
+      // 📧 היסטוריית מיילים קודמים
+      previousEmails: previousEmails.map((email: { id: string; candidateName: string; subject: string; matchingPoints: string; sentAt: Date }) => ({
+        id: email.id,
+        candidateName: email.candidateName,
+        subject: email.subject,
+        matchingPoints: JSON.parse(email.matchingPoints),
+        sentAt: email.sentAt,
+      }))
+    })
+  } catch (error: any) {
+    console.error("Error generating preview:", error)
+    return NextResponse.json(
+      { error: "Failed to generate preview", details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
 // 🤖 פונקציה לניתוח חכם של קורות חיים ויצירת משפטי התאמה
 function analyzeAndGenerateMatchingPoints(
   candidate: any,
@@ -164,7 +264,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { candidateId, positionId } = await request.json()
+    // קבלת נתונים - כולל משפטי התאמה מותאמים אישית (אופציונלי)
+    const { candidateId, positionId, customMatchingPoints, customSubject } = await request.json()
 
     if (!candidateId || !positionId) {
       return NextResponse.json(
@@ -236,12 +337,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 🤖 יצירת 5 משפטי התאמה חכמים
-    const matchingPoints = analyzeAndGenerateMatchingPoints(
-      candidate,
-      position,
-      candidate.tags
-    )
+    // 🤖 שימוש במשפטי התאמה מותאמים או יצירה אוטומטית
+    const matchingPoints = customMatchingPoints && customMatchingPoints.length === 5
+      ? customMatchingPoints
+      : analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
 
     // הגדרת SMTP
     const transporter = nodemailer.createTransport({
@@ -254,8 +353,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // בניית המייל
-    const emailSubject = `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
+    // בניית המייל - עם נושא מותאם או אוטומטי
+    const emailSubject = customSubject || `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
     
     const emailHTML = `
       <!DOCTYPE html>
@@ -517,7 +616,7 @@ export async function POST(request: NextRequest) {
               </div>
               
               <ul class="matching-points">
-                ${matchingPoints.map((point, index) => `
+                ${matchingPoints.map((point: string, index: number) => `
                   <li class="matching-point">
                     <div class="point-number">${index + 1}</div>
                     <div class="point-text">${point}</div>
@@ -564,6 +663,11 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
+    // יצירת טקסט משפטי ההתאמה
+    const matchingPointsText = matchingPoints
+      .map((point: string, i: number) => `${i + 1}. ${point}`)
+      .join('\n\n')
+
     // שליחת המייל
     const mailOptions: any = {
       from: `"${process.env.SMTP_FROM_NAME || 'צוות הגיוס'}" <${process.env.SMTP_USER}>`,
@@ -581,7 +685,7 @@ ${candidate.yearsOfExperience ? `ניסיון: ${candidate.yearsOfExperience} ש
 
 למה ${candidate.name} מתאים/ה:
 
-${matchingPoints.map((point, i) => `${i + 1}. ${point}`).join('\n\n')}
+${matchingPointsText}
 
 ${candidate.email ? `אימייל: ${candidate.email}` : ''}
 ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
@@ -603,11 +707,20 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
 
     await transporter.sendMail(mailOptions)
 
-    // עדכון שהמייל נשלח (אופציונלי - ניתן להוסיף שדה במסד הנתונים)
-    // await prisma.candidate.update({
-    //   where: { id: candidateId },
-    //   data: { lastSentToEmployer: new Date() }
-    // })
+    // 📧 שמירת המייל להיסטוריה
+    await prisma.employerEmailHistory.create({
+      data: {
+        candidateId,
+        candidateName: candidate.name,
+        positionId,
+        positionTitle: position.title,
+        employerId: position.employer.id,
+        employerName: position.employer.name,
+        employerEmail: position.employer.email,
+        subject: emailSubject,
+        matchingPoints: JSON.stringify(matchingPoints),
+      }
+    })
 
     return NextResponse.json({
       success: true,

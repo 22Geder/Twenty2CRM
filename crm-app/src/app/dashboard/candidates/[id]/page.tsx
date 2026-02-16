@@ -26,7 +26,8 @@ import {
   Clock,
   XCircle,
   Building2,
-  Star
+  Star,
+  Target
 } from "lucide-react"
 import Link from "next/link"
 import { MatchingPositionsList } from "@/components/matching-positions-list"
@@ -54,6 +55,12 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   const [employers, setEmployers] = useState<any[]>([])  // 🆕 רשימת מעסיקים
   const [candidateStatus, setCandidateStatus] = useState<'new' | 'in-process' | 'hired' | 'rejected'>('new')  // 🆕 סטטוס מועמד
   const [statusSaving, setStatusSaving] = useState(false)  // 🆕 שומר סטטוס
+  
+  // 🆕 סטייטים למודל בחירת משרה לתהליך
+  const [showPositionModal, setShowPositionModal] = useState(false)
+  const [matchingPositions, setMatchingPositions] = useState<any[]>([])
+  const [loadingPositions, setLoadingPositions] = useState(false)
+  const [inProcessPosition, setInProcessPosition] = useState<any>(null)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -159,6 +166,9 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       // 🆕 קביעת סטטוס מועמד
       if (data.hiredAt) {
         setCandidateStatus('hired')
+      } else if (data.inProcessPositionId) {
+        // 🆕 אם יש משרה בתהליך - הוא בתהליך
+        setCandidateStatus('in-process')
       } else if (data.applications && data.applications.length > 0) {
         const hasRejected = data.applications.every((app: any) => app.status === 'REJECTED')
         if (hasRejected) {
@@ -168,6 +178,13 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         }
       } else {
         setCandidateStatus('new')
+      }
+      
+      // 🆕 טעינת משרה בתהליך
+      if (data.inProcessPosition) {
+        setInProcessPosition(data.inProcessPosition)
+      } else {
+        setInProcessPosition(null)
       }
     } catch (err: any) {
       setError(err.message)
@@ -310,19 +327,29 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         if (employerId) {
           updateData.hiredToEmployerId = employerId
         }
+        // 🆕 ניקוי המשרה בתהליך אחרי קבלה
+        updateData.inProcessPositionId = null
+        updateData.inProcessAt = null
       } else if (newStatus === 'rejected') {
         updateData.hiredAt = null
         updateData.hiredToEmployerId = null
         updateData.employmentStatus = null
+        // 🆕 ניקוי המשרה בתהליך
+        updateData.inProcessPositionId = null
+        updateData.inProcessAt = null
       } else if (newStatus === 'in-process') {
         updateData.hiredAt = null
         updateData.hiredToEmployerId = null
         updateData.employmentStatus = null
+        // לא מנקים כאן - זה יקרה דרך handleInProcessClick
       } else {
         // new
         updateData.hiredAt = null
         updateData.hiredToEmployerId = null
         updateData.employmentStatus = null
+        // 🆕 ניקוי המשרה בתהליך
+        updateData.inProcessPositionId = null
+        updateData.inProcessAt = null
       }
       
       const response = await fetch(`/api/candidates/${candidateId}`, {
@@ -337,6 +364,64 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       }
 
       setCandidateStatus(newStatus)
+      await fetchCandidate()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
+  // 🆕 טיפול בלחיצה על "בתהליך" - פותח מודל לבחירת משרה מכל המשרות
+  const handleInProcessClick = async () => {
+    setLoadingPositions(true)
+    setShowPositionModal(true)
+    
+    try {
+      // 🆕 שליפת כל המשרות הפעילות (לא רק מתאימות!)
+      const response = await fetch('/api/positions?active=true&limit=500')
+      if (response.ok) {
+        const data = await response.json()
+        // מיון לפי מעסיק ואז לפי שם משרה
+        const allPositions = (data.positions || data || [])
+          .sort((a: any, b: any) => {
+            const empA = a.employer?.name || ''
+            const empB = b.employer?.name || ''
+            if (empA !== empB) return empA.localeCompare(empB, 'he')
+            return (a.title || '').localeCompare(b.title || '', 'he')
+          })
+        setMatchingPositions(allPositions)
+      }
+    } catch (error) {
+      console.error('Error fetching positions:', error)
+    } finally {
+      setLoadingPositions(false)
+    }
+  }
+
+  // 🆕 בחירת משרה לתהליך
+  const selectPositionForProcess = async (positionId: string) => {
+    setStatusSaving(true)
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inProcessPositionId: positionId,
+          inProcessAt: new Date().toISOString(),
+          hiredAt: null,
+          hiredToEmployerId: null,
+          employmentStatus: null,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to update status")
+      }
+
+      setCandidateStatus('in-process')
+      setShowPositionModal(false)
       await fetchCandidate()
     } catch (err: any) {
       setError(err.message)
@@ -471,7 +556,7 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                 size="sm"
                 variant={candidateStatus === 'in-process' ? 'default' : 'outline'}
                 className={candidateStatus === 'in-process' ? 'bg-blue-500 hover:bg-blue-600' : 'hover:bg-blue-100'}
-                onClick={() => updateCandidateStatus('in-process')}
+                onClick={handleInProcessClick}
                 disabled={statusSaving}
               >
                 <Clock className="h-4 w-4 ml-1" />
@@ -533,6 +618,74 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
               </Badge>
             )}
           </div>
+          
+          {/* 🆕 הצגת משרה בתהליך */}
+          {inProcessPosition && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-800">בתהליך למשרה:</span>
+                <Link 
+                  href={`/dashboard/positions/${inProcessPosition.id}`}
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  {inProcessPosition.title}
+                </Link>
+                {inProcessPosition.employer && (
+                  <span className="text-gray-600">
+                    ({inProcessPosition.employer.name})
+                  </span>
+                )}
+                {candidate.inProcessAt && (
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700 text-xs">
+                    מתאריך {new Date(candidate.inProcessAt).toLocaleDateString('he-IL')}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* 🚨 התראת 24 שעות בתהליך */}
+          {candidate.inProcessAt && (() => {
+            const hoursInProcess = (new Date().getTime() - new Date(candidate.inProcessAt).getTime()) / (1000 * 60 * 60)
+            if (hoursInProcess >= 24) {
+              return (
+                <div className="mt-4 p-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg shadow-lg animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">⚠️</div>
+                    <div>
+                      <p className="font-bold text-lg">אבירן תתעורר! אני פה {Math.floor(hoursInProcess)} שעות! 😤</p>
+                      <p className="text-sm opacity-90">
+                        המועמד {candidate.name} בתהליך כבר מעל 24 שעות. 
+                        מה קורה? למה עדיין בתהליך?
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          className="bg-white text-red-600 hover:bg-red-50"
+                          onClick={() => updateCandidateStatus('hired')}
+                        >
+                          <CheckCircle className="h-4 w-4 ml-1" />
+                          התקבל!
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          className="bg-white text-gray-600 hover:bg-gray-50"
+                          onClick={() => updateCandidateStatus('rejected')}
+                        >
+                          <XCircle className="h-4 w-4 ml-1" />
+                          לא התקבל
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+            return null
+          })()}
         </CardContent>
       </Card>
 
@@ -1311,6 +1464,8 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       <div className="mt-8">
         <SmartAIMatching 
           candidateId={candidateId}
+          candidateName={candidate?.name}
+          candidatePhone={candidate?.phone || undefined}
           onSendToEmployer={(positionId) => {
             router.push(`/dashboard/send-candidate?candidateId=${candidateId}&positionId=${positionId}`)
           }}
@@ -1319,8 +1474,101 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
 
       {/* רשימת משרות מתאימות - לפי תגיות */}
       <div className="mt-8">
-        <MatchingPositionsList candidateId={candidateId} candidateName={candidate?.name} />
+        <MatchingPositionsList candidateId={candidateId} candidateName={candidate?.name} candidatePhone={candidate?.phone || undefined} />
       </div>
+
+      {/* 🆕 מודל בחירת משרה לתהליך - כל המשרות לפי מעסיק */}
+      {showPositionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPositionModal(false)}>
+          <div 
+            className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                בחר משרה לתהליך - כל המשרות הפעילות
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowPositionModal(false)} className="text-white hover:bg-white/20">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-4 overflow-y-auto max-h-[65vh]">
+              {loadingPositions ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="mr-2 text-gray-600">טוען את כל המשרות...</span>
+                </div>
+              ) : matchingPositions.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Briefcase className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>לא נמצאו משרות פעילות</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 mb-4 bg-blue-50 p-2 rounded">
+                    🎯 נמצאו {matchingPositions.length} משרות פעילות מ-{[...new Set(matchingPositions.map((p: any) => p.employer?.id))].length} מעסיקים. בחר את המשרה שהמועמד בתהליך אליה:
+                  </p>
+                  
+                  {/* קיבוץ לפי מעסיק */}
+                  {(() => {
+                    const grouped = matchingPositions.reduce((acc: any, pos: any) => {
+                      const empId = pos.employer?.id || 'unknown'
+                      const empName = pos.employer?.name || 'ללא מעסיק'
+                      if (!acc[empId]) {
+                        acc[empId] = { name: empName, positions: [] }
+                      }
+                      acc[empId].positions.push(pos)
+                      return acc
+                    }, {} as Record<string, { name: string; positions: any[] }>)
+                    
+                    return Object.entries(grouped).map(([empId, { name, positions }]: [string, any]) => (
+                      <div key={empId} className="border rounded-lg overflow-hidden">
+                        <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-2 font-semibold flex items-center gap-2 sticky top-0">
+                          <Building2 className="h-4 w-4 text-blue-600" />
+                          {name}
+                          <Badge variant="secondary" className="mr-auto">{positions.length} משרות</Badge>
+                        </div>
+                        <div className="divide-y">
+                          {positions.map((position: any) => (
+                            <div
+                              key={position.id}
+                              className="p-3 hover:bg-blue-50 cursor-pointer transition-all"
+                              onClick={() => selectPositionForProcess(position.id)}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900">{position.title}</h4>
+                                  {position.location && (
+                                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                                      <MapPin className="h-3 w-3" />
+                                      {position.location}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button size="sm" variant="outline" className="bg-blue-500 text-white hover:bg-blue-600 border-none text-xs">
+                                  בחר
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  })()}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-2 p-4 border-t bg-gray-50">
+              <Button variant="outline" onClick={() => setShowPositionModal(false)}>
+                ביטול
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

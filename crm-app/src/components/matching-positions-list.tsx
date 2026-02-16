@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { 
   Briefcase,
   Building2,
@@ -15,9 +17,55 @@ import {
   Info,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  MessageCircle,
+  X,
+  Eye,
+  Edit3,
+  Mail,
+  History,
+  Clock,
+  Copy,
+  ChevronDown
 } from "lucide-react"
 import Link from "next/link"
+
+// 📧 ממשק לתצוגה מקדימה של המייל
+interface EmailPreview {
+  subject: string
+  matchingPoints: string[]
+  candidate: {
+    id: string
+    name: string
+    email: string | null
+    phone: string | null
+    city: string | null
+    currentTitle: string | null
+    currentCompany: string | null
+    yearsOfExperience: number | null
+    resumeUrl: string | null
+    tags: string[]
+  }
+  position: {
+    id: string
+    title: string
+    location: string | null
+  }
+  employer: {
+    id: string
+    name: string
+    email: string
+  }
+}
+
+// 📧 ממשק למיילים קודמים
+interface PreviousEmail {
+  id: string
+  candidateName: string
+  subject: string
+  matchingPoints: string[]
+  sentAt: string
+}
 
 interface MatchingPosition {
   id: string
@@ -25,6 +73,8 @@ interface MatchingPosition {
   location: string | null
   salaryRange: string | null
   employmentType: string | null
+  description: string | null
+  requirements: string | null
   active: boolean
   createdAt: string
   employer: {
@@ -69,9 +119,10 @@ interface MatchingPosition {
 interface MatchingPositionsListProps {
   candidateId: string
   candidateName?: string
+  candidatePhone?: string
 }
 
-export function MatchingPositionsList({ candidateId, candidateName }: MatchingPositionsListProps) {
+export function MatchingPositionsList({ candidateId, candidateName, candidatePhone }: MatchingPositionsListProps) {
   const [positions, setPositions] = useState<MatchingPosition[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -80,6 +131,91 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
   const [showScoreDetails, setShowScoreDetails] = useState<string | null>(null)
   const [aiAnalysis, setAiAnalysis] = useState<any>(null)
   const [analyzingPosition, setAnalyzingPosition] = useState<string | null>(null)
+
+  // 📧 State לתצוגה מקדימה של מייל
+  const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null)
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [editedSubject, setEditedSubject] = useState("")
+  const [editedPoints, setEditedPoints] = useState<string[]>([])
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [previousEmails, setPreviousEmails] = useState<PreviousEmail[]>([])
+  const [showPreviousEmails, setShowPreviousEmails] = useState(false)
+
+  // 📱 WhatsApp Helpers
+  const normalizePhoneForWhatsApp = (phone: string): string => {
+    // הסרת תווים לא נחוצים
+    let cleaned = phone.replace(/[\s\-\(\)\.]/g, '')
+    // הסרת + מההתחלה אם יש
+    if (cleaned.startsWith('+')) cleaned = cleaned.substring(1)
+    // אם מתחיל ב-0, החלף ל-972
+    if (cleaned.startsWith('0')) cleaned = '972' + cleaned.substring(1)
+    // אם לא מתחיל ב-972, הוסף
+    if (!cleaned.startsWith('972')) cleaned = '972' + cleaned
+    return cleaned
+  }
+
+  // יצירת הודעת וואטסאפ מותאמת אישית למשרה
+  const generateWhatsAppMessage = (position: MatchingPosition): string => {
+    const lines: string[] = []
+    
+    // פתיחה אישית עם שם המועמד
+    lines.push(`היי ${candidateName || ''}! 👋`)
+    lines.push('')
+    lines.push(`מצאתי משרה שיכולה להתאים לך:`)
+    lines.push('')
+    
+    // פרטי המשרה
+    lines.push(`🎯 *${position.title}*`)
+    lines.push(`🏢 ${position.employer.name}`)
+    
+    if (position.location) {
+      lines.push(`📍 ${position.location}`)
+    }
+    
+    if (position.salaryRange) {
+      lines.push(`💰 ${position.salaryRange}`)
+    }
+    
+    if (position.employmentType) {
+      lines.push(`⏰ ${position.employmentType}`)
+    }
+    
+    // תיאור המשרה (קצר)
+    if (position.description) {
+      lines.push('')
+      const shortDesc = position.description.length > 200 
+        ? position.description.substring(0, 200) + '...' 
+        : position.description
+      lines.push(`📋 *תיאור:*`)
+      lines.push(shortDesc)
+    }
+    
+    // דרישות המשרה
+    if (position.requirements) {
+      lines.push('')
+      const shortReq = position.requirements.length > 250 
+        ? position.requirements.substring(0, 250) + '...' 
+        : position.requirements
+      lines.push(`✅ *דרישות:*`)
+      lines.push(shortReq)
+    }
+    
+    // סיום
+    lines.push('')
+    lines.push(`האם המשרה מעניינת אותך? 🤔`)
+    lines.push('')
+    lines.push(`טוונטי טו ג'ובס 🚀`)
+    
+    return lines.join('\n')
+  }
+
+  // יצירת קישור וואטסאפ
+  const getWhatsAppLink = (phone: string, message: string): string => {
+    const normalizedPhone = normalizePhoneForWhatsApp(phone)
+    const encodedMessage = encodeURIComponent(message)
+    return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
+  }
 
   useEffect(() => {
     if (candidateId) {
@@ -106,8 +242,10 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
         id: match.positionId,
         title: match.positionTitle,
         location: match.location,
-        salaryRange: null,
-        employmentType: null,
+        salaryRange: match.salaryRange || null,
+        employmentType: match.employmentType || null,
+        description: match.description || null,
+        requirements: match.requirements || null,
         active: true,
         createdAt: new Date().toISOString(),
         employer: {
@@ -174,26 +312,62 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
     }
   }
 
-  const sendToEmployer = async (position: MatchingPosition) => {
+  // 📧 פתיחת תצוגה מקדימה של המייל לפני שליחה
+  const openEmailPreview = async (position: MatchingPosition) => {
     if (position.isBlocked) {
       alert(`❌ לא ניתן לשלוח - ${candidateName || 'המועמד/ת'} כבר עבד/ה ב-${position.employer.name}`)
       return
     }
 
-    if (!confirm(`האם לשלוח את ${candidateName || 'המועמד/ת'} למעסיק ${position.employer.name} עם ניתוח התאמה אוטומטי?`)) {
-      return
+    try {
+      setLoadingPreview(true)
+      setSending(position.id)
+      
+      // שליפת תצוגה מקדימה מהשרת
+      const response = await fetch(
+        `/api/send-candidate-to-employer?candidateId=${candidateId}&positionId=${position.id}`,
+        { method: "GET" }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load preview")
+      }
+
+      // הגדרת הנתונים לעריכה
+      setEmailPreview(data.preview)
+      setEditedSubject(data.preview.subject)
+      setEditedPoints([...data.preview.matchingPoints])
+      
+      // 📧 שמירת מיילים קודמים
+      setPreviousEmails(data.previousEmails || [])
+      setShowPreviousEmails(false)
+      
+      setShowEmailModal(true)
+    } catch (err: any) {
+      alert(`❌ שגיאה בטעינת התצוגה המקדימה: ${err.message}`)
+    } finally {
+      setLoadingPreview(false)
+      setSending(null)
     }
+  }
+
+  // 📤 שליחת המייל עם העריכות
+  const sendEmailWithPreview = async () => {
+    if (!emailPreview) return
 
     try {
-      setSending(position.id)
+      setSendingEmail(true)
+      
       const response = await fetch("/api/send-candidate-to-employer", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidateId,
-          positionId: position.id,
+          positionId: emailPreview.position.id,
+          customSubject: editedSubject,
+          customMatchingPoints: editedPoints,
         }),
       })
 
@@ -203,14 +377,39 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
         throw new Error(data.error || "Failed to send candidate")
       }
 
-      alert(`✅ המייל נשלח בהצלחה!\n\nנשלח ל: ${data.employerEmail}\n\nהמייל כולל:\n✓ פרטי המועמד/ת\n✓ 5 משפטי התאמה מדויקים\n✓ קורות חיים מצורפים`)
-      
+      alert(`✅ המייל נשלח בהצלחה!\n\nנשלח ל: ${data.employerEmail}`)
+      setShowEmailModal(false)
+      setEmailPreview(null)
       await fetchMatchingPositions()
     } catch (err: any) {
-      alert(`❌ שגיאה: ${err.message}`)
+      alert(`❌ שגיאה בשליחה: ${err.message}`)
     } finally {
-      setSending(null)
+      setSendingEmail(false)
     }
+  }
+
+  // עדכון משפט התאמה בודד
+  const updateMatchingPoint = (index: number, value: string) => {
+    const newPoints = [...editedPoints]
+    newPoints[index] = value
+    setEditedPoints(newPoints)
+  }
+
+  // 📧 העתקת משפטי התאמה ממייל קודם
+  const loadFromPreviousEmail = (email: PreviousEmail) => {
+    setEditedPoints([...email.matchingPoints])
+    // עדכון הנושא עם שם המועמד הנוכחי
+    if (emailPreview) {
+      setEditedSubject(`מועמד/ת מתאים/ה למשרה: ${emailPreview.position.title} - ${emailPreview.candidate.name}`)
+    }
+    setShowPreviousEmails(false)
+  }
+
+  // 📧 העתקת משפט בודד ממייל קודם
+  const copyPointFromPrevious = (point: string, index: number) => {
+    const newPoints = [...editedPoints]
+    newPoints[index] = point
+    setEditedPoints(newPoints)
   }
 
   const getMatchScoreColor = (score: number) => {
@@ -479,12 +678,30 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
                     )}
                   </Button>
 
+                  {/* WhatsApp Button */}
+                  {candidatePhone && (
+                    <a
+                      href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1"
+                    >
+                      <Button
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                        size="sm"
+                      >
+                        <MessageCircle className="h-4 w-4 ml-2" />
+                        וואטסאפ למועמד
+                      </Button>
+                    </a>
+                  )}
+
                   <Button
-                    onClick={() => sendToEmployer(position)}
+                    onClick={() => openEmailPreview(position)}
                     className={`flex-1 ${
                       position.isBlocked
                         ? 'bg-gray-400'
-                        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                        : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
                     }`}
                     size="sm"
                     disabled={sending === position.id || position.isBlocked}
@@ -492,12 +709,12 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
                     {sending === position.id ? (
                       <>
                         <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        שולח...
+                        טוען...
                       </>
                     ) : (
                       <>
-                        <Send className="h-4 w-4 ml-2" />
-                        שלח למעסיק
+                        <Eye className="h-4 w-4 ml-2" />
+                        צפה ושלח למעסיק
                       </>
                     )}
                   </Button>
@@ -507,6 +724,198 @@ export function MatchingPositionsList({ candidateId, candidateName }: MatchingPo
           </div>
         )}
       </CardContent>
+
+      {/* 📧 מודל תצוגה מקדימה של המייל */}
+      {showEmailModal && emailPreview && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" dir="rtl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                <h2 className="text-lg font-bold">תצוגה מקדימה - ערוך לפני שליחה</h2>
+              </div>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="hover:bg-white/20 rounded-full p-1 transition"
+                title="סגור"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* פרטי הנמען */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm text-gray-500 mb-1">נשלח אל:</div>
+                <div className="font-medium text-gray-800">
+                  {emailPreview.employer.name} ({emailPreview.employer.email})
+                </div>
+                <div className="text-sm text-gray-500 mt-2">עבור המשרה:</div>
+                <div className="font-medium text-gray-800">{emailPreview.position.title}</div>
+              </div>
+
+              {/* נושא המייל */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  📝 נושא המייל:
+                </label>
+                <Input
+                  value={editedSubject}
+                  onChange={(e) => setEditedSubject(e.target.value)}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+
+              {/* פרטי המועמד */}
+              <div className="bg-purple-50 rounded-lg p-3">
+                <div className="font-semibold text-purple-900 mb-2">📋 פרטי המועמד/ת:</div>
+                <div className="grid gap-1 text-sm text-purple-800">
+                  <div><strong>שם:</strong> {emailPreview.candidate.name}</div>
+                  {emailPreview.candidate.currentTitle && (
+                    <div><strong>תפקיד:</strong> {emailPreview.candidate.currentTitle}</div>
+                  )}
+                  {emailPreview.candidate.yearsOfExperience && (
+                    <div><strong>ניסיון:</strong> {emailPreview.candidate.yearsOfExperience} שנים</div>
+                  )}
+                  {emailPreview.candidate.city && (
+                    <div><strong>מיקום:</strong> {emailPreview.candidate.city}</div>
+                  )}
+                  {emailPreview.candidate.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {emailPreview.candidate.tags.slice(0, 5).map((tag, i) => (
+                        <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 📧 מיילים קודמים */}
+              {previousEmails.length > 0 && (
+                <div className="border border-blue-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setShowPreviousEmails(!showPreviousEmails)}
+                    className="w-full bg-blue-50 hover:bg-blue-100 p-3 flex items-center justify-between transition"
+                  >
+                    <div className="flex items-center gap-2 text-blue-700 font-medium">
+                      <History className="h-4 w-4" />
+                      📧 היסטוריית מיילים למשרה זו ({previousEmails.length})
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-blue-600 transition ${showPreviousEmails ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showPreviousEmails && (
+                    <div className="p-3 space-y-3 max-h-60 overflow-y-auto bg-white">
+                      {previousEmails.map((email) => (
+                        <div key={email.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {new Date(email.sentAt).toLocaleDateString('he-IL')} • למועמד: {email.candidateName}
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => loadFromPreviousEmail(email)}
+                            >
+                              <Copy className="h-3 w-3 ml-1" />
+                              העתק הכל
+                            </Button>
+                          </div>
+                          <div className="space-y-1">
+                            {email.matchingPoints.slice(0, 2).map((point, idx) => (
+                              <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded flex items-start justify-between gap-2">
+                                <span className="flex-1">"{point.substring(0, 80)}..."</span>
+                                <button
+                                  onClick={() => copyPointFromPrevious(point, idx)}
+                                  className="text-blue-500 hover:text-blue-700 shrink-0"
+                                  title={`העתק למשפט ${idx + 1}`}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                            {email.matchingPoints.length > 2 && (
+                              <div className="text-xs text-gray-400 text-center">
+                                +{email.matchingPoints.length - 2} משפטים נוספים
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5 משפטי ההתאמה */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ✨ 5 משפטי ההתאמה (ערוך לפי הצורך):
+                </label>
+                <div className="space-y-3">
+                  {editedPoints.map((point, index) => (
+                    <div key={index} className="relative">
+                      <div className="absolute right-3 top-3 bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                        {index + 1}
+                      </div>
+                      <Textarea
+                        value={point}
+                        onChange={(e) => updateMatchingPoint(index, e.target.value)}
+                        className="text-right pr-12 min-h-[70px]"
+                        dir="rtl"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* הערה על קו"ח */}
+              {emailPreview.candidate.resumeUrl && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                  📄 קורות החיים יצורפו אוטומטית למייל
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t p-4 bg-gray-50 flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailModal(false)}
+                className="flex-1"
+              >
+                ביטול
+              </Button>
+              <Button
+                onClick={sendEmailWithPreview}
+                disabled={sendingEmail}
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              >
+                {sendingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    שולח...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 ml-2" />
+                    שלח מייל למעסיק
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

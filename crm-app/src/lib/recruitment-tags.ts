@@ -390,6 +390,90 @@ export const RECRUITMENT_TAGS: RecruitmentTagsType = {
     negative: [],
     color: "#AB47BC",
     icon: "👥"
+  },
+
+  "Banking": {
+    displayName: "בנקאות ושירותים פיננסיים",
+    positive: [
+      // בנקאי לקוחות - תפקיד עיקרי
+      "בנקאי", "בנקאית", "בנקאי לקוחות", "בנקאות", "שירותי בנקאות",
+      "בנק", "סניף בנק", "מנהל סניף", "מנהל תחום",
+      
+      // עו"ש ושירותים בסיסיים
+      "עו\"ש", "עובר ושב", "חשבון עו\"ש", "פתיחת חשבון", "ניהול חשבון",
+      "הוראות קבע", "הרשאות לחיוב", "אישור יתרות", "סגירת חשבון",
+      "כרטיסי אשראי", "כרטיס אשראי", "פנקסי שיקים", "פנקס צ'קים",
+      "שיקים", "צ'קים", "שיקים דחויים",
+      
+      // אשראי והשקעות
+      "אשראי", "בקשת אשראי", "אישור אשראי", "הלוואות", "הלוואה",
+      "השקעות", "ני\"ע", "ניירות ערך", "פיקדונות", "פיקדון",
+      "חוק הייעוץ", "ייעוץ השקעות",
+      
+      // טלר וקופה
+      "טלר", "טלרית", "שירותי קופה", "קופה", "קופאי בנק",
+      "הפקדות", "הפקדה", "משיכות", "משיכה", "מזומן",
+      "פריטה", "כספון", "קופה מרכזית",
+      
+      // מט"ח
+      "מט\"ח", "מטבע חוץ", "קניית מט\"ח", "מכירת מט\"ח",
+      "פעולות מט\"ח", "קופת מט\"ח",
+      
+      // כישורים ותכונות נדרשות
+      "תודעת שירות", "שירות לקוחות", "קבלת קהל", "שירות פרונטאלי",
+      "יחסי אנוש", "סבלנות", "סובלנות", "עבודה בצוות",
+      "יכולת מכירה", "מכירות", "שיווק מוצרי בנק", "יעדי מכירות",
+      "עמידה ביעדים", "סל מכירות",
+      "סדר וארגון", "דייקנות", "יסודיות", "תשומת לב לפרטים",
+      "עבודה תחת לחץ", "יעילות", "מהירות תגובה",
+      "יושרה", "אמינות", "מהימנות",
+      "יכולת למידה", "הבנה מהירה",
+      "גמישות", "מעבר בין משימות",
+      
+      // מערכות ונהלים
+      "CRM", "מערכת CRM", "נהלי הבנק", "נהלים בנקאיים",
+      "הלבנת הון", "ציות", "רגולציה", "תיוק", "דוגמאות חתימה",
+      
+      // כלליS
+      "גיוס לקוחות", "העמקת פעילות", "לקוחות רדומים",
+      "ביזנס", "תיקי ביזנס", "עסקאות", "תשלומים"
+    ],
+    negative: [],
+    color: "#1565C0",
+    icon: "🏦"
+  },
+
+  "CustomerService": {
+    displayName: "שירות לקוחות ומכירות",
+    positive: [
+      // שירות לקוחות
+      "שירות לקוחות", "נציג שירות", "נציגת שירות", "מוקד שירות",
+      "קבלת קהל", "שירות פרונטאלי", "שירות טלפוני",
+      "תודעת שירות", "מסביר פנים", "יחסי אנוש טובים",
+      "טיפול בתלונות", "פתרון בעיות", "מענה ללקוחות",
+      
+      // מכירות
+      "מכירות", "יכולת מכירה", "שיווק", "שיווק מוצרים",
+      "איש מכירות", "אשת מכירות", "נציג מכירות",
+      "עמידה ביעדים", "יעדי מכירות", "טלמרקטינג",
+      "הגדלת מכירות", "מכירה יזומה",
+      
+      // קופה וקמעונאות
+      "קופאי", "קופאית", "עבודת קופה", "קופה רושמת",
+      "מזומן", "כרטיסי אשראי",
+      "קמעונאות", "חנות", "רשת חנויות",
+      
+      // מוקדים
+      "מוקד", "מוקדן", "מוקדנית", "call center",
+      "מוקד טלפוני", "מענה טלפוני",
+      
+      // כישורים
+      "סבלנות", "אדיבות", "הקשבה", "תקשורת",
+      "יכולת שכנוע", "משא ומתן", "התמודדות עם לחץ"
+    ],
+    negative: [],
+    color: "#00ACC1",
+    icon: "🎯"
   }
 };
 
@@ -515,8 +599,10 @@ export function findRelatedCategories(categories: string[]): string[] {
     "Security": ["General_Office_Admin"],
     "Production": ["Engineer", "Warehouse_Worker", "Maintenance"],
     "Healthcare": ["General_Office_Admin", "Consulting"],
-    "Finance_Accounting": ["General_Office_Admin", "Consulting"],
-    "HR_Recruitment": ["General_Office_Admin", "Consulting"]
+    "Finance_Accounting": ["General_Office_Admin", "Consulting", "Banking"],
+    "HR_Recruitment": ["General_Office_Admin", "Consulting"],
+    "Banking": ["Finance_Accounting", "CustomerService", "General_Office_Admin"],
+    "CustomerService": ["Banking", "General_Office_Admin", "HR_Recruitment"]
   };
   
   const related = new Set<string>();

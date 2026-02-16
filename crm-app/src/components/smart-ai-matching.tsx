@@ -23,12 +23,14 @@ import {
   Zap,
   Eye,
   Search,
-  Navigation
+  Navigation,
+  MessageCircle
 } from "lucide-react"
 
 interface SmartAIMatchingProps {
   candidateId: string
   candidateName?: string
+  candidatePhone?: string
   onSendToEmployer?: (positionId: string) => void
 }
 
@@ -47,6 +49,10 @@ interface MatchResult {
   positionTitle: string
   employerName: string
   location: string
+  description?: string
+  requirements?: string
+  salaryRange?: string
+  employmentType?: string
   score: number
   locationMatch?: boolean
   strengths: string[]
@@ -55,7 +61,7 @@ interface MatchResult {
   shouldProceed: boolean
 }
 
-export function SmartAIMatching({ candidateId, candidateName, onSendToEmployer }: SmartAIMatchingProps) {
+export function SmartAIMatching({ candidateId, candidateName, candidatePhone, onSendToEmployer }: SmartAIMatchingProps) {
   const [positions, setPositions] = useState<Position[]>([])
   const [selectedPositionId, setSelectedPositionId] = useState<string>("")
   const [loading, setLoading] = useState(false)
@@ -68,6 +74,70 @@ export function SmartAIMatching({ candidateId, candidateName, onSendToEmployer }
   const [scanStatus, setScanStatus] = useState<string>("")
   const [candidateCity, setCandidateCity] = useState<string>("")
   const [autoScanned, setAutoScanned] = useState(false)
+
+  // 📱 WhatsApp Helpers
+  const normalizePhoneForWhatsApp = (phone: string): string => {
+    let cleaned = phone.replace(/[\s\-\(\)\.]/g, '')
+    if (cleaned.startsWith('+')) cleaned = cleaned.substring(1)
+    if (cleaned.startsWith('0')) cleaned = '972' + cleaned.substring(1)
+    if (!cleaned.startsWith('972')) cleaned = '972' + cleaned
+    return cleaned
+  }
+
+  const generateWhatsAppMessage = (match: MatchResult): string => {
+    const lines: string[] = []
+    
+    lines.push(`היי ${candidateName || ''}! 👋`)
+    lines.push('')
+    lines.push(`מצאתי משרה שיכולה להתאים לך:`)
+    lines.push('')
+    
+    lines.push(`🎯 *${match.positionTitle}*`)
+    lines.push(`🏢 ${match.employerName}`)
+    
+    if (match.location) {
+      lines.push(`📍 ${match.location}`)
+    }
+    
+    if (match.salaryRange) {
+      lines.push(`💰 ${match.salaryRange}`)
+    }
+    
+    if (match.employmentType) {
+      lines.push(`⏰ ${match.employmentType}`)
+    }
+    
+    if (match.description) {
+      lines.push('')
+      const shortDesc = match.description.length > 200 
+        ? match.description.substring(0, 200) + '...' 
+        : match.description
+      lines.push(`📋 *תיאור:*`)
+      lines.push(shortDesc)
+    }
+    
+    if (match.requirements) {
+      lines.push('')
+      const shortReq = match.requirements.length > 250 
+        ? match.requirements.substring(0, 250) + '...' 
+        : match.requirements
+      lines.push(`✅ *דרישות:*`)
+      lines.push(shortReq)
+    }
+    
+    lines.push('')
+    lines.push(`האם המשרה מעניינת אותך? 🤔`)
+    lines.push('')
+    lines.push(`טוונטי טו ג'ובס 🚀`)
+    
+    return lines.join('\n')
+  }
+
+  const getWhatsAppLink = (phone: string, message: string): string => {
+    const normalizedPhone = normalizePhoneForWhatsApp(phone)
+    const encodedMessage = encodeURIComponent(message)
+    return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
+  }
 
   // טוען משרות
   useEffect(() => {
@@ -258,15 +328,35 @@ export function SmartAIMatching({ candidateId, candidateName, onSendToEmployer }
             <p className="text-sm text-gray-700">{match.recommendation}</p>
           </div>
 
-          {match.shouldProceed && onSendToEmployer && (
-            <Button 
-              onClick={() => onSendToEmployer(match.positionId)}
-              className="w-full bg-teal-600 hover:bg-teal-700"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              שלח למעסיק
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {/* WhatsApp Button */}
+            {candidatePhone && (
+              <a
+                href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(match))}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1"
+              >
+                <Button
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  וואטסאפ למועמד
+                </Button>
+              </a>
+            )}
+            
+            {/* Send to Employer Button */}
+            {match.shouldProceed && onSendToEmployer && (
+              <Button 
+                onClick={() => onSendToEmployer(match.positionId)}
+                className="flex-1 bg-teal-600 hover:bg-teal-700"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                שלח למעסיק
+              </Button>
+            )}
+          </div>
         </CardContent>
       )}
     </Card>

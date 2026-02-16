@@ -259,7 +259,7 @@ function detectTags(text: string): string[] {
 // ניתוח עם Gemini AI
 async function analyzeWithGemini(cvText: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `אתה מומחה HR ישראלי. נתח את קורות החיים הבאים וחלץ מידע מדויק.
 

@@ -38,6 +38,7 @@ interface MatchingCandidate {
   rating: number | null
   createdAt: string
   resumeUrl: string | null
+  city?: string | null
   tags: Array<{
     id: string
     name: string
@@ -50,12 +51,34 @@ interface MatchingCandidate {
   }>
   matchScore: number
   hasApplied: boolean
+  locationMatch?: boolean
+  candidateCategories?: string[]
+  categoryOverlap?: string[]
+  recruitmentTagMatch?: number
+  // 🆕 שדות חדשים
+  educationStatus?: {
+    level: string
+    isStudying: boolean
+    details: string
+  }
+  whySuitable?: string[]
+  comparisonTags?: Array<{
+    name: string
+    type: 'match' | 'skill' | 'education' | 'location' | 'experience' | 'category'
+    color: string
+  }>
+  candidateRecruitmentTags?: Array<{
+    keyword: string
+    category: string
+  }>
   scoreBreakdown?: {
     tags: number
+    recruitmentTags: number
+    categories: number
     partial: number
+    location: number
     experience: number
     rating: number
-    location: number
     title: number
     freshness: number
     contact: number
@@ -109,6 +132,8 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
   const createApplication = async (candidateId: string) => {
     try {
       setApplying(candidateId)
+      console.log('Creating application for candidate:', candidateId, 'to position:', positionId)
+      
       const response = await fetch("/api/applications", {
         method: "POST",
         headers: {
@@ -122,15 +147,24 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
         }),
       })
 
+      const data = await response.json()
+      console.log('Application response:', response.status, data)
+
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to create application")
+        if (response.status === 409) {
+          alert("✅ המועמד כבר נמצא בתהליך למשרה זו")
+        } else {
+          throw new Error(data.error || "Failed to create application")
+        }
+        return
       }
 
       // רענון הרשימה
+      alert("✅ המועמד נוסף למשרה בהצלחה!")
       await fetchMatchingCandidates()
     } catch (err: any) {
-      alert(err.message)
+      console.error('Error creating application:', err)
+      alert("❌ שגיאה: " + err.message)
     } finally {
       setApplying(null)
     }
@@ -383,8 +417,9 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
             </div>
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+            <span className="text-sm">🧠</span>
             <TrendingUp className="h-3 w-3" />
-            מיון חכם לפי 10 פרמטרים
+            AI ULTRA - התאמה חכמה לפי 10 פרמטרים + מיקום
         </p>
         
         {/* כפתורי בחירה */}
@@ -576,10 +611,28 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
                           <span className="font-bold">{candidate.scoreBreakdown.tags}</span>
                         </div>
                       )}
+                      {candidate.scoreBreakdown.recruitmentTags > 0 && (
+                        <div className="flex justify-between">
+                          <span>🧠 תגיות AI:</span>
+                          <span className="font-bold">{candidate.scoreBreakdown.recruitmentTags}</span>
+                        </div>
+                      )}
+                      {candidate.scoreBreakdown.categories > 0 && (
+                        <div className="flex justify-between">
+                          <span>📂 קטגוריות:</span>
+                          <span className="font-bold">{candidate.scoreBreakdown.categories}</span>
+                        </div>
+                      )}
                       {candidate.scoreBreakdown.partial > 0 && (
                         <div className="flex justify-between">
                           <span>התאמה חלקית:</span>
                           <span className="font-bold">{candidate.scoreBreakdown.partial}</span>
+                        </div>
+                      )}
+                      {candidate.scoreBreakdown.location > 0 && (
+                        <div className="flex justify-between">
+                          <span>📍 מיקום:</span>
+                          <span className="font-bold text-green-600">{candidate.scoreBreakdown.location}</span>
                         </div>
                       )}
                       {candidate.scoreBreakdown.experience > 0 && (
@@ -592,12 +645,6 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
                         <div className="flex justify-between">
                           <span>תפקיד נוכחי:</span>
                           <span className="font-bold">{Math.round(candidate.scoreBreakdown.title)}</span>
-                        </div>
-                      )}
-                      {candidate.scoreBreakdown.location > 0 && (
-                        <div className="flex justify-between">
-                          <span>מיקום:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.location}</span>
                         </div>
                       )}
                       {candidate.scoreBreakdown.rating > 0 && (
@@ -616,6 +663,58 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
                         <span>סה"כ:</span>
                         <span>{candidate.matchScore}%</span>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Location Match Indicator */}
+                  {candidate.locationMatch && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                      <span className="text-lg">📍</span>
+                      <span className="font-medium">מתגורר באזור המשרה!</span>
+                    </div>
+                  )}
+
+                  {/* 🎓 Education Status - השכלה */}
+                  {candidate.educationStatus?.details && (
+                    <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                      <span className="text-lg">🎓</span>
+                      <span className="font-medium">{candidate.educationStatus.details}</span>
+                    </div>
+                  )}
+
+                  {/* 📝 Why Suitable - למה מתאים */}
+                  {candidate.whySuitable && candidate.whySuitable.length > 0 && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
+                      <div className="text-sm font-bold text-green-800 mb-2 flex items-center gap-1">
+                        <span>💡</span>
+                        למה מתאים למשרה:
+                      </div>
+                      <ul className="space-y-1">
+                        {candidate.whySuitable.map((reason, idx) => (
+                          <li key={idx} className="text-xs text-green-700">
+                            {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 🔑 Comparison Tags - עד 30 תגיות השוואה */}
+                  {candidate.comparisonTags && candidate.comparisonTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {candidate.comparisonTags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                          style={{
+                            backgroundColor: `${tag.color}20`,
+                            color: tag.color,
+                            border: `1px solid ${tag.color}40`
+                          }}
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
                     </div>
                   )}
 

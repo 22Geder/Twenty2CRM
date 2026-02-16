@@ -21,6 +21,8 @@ export interface Job {
   jobCode?: string;
   positionType?: 'permanent' | 'temporary' | 'maternity-replacement';
   branchType?: 'continuous' | 'split';
+  description?: string;  // 🆕 תיאור המשרה
+  salary?: string;       // 🆕 שכר
   salaryDetails?: {
     monthly?: string;
     yearly?: string;

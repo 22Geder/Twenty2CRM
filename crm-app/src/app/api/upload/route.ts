@@ -80,6 +80,61 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
   }
 }
 
+// 🆕 AI-powered structured CV extraction using Gemini
+async function extractCVWithAI(text: string): Promise<any> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    
+    const prompt = `אתה מומחה בניתוח קורות חיים. נתח את הטקסט הבא וחלץ את המידע בפורמט JSON בלבד.
+
+טקסט קורות החיים:
+${text.substring(0, 4000)}
+
+החזר JSON בפורמט הבא בלבד (ללא הסברים נוספים):
+{
+  "name": "שם מלא של המועמד",
+  "email": "כתובת אימייל או null",
+  "phone": "מספר טלפון בפורמט 05XXXXXXXX או null",
+  "city": "עיר מגורים או null",
+  "currentTitle": "תפקיד נוכחי/אחרון או null",
+  "yearsOfExperience": מספר שנות ניסיון או null,
+  "skills": ["רשימת כישורים ומיומנויות"],
+  "education": "השכלה או null",
+  "licenses": ["רשימת רישיונות - נהיגה, מלגזה וכו'"],
+  "languages": ["שפות"],
+  "workHistory": ["תפקידים קודמים"],
+  "confidence": {
+    "name": 0-100,
+    "phone": 0-100,
+    "email": 0-100,
+    "city": 0-100
+  }
+}
+
+חשוב: 
+- החזר JSON תקין בלבד
+- אם לא מצאת מידע, רשום null
+- ציון ביטחון (confidence) מציין כמה אתה בטוח במידע שחילצת`;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    // Extract JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.log('⚠️ AI did not return valid JSON, falling back to regex');
+      return null;
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log('✅ AI extracted candidate data:', parsed.name);
+    return parsed;
+  } catch (error) {
+    console.error('AI extraction error:', error);
+    return null;
+  }
+}
+
 // AI-powered text analysis to extract candidate info
 function analyzeCVText(text: string): any {
   const lines = text.split('\n').filter(line => line.trim());
@@ -351,6 +406,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const confirmOnly = formData.get('confirmOnly') === 'true'; // 🆕 מצב אישור בלבד
 
     if (!file) {
       return NextResponse.json(
@@ -389,8 +445,77 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Analyze the extracted text
-    const candidateData = analyzeCVText(text);
+    // 🆕 נסה קודם AI extraction, ואז fallback to regex
+    let candidateData: any = null;
+    let aiExtracted = false;
+    let confidence: any = { name: 0, phone: 0, email: 0, city: 0 };
+    
+    // Try AI extraction first
+    if (text.length > 50) {
+      const aiData = await extractCVWithAI(text);
+      if (aiData && aiData.name && aiData.name !== 'null') {
+        candidateData = {
+          name: aiData.name || 'לא זוהה',
+          email: aiData.email || 'לא זוהה',
+          phone: aiData.phone || 'לא זוהה',
+          city: aiData.city || 'לא זוהה',
+          currentTitle: aiData.currentTitle || 'לא זוהה',
+          skills: aiData.skills || [],
+          experience: aiData.yearsOfExperience ? `${aiData.yearsOfExperience} שנים` : 'לא זוהה',
+          education: aiData.education,
+          licenses: aiData.licenses || [],
+          languages: aiData.languages || [],
+          workHistory: aiData.workHistory || [],
+          tags: [...(aiData.skills || []), ...(aiData.licenses || []), ...(aiData.languages || [])],
+          recruitmentTags: [],
+          professionalCategories: []
+        };
+        confidence = aiData.confidence || { name: 80, phone: 80, email: 80, city: 80 };
+        aiExtracted = true;
+        console.log('✅ Using AI extraction for:', candidateData.name);
+      }
+    }
+    
+    // Fallback to regex if AI failed
+    if (!candidateData) {
+      candidateData = analyzeCVText(text);
+      console.log('📝 Using regex extraction for:', candidateData.name);
+    }
+
+    // 🆕 חישוב איכות הנתונים שחולצו
+    const dataQuality = {
+      hasName: candidateData.name && candidateData.name !== 'לא זוהה',
+      hasPhone: candidateData.phone && candidateData.phone !== 'לא זוהה',
+      hasEmail: candidateData.email && candidateData.email !== 'לא זוהה',
+      hasCity: candidateData.city && candidateData.city !== 'לא זוהה',
+      hasTitle: candidateData.currentTitle && candidateData.currentTitle !== 'לא זוהה',
+      hasSkills: Array.isArray(candidateData.skills) && candidateData.skills.length > 0 && 
+                 !candidateData.skills.includes('לא זוהו'),
+      confidence
+    };
+    
+    const qualityScore = [
+      dataQuality.hasName ? 25 : 0,
+      dataQuality.hasPhone ? 25 : 0,
+      dataQuality.hasEmail ? 20 : 0,
+      dataQuality.hasCity ? 15 : 0,
+      dataQuality.hasTitle ? 10 : 0,
+      dataQuality.hasSkills ? 5 : 0
+    ].reduce((a, b) => a + b, 0);
+
+    // 🆕 אם זה רק בדיקה (confirmOnly), החזר את הנתונים בלי לשמור
+    if (confirmOnly) {
+      return NextResponse.json({
+        success: true,
+        needsConfirmation: qualityScore < 70 || !dataQuality.hasName,
+        qualityScore,
+        dataQuality,
+        candidate: candidateData,
+        extractedText: text.substring(0, 1000),
+        aiExtracted,
+        fileName: file.name
+      });
+    }
 
     // Save file to uploads directory
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'resumes');

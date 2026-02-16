@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Users, 
   Plus, 
@@ -24,7 +25,9 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Filter
+  Filter,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 
@@ -70,6 +73,63 @@ export default function CandidatesPageModern() {
   const [matchingCandidate, setMatchingCandidate] = useState<string | null>(null)
   const [matchResults, setMatchResults] = useState<any>(null)
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all')
+  
+  // 🆕 מחיקה המונית
+  const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  // 🆕 בחירת/ביטול בחירת מועמד
+  const toggleSelect = (id: string) => {
+    setSelectedCandidates(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  // 🆕 בחירת/ביטול בחירת כולם
+  const toggleSelectAll = () => {
+    if (selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0) {
+      setSelectedCandidates(new Set())
+    } else {
+      setSelectedCandidates(new Set(filteredCandidates.map(c => c.id)))
+    }
+  }
+
+  // 🆕 מחיקה המונית
+  const bulkDelete = async () => {
+    if (selectedCandidates.size === 0) return
+    
+    setIsDeleting(true)
+    try {
+      const response = await fetch('/api/candidates/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedCandidates) })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        alert(`✅ נמחקו ${data.deleted} מועמדים בהצלחה!`)
+        setSelectedCandidates(new Set())
+        setShowDeleteConfirm(false)
+        fetchCandidates()
+      } else {
+        const error = await response.json()
+        alert(`❌ שגיאה במחיקה: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error bulk deleting:', error)
+      alert('❌ שגיאה במחיקה')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   // Helper function to determine candidate status
   const getCandidateStatus = (candidate: Candidate): 'hired' | 'rejected' | 'in-process' | 'new' => {
@@ -444,6 +504,93 @@ export default function CandidatesPageModern() {
         </Card>
       </div>
 
+      {/* 🆕 Bulk Delete Toolbar */}
+      {filteredCandidates.length > 0 && (
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                    בחר הכל
+                  </label>
+                </div>
+                {selectedCandidates.size > 0 && (
+                  <span className="text-sm text-[#00A8A8] font-medium bg-[#00A8A8]/10 px-3 py-1 rounded-full">
+                    נבחרו {selectedCandidates.size} מועמדים
+                  </span>
+                )}
+              </div>
+              {selectedCandidates.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  <Trash2 className="h-4 w-4 ml-2" />
+                  מחק {selectedCandidates.size} מועמדים
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 🆕 Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4 border-0 shadow-2xl">
+            <CardHeader className="bg-red-50 border-b border-red-100">
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                אישור מחיקה
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-slate-600 mb-4">
+                האם אתה בטוח שברצונך למחוק <strong className="text-red-600">{selectedCandidates.size}</strong> מועמדים?
+              </p>
+              <p className="text-sm text-slate-500 mb-6">
+                פעולה זו לא ניתנת לביטול!
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                >
+                  ביטול
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={bulkDelete}
+                  disabled={isDeleting}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      מוחק...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 ml-2" />
+                      מחק לצמיתות
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Premium Candidates Grid */}
       {filteredCandidates.length === 0 ? (
         <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
@@ -457,8 +604,20 @@ export default function CandidatesPageModern() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCandidates.map((candidate) => (
-            <Link key={candidate.id} href={`/dashboard/candidates/${candidate.id}`}>
-              <Card className="group hover:shadow-2xl hover:shadow-[#00A8A8]/20 transition-all duration-500 hover:-translate-y-2 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative">
+            <div key={candidate.id} className="relative">
+              {/* 🆕 Checkbox for bulk select */}
+              <div 
+                className="absolute top-4 left-4 z-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  checked={selectedCandidates.has(candidate.id)}
+                  onCheckedChange={() => toggleSelect(candidate.id)}
+                  className="bg-white border-2 shadow-sm"
+                />
+              </div>
+              <Link href={`/dashboard/candidates/${candidate.id}`}>
+              <Card className={`group hover:shadow-2xl hover:shadow-[#00A8A8]/20 transition-all duration-500 hover:-translate-y-2 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative ${selectedCandidates.has(candidate.id) ? 'ring-2 ring-[#00A8A8] bg-[#00A8A8]/5' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-[#00A8A8]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <CardHeader className="relative">
@@ -561,7 +720,8 @@ export default function CandidatesPageModern() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       )}

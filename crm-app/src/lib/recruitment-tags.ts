@@ -303,14 +303,41 @@ export const RECRUITMENT_TAGS: RecruitmentTagsType = {
   },
   
   "Vehicle_Automotive": {
-    displayName: "רכב ומוסכים",
+    displayName: "רכב ומכירות רכב",
     positive: [
-      "איש שטח", "סוכן רכב", "בוחן רכב", "חשמלאי רכב", "יועץ שירות",
-      "מאבחן תקלות", "מחסנאי מוסך", "מכונאי רכב", "מנהל מוסך",
-      "מתקין אביזרים לרכב", "נהג רכב גרר", "נהג רכב השכרה",
-      "נציג טרייד אין", "נציג מכירות רכבים", "נציג מסירת רכב חדש",
-      "נציג שירות בתחום הרכב", "עובד מכון רישוי", "עוזר מכונאי",
-      "פחח רכב", "צבעי רכב", "שוטף רכבים"
+      // מכירות רכב
+      "איש מכירות רכב", "אשת מכירות רכב", "סוכן מכירות רכב", "סוכנת מכירות רכב",
+      "מכירות רכב", "נציג מכירות רכב", "נציגת מכירות רכב", "מנהל מכירות רכב",
+      "מנהלת מכירות רכב", "אולם תצוגה", "סוכנות רכב", "חברת ליסינג",
+      "טרייד אין", "טריידאין", "trade in", "מימון רכב", "ביטוח רכב",
+      "ליסינג", "יד ראשונה", "יד שניה", "יד 2", "סלקט", "מכירת רכבים",
+      
+      // מותגים ויבואנים
+      "GEELY", "ג'ילי", "ZEEKR", "זיקר", "טויוטה", "Toyota", "לקסוס", "Lexus",
+      "יונדאי", "Hyundai", "מאזדה", "Mazda", "קיה", "KIA", "פולקסווגן", "Volkswagen",
+      "סקודה", "Skoda", "אאודי", "Audi", "BMW", "מרצדס", "Mercedes", "רנו", "Renault",
+      "פיאט", "Fiat", "סוזוקי", "Suzuki", "סובארו", "Subaru", "הונדה", "Honda",
+      "ניסאן", "Nissan", "מיצובישי", "Mitsubishi", "שברולט", "Chevrolet",
+      "אלבר", "סאן קאר", "באדג'ט", "Budget", "יד ראשונה", "UNION", "יוניון",
+      "פריים מוטורס", "אופרייט", "Upright", "דלק מוטורס", "קרסו מוטורס",
+      "UMI", "יוניברסל מוטורס", "אוטומוביל", "סוכנות רכב", "אוטוקאר",
+      
+      // שטח ופיתוח עסקי רכב
+      "איש שטח", "אשת שטח", "סוכן שטח", "סוכנת שטח", "פיתוח עסקי רכב",
+      "גיוס לקוחות רכב", "תיק לקוחות רכב", "לקוחות עסקיים רכב",
+      
+      // יועצים ושירות
+      "יועץ שירות", "יועצת שירות", "מנהל סניף רכב", "מנהלת סניף רכב",
+      "מתאם מכירות", "מתאמת מכירות", "נציג קבלה רכב", "דייל רכב", "דיילת רכב",
+      "נציג התרשמות", "נסיעת מבחן", "Test Drive", "מסירת רכב",
+      
+      // טכני ומוסך
+      "סוכן רכב", "בוחן רכב", "חשמלאי רכב", "מאבחן תקלות", "מחסנאי מוסך",
+      "מכונאי רכב", "מנהל מוסך", "מתקין אביזרים לרכב", "נהג רכב גרר",
+      "נהג רכב השכרה", "נציג טרייד אין", "נציג מכירות רכבים", 
+      "נציג מסירת רכב חדש", "נציג שירות בתחום הרכב", "עובד מכון רישוי",
+      "עוזר מכונאי", "פחח רכב", "צבעי רכב", "שוטף רכבים", "PDI",
+      "הכנת רכב למסירה", "תומך טכני רכב", "רפרנט תפעול", "אביזרי רכב"
     ],
     negative: [],
     color: "#37474F",
@@ -591,10 +618,10 @@ export function findRelatedCategories(categories: string[]): string[] {
     "HighTech": ["Engineer", "Consulting"],
     "Engineer": ["HighTech", "Practical_Engineering", "Production"],
     "Practical_Engineering": ["Engineer", "Maintenance", "Production"],
-    "General_Office_Admin": ["Finance_Accounting", "HR_Recruitment", "Consulting"],
+    "General_Office_Admin": ["Finance_Accounting", "HR_Recruitment", "Consulting", "Vehicle_Automotive"],
     "Kitchen_Staff": ["Cleaning", "Production"],
-    "Drivers": ["Logistics_Operations", "Warehouse_Worker"],
-    "Vehicle_Automotive": ["Mechanic_Technician", "Drivers"],
+    "Drivers": ["Logistics_Operations", "Warehouse_Worker", "Vehicle_Automotive"],
+    "Vehicle_Automotive": ["Mechanic_Technician", "Drivers", "General_Office_Admin", "CustomerService"],
     "Safety": ["Maintenance", "Production", "Engineer"],
     "Security": ["General_Office_Admin"],
     "Production": ["Engineer", "Warehouse_Worker", "Maintenance"],

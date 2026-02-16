@@ -139,11 +139,12 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
 
-  // טוען משרות
+  // טוען משרות - מצב מהיר!
   useEffect(() => {
     const fetchPositions = async () => {
       try {
-        const res = await fetch('/api/positions?active=true')
+        // 🚀 מצב מהיר - רק שדות הכרחיים!
+        const res = await fetch('/api/positions?active=true&fast=true')
         if (res.ok) {
           const data = await res.json()
           setPositions(data.positions || data || [])
@@ -170,11 +171,11 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
     setLoading(true)
     setError(null)
     setAllResults([])
-    setScanStatus("מתחיל סריקה מהירה...")
+    setScanStatus("⚡ שלב 1: סינון מהיר בלי AI...")
     setMode('scan')
 
     try {
-      setScanStatus(`🚀 סריקה מהירה במקביל - בודק את כל המשרות...`)
+      const startTime = Date.now()
       
       const res = await fetch('/api/ai-match-v3', {
         method: 'POST',
@@ -190,7 +191,9 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
       const data = await res.json()
       setAllResults(data.matches || [])
       setCandidateCity(data.candidateCity || '')
-      setScanStatus(`הסריקה הושלמה - נסרקו ${data.totalScanned} משרות`)
+      
+      const timeStr = data.scanTimeMs ? `${(data.scanTimeMs / 1000).toFixed(1)}` : ((Date.now() - startTime) / 1000).toFixed(1)
+      setScanStatus(`✅ נסרקו ${data.totalScanned} משרות | ${data.aiAnalyzed || 0} עם AI | ${timeStr} שניות`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה')
       setScanStatus("")
@@ -372,7 +375,7 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Brain className="h-6 w-6" />
-            סריקה חכמה V3 - AI + מיקום
+            סריקה חכמה V3 TURBO ⚡
           </div>
           {candidateCity && (
             <Badge className="bg-white/20 text-white">

@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
     const skip = (page - 1) * limit
+    const fast = searchParams.get("fast") === "true" // 🚀 מצב מהיר למיוחד
 
     const where: any = {}
 
@@ -58,6 +59,21 @@ export async function GET(request: NextRequest) {
 
     if (active !== null && active !== undefined) {
       where.active = active === "true"
+    }
+
+    // 🚀 מצב מהיר - רק שדות הכרחיים!
+    if (fast) {
+      const positions = await prisma.position.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          location: true,
+          employer: { select: { id: true, name: true } }
+        }
+      })
+      return NextResponse.json({ positions })
     }
 
     const [positions, total] = await Promise.all([

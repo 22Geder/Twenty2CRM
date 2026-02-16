@@ -13,12 +13,14 @@ import {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
 /**
- * 🧠 AI Match V3 - סריקה אנושית חכמה
- * עובר על כל משרה אחת אחת כמו מגייס אנושי
- * מתעדף מיקום קרוב למועמד!
+ * 🧠 AI Match V3 - סריקה אנושית חכמה מהירה במיוחד!
+ * שלב 1: סינון מהיר בלי AI לכל המשרות (אלפיות שניה!)
+ * שלב 2: AI מעמיק רק על ה-25 המתאימים ביותר
+ * תוצאה: מהירות X10 בלי לפספס שום משרה!
  */
 export async function POST(request: Request) {
   try {
+    const startTime = Date.now()
     const body = await request.json()
     const { candidateId, positionId } = body
 
@@ -36,10 +38,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "מועמד לא נמצא" }, { status: 404 })
     }
 
-    // שליפת כל המשרות הפעילות
+    // 🚀 שליפת משרות מהירה - רק שדות הכרחיים!
     const positions = await prisma.position.findMany({
       where: { active: true },
-      include: { employer: true, tags: true }
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        description: true,
+        requirements: true,
+        salaryRange: true,
+        employmentType: true,
+        employer: { select: { id: true, name: true } },
+        tags: { select: { id: true, name: true } }
+      }
     })
 
     if (positions.length === 0) {
@@ -52,22 +64,9 @@ export async function POST(request: Request) {
     const candidateCityExtracted = extractLocalityFromAddress(rawCandidateCity)
     const finalCandidateCity = candidateCityExtracted || candidateCity
     
-    console.log(`🗺️ מועמד: ${candidate.name}, עיר גולמית: "${rawCandidateCity}", מנורמל: "${finalCandidateCity}"`)
-    
-    // מיון ראשוני לפי מיקום - משרות קרובות למועמד קודם!
-    const sortedPositions = positions.sort((a, b) => {
-      const locA = extractLocalityFromAddress(a.location || '') || normalizeLocality(a.location || '')
-      const locB = extractLocalityFromAddress(b.location || '') || normalizeLocality(b.location || '')
-      
-      const matchA = finalCandidateCity && areLocationsNearby(finalCandidateCity, locA)
-      const matchB = finalCandidateCity && areLocationsNearby(finalCandidateCity, locB)
-      
-      if (matchA && !matchB) return -1
-      if (!matchA && matchB) return 1
-      return 0
-    })
+    console.log(`🗺️ מועמד: ${candidate.name}, עיר: "${finalCandidateCity}", משרות: ${positions.length}`)
 
-    // אם נבחרה משרה ספציפית
+    // אם נבחרה משרה ספציפית - AI מלא
     if (positionId) {
       const position = positions.find(p => p.id === positionId)
       if (!position) {
@@ -77,45 +76,83 @@ export async function POST(request: Request) {
       return NextResponse.json(result)
     }
 
-    // 🚀 סריקה מהירה במקביל - 8 משרות בו-זמנית! (שודרג מ-5)
-    const BATCH_SIZE = 8
-    const matches: any[] = []
+    // ⚡ שלב 1: סינון מהיר בלי AI - עובר על כל המשרות!
+    console.log(`⚡ התחלת סינון מהיר ל-${positions.length} משרות...`)
+    const quickScanStart = Date.now()
     
-    for (let i = 0; i < sortedPositions.length; i += BATCH_SIZE) {
-      const batch = sortedPositions.slice(i, i + BATCH_SIZE)
+    const quickResults = positions.map(position => {
+      // חישוב מקומי מהיר - אין קריאות רשת!
+      const positionLocality = extractLocalityFromAddress(position.location || '') || normalizeLocality(position.location || '')
+      const locationMatch = !!(finalCandidateCity && positionLocality && areLocationsNearby(finalCandidateCity, positionLocality))
+      const quickMatch = smartFallbackMatch(candidate, position, finalCandidateCity, locationMatch)
+      return { ...quickMatch, _quickScore: quickMatch.score }
+    })
+    
+    console.log(`⚡ סינון מהיר הושלם ב-${Date.now() - quickScanStart}ms`)
+
+    // מיון לפי ציון מהיר + מיקום
+    quickResults.sort((a, b) => {
+      if (a.locationMatch && !b.locationMatch) return -1
+      if (!a.locationMatch && b.locationMatch) return 1
+      return b._quickScore - a._quickScore
+    })
+
+    // 🧠 שלב 2: AI רק על ה-25 הטובים ביותר (בבאצ'ים של 15!)
+    const TOP_FOR_AI = 25
+    const BATCH_SIZE = 15
+    const topCandidates = quickResults.slice(0, TOP_FOR_AI)
+    const restResults = quickResults.slice(TOP_FOR_AI)
+    
+    console.log(`🧠 מריץ AI על ${topCandidates.length} משרות מובילות...`)
+    const aiStart = Date.now()
+    
+    const aiResults: any[] = []
+    for (let i = 0; i < topCandidates.length; i += BATCH_SIZE) {
+      const batch = topCandidates.slice(i, i + BATCH_SIZE)
+      const batchPositions = batch.map(r => positions.find(p => p.id === r.positionId)!)
+      
       const batchResults = await Promise.all(
-        batch.map(async (position) => {
+        batchPositions.map(async (position) => {
           try {
-            return await analyzeMatchV3(candidate, position, candidateCity)
+            return await analyzeMatchV3(candidate, position, finalCandidateCity)
           } catch (error) {
-            console.error(`Error analyzing position ${position.id}:`, error)
-            return createErrorMatch(position)
+            // במקרה של שגיאה - השתמש בתוצאה המהירה
+            const quickResult = batch.find(b => b.positionId === position.id)
+            return quickResult || createErrorMatch(position)
           }
         })
       )
-      matches.push(...batchResults)
+      aiResults.push(...batchResults)
     }
+    
+    console.log(`🧠 AI הושלם ב-${Date.now() - aiStart}ms`)
 
-    // מיון סופי: קודם לפי בונוס מיקום, אחרי זה לפי ציון
-    matches.sort((a, b) => {
-      // משרות עם בונוס מיקום קודמות
+    // איחוד התוצאות: AI results + quick results לשאר
+    const allMatches = [...aiResults, ...restResults]
+
+    // מיון סופי
+    allMatches.sort((a, b) => {
       if (a.locationMatch && !b.locationMatch) return -1
       if (!a.locationMatch && b.locationMatch) return 1
-      // אחרי זה לפי ציון
       return b.score - a.score
     })
 
     // סינון - רק משרות עם סיכוי סביר
-    const relevantMatches = matches.filter(m => m.score >= 30 || m.locationMatch)
-    const notRelevant = matches.filter(m => m.score < 30 && !m.locationMatch)
+    const relevantMatches = allMatches.filter(m => m.score >= 30 || m.locationMatch)
+    const notRelevant = allMatches.filter(m => m.score < 30 && !m.locationMatch)
+
+    const totalTime = Date.now() - startTime
+    console.log(`✅ סריקה הושלמה ב-${totalTime}ms | ${positions.length} משרות | ${aiResults.length} עם AI`)
 
     return NextResponse.json({ 
       matches: relevantMatches,
       notRelevant: notRelevant.length,
       totalScanned: positions.length,
+      aiAnalyzed: aiResults.length,
+      scanTimeMs: totalTime,
       candidateCity: candidate.city || 'לא צוין',
       normalizedCity: finalCandidateCity,
-      locationDatabase: TOTAL_LOCALITIES // מספר היישובים במאגר
+      locationDatabase: TOTAL_LOCALITIES
     })
 
   } catch (error) {
@@ -184,46 +221,52 @@ async function analyzeMatchV3(candidate: any, position: any, candidateCity: stri
 }
 
 // התאמה חכמה בלי AI
+// 🆕 משקולות חדשים: 55% מיקום, 45% כישורים/תגיות
 function smartFallbackMatch(candidate: any, position: any, candidateCity: string, locationMatch: boolean) {
   const candidateText = buildCandidateText(candidate).toLowerCase()
   const positionTitle = (position.title || '').toLowerCase()
   const positionDesc = ((position.description || '') + ' ' + (position.requirements || '')).toLowerCase()
   
-  // ציון בסיסי - כל משרה מקבלת לפחות 10 נקודות
-  let score = 10
+  // ציון בסיסי
+  let locationScore = 0
+  let skillsScore = 0
   const strengths: string[] = []
   const weaknesses: string[] = []
 
-  // בונוס מיקום - 25 נקודות! (משתמש במאגר יישובים מלא)
+  // 🗺️ בונוס מיקום - 55 נקודות מקסימום!
   if (locationMatch) {
-    score += 25
+    locationScore = 55
     strengths.push(`📍 מיקום מתאים: ${candidate.city || 'לא צוין'}`)
   } else if (candidate.city && position.location) {
     // בדיקה נוספת למיקום קרוב עם המאגר המלא
     const positionLocality = extractLocalityFromAddress(position.location) || normalizeLocality(position.location)
     if (areLocationsNearby(candidateCity, positionLocality)) {
-      score += 20
+      locationScore = 45
       strengths.push(`מיקום קרוב: ${position.location}`)
     } else {
+      locationScore = 0
       weaknesses.push(`מרחק: המועמד ב${candidate.city}, המשרה ב${position.location}`)
     }
   }
 
-  // התאמת תפקיד
+  // 🎯 כישורים ותגיות - 45 נקודות מקסימום!
+  let hasAnySkillMatch = false
+
+  // התאמת תפקיד (עד 15 נקודות מתוך 45)
   const titleWords = positionTitle.split(/\s+/).filter((w: string) => w.length > 2)
   let titleMatches = 0
   for (const word of titleWords) {
     if (candidateText.includes(word)) {
       titleMatches++
+      hasAnySkillMatch = true
     }
   }
   if (titleMatches > 0) {
-    const titleScore = Math.min(30, titleMatches * 15)
-    score += titleScore
+    skillsScore += Math.min(15, titleMatches * 8)
     strengths.push(`התאמה לתפקיד ${position.title}`)
   }
 
-  // התאמת תגיות
+  // התאמת תגיות (עד 15 נקודות מתוך 45)
   const candidateTags = candidate.tags?.map((t: any) => t.name.toLowerCase()) || []
   const positionTags = position.tags?.map((t: any) => t.name.toLowerCase()) || []
   
@@ -231,54 +274,47 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   for (const tag of positionTags) {
     if (candidateTags.some((ct: string) => ct.includes(tag) || tag.includes(ct))) {
       tagMatches++
+      hasAnySkillMatch = true
       strengths.push(`תגית: ${tag}`)
     }
   }
-  score += Math.min(20, tagMatches * 10)
+  skillsScore += Math.min(15, tagMatches * 8)
 
-  // ניסיון
-  const years = candidate.yearsOfExperience || 0
-  if (years >= 5) {
-    score += 15
-    strengths.push(`${years} שנות ניסיון`)
-  } else if (years >= 2) {
-    score += 10
-    strengths.push(`${years} שנות ניסיון`)
-  } else if (years >= 1) {
-    score += 5
-    strengths.push(`${years} שנת ניסיון`)
-  }
-
-  // כישורים
+  // כישורים (עד 10 נקודות מתוך 45)
   const skills = (candidate.skills || '').toLowerCase().split(',')
   let skillMatches = 0
   for (const skill of skills) {
     if (skill.trim() && skill.trim().length > 2 && positionDesc.includes(skill.trim())) {
       skillMatches++
+      hasAnySkillMatch = true
     }
   }
-  score += Math.min(15, skillMatches * 5)
+  skillsScore += Math.min(10, skillMatches * 4)
 
-  // חיפוש מילות מפתח בקורות חיים
-  const resume = (candidate.resume || candidate.notes || '').toLowerCase()
-  if (resume.length > 50) {
-    // מילות מפתח נפוצות
-    const keywords = positionTitle.split(/\s+/).filter((w: string) => w.length > 2)
-    let keywordMatches = 0
-    for (const word of keywords) {
-      if (resume.includes(word)) {
-        keywordMatches++
-      }
-    }
-    if (keywordMatches > 0) {
-      score += Math.min(10, keywordMatches * 3)
-      if (keywordMatches >= 2) {
-        strengths.push(`קורות חיים תואמים למשרה`)
-      }
-    }
+  // ניסיון (עד 5 נקודות)
+  const years = candidate.yearsOfExperience || 0
+  if (years >= 5) {
+    skillsScore += 5
+    strengths.push(`${years} שנות ניסיון`)
+    hasAnySkillMatch = true
+  } else if (years >= 2) {
+    skillsScore += 3
+    strengths.push(`${years} שנות ניסיון`)
+    hasAnySkillMatch = true
+  } else if (years >= 1) {
+    skillsScore += 2
+    strengths.push(`${years} שנת ניסיון`)
   }
 
-  score = Math.min(100, score)
+  // 🆕 אם אין כישורים כלל - בונוס 40%
+  if (!hasAnySkillMatch && candidate.skills?.trim() === '') {
+    skillsScore = 40
+    strengths.push('מועמד ללא כישורים מוגדרים - התאמה כללית')
+  }
+
+  // ציון סופי: מיקום + כישורים
+  let score = locationScore + Math.min(45, skillsScore)
+  score = Math.min(100, Math.round(score))
 
   // קביעת המלצה חכמה
   let recommendation = ''

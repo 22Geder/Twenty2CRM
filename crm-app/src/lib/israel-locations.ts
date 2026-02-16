@@ -1,18 +1,45 @@
 /**
- * 🗺️ מאגר יישובים מלא של ישראל
- * כולל כל הערים, המועצות האזוריות, היישובים הקטנים והשכונות
- * מאורגן לפי אזורים גיאוגרפיים לסינון מדויק
+ * 🗺️ מאגר יישובים מלא ומורחב של מדינת ישראל
+ * כולל את כל הערים, העיירות, הקיבוצים, המושבים, הכפרים הערביים והדרוזיים,
+ * היישובים הבדואיים, השכונות בערים הגדולות, והמועצות האזוריות
+ * 
+ * ✅ מעודכן: 1,500+ יישובים
+ * ✅ תאימות לאחור מלאה
  */
+
+// ייבוא מהמאגר המקיף
+export * from './israel-locations-complete'
+
+import {
+  ISRAELI_CITIES,
+  KIBBUTZIM,
+  MOSHAVIM,
+  ARAB_LOCALITIES,
+  DRUZE_LOCALITIES,
+  NEIGHBORHOODS,
+  REGIONAL_COUNCILS,
+  ALL_ISRAEL_LOCALITIES,
+  EXTENDED_ALIASES,
+  PROXIMITY_GROUPS,
+  normalizeLocalityComplete,
+  extractLocalityAdvanced,
+  areLocationsProximate,
+  getProximateLocalities,
+  getGeographicRegion
+} from './israel-locations-complete'
+
+// ========== תאימות לאחור - מבנה ישן ==========
 
 // ========== צפון ישראל ==========
 export const NORTH_ISRAEL = {
-  // גליל עליון
+  // גליל עליון - מורחב
   galilUpper: [
     'קריית שמונה', 'מטולה', 'כפר גלעדי', 'דפנה', 'שדה נחמיה', 'האון',
     'מעיין ברוך', 'דן', 'סניר', 'בית הלל', 'יסוד המעלה', 'ראש פינה',
     'חצור הגלילית', 'עמיעד', 'איילת השחר', 'נאות מרדכי', 'שאר ישוב',
     'מנרה', 'מרגליות', 'רמות נפתלי', 'יפתח', 'אביבים', 'מלכיה',
-    'מעיליא', 'מגד֯ל העמק', 'עין המפרץ'
+    'מעיליא', 'מגדל העמק', 'עין המפרץ', 'שמיר', 'עמיר', 'גונן',
+    'כפר סאלד', 'עלמה', 'כנף', 'פרוד', 'בר עם', 'בראם'
   ],
   
   // גליל תחתון
@@ -510,7 +537,7 @@ export function getNearbyLocalities(locality: string): string[] {
     }
   }
   
-  return [...new Set(nearby)]
+  return Array.from(new Set(nearby))
 }
 
 /**

@@ -38,23 +38,23 @@ export default function EmailAutoScannerPage() {
     }))
   }, [isRunning, stats.totalScans, stats.candidatesCreated]) // עדכון רק בשינוי משמעותי
 
-  // סריקה אוטומטית כל 10 דקות
+  // סריקה אוטומטית כל 3 שעות
   useEffect(() => {
     if (isRunning) {
       // סריקה מיידית בהפעלה
       performScan()
       
-      // הגדרת זמן הסריקה הבאה
-      const next = new Date(Date.now() + 10 * 60 * 1000)
+      // הגדרת זמן הסריקה הבאה (3 שעות)
+      const next = new Date(Date.now() + 3 * 60 * 60 * 1000)
       setNextScanTime(next)
       
-      // סריקה כל 10 דקות
+      // סריקה כל 3 שעות
       intervalRef.current = setInterval(() => {
         performScan()
         // עדכון זמן הסריקה הבאה
-        const nextTime = new Date(Date.now() + 10 * 60 * 1000)
+        const nextTime = new Date(Date.now() + 3 * 60 * 60 * 1000)
         setNextScanTime(nextTime)
-      }, 10 * 60 * 1000) // 10 דקות
+      }, 3 * 60 * 60 * 1000) // 3 שעות
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
@@ -150,7 +150,7 @@ export default function EmailAutoScannerPage() {
         <div>
           <h1 className="text-3xl font-bold">סורק מיילים אוטומטי 📧</h1>
           <p className="text-muted-foreground mt-1">
-            סריקה אוטומטית של מיילים חדשים כל 10 דקות
+            סריקה אוטומטית של מיילים חדשים כל 3 שעות | קורות חיים שמגיעים מועלים אוטומטית
           </p>
         </div>
         

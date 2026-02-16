@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Building2, Plus, Search, Users } from "lucide-react"
+import { MapPin, Building2, Plus, Search, Users, Tag } from "lucide-react"
 import Link from "next/link"
+import { PositionActions, PositionTagsEditor, DeletePositionButton } from "@/components/position-actions"
 
 async function getPositions() {
   return await prisma.position.findMany({
@@ -17,7 +18,8 @@ async function getPositions() {
           applications: true
         }
       }
-    }
+    },
+    // Adding keywords to the select
   })
 }
 
@@ -175,11 +177,15 @@ export default async function PositionsPage() {
                         <span className="font-semibold">{position._count.applications}</span>
                         <Users className="h-4 w-4" />
                       </div>
-                      <Link href={`/dashboard/positions/${position.id}`}>
-                        <Button variant="outline" size="sm" className="border-[#7CB342]/50 text-[#7CB342] hover:bg-[#7CB342]/10 hover:border-[#7CB342]">
-                          צפה בפרטים
-                        </Button>
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link href={`/dashboard/positions/${position.id}`}>
+                          <Button variant="outline" size="sm" className="border-[#7CB342]/50 text-[#7CB342] hover:bg-[#7CB342]/10 hover:border-[#7CB342]">
+                            צפה בפרטים
+                          </Button>
+                        </Link>
+                      </div>
+                      {/* 🏷️ ניהול תגיות ומחיקה */}
+                      <PositionActions position={position} />
                     </div>
                   </div>
                 </CardContent>
@@ -212,11 +218,15 @@ export default async function PositionsPage() {
                       </div>
                     </div>
 
-                    <Link href={`/dashboard/positions/${position.id}`}>
-                      <Button variant="outline" size="sm" className="border-[#FF8C00]/50 text-[#FF8C00] hover:bg-[#FF8C00]/10 hover:border-[#FF8C00]">
-                        ערוך
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/dashboard/positions/${position.id}`}>
+                        <Button variant="outline" size="sm" className="border-[#FF8C00]/50 text-[#FF8C00] hover:bg-[#FF8C00]/10 hover:border-[#FF8C00]">
+                          ערוך
+                        </Button>
+                      </Link>
+                      {/* 🗑️ מחיקת טיוטה */}
+                      <DeletePositionButton position={position} />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -10,8 +10,13 @@ import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTa
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// 🆕 קריאת PDF עם Gemini Vision (לקבצים סרוקים!)
+// 🆕 קריאת PDF עם Gemini Vision (לקבצים סרוקים!) - with timeout
 async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
+  // Timeout helper
+  const timeout = (ms: number) => new Promise<string>((_, reject) => 
+    setTimeout(() => reject(new Error('PDF OCR timeout')), ms)
+  );
+  
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
@@ -37,51 +42,70 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
 אל תדלג על מידע - חלץ הכל!
 אם יש טבלאות, המר אותן לטקסט קריא.`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: 'application/pdf',
-          data: base64Data
+    // Race between API call and 30 second timeout
+    const result = await Promise.race([
+      model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: base64Data
+          }
         }
-      }
-    ]);
+      ]),
+      timeout(30000)
+    ]) as any;
     
     const response = result.response;
     const text = response.text();
     
     console.log('📄 Gemini PDF OCR extracted text length:', text.length);
     return text;
-  } catch (error) {
-    console.error('Error extracting text from PDF with Gemini:', error);
+  } catch (error: any) {
+    if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+      console.error('⚠️ Gemini PDF OCR quota exceeded - falling back to text extraction');
+    } else if (error?.message?.includes('timeout')) {
+      console.error('⚠️ PDF OCR timeout - falling back to text extraction');
+    } else {
+      console.error('Error extracting text from PDF with Gemini:', error?.message || error);
+    }
     return '';
   }
 }
 
-// Helper to extract text from PDF - נסה קודם pdf-parse, אחר כך Gemini
+// Helper to extract text from PDF - נסה כמה שיטות
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  let pdfParseText = '';
+  
+  // 1. נסה קודם pdf-parse לPDF רגיל עם טקסט
   try {
-    // First try pdf-parse for text-based PDFs
-    const mod: any = await import('pdf-parse');
-    const parser = mod?.default ?? mod;
-    const data = await parser(buffer);
-    const text = data.text;
+    const pdfParse = require('pdf-parse/lib/pdf-parse');
+    const data = await pdfParse(buffer);
+    pdfParseText = data.text || '';
+    console.log('📄 pdf-parse extracted:', pdfParseText.length, 'chars');
     
-    // אם הטקסט קצר מדי (פחות מ-100 תווים), כנראה PDF סרוק
-    if (text.trim().length < 100) {
-      console.log('📄 PDF text too short, trying Gemini Vision OCR...');
-      const geminiText = await extractTextFromPDFWithGemini(buffer);
-      if (geminiText.length > text.length) {
-        return geminiText;
-      }
+    // אם יש טקסט מספיק - תחזיר אותו
+    if (pdfParseText.trim().length >= 100) {
+      return pdfParseText;
     }
-    
-    return text;
-  } catch (error) {
-    console.error('Error parsing PDF with pdf-parse, trying Gemini:', error);
-    // Fallback to Gemini Vision for scanned PDFs
-    return await extractTextFromPDFWithGemini(buffer);
+  } catch (error: any) {
+    console.log('⚠️ pdf-parse failed:', error.message);
   }
+  
+  // 2. אם pdf-parse נכשל או הטקסט קצר - נסה Gemini Vision
+  try {
+    console.log('📄 Trying Gemini Vision OCR for PDF...');
+    const geminiText = await extractTextFromPDFWithGemini(buffer);
+    if (geminiText.length > pdfParseText.length && geminiText.length > 50) {
+      console.log('✅ Gemini Vision extracted:', geminiText.length, 'chars');
+      return geminiText;
+    }
+  } catch (error: any) {
+    console.log('⚠️ Gemini Vision failed:', error.message);
+  }
+  
+  // 3. אם הכל נכשל - החזר מה שיש מ-pdf-parse או טקסט ריק
+  return pdfParseText || '';
 }
 
 // Helper to extract text from DOCX
@@ -95,8 +119,13 @@ async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
   }
 }
 
-// 🆕 OCR - Extract text from image using Gemini Vision
+// 🆕 OCR - Extract text from image using Gemini Vision (with timeout)
 async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<string> {
+  // Timeout helper
+  const timeout = (ms: number) => new Promise<string>((_, reject) => 
+    setTimeout(() => reject(new Error('OCR timeout')), ms)
+  );
+  
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
@@ -120,29 +149,44 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
 החזר את הטקסט המלא כפי שהוא מופיע בקורות החיים.
 אל תדלג על מידע - חלץ הכל!`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: mimeType,
-          data: base64Data
+    // Race between API call and 30 second timeout (images take longer)
+    const result = await Promise.race([
+      model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: mimeType,
+            data: base64Data
+          }
         }
-      }
-    ]);
+      ]),
+      timeout(30000)
+    ]) as any;
     
     const response = result.response;
     const text = response.text();
     
     console.log('🖼️ OCR extracted text length:', text.length);
     return text;
-  } catch (error) {
-    console.error('Error extracting text from image with Gemini Vision:', error);
+  } catch (error: any) {
+    if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+      console.error('⚠️ Gemini Vision API quota exceeded - cannot process image OCR');
+    } else if (error?.message?.includes('timeout')) {
+      console.error('⚠️ OCR timeout - image too complex or API slow');
+    } else {
+      console.error('Error extracting text from image with Gemini Vision:', error?.message || error);
+    }
     return '';
   }
 }
 
-// 🆕 AI-powered structured CV extraction using Gemini
+// 🆕 AI-powered structured CV extraction using Gemini (with timeout)
 async function extractCVWithAI(text: string): Promise<any> {
+  // Timeout helper to prevent hanging on API issues
+  const timeout = (ms: number) => new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('AI extraction timeout')), ms)
+  );
+  
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
@@ -177,7 +221,12 @@ ${text.substring(0, 4000)}
 - אם לא מצאת מידע, רשום null
 - ציון ביטחון (confidence) מציין כמה אתה בטוח במידע שחילצת`;
 
-    const result = await model.generateContent(prompt);
+    // Race between API call and 15 second timeout
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeout(15000)
+    ]) as any;
+    
     const responseText = result.response.text();
     
     // Extract JSON from response
@@ -190,8 +239,15 @@ ${text.substring(0, 4000)}
     const parsed = JSON.parse(jsonMatch[0]);
     console.log('✅ AI extracted candidate data:', parsed.name);
     return parsed;
-  } catch (error) {
-    console.error('AI extraction error:', error);
+  } catch (error: any) {
+    // Check for quota exceeded error (429)
+    if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+      console.warn('⚠️ Gemini API quota exceeded - falling back to regex extraction');
+    } else if (error?.message?.includes('timeout')) {
+      console.warn('⚠️ AI extraction timeout - falling back to regex extraction');
+    } else {
+      console.error('AI extraction error:', error?.message || error);
+    }
     return null;
   }
 }

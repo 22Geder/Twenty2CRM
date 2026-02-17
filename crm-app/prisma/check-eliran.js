@@ -2,59 +2,65 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  // חיפוש אלירן
-  const candidate = await prisma.candidate.findFirst({
+  // חיפוש כל האלירנים
+  console.log('=== כל המועמדים בשם אלירן ===');
+  const allElirans = await prisma.candidate.findMany({
     where: { name: { contains: 'אלירן' } }
   });
   
-  if (candidate) {
-    console.log('=== פרטי המועמד ===');
-    console.log('שם:', candidate.name);
-    console.log('עיר:', candidate.city);
-    console.log('כישורים:', candidate.skills);
-    console.log('ציון:', candidate.score);
-    console.log('תפקיד נוכחי:', candidate.currentTitle);
-    console.log('חברה נוכחית:', candidate.currentCompany);
-    console.log('הערות:', candidate.notes?.substring(0, 500));
-    console.log('');
+  for (const c of allElirans) {
+    console.log(`ID: ${c.id}`);
+    console.log(`שם: ${c.name}`);
+    console.log(`תפקיד: ${c.currentTitle || 'לא צוין'}`);
+    console.log(`כישורים: ${c.skills || 'לא צוין'}`);
+    console.log(`הערות: ${c.notes?.substring(0, 300) || 'אין'}`);
+    console.log('---');
+  }
+  
+  // חיפוש גם אברהם
+  console.log('\n=== מועמדים בשם אברהם ===');
+  const abrahams = await prisma.candidate.findMany({
+    where: { name: { contains: 'אברהם' } }
+  });
+  
+  for (const c of abrahams) {
+    console.log(`ID: ${c.id}`);
+    console.log(`שם: ${c.name}`);
+    console.log(`תפקיד: ${c.currentTitle || 'לא צוין'}`);
+    console.log(`כישורים: ${c.skills || 'לא צוין'}`);
+    console.log(`הערות: ${c.notes?.substring(0, 300) || 'אין'}`);
+    console.log('---');
+  }
+  
+  // חיפוש משרות רכב
+  console.log('\n=== משרות מכירות רכב פעילות ===');
+  const carPositions = await prisma.position.findMany({
+    where: {
+      active: true,
+      OR: [
+        { title: { contains: 'מכירות' } },
+        { title: { contains: 'רכב' } },
+        { employer: { name: { contains: 'UNION' } } },
+        { employer: { name: { contains: 'GAC' } } },
+        { employer: { name: { contains: 'אופרייט' } } },
+      ]
+    },
+    include: { employer: true }
+  });
+  
+  for (const pos of carPositions) {
+    let keywords = [];
+    try {
+      keywords = pos.keywords ? JSON.parse(pos.keywords) : [];
+    } catch { }
     
-    // חיפוש משרות רכב
-    console.log('=== משרות רכב פעילות ===');
-    const carPositions = await prisma.position.findMany({
-      where: {
-        active: true,
-        OR: [
-          { title: { contains: 'מכירות' } },
-          { title: { contains: 'רכב' } },
-          { employer: { name: { contains: 'UNION' } } },
-          { employer: { name: { contains: 'GAC' } } },
-          { employer: { name: { contains: 'אופרייט' } } },
-        ]
-      },
-      include: { employer: true }
-    });
+    const hasSales = keywords.some(k => 
+      k.includes('מכירות') || k.includes('מכירן') || k.includes('סוכן מכירות')
+    );
     
-    for (const pos of carPositions) {
-      // פענוח keywords 
-      let keywords = [];
-      try {
-        keywords = pos.keywords ? JSON.parse(pos.keywords) : [];
-      } catch { }
-      
-      const hasSales = keywords.some(k => 
-        k.includes('מכירות') || k.includes('מכירן') || k.includes('סוכן מכירות')
-      );
-      const hasCarSales = keywords.some(k => 
-        k.includes('מכירות רכב') || k.includes('איש מכירות רכב')
-      );
-      
-      console.log(`${pos.employer?.name} | ${pos.title}`);
-      console.log(`   📍 ${pos.location} | יש מכירות: ${hasSales} | מכירות רכב: ${hasCarSales}`);
-      console.log(`   🏷️ ${keywords.length} תגיות: ${keywords.slice(0, 8).join(', ')}...`);
-      console.log('');
-    }
-  } else {
-    console.log('מועמד לא נמצא');
+    console.log(`${pos.employer?.name} | ${pos.title}`);
+    console.log(`   📍 ${pos.location} | מכירות: ${hasSales ? '✅' : '❌'}`);
+    console.log(`   🏷️ ${keywords.length} תגיות`);
   }
 }
 

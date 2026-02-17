@@ -270,6 +270,23 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* כפתור וואטסאפ ישירות בכרטיס - תמיד גלוי! */}
+            {candidatePhone && (
+              <a
+                href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(match))}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                >
+                  <MessageCircle className="h-4 w-4 ml-1" />
+                  וואטסאפ
+                </Button>
+              </a>
+            )}
             {match.locationMatch && (
               <Badge className="bg-blue-100 text-blue-700">
                 <Navigation className="h-3 w-3 mr-1" />

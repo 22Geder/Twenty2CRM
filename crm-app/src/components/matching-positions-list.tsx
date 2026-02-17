@@ -558,8 +558,24 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     </div>
                   </div>
 
-                  {/* Match Score */}
+                  {/* Match Score + Quick WhatsApp */}
                   <div className="flex items-center gap-2">
+                    {/* כפתור וואטסאפ מהיר - תמיד גלוי */}
+                    {candidatePhone && (
+                      <a
+                        href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button
+                          size="sm"
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                        >
+                          <MessageCircle className="h-4 w-4 ml-1" />
+                          וואטסאפ
+                        </Button>
+                      </a>
+                    )}
                     <div className="text-center">
                       <div
                         className={`text-3xl font-bold px-4 py-2 rounded-lg ${getMatchScoreColor(

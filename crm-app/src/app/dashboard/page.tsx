@@ -232,6 +232,9 @@ export default async function CiviDashboardPage() {
   const recentPositions = await getRecentPositions()
   const upcomingTasks = await getUpcomingTasks()
   const candidateSources = await getCandidateSources()
+  const inProcessCandidates = await getCandidatesInProcess()
+  const rejectedCandidates = await getRejectedCandidates()
+  const hiredCandidates = await getHiredCandidates()
 
   // Calculate percentages for status bars
   const totalInProcess = stats.inProcess || 1
@@ -319,6 +322,90 @@ export default async function CiviDashboardPage() {
       {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
         
+        {/* Candidate Status Overview - 3 Categories */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* In Process - בתהליך */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
+              <span className="font-semibold">בתהליך</span>
+              <span className="bg-white/20 px-2 py-1 rounded text-sm">{inProcessCandidates.length}</span>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto">
+              {inProcessCandidates.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {inProcessCandidates.map((app: any) => (
+                    <Link key={app.id} href={`/dashboard/candidates/${app.candidate.id}`} 
+                          className="block px-4 py-2 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium text-slate-700">{app.candidate.name}</span>
+                          <span className="text-xs text-slate-400 mr-2">({app.status})</span>
+                        </div>
+                        <span className="text-xs text-slate-500">{new Date(app.updatedAt).toLocaleDateString('he-IL')}</span>
+                      </div>
+                      <div className="text-xs text-blue-600 truncate">{app.position?.title || 'משרה לא צוינה'}</div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-slate-400 text-sm">אין מועמדים בתהליך</div>
+              )}
+            </div>
+          </div>
+
+          {/* Rejected - לא מתאים */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 flex items-center justify-between">
+              <span className="font-semibold">לא מתאים</span>
+              <span className="bg-white/20 px-2 py-1 rounded text-sm">{rejectedCandidates.length}</span>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto">
+              {rejectedCandidates.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {rejectedCandidates.map((app: any) => (
+                    <Link key={app.id} href={`/dashboard/candidates/${app.candidate.id}`} 
+                          className="block px-4 py-2 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-slate-700">{app.candidate.name}</span>
+                        <span className="text-xs text-slate-500">{new Date(app.updatedAt).toLocaleDateString('he-IL')}</span>
+                      </div>
+                      <div className="text-xs text-red-600 truncate">{app.position?.title || 'משרה לא צוינה'}</div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-slate-400 text-sm">אין מועמדים שנדחו</div>
+              )}
+            </div>
+          </div>
+
+          {/* Hired - התקבלו */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 flex items-center justify-between">
+              <span className="font-semibold">התקבלו</span>
+              <span className="bg-white/20 px-2 py-1 rounded text-sm">{hiredCandidates.length}</span>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto">
+              {hiredCandidates.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {hiredCandidates.map((app: any) => (
+                    <Link key={app.id} href={`/dashboard/candidates/${app.candidate.id}`} 
+                          className="block px-4 py-2 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-slate-700">{app.candidate.name}</span>
+                        <span className="text-xs text-slate-500">{new Date(app.updatedAt).toLocaleDateString('he-IL')}</span>
+                      </div>
+                      <div className="text-xs text-green-600 truncate">{app.position?.title || 'משרה לא צוינה'}</div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-slate-400 text-sm">אין מועמדים שהתקבלו</div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Top Stats Row - 5 Cards */}
         <div className="grid grid-cols-5 gap-4">
           {/* Card 1 - Started Work This Month */}

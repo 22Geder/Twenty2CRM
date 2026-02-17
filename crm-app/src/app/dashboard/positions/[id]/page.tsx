@@ -14,7 +14,8 @@ import {
   Edit,
   Trash2,
   Calendar,
-  DollarSign
+  DollarSign,
+  Tag
 } from "lucide-react"
 import Link from "next/link"
 import { MatchingCandidatesSidebar } from "@/components/matching-candidates-sidebar"
@@ -354,6 +355,45 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
                 <p className="text-sm font-semibold">נוצר ב</p>
                 <p className="text-sm">{new Date(position.createdAt).toLocaleDateString("he-IL")}</p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Tags Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  תיוגים
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {position.tags && position.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {position.tags.map((tag: any) => (
+                    <Badge 
+                      key={tag.id} 
+                      variant="outline"
+                      style={tag.color ? { 
+                        backgroundColor: `${tag.color}20`,
+                        borderColor: tag.color,
+                        color: tag.color
+                      } : undefined}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">אין תיוגים עדיין</p>
+              )}
+              <Link href={`/dashboard/positions/${positionId}/edit`} className="mt-3 block">
+                <Button variant="outline" size="sm" className="w-full">
+                  <Edit className="ml-2 h-3 w-3" />
+                  ערוך תיוגים
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 

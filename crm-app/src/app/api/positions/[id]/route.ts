@@ -121,6 +121,13 @@ export async function PUT(
       openings,
       priority,
       closedAt,
+      keywords,
+      contactEmail,
+      contactName,
+      workHours,
+      benefits,
+      transportation,
+      tagIds, // 🆕 Array of tag IDs
     } = body
 
     // Check if position exists
@@ -135,26 +142,42 @@ export async function PUT(
       )
     }
 
+    // Build the update data object
+    const updateData: any = {
+      title,
+      description,
+      requirements,
+      location,
+      salaryRange,
+      employmentType,
+      departmentId: departmentId || null,
+      employerId,
+      recruiterId: recruiterId || null,
+      imageUrl,
+      active,
+      ruTitle,
+      ruDescription,
+      openings: openings ? parseInt(openings) : undefined,
+      priority: priority ? parseInt(priority) : undefined,
+      closedAt: closedAt ? new Date(closedAt) : undefined,
+      keywords,
+      contactEmail,
+      contactName,
+      workHours,
+      benefits,
+      transportation,
+    }
+
+    // 🆕 Handle tags update
+    if (tagIds !== undefined) {
+      updateData.tags = {
+        set: tagIds.map((tagId: string) => ({ id: tagId }))
+      }
+    }
+
     const position = await prisma.position.update({
       where: { id },
-      data: {
-        title,
-        description,
-        requirements,
-        location,
-        salaryRange,
-        employmentType,
-        departmentId,
-        employerId,
-        recruiterId,
-        imageUrl,
-        active,
-        ruTitle,
-        ruDescription,
-        openings: openings ? parseInt(openings) : undefined,
-        priority: priority ? parseInt(priority) : undefined,
-        closedAt: closedAt ? new Date(closedAt) : undefined,
-      },
+      data: updateData,
       include: {
         employer: true,
         department: true,
@@ -165,6 +188,7 @@ export async function PUT(
             email: true,
           },
         },
+        tags: true,
         _count: {
           select: {
             applications: true,

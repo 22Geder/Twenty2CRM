@@ -64,20 +64,22 @@ async function main() {
         currentKeywords = [];
       }
       
-      // בודקים אם זו משרת מכירות
+      // בודקים אם זו משרת מכירות - רק אם כתוב במפורש "מכירות" או "מכירן"
+      const titleLower = position.title.toLowerCase();
       const isSales = position.title.includes('מכירות') || 
-                      position.title.includes('יועץ') ||
-                      position.title.includes('איש') ||
-                      position.title.includes('אשת') ||
-                      position.title.includes('נציג');
+                      position.title.includes('מכירן') ||
+                      (position.title.includes('איש') && position.title.includes('מכיר')) ||
+                      (position.title.includes('אשת') && position.title.includes('מכיר')) ||
+                      (position.title.includes('סוכן') && position.title.includes('מכיר'));
       
       // בודקים אם זו משרת קבלה/התרשמות
       const isReception = position.title.includes('קבלה') || 
                           position.title.includes('דייל') ||
                           position.title.includes('התרשמות');
       
-      // בודקים אם זו משרה ניהולית
-      const isManagement = position.title.includes('מנהל');
+      // בודקים אם זו משרה ניהולית של מכירות
+      const isManagement = position.title.includes('מנהל') && 
+                           (position.title.includes('מכיר') || position.title.includes('אולם'));
       
       // מוסיפים keywords מתאימים
       const newKeywords = new Set(currentKeywords);
@@ -98,7 +100,6 @@ async function main() {
       }
       
       // מוסיפים את המותג הרלוונטי
-      const titleLower = position.title.toLowerCase();
       const employerName = position.employer?.name || '';
       
       if (titleLower.includes('geely') || titleLower.includes("ג'ילי") || employerName.includes('UNION')) {

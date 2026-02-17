@@ -10,16 +10,77 @@ import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTa
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// Helper to extract text from PDF
+// 🆕 קריאת PDF עם Gemini Vision (לקבצים סרוקים!)
+async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    
+    // Convert buffer to base64
+    const base64Data = buffer.toString('base64');
+    
+    const prompt = `אתה מומחה ב-OCR לקורות חיים בעברית ואנגלית.
+    
+נתח את קובץ ה-PDF הזה שהוא קורות חיים ותחלץ את כל הטקסט.
+
+התמקד במיוחד ב:
+1. שם מלא של המועמד
+2. מספר טלפון (בפורמט ישראלי 05X-XXX-XXXX)
+3. כתובת אימייל
+4. עיר מגורים
+5. ניסיון תעסוקתי - תפקידים, חברות, שנים
+6. השכלה - תארים, מוסדות
+7. כישורים ומיומנויות
+8. רישיונות (נהיגה, מלגזה וכו')
+9. שפות
+
+החזר את הטקסט המלא כפי שהוא מופיע בקורות החיים.
+אל תדלג על מידע - חלץ הכל!
+אם יש טבלאות, המר אותן לטקסט קריא.`;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: 'application/pdf',
+          data: base64Data
+        }
+      }
+    ]);
+    
+    const response = result.response;
+    const text = response.text();
+    
+    console.log('📄 Gemini PDF OCR extracted text length:', text.length);
+    return text;
+  } catch (error) {
+    console.error('Error extracting text from PDF with Gemini:', error);
+    return '';
+  }
+}
+
+// Helper to extract text from PDF - נסה קודם pdf-parse, אחר כך Gemini
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
+    // First try pdf-parse for text-based PDFs
     const mod: any = await import('pdf-parse');
     const parser = mod?.default ?? mod;
     const data = await parser(buffer);
-    return data.text;
+    const text = data.text;
+    
+    // אם הטקסט קצר מדי (פחות מ-100 תווים), כנראה PDF סרוק
+    if (text.trim().length < 100) {
+      console.log('📄 PDF text too short, trying Gemini Vision OCR...');
+      const geminiText = await extractTextFromPDFWithGemini(buffer);
+      if (geminiText.length > text.length) {
+        return geminiText;
+      }
+    }
+    
+    return text;
   } catch (error) {
-    console.error('Error parsing PDF:', error);
-    return '';
+    console.error('Error parsing PDF with pdf-parse, trying Gemini:', error);
+    // Fallback to Gemini Vision for scanned PDFs
+    return await extractTextFromPDFWithGemini(buffer);
   }
 }
 

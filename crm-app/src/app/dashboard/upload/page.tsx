@@ -254,13 +254,14 @@ export default function BulkUploadPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">📄 העלאת קורות חיים המונית + AI</h1>
-        <p className="text-gray-600">העלה עד 500 קורות חיים - המערכת תקרא עם AI ותנתח אוטומטית</p>
+        <p className="text-gray-600">העלה עד 500 קורות חיים - המערכת תקרא עם Gemini AI ותנתח אוטומטית</p>
         <div className="flex flex-wrap gap-2 mt-3">
-          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">📄 PDF</span>
+          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">📄 PDF (רגיל + סרוק!)</span>
           <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">📝 DOCX</span>
           <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">🖼️ תמונות OCR</span>
-          <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">🤖 AI Gemini</span>
+          <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">🤖 Gemini Vision AI</span>
         </div>
+        <p className="text-xs text-gray-500 mt-2">✨ חדש! המערכת קוראת גם קבצי PDF סרוקים (תמונה בתוך PDF) באמצעות Gemini Vision</p>
       </div>
 
       {/* Stats Cards */}

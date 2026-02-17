@@ -91,8 +91,17 @@ export async function GET(request: NextRequest) {
     // 🆕 Calculate candidate's recruitment tags once
     const candidateText = `${candidate.name} ${candidate.currentTitle || ''} ${candidate.skills || ''} ${candidate.resume || ''}`
     const candidateRecruitmentTags = findMatchingTags(candidateText)
-    const candidateCategories = getUniqueCategories(candidateRecruitmentTags)
+    let candidateCategories = getUniqueCategories(candidateRecruitmentTags)
     const candidateTagKeywords = candidateRecruitmentTags.map(t => t.keyword)
+    
+    // 🆕 שימוש בפרופיל AI משופר אם קיים
+    const candidateMainIndustries: string[] = candidateProfile?.mainIndustries || []
+    const candidateRelevantFor: string[] = candidateProfile?.relevantFor || []
+    
+    // הוספת התחומים מה-AI לקטגוריות
+    if (candidateMainIndustries.length > 0) {
+      candidateCategories = [...new Set([...candidateCategories, ...candidateMainIndustries])]
+    }
 
     for (const position of positions) {
       try {
@@ -135,12 +144,25 @@ export async function GET(request: NextRequest) {
         // 🆕 Check for category match bonus
         const categoryOverlap = candidateCategories.filter(c => positionCategories.includes(c))
         const categoryBonus = categoryOverlap.length > 0 ? 5 : 0
+        
+        // 🆕 בונוס נוסף אם המשרה מתאימה לrelevantFor של המועמד
+        let relevanceBonus = 0
+        if (candidateRelevantFor.length > 0) {
+          const positionTitleLower = position.title.toLowerCase()
+          for (const relevantType of candidateRelevantFor) {
+            if (positionTitleLower.includes(relevantType.toLowerCase()) ||
+                relevantType.toLowerCase().includes(positionTitleLower.slice(0, 10))) {
+              relevanceBonus = 10
+              break
+            }
+          }
+        }
 
         matches.push({
           positionId: position.id,
           positionTitle: position.title,
           employerName: position.employer?.name,
-          matchScore: Math.min(100, combinedScore + categoryBonus),
+          matchScore: Math.min(100, combinedScore + categoryBonus + relevanceBonus),
           reasoning: matchResult.reasoning,
           matchedSkills: matchResult.matchedSkills,
           missingSkills: matchResult.missingSkills,

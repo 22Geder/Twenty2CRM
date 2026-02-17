@@ -561,7 +561,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                   {/* Match Score + Quick WhatsApp */}
                   <div className="flex items-center gap-2">
                     {/* כפתור וואטסאפ מהיר - תמיד גלוי */}
-                    {candidatePhone && (
+                    {candidatePhone ? (
                       <a
                         href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))}
                         target="_blank"
@@ -575,6 +575,10 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                           וואטסאפ
                         </Button>
                       </a>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-400 text-xs">
+                        אין טלפון
+                      </Badge>
                     )}
                     <div className="text-center">
                       <div

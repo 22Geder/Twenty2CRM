@@ -125,6 +125,65 @@ async function getDashboardStats() {
   }
 }
 
+// Get candidates in process (בתהליך)
+async function getCandidatesInProcess() {
+  return await prisma.application.findMany({
+    where: {
+      status: {
+        in: ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER']
+      }
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 10,
+    include: {
+      candidate: {
+        select: { id: true, name: true, phone: true }
+      },
+      position: {
+        select: { id: true, title: true }
+      }
+    }
+  })
+}
+
+// Get rejected candidates (לא מתאים)
+async function getRejectedCandidates() {
+  return await prisma.application.findMany({
+    where: {
+      status: 'REJECTED'
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 10,
+    include: {
+      candidate: {
+        select: { id: true, name: true, phone: true }
+      },
+      position: {
+        select: { id: true, title: true }
+      }
+    }
+  })
+}
+
+// Get hired candidates (התקבלו)
+async function getHiredCandidates() {
+  return await prisma.application.findMany({
+    where: {
+      status: 'HIRED'
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 10,
+    include: {
+      candidate: {
+        select: { id: true, name: true, phone: true }
+      },
+      position: {
+        select: { id: true, title: true }
+      }
+    }
+  })
+}
+
 // Get recent positions
 async function getRecentPositions() {
   return await prisma.position.findMany({

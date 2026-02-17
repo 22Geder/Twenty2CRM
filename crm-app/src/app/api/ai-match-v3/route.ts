@@ -219,15 +219,26 @@ JSON בלבד:`
 
     const analysis = JSON.parse(jsonMatch[0])
     
-    // חישוב ציון סופי עם בונוס מיקום
-    let finalScore = analysis.score || 0
+    // ========================================
+    // 🆕 חישוב ציון סופי לפי המשקולות החדשים:
+    // 65% מיקום + 35% AI (תגיות + קריאה אנושית)
+    // ========================================
+    
+    // הציון מה-AI מייצג 35% מהציון הסופי (תגיות + קריאה אנושית)
+    let aiScore = Math.round((analysis.score || 0) * 0.35)
+    
+    // בונוס מיקום - 65% מהציון הסופי
+    let locationBonus = 0
     if (locationMatch) {
-      finalScore = Math.min(100, finalScore + 15)
+      locationBonus = 65
     }
 
-    // הפחתת ציון אם אין קורות חיים
+    let finalScore = locationBonus + aiScore
+    finalScore = Math.min(100, finalScore)
+    
+    // הפחתת ציון אם אין קורות חיים (מתוך החלק של ה-AI)
     if (!hasResume) {
-      finalScore = Math.max(30, finalScore - 20)
+      finalScore = Math.max(20, finalScore - 10)
     }
 
     return {
@@ -253,7 +264,7 @@ JSON בלבד:`
 }
 
 // התאמה חכמה בלי AI
-// 🆕 משקולות חדשים: 55% מיקום, 45% כישורים/תגיות
+// 🆕 משקולות חדשים: 65% מיקום, 35% תגיות+קריאה אנושית (20% תגיות, 15% קריאה אנושית)
 function smartFallbackMatch(candidate: any, position: any, candidateCity: string, locationMatch: boolean) {
   const candidateText = buildCandidateText(candidate).toLowerCase()
   const positionTitle = (position.title || '').toLowerCase()
@@ -261,19 +272,22 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   
   // ציון בסיסי
   let locationScore = 0
-  let skillsScore = 0
+  let tagsScore = 0      // 20 נקודות מקסימום
+  let humanScore = 0     // 15 נקודות מקסימום
   const strengths: string[] = []
   const weaknesses: string[] = []
 
-  // 🗺️ בונוס מיקום - 55 נקודות מקסימום!
+  // ========================================
+  // 🗺️ בונוס מיקום - 65 נקודות מקסימום (65%)
+  // ========================================
   if (locationMatch) {
-    locationScore = 55
+    locationScore = 65
     strengths.push(`📍 מיקום מתאים: ${candidate.city || 'לא צוין'}`)
   } else if (candidate.city && position.location) {
     // בדיקה נוספת למיקום קרוב עם המאגר המלא
     const positionLocality = extractLocalityFromAddress(position.location) || normalizeLocality(position.location)
     if (areLocationsNearby(candidateCity, positionLocality)) {
-      locationScore = 45
+      locationScore = 55
       strengths.push(`מיקום קרוב: ${position.location}`)
     } else {
       locationScore = 0
@@ -281,24 +295,9 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     }
   }
 
-  // 🎯 כישורים ותגיות - 45 נקודות מקסימום!
-  let hasAnySkillMatch = false
-
-  // התאמת תפקיד (עד 15 נקודות מתוך 45)
-  const titleWords = positionTitle.split(/\s+/).filter((w: string) => w.length > 2)
-  let titleMatches = 0
-  for (const word of titleWords) {
-    if (candidateText.includes(word)) {
-      titleMatches++
-      hasAnySkillMatch = true
-    }
-  }
-  if (titleMatches > 0) {
-    skillsScore += Math.min(15, titleMatches * 8)
-    strengths.push(`התאמה לתפקיד ${position.title}`)
-  }
-
-  // התאמת תגיות (עד 15 נקודות מתוך 45)
+  // ========================================
+  // 🏷️ תגיות - 20 נקודות מקסימום (20%)
+  // ========================================
   const candidateTags = candidate.tags?.map((t: any) => t.name.toLowerCase()) || []
   const positionTags = position.tags?.map((t: any) => t.name.toLowerCase()) || []
   
@@ -306,46 +305,65 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   for (const tag of positionTags) {
     if (candidateTags.some((ct: string) => ct.includes(tag) || tag.includes(ct))) {
       tagMatches++
-      hasAnySkillMatch = true
       strengths.push(`תגית: ${tag}`)
     }
   }
-  skillsScore += Math.min(15, tagMatches * 8)
+  tagsScore = Math.min(20, tagMatches * 7) // עד 20 נקודות מתגיות
 
-  // כישורים (עד 10 נקודות מתוך 45)
+  // ========================================
+  // 🧠 קריאה אנושית - 15 נקודות מקסימום (15%)
+  // ========================================
+  let hasHumanMatch = false
+
+  // התאמת תפקיד (עד 8 נקודות)
+  const titleWords = positionTitle.split(/\s+/).filter((w: string) => w.length > 2)
+  let titleMatches = 0
+  for (const word of titleWords) {
+    if (candidateText.includes(word)) {
+      titleMatches++
+      hasHumanMatch = true
+    }
+  }
+  if (titleMatches > 0) {
+    humanScore += Math.min(8, titleMatches * 3)
+    strengths.push(`התאמה לתפקיד ${position.title}`)
+  }
+
+  // כישורים מקורות חיים (עד 5 נקודות)
   const skills = (candidate.skills || '').toLowerCase().split(',')
   let skillMatches = 0
   for (const skill of skills) {
     if (skill.trim() && skill.trim().length > 2 && positionDesc.includes(skill.trim())) {
       skillMatches++
-      hasAnySkillMatch = true
+      hasHumanMatch = true
     }
   }
-  skillsScore += Math.min(10, skillMatches * 4)
+  humanScore += Math.min(5, skillMatches * 2)
 
-  // ניסיון (עד 5 נקודות)
+  // ניסיון (עד 2 נקודות)
   const years = candidate.yearsOfExperience || 0
   if (years >= 5) {
-    skillsScore += 5
+    humanScore += 2
     strengths.push(`${years} שנות ניסיון`)
-    hasAnySkillMatch = true
+    hasHumanMatch = true
   } else if (years >= 2) {
-    skillsScore += 3
+    humanScore += 1
     strengths.push(`${years} שנות ניסיון`)
-    hasAnySkillMatch = true
-  } else if (years >= 1) {
-    skillsScore += 2
-    strengths.push(`${years} שנת ניסיון`)
+    hasHumanMatch = true
   }
 
-  // 🆕 אם אין כישורים כלל - בונוס 40%
-  if (!hasAnySkillMatch && candidate.skills?.trim() === '') {
-    skillsScore = 40
+  humanScore = Math.min(15, humanScore) // מקסימום 15 נקודות
+
+  // 🆕 אם אין כישורים כלל - בונוס מינימלי
+  if (!hasHumanMatch && tagMatches === 0 && candidate.skills?.trim() === '') {
+    humanScore = 10
     strengths.push('מועמד ללא כישורים מוגדרים - התאמה כללית')
   }
 
-  // ציון סופי: מיקום + כישורים
-  let score = locationScore + Math.min(45, skillsScore)
+  // ========================================
+  // ציון סופי: 65% מיקום + 20% תגיות + 15% קריאה אנושית
+  // ========================================
+  let score = locationScore + tagsScore + humanScore
   score = Math.min(100, Math.round(score))
 
   // קביעת המלצה חכמה

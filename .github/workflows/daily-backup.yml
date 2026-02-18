@@ -6,6 +6,10 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:  # Allow manual trigger
 
+env:
+  CRM_URL: https://superb-transformation-production.up.railway.app
+  CRON_SECRET: twenty2crm-backup-2024
+
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -17,7 +21,7 @@ jobs:
           
           # Trigger the cron backup endpoint
           response=$(curl -s -w "%{http_code}" -o response.txt \
-            "${{ secrets.CRM_URL }}/api/cron/backup?secret=${{ secrets.CRON_SECRET }}")
+            "${{ env.CRM_URL }}/api/cron/backup?secret=${{ env.CRON_SECRET }}")
           
           echo "Response code: $response"
           cat response.txt
@@ -31,7 +35,7 @@ jobs:
           echo "📥 Downloading full backup..."
           
           curl -s -o "backup-$(date +%Y-%m-%d).json" \
-            "${{ secrets.CRM_URL }}/api/backup"
+            "${{ env.CRM_URL }}/api/backup"
           
           # Show backup file size
           ls -lh backup-*.json

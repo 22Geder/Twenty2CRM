@@ -56,6 +56,11 @@ interface Candidate {
   hiredAt: string | null
   applications: Application[]
   tags: Array<{ id: string; name: string; color: string }>
+  uploadedBy?: {  // 🆕 מי העלה את המועמד
+    id: string
+    name: string
+    email: string
+  } | null
   _count: {
     applications: number
     interviews: number
@@ -690,9 +695,18 @@ export default function CandidatesPageModern() {
 
                   {/* Premium Footer */}
                   <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex gap-3 text-xs text-slate-500">
-                      <span className="bg-[#00A8A8]/10 text-[#00A8A8] px-2 py-1 rounded-full">{candidate._count?.applications || 0} מועמדויות</span>
-                      <span className="bg-[#FF8C00]/10 text-[#FF8C00] px-2 py-1 rounded-full">{candidate._count?.interviews || 0} ראיונות</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex gap-3 text-xs text-slate-500">
+                        <span className="bg-[#00A8A8]/10 text-[#00A8A8] px-2 py-1 rounded-full">{candidate._count?.applications || 0} מועמדויות</span>
+                        <span className="bg-[#FF8C00]/10 text-[#FF8C00] px-2 py-1 rounded-full">{candidate._count?.interviews || 0} ראיונות</span>
+                      </div>
+                      {/* 🆕 הצגת מי העלה */}
+                      {candidate.uploadedBy && (
+                        <div className="text-xs text-slate-400 flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          <span>הועלה ע"י: {candidate.uploadedBy.name}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button 

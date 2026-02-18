@@ -28,6 +28,7 @@ model User {
   communications    Communication[]
   notifications     Notification[]
   activityLogs      ActivityLog[]
+  uploadedCandidates Candidate[]    @relation("CandidateUploader") // מועמדים שהמשתמש העלה
 }
 
 model Department {
@@ -130,6 +131,8 @@ model Candidate {
   inProcessPositionId String?   // 🆕 המשרה שהמועמד בתהליך בה (סטטוס "בתהליך")
   inProcessAt     DateTime?     // 🆕 מתי נכנס לתהליך
   inProcessPosition   Position? @relation("InProcessCandidates", fields: [inProcessPositionId], references: [id])
+  uploadedById  String?         // 🆕 מי העלה את המועמד
+  uploadedBy    User?           @relation("CandidateUploader", fields: [uploadedById], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   

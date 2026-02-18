@@ -105,6 +105,13 @@ export async function GET(request: NextRequest) {
             },
           },
           tags: true,  // הוסף תגיות למועמדים
+          uploadedBy: {  // 🆕 מי העלה את המועמד
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           _count: {
             select: {
               applications: true,
@@ -141,6 +148,9 @@ export async function POST(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    
+    // 🆕 קבלת מזהה של המשתמש שמעלה
+    const uploadedById = (session.user as any)?.id || null
 
     const body = await request.json()
     let {
@@ -276,6 +286,7 @@ export async function POST(request: NextRequest) {
         isSelfEmployed: Boolean(isSelfEmployed),
         resume: resume || null,  // 🆕 שמירת טקסט קורות חיים
         tags: tagConnections,    // 🆕 חיבור תגיות
+        uploadedById,            // 🆕 מי העלה את המועמד
       },
       include: {
         tags: true  // כלול תגיות בתשובה

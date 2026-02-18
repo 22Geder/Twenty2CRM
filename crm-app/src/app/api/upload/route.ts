@@ -573,6 +573,9 @@ export async function POST(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // 🆕 קבלת מזהה של המשתמש שמעלה
+    const uploadedById = (session.user as any)?.id || null;
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -766,6 +769,7 @@ export async function POST(request: NextRequest) {
           aiProfile: aiProfileJson,  // 🆕 שמירת פרופיל AI משופר
           source: 'UPLOAD',
           notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name}`,
+          uploadedById,  // 🆕 מי העלה את המועמד
         },
         update: {
           name,
@@ -823,6 +827,7 @@ export async function POST(request: NextRequest) {
             aiProfile: aiProfileJson,  // 🆕 שמירת פרופיל AI משופר
             source: 'UPLOAD',
             notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name} (ללא אימייל)`,
+            uploadedById,  // 🆕 מי העלה את המועמד
           },
           select: { id: true },
         });

@@ -141,17 +141,53 @@ export async function POST(request: Request) {
     const scores = allMatches.map(m => m.score).sort((a, b) => b - a)
     console.log(`📊 ציונים: מקס=${scores[0]}, מין=${scores[scores.length-1]}, מיקום=${allMatches.filter(m => m.locationMatch).length}`)
 
-    // סינון - מראה את הכל עם ציון 10+ או מיקום מתאים, ולפחות 20 תוצאות
-    let relevantMatches = allMatches.filter(m => m.score >= 10 || m.locationMatch)
+    // ========================================
+    // 🚗 עדיפות למשרות קרובות - אם אין רכב במשרה
+    // ========================================
+    const positionsWithCar = new Set<string>()
+    for (const match of allMatches) {
+      const position = positions.find(p => p.id === match.positionId)
+      if (position) {
+        const hasCarBenefit = /רכב צמוד|רכב חברה|רכב|הסעה|הסעות/i.test(
+          (position.description || '') + ' ' + (position.salaryRange || '')
+        )
+        if (hasCarBenefit) positionsWithCar.add(match.positionId)
+      }
+    }
+    
+    // סינון חכם - חלוקה לפי מיקום ורכב
+    const nearbyMatches = allMatches.filter(m => m.locationMatch)
+    const farWithCarMatches = allMatches.filter(m => !m.locationMatch && positionsWithCar.has(m.positionId))
+    const farWithoutCarMatches = allMatches.filter(m => !m.locationMatch && !positionsWithCar.has(m.positionId))
+
+    // מיון לפי ציון בתוך כל קבוצה
+    nearbyMatches.sort((a, b) => b.score - a.score)
+    farWithCarMatches.sort((a, b) => b.score - a.score)
+    farWithoutCarMatches.sort((a, b) => b.score - a.score)
+
+    // 🎯 בניית רשימת 15 המשרות הטובות ביותר
+    // עדיפות: 1) קרובות, 2) רחוקות עם רכב, 3) רחוקות בלי רכב (רק אם ציון גבוה)
+    const MAX_RESULTS = 15
+    let relevantMatches: typeof allMatches = []
+    
+    // קודם - כל המשרות הקרובות (עד MAX_RESULTS)
+    relevantMatches.push(...nearbyMatches.slice(0, MAX_RESULTS))
+    
+    // אם יש מקום - הוסף משרות עם רכב (רחוקות אבל עם הסעה/רכב צמוד)
+    if (relevantMatches.length < MAX_RESULTS) {
+      const remaining = MAX_RESULTS - relevantMatches.length
+      relevantMatches.push(...farWithCarMatches.slice(0, remaining))
+    }
+    
+    // אם עדיין יש מקום - הוסף משרות רחוקות בלי רכב רק אם ציון גבוה (50+)
+    if (relevantMatches.length < MAX_RESULTS) {
+      const remaining = MAX_RESULTS - relevantMatches.length
+      const highScoreFar = farWithoutCarMatches.filter(m => m.score >= 50)
+      relevantMatches.push(...highScoreFar.slice(0, remaining))
+    }
     
     console.log(`📋 לפני: ${allMatches.length} משרות, אחרי סינון: ${relevantMatches.length}`)
-    
-    // אם אין מספיק תוצאות, הוסף את הטובים ביותר
-    if (relevantMatches.length < 20 && allMatches.length > relevantMatches.length) {
-      const remaining = allMatches.filter(m => m.score < 10 && !m.locationMatch)
-      relevantMatches = [...relevantMatches, ...remaining.slice(0, 20 - relevantMatches.length)]
-      console.log(`➕ הוספתי ${relevantMatches.length - allMatches.filter(m => m.score >= 10 || m.locationMatch).length} משרות נוספות`)
-    }
+    console.log(`  📍 קרובות: ${nearbyMatches.length}, 🚗 עם רכב: ${farWithCarMatches.length}, 🚶 בלי רכב: ${farWithoutCarMatches.length}`)
     
     const notRelevant = allMatches.filter(m => !relevantMatches.includes(m))
 

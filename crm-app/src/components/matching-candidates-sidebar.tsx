@@ -23,7 +23,8 @@ import {
   Info,
   Briefcase,
   CheckSquare,
-  Square
+  Square,
+  MessageCircle
 } from "lucide-react"
 import Link from "next/link"
 
@@ -218,6 +219,21 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
     if (score >= 60) return 'text-blue-600 bg-blue-50'
     if (score >= 40) return 'text-yellow-600 bg-yellow-50'
     return 'text-gray-600 bg-gray-50'
+  }
+
+  // 📱 WhatsApp Helper
+  const normalizePhoneForWhatsApp = (phone: string): string => {
+    const cleaned = phone.replace(/[^0-9]/g, '')
+    if (cleaned.startsWith('972')) return cleaned
+    if (cleaned.startsWith('0')) return '972' + cleaned.slice(1)
+    return '972' + cleaned
+  }
+
+  const getWhatsAppLink = (phone: string, candidateName: string): string => {
+    const normalizedPhone = normalizePhoneForWhatsApp(phone)
+    const message = `היי ${candidateName}! 👋\n\nאני מטוונטי טו ג'ובס, ויש לי משרה שיכולה להתאים לך:\n\n🎯 ${positionTitle || 'משרה חדשה'}\n\nאשמח לדבר איתך ולספר עוד!\n\nמה אומרת/אומר?`
+    const encodedMessage = encodeURIComponent(message)
+    return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
 
   const getMatchScoreLabel = (score: number) => {
@@ -854,26 +870,42 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
                       )}
                     </div>
 
-                    {/* שורה שנייה - כפתור שליחה למעסיק (בולט) */}
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md"
-                      onClick={() => sendCandidateToEmployer(candidate.id, candidate.name)}
-                      disabled={sendingToEmployer === candidate.id}
-                    >
-                      {sendingToEmployer === candidate.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-sm font-semibold">שולח למעסיק...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Briefcase className="h-4 w-4" />
-                          <span className="text-sm font-semibold">🤖 שלח למעסיק + ניתוח AI</span>
-                        </>
+                    {/* שורה שנייה - כפתורי וואטסאפ ושליחה למעסיק */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* 📱 כפתור וואטסאפ למועמד */}
+                      {candidate.phone && (
+                        <a
+                          href={getWhatsAppLink(candidate.phone, candidate.name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          <span>וואטסאפ</span>
+                        </a>
                       )}
-                    </Button>
+                      
+                      {/* 🏢 כפתור שליחה למעסיק */}
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className={`flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md ${!candidate.phone ? 'col-span-2' : ''}`}
+                        onClick={() => sendCandidateToEmployer(candidate.id, candidate.name)}
+                        disabled={sendingToEmployer === candidate.id}
+                      >
+                        {sendingToEmployer === candidate.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm font-semibold">שולח...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Briefcase className="h-4 w-4" />
+                            <span className="text-sm font-semibold">🤖 למעסיק</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

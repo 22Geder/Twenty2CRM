@@ -518,6 +518,84 @@ export async function GET() {
       console.log('✅ YES contacts updated')
     }
 
+    // =============================================================
+    // 7. Update Sela Logistics positions with 60 keywords
+    // =============================================================
+    console.log('🏷️ מוסיף 60 תגיות לכל משרת סלע לוגיסטיקה...')
+
+    const LOGISTICS_BASE_KEYWORDS = [
+      'לוגיסטיקה', 'מחסן', 'מחסנים', 'מרלוג', 'מרכז לוגיסטי', 'שרשרת אספקה', 'supply chain',
+      'הפצה', 'הובלה', 'משלוחים', 'שינוע', 'תובלה', 'סחורה', 'מלאי', 'מלאים', 'inventory',
+      'אחסון', 'אחסנה', 'קליטה', 'קליטת סחורה', 'הזמנות', 'הזמנה', 'תעודות משלוח',
+      'מלגזה', 'מלגזן', 'מלגזנים', 'היגש', 'מלגזת היגש', 'reach truck', 'forklift',
+      'מסופון', 'סורק', 'ברקוד', 'barcode', 'WMS', 'מערכת ניהול מחסן', 'ERP', 'SAP',
+      'פלטה', 'משטח', 'משטחים', 'pallet', 'רמפה', 'רמפות', 'dock', 'מטען', 'מטענים',
+      'ליקוט', 'מלקט', 'picker', 'picking', 'פקיד מחסן', 'מחסנאי', 'warehouse', 'עובד מחסן',
+      'בקר', 'בקרה', 'בקר סחורה', 'quality control', 'QC', 'בדיקה', 'סריקה',
+      'סדרן', 'סדרן הפצה', 'רפרנט', 'רפרנט שטח', 'תפעול', 'operations',
+      'אשדוד', 'בית שמש', 'דרום', 'מרכז', 'נגב', 'שפלה', 'חפץ חיים', 'בני דרום', 'מבקיעים',
+      'אזור תעשייה', 'industrial', 'park', 'מפעל', 'factory',
+      'משמרות', 'בוקר', 'לילה', 'ערב', 'משמרת', 'שעתי', 'גלובלי', 'שכר שעתי',
+      'הסעה', 'הסעות', 'ארוחות', 'ארוחה חמה', 'תנאים סוציאליים',
+      'רישיון נהיגה', 'ניידות', 'עבודה פיזית', 'כושר גופני', 'אחריות', 'סדר וארגון',
+      'עבודת צוות', 'לחץ', 'עבודה תחת לחץ', 'דיוק', 'תשומת לב', 'זהירות', 'בטיחות'
+    ]
+
+    const SPECIFIC_KEYWORDS: Record<string, string[]> = {
+      'מלגזן': ['רישיון מלגזה', 'מלגזה חשמלית', 'מלגזת קומה', 'העמסה', 'פריקה', 'הרמה', 'נסיעה', 'תמרון', 'הובלת סחורה', 'סידור מחסן', 'הנחת משטחים', 'גובה', 'מדפים', 'racks'],
+      'היגש': ['reach', 'גובה רב', 'narrow aisle', 'מעברים צרים', 'דיוק גבוה', 'שליפה מגובה', 'אחסון גבוה', 'מרפסות', 'רמות', 'levels'],
+      'פקיד': ['אדמיניסטרציה', 'משרדי', 'מחשב', 'אקסל', 'Excel', 'Word', 'מערכות מידע', 'ניהול מלאי', 'דוחות', 'תיעוד', 'רישום', 'עדכון נתונים', 'קלדנות', 'הקלדה', 'רוסית', 'שפות'],
+      'מלקט': ['ליקוט הזמנות', 'order picking', 'walking', 'הליכה', 'חיפוש', 'איתור', 'מסופון הזמנות', 'RF', 'מהירות', 'speed', 'יעילות', 'efficiency', 'אריזה', 'packing'],
+      'בקר': ['בקרת איכות', 'בדיקת סחורה', 'inspection', 'verify', 'אימות', 'התאמה', 'תעודות', 'חשבוניות', 'invoices', 'נזקים', 'חריגות', 'דיווח ליקויים', 'documentation'],
+      'מחסנאי': ['עבודת מחסן', 'קבלה', 'receiving', 'שינוע פנימי', 'internal', 'movement', 'סידור', 'ארגון', 'organization', 'ניקיון', 'תחזוקת מחסן'],
+      'שירות': ['שירות לקוחות', 'customer service', 'טלפון', 'מענה', 'תיאום', 'coordination', 'פניות', 'תלונות', 'פתרון בעיות', 'מעקב', 'ידידותי', 'סבלנות'],
+      'רפרנט': ['ניהול נהגים', 'driver management', 'מעקב משלוחים', 'tracking', 'פתרון תקלות', 'החלטות', 'עצמאות', 'אחריות מערכתית', 'קשר עם לקוחות', 'ספקים'],
+      'סדרן': ['תכנון קווים', 'route planning', 'optimization', 'אופטימיזציה', 'לוגיסטיקת הפצה', 'distribution', 'קבלנים', 'משאיות', 'trucks', 'זמנים', 'ניהול זמן'],
+      'לקוח': ['נציג לקוח', 'account', 'חשבון', 'ניהול הזמנות', 'order management', 'סטטוס', 'status', 'עדכונים', 'updates', 'שקיפות', 'דיוק נתונים']
+    }
+
+    function generateKeywordsForPosition(title: string, description: string, location: string): string[] {
+      const allKeywords = new Set(LOGISTICS_BASE_KEYWORDS)
+      const titleLower = title.toLowerCase()
+      const descLower = (description || '').toLowerCase()
+
+      for (const [type, keywords] of Object.entries(SPECIFIC_KEYWORDS)) {
+        if (titleLower.includes(type) || descLower.includes(type)) {
+          keywords.forEach(k => allKeywords.add(k))
+        }
+      }
+
+      if (location) {
+        allKeywords.add(location)
+        if (location.includes('אשדוד')) { allKeywords.add('אזור אשדוד'); allKeywords.add('שפלה דרומית') }
+        if (location.includes('בית שמש')) { allKeywords.add('אזור בית שמש'); allKeywords.add('הר טוב') }
+        if (location.includes('בני דרום')) { allKeywords.add('בני דרום'); allKeywords.add('אשקלון') }
+        if (location.includes('חפץ חיים')) { allKeywords.add('קיבוץ'); allKeywords.add('שפלה') }
+        if (location.includes('מבקיעים')) { allKeywords.add('מבקיעים'); allKeywords.add('דרום') }
+      }
+
+      return Array.from(allKeywords).slice(0, 60)
+    }
+
+    const selaEmployer = await prisma.employer.findFirst({
+      where: { name: { contains: 'סלע', mode: 'insensitive' } }
+    })
+
+    if (selaEmployer) {
+      const selaPositions = await prisma.position.findMany({
+        where: { employerId: selaEmployer.id }
+      })
+
+      for (const pos of selaPositions) {
+        const keywords = generateKeywordsForPosition(pos.title, pos.description || '', pos.location || '')
+        await prisma.position.update({
+          where: { id: pos.id },
+          data: { keywords: JSON.stringify(keywords) }
+        })
+      }
+      console.log(`✅ ${selaPositions.length} Sela positions updated with 60 keywords each`)
+    }
+
     // Get final counts
     const stats = {
       users: await prisma.user.count(),

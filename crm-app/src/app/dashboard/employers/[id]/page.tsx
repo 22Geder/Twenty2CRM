@@ -5,9 +5,21 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import {
   Building2, Mail, Phone, Globe, Briefcase, Users, ArrowRight,
-  MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle
+  MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle, Pencil, Save, Loader2
 } from "lucide-react"
 
 interface Employer {
@@ -55,6 +67,17 @@ export default function EmployerDetailPage({ params }: PageProps) {
   const [employer, setEmployer] = useState<Employer | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    website: "",
+    description: ""
+  })
 
   useEffect(() => {
     fetchEmployer()
@@ -66,6 +89,14 @@ export default function EmployerDetailPage({ params }: PageProps) {
       if (response.ok) {
         const data = await response.json()
         setEmployer(data)
+        // Initialize edit form with current data
+        setEditForm({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          website: data.website || "",
+          description: data.description || ""
+        })
       } else {
         setError("לקוח לא נמצא")
       }
@@ -74,6 +105,32 @@ export default function EmployerDetailPage({ params }: PageProps) {
       setError("שגיאה בטעינת הלקוח")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveEmployer = async () => {
+    if (!employer) return
+    
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/employers/${employer.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm)
+      })
+      
+      if (response.ok) {
+        const updatedEmployer = await response.json()
+        setEmployer({ ...employer, ...updatedEmployer })
+        setEditDialogOpen(false)
+      } else {
+        alert("שגיאה בשמירת הפרטים")
+      }
+    } catch (err) {
+      console.error("Error saving employer:", err)
+      alert("שגיאה בשמירת הפרטים")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -202,12 +259,106 @@ export default function EmployerDetailPage({ params }: PageProps) {
                 </div>
               </div>
             </div>
-            <Link href="/dashboard/employers">
-              <Button variant="outline" className="border-slate-500 text-slate-300 hover:bg-slate-700">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                חזור ללקוחות
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-[#FF8C00] hover:bg-[#E65100] text-white">
+                    <Pencil className="ml-2 h-4 w-4" />
+                    עריכת פרטים
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <div dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="text-right">עריכת פרטי לקוח</DialogTitle>
+                    <DialogDescription className="text-right">
+                      עדכן את פרטי הקשר של הלקוח
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">שם הלקוח</Label>
+                      <Input
+                        id="name"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        placeholder="שם הלקוח"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">אימייל</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        placeholder="email@example.com"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">טלפון</Label>
+                      <Input
+                        id="phone"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        placeholder="050-0000000"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="website">אתר אינטרנט</Label>
+                      <Input
+                        id="website"
+                        value={editForm.website}
+                        onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                        placeholder="https://example.com"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">תיאור</Label>
+                      <Textarea
+                        id="description"
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        placeholder="תיאור הלקוח..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter className="flex justify-start gap-2">
+                    <Button
+                      onClick={handleSaveEmployer}
+                      disabled={saving}
+                      className="bg-[#FF8C00] hover:bg-[#E65100]"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          שומר...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="ml-2 h-4 w-4" />
+                          שמור שינויים
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                      ביטול
+                    </Button>
+                  </DialogFooter>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Link href="/dashboard/employers">
+                <Button variant="outline" className="border-slate-500 text-slate-300 hover:bg-slate-700">
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                  חזור ללקוחות
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {employer.description && (

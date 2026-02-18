@@ -7,9 +7,8 @@ cmds = ["npm install --legacy-peer-deps"]
 [phases.build]
 cmds = [
   "npx prisma generate",
-  "npm run build",
-  "node copy-standalone.js"
+  "npm run build"
 ]
 
 [start]
-cmd = "npx prisma db push --accept-data-loss && node prisma/update-sela-positions.js && node .next/standalone/server.js"
+cmd = "npx prisma db push --accept-data-loss && node prisma/update-sela-positions.js && npm start"

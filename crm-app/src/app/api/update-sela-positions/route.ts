@@ -315,7 +315,7 @@ export async function GET() {
 ידע והכרה בעבודה על מחשב - חובה
 תודעת שירות`,
         contactName: 'Dana Shapiro',
-        contactEmail: 'dana@logistim.co.il'
+        contactEmail: 'danav@selabonded.co.il'
       },
       {
         title: 'רפרנט/ית שטח - בית שמש',
@@ -342,7 +342,7 @@ export async function GET() {
 אסרטיביות - חובה
 ניידות - חובה`,
         contactName: 'Dana Shapiro',
-        contactEmail: 'dana@logistim.co.il'
+        contactEmail: 'danav@selabonded.co.il'
       },
       {
         title: 'סדרן/ית הפצה - אשדוד/בית שמש',
@@ -369,7 +369,7 @@ export async function GET() {
 תפקוד מעולה תחת לחץ
 ניידות - חובה`,
         contactName: 'Dana Shapiro',
-        contactEmail: 'dana@logistim.co.il'
+        contactEmail: 'danav@selabonded.co.il'
       },
       {
         title: 'רפרנט/ית שטח - מבקיעים',
@@ -412,7 +412,7 @@ export async function GET() {
         requirements: `ניסיון בתחום הלוגיסטיקה - חובה
 שליטה ביישומי אופיס - חובה`,
         contactName: 'Dana Shapiro',
-        contactEmail: 'dana@logistim.co.il'
+        contactEmail: 'danav@selabonded.co.il'
       }
     ]
 

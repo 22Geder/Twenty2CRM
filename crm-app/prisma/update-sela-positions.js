@@ -2,6 +2,72 @@ const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 
+// 🏷️ תגיות לוגיסטיקה מקיפות - 60+ תגיות לכל משרה
+const LOGISTICS_BASE_KEYWORDS = [
+  'לוגיסטיקה', 'מחסן', 'מחסנים', 'מרלוג', 'מרכז לוגיסטי', 'שרשרת אספקה', 'supply chain',
+  'הפצה', 'הובלה', 'משלוחים', 'שינוע', 'תובלה', 'סחורה', 'מלאי', 'מלאים', 'inventory',
+  'אחסון', 'אחסנה', 'קליטה', 'קליטת סחורה', 'הזמנות', 'הזמנה', 'תעודות משלוח',
+  'מלגזה', 'מלגזן', 'מלגזנים', 'היגש', 'מלגזת היגש', 'reach truck', 'forklift',
+  'מסופון', 'סורק', 'ברקוד', 'barcode', 'WMS', 'מערכת ניהול מחסן', 'ERP', 'SAP',
+  'פלטה', 'משטח', 'משטחים', 'pallet', 'רמפה', 'רמפות', 'dock', 'מטען', 'מטענים',
+  'ליקוט', 'מלקט', 'picker', 'picking', 'פקיד מחסן', 'מחסנאי', 'warehouse', 'עובד מחסן',
+  'בקר', 'בקרה', 'בקר סחורה', 'quality control', 'QC', 'בדיקה', 'סריקה',
+  'סדרן', 'סדרן הפצה', 'רפרנט', 'רפרנט שטח', 'תפעול', 'operations'
+]
+
+const SPECIFIC_KEYWORDS = {
+  מלגזן: ['רישיון מלגזה', 'מלגזה חשמלית', 'מלגזת קומה', 'העמסה', 'פריקה', 'הרמה', 'נסיעה', 'תמרון', 'הובלת סחורה', 'סידור מחסן', 'הנחת משטחים', 'גובה', 'מדפים', 'racks'],
+  היגש: ['reach', 'גובה רב', 'narrow aisle', 'מעברים צרים', 'דיוק גבוה', 'שליפה מגובה', 'אחסון גבוה', 'מרפסות', 'רמות', 'levels'],
+  פקיד: ['אדמיניסטרציה', 'משרדי', 'מחשב', 'אקסל', 'Excel', 'Word', 'מערכות מידע', 'ניהול מלאי', 'דוחות', 'תיעוד', 'רישום', 'עדכון נתונים', 'קלדנות', 'הקלדה', 'רוסית', 'שפות'],
+  מלקט: ['ליקוט הזמנות', 'order picking', 'walking', 'הליכה', 'חיפוש', 'איתור', 'מסופון הזמנות', 'RF', 'מהירות', 'speed', 'יעילות', 'efficiency', 'אריזה', 'packing'],
+  בקר: ['בקרת איכות', 'בדיקת סחורה', 'inspection', 'verify', 'אימות', 'התאמה', 'תעודות', 'חשבוניות', 'invoices', 'נזקים', 'חריגות', 'דיווח ליקויים', 'documentation'],
+  מחסנאי: ['עבודת מחסן', 'קבלה', 'receiving', 'שינוע פנימי', 'internal', 'movement', 'סידור', 'ארגון', 'organization', 'ניקיון', 'תחזוקת מחסן'],
+  שירות: ['שירות לקוחות', 'customer service', 'טלפון', 'מענה', 'תיאום', 'coordination', 'פניות', 'תלונות', 'פתרון בעיות', 'מעקב', 'ידידותי', 'סבלנות'],
+  רפרנט: ['ניהול נהגים', 'driver management', 'מעקב משלוחים', 'tracking', 'פתרון תקלות', 'החלטות', 'עצמאות', 'אחריות מערכתית', 'קשר עם לקוחות', 'ספקים'],
+  סדרן: ['תכנון קווים', 'route planning', 'optimization', 'אופטימיזציה', 'לוגיסטיקת הפצה', 'distribution', 'קבלנים', 'משאיות', 'trucks', 'זמנים', 'ניהול זמן'],
+  לקוח: ['נציג לקוח', 'account', 'חשבון', 'ניהול הזמנות', 'order management', 'סטטוס', 'status', 'עדכונים', 'updates', 'שקיפות', 'דיוק נתונים']
+}
+
+const LOCATION_KEYWORDS = {
+  'אשדוד': ['אזור אשדוד', 'שפלה דרומית', 'דרום'],
+  'בית שמש': ['אזור בית שמש', 'הר טוב', 'שפלה'],
+  'בני דרום': ['בני דרום', 'אשקלון', 'דרום'],
+  'חפץ חיים': ['קיבוץ', 'שפלה', 'מרכז'],
+  'מבקיעים': ['מבקיעים', 'דרום', 'נגב']
+}
+
+function generateKeywordsForPosition(title, description, location) {
+  const allKeywords = new Set(LOGISTICS_BASE_KEYWORDS)
+  const titleLower = title.toLowerCase()
+  const descLower = (description || '').toLowerCase()
+
+  // הוסף תגיות ספציפיות לסוג המשרה
+  for (const [type, keywords] of Object.entries(SPECIFIC_KEYWORDS)) {
+    if (titleLower.includes(type) || descLower.includes(type)) {
+      keywords.forEach(k => allKeywords.add(k))
+    }
+  }
+
+  // הוסף תגיות מיקום
+  if (location) {
+    allKeywords.add(location)
+    for (const [loc, keywords] of Object.entries(LOCATION_KEYWORDS)) {
+      if (location.includes(loc)) {
+        keywords.forEach(k => allKeywords.add(k))
+      }
+    }
+  }
+
+  // הוסף תנאים כלליים
+  const extraKeywords = ['משמרות', 'בוקר', 'לילה', 'ערב', 'משמרת', 'שעתי', 'גלובלי', 'שכר שעתי',
+    'הסעה', 'הסעות', 'ארוחות', 'ארוחה חמה', 'תנאים סוציאליים', 'רישיון נהיגה', 'ניידות',
+    'עבודה פיזית', 'כושר גופני', 'אחריות', 'סדר וארגון', 'עבודת צוות', 'לחץ', 'עבודה תחת לחץ',
+    'דיוק', 'תשומת לב', 'זהירות', 'בטיחות', 'אזור תעשייה', 'industrial', 'מפעל', 'factory']
+  extraKeywords.forEach(k => allKeywords.add(k))
+
+  return Array.from(allKeywords).slice(0, 60)
+}
+
 // 📋 משרות סלע לוגיסטיקה - פנינית רויטמן
 const SELA_POSITIONS = [
   {
@@ -263,8 +329,10 @@ async function main() {
   }
 
   // עדכון/יצירת משרות סלע
-  console.log('\n📦 מעדכן משרות סלע לוגיסטיקה (פנינית):')
+  console.log('\n📦 מעדכן משרות סלע לוגיסטיקה (פנינית) עם 60 תגיות:')
   for (const pos of SELA_POSITIONS) {
+    const keywords = generateKeywordsForPosition(pos.title, pos.description, pos.location)
+    
     const existing = await prisma.position.findFirst({
       where: {
         title: pos.title,
@@ -286,10 +354,11 @@ async function main() {
           contactName: pos.contactName,
           contactEmail: pos.contactEmail,
           priority: pos.priority,
+          keywords: JSON.stringify(keywords),
           active: true
         }
       })
-      console.log(`   ✏️ עודכנה: ${pos.title}`)
+      console.log(`   ✏️ עודכנה: ${pos.title} (${keywords.length} תגיות)`)
     } else {
       await prisma.position.create({
         data: {
@@ -304,18 +373,21 @@ async function main() {
           contactName: pos.contactName,
           contactEmail: pos.contactEmail,
           priority: pos.priority,
+          keywords: JSON.stringify(keywords),
           employerId: selaEmployer.id,
           active: true,
           employmentType: 'Full-time'
         }
       })
-      console.log(`   ✅ נוצרה: ${pos.title}`)
+      console.log(`   ✅ נוצרה: ${pos.title} (${keywords.length} תגיות)`)
     }
   }
 
   // עדכון/יצירת משרות לוגיסטים
-  console.log('\n🚚 מעדכן משרות לוגיסטיקר (דנה):')
+  console.log('\n🚚 מעדכן משרות לוגיסטים (דנה) עם 60 תגיות:')
   for (const pos of LOGISTIM_POSITIONS) {
+    const keywords = generateKeywordsForPosition(pos.title, pos.description, pos.location)
+    
     const existing = await prisma.position.findFirst({
       where: {
         title: pos.title,
@@ -337,10 +409,11 @@ async function main() {
           contactName: pos.contactName,
           contactEmail: pos.contactEmail,
           priority: pos.priority,
+          keywords: JSON.stringify(keywords),
           active: true
         }
       })
-      console.log(`   ✏️ עודכנה: ${pos.title}`)
+      console.log(`   ✏️ עודכנה: ${pos.title} (${keywords.length} תגיות)`)
     } else {
       await prisma.position.create({
         data: {
@@ -355,12 +428,13 @@ async function main() {
           contactName: pos.contactName,
           contactEmail: pos.contactEmail,
           priority: pos.priority,
+          keywords: JSON.stringify(keywords),
           employerId: logistimEmployer.id,
           active: true,
           employmentType: 'Full-time'
         }
       })
-      console.log(`   ✅ נוצרה: ${pos.title}`)
+      console.log(`   ✅ נוצרה: ${pos.title} (${keywords.length} תגיות)`)
     }
   }
 

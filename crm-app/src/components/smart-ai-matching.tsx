@@ -64,14 +64,14 @@ interface MatchResult {
 export function SmartAIMatching({ candidateId, candidateName, candidatePhone, onSendToEmployer }: SmartAIMatchingProps) {
   const [positions, setPositions] = useState<Position[]>([])
   const [selectedPositionId, setSelectedPositionId] = useState<string>("")
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // 🆕 Start with loading true
   const [loadingPositions, setLoadingPositions] = useState(true)
   const [result, setResult] = useState<MatchResult | null>(null)
   const [allResults, setAllResults] = useState<MatchResult[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [mode, setMode] = useState<'browse' | 'single' | 'scan'>('browse')
+  const [mode, setMode] = useState<'browse' | 'single' | 'scan'>('scan') // 🆕 Start in scan mode
   const [expandedResult, setExpandedResult] = useState<string | null>(null)
-  const [scanStatus, setScanStatus] = useState<string>("")
+  const [scanStatus, setScanStatus] = useState<string>("⏳ טוען נתונים...")
   const [candidateCity, setCandidateCity] = useState<string>("")
   const [autoScanned, setAutoScanned] = useState(false)
 
@@ -143,11 +143,16 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
   useEffect(() => {
     const fetchPositions = async () => {
       try {
+        console.log('📦 Loading positions...')
         // 🚀 מצב מהיר - רק שדות הכרחיים!
         const res = await fetch('/api/positions?active=true&fast=true')
         if (res.ok) {
           const data = await res.json()
-          setPositions(data.positions || data || [])
+          const positionsList = data.positions || data || []
+          console.log('✅ Loaded', positionsList.length, 'positions')
+          setPositions(positionsList)
+        } else {
+          console.error('❌ Failed to load positions:', res.status)
         }
       } catch (e) {
         console.error('Error loading positions:', e)
@@ -160,11 +165,26 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
 
   // סריקה אוטומטית כשנטען
   useEffect(() => {
-    if (!loadingPositions && positions.length > 0 && candidateId && !autoScanned) {
-      setAutoScanned(true)
-      runFullScan()
+    // If positions loaded but no candidateId yet, stop loading state
+    if (!loadingPositions && !candidateId) {
+      setLoading(false)
+      setScanStatus("ממתין לטעינת מועמד...")
+      return
     }
-  }, [loadingPositions, positions.length, candidateId, autoScanned])
+    
+    if (!loadingPositions && positions.length > 0 && candidateId && candidateId.length > 0 && !autoScanned) {
+      console.log('🚀 Auto-scan triggered for candidate:', candidateId)
+      setAutoScanned(true)
+      setScanStatus("⚡ מתחיל סריקה...")
+      // Use timeout to ensure state is updated
+      setTimeout(() => {
+        runFullScan()
+      }, 100)
+    } else if (!loadingPositions && positions.length === 0) {
+      setLoading(false)
+      setScanStatus("אין משרות פעילות")
+    }
+  }, [loadingPositions, positions.length, candidateId, autoScanned, runFullScan])
 
   // סריקה מלאה של כל המשרות
   const runFullScan = useCallback(async () => {
@@ -389,6 +409,24 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
   const recommendedMatches = allResults.filter(r => r.shouldProceed)
   const locationMatches = allResults.filter(r => r.locationMatch)
   const otherMatches = allResults.filter(r => !r.shouldProceed)
+
+  // Show loading state when component first loads
+  if (loadingPositions) {
+    return (
+      <Card dir="rtl">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-6 w-6" />
+            סריקה חכמה V3 TURBO ⚡
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-purple-600 mb-4" />
+          <p className="text-gray-600">טוען משרות...</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card dir="rtl">

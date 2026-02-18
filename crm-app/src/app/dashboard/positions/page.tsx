@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Building2, Plus, Search, Users, Tag } from "lucide-react"
 import Link from "next/link"
-import { PositionActions, PositionTagsEditor, DeletePositionButton } from "@/components/position-actions"
+import { PositionActions, PositionTagsEditor, DeletePositionButton, ToggleActiveButton } from "@/components/position-actions"
 
 async function getPositions() {
   return await prisma.position.findMany({
@@ -219,6 +219,7 @@ export default async function PositionsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <ToggleActiveButton position={position} />
                       <Link href={`/dashboard/positions/${position.id}`}>
                         <Button variant="outline" size="sm" className="border-[#FF8C00]/50 text-[#FF8C00] hover:bg-[#FF8C00]/10 hover:border-[#FF8C00]">
                           ערוך

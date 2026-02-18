@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { 
-  Trash2, Tag, X, Plus, Edit, Check, AlertTriangle 
+  Trash2, Tag, X, Plus, Edit, Check, AlertTriangle, Power, PowerOff 
 } from "lucide-react"
 import {
   Dialog,
@@ -21,6 +21,7 @@ interface Position {
   id: string
   title: string
   keywords?: string | null
+  active?: boolean
   _count?: { applications: number }
 }
 
@@ -28,6 +29,7 @@ interface PositionActionsProps {
   position: Position
   onDelete?: (id: string) => void
   onTagsUpdate?: (id: string, tags: string[]) => void
+  onToggleActive?: (id: string, active: boolean) => void
 }
 
 // 🏷️ ניהול תגיות למשרה
@@ -279,10 +281,68 @@ export function DeletePositionButton({
   )
 }
 
+// כפתור הפעלה/השבתה מהירה
+export function ToggleActiveButton({ 
+  position, 
+  onToggled 
+}: { 
+  position: Position
+  onToggled?: (active: boolean) => void 
+}) {
+  const [loading, setLoading] = useState(false)
+  const isActive = position.active !== false // default is true
+  
+  const handleToggle = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/positions/${position.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !isActive })
+      })
+      
+      if (response.ok) {
+        onToggled?.(!isActive)
+        window.location.reload()
+      }
+    } catch (err) {
+      console.error('שגיאה בשינוי סטטוס:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleToggle}
+      disabled={loading}
+      className={isActive 
+        ? "text-green-600 hover:text-orange-600 hover:bg-orange-50" 
+        : "text-slate-400 hover:text-green-600 hover:bg-green-50"
+      }
+      title={isActive ? 'הפוך ללא פעיל' : 'הפעל משרה'}
+    >
+      {loading ? (
+        <span className="animate-spin">⏳</span>
+      ) : isActive ? (
+        <Power className="h-4 w-4" />
+      ) : (
+        <PowerOff className="h-4 w-4" />
+      )}
+    </Button>
+  )
+}
+
 // רכיב משולב לשורת משרה
-export function PositionActions({ position, onDelete, onTagsUpdate }: PositionActionsProps) {
+export function PositionActions({ position, onDelete, onTagsUpdate, onToggleActive }: PositionActionsProps) {
   return (
     <div className="flex items-center gap-2">
+      <ToggleActiveButton 
+        position={position}
+        onToggled={(active) => onToggleActive?.(position.id, active)}
+      />
       <PositionTagsEditor 
         position={position} 
         onUpdate={(tags) => onTagsUpdate?.(position.id, tags)} 

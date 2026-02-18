@@ -12,7 +12,10 @@ import {
   RefreshCw,
   Search,
   UserMinus,
-  Filter
+  Filter,
+  Sparkles,
+  Heart,
+  Briefcase
 } from 'lucide-react'
 
 interface Candidate {
@@ -429,6 +432,81 @@ ${selectedPosition ? `משרה: {position}` : ''}
                   (השתמש ב-{'{name}'} ו-{'{position}'} להחלפה אוטומטית)
                 </span>
               </label>
+              
+              {/* 🌟 תבניות מוכנות */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubject('👋 עדיין מחפשים עבודה? יש לנו משרות חדשות כל יום!')
+                    setMessage(`שלום {name}! 👋
+
+אנחנו מטוונטי טו ג'ובס, ורצינו לבדוק אם את/ה עדיין מחפש/ת עבודה.
+
+כל יום מתחדשות אצלנו משרות חדשות! 🚀
+
+יש לנו משרות בתחומים שונים:
+• בנקאות ופיננסים
+• שירות לקוחות ומוקדים
+• לוגיסטיקה ומחסנאות
+• מכירות ורכב
+• ועוד...
+
+אם את/ה מעוניין/ת לשמוע על הצעות, פשוט השיבו למייל הזה או התקשרו אלינו ב-055-9862658.
+
+בהצלחה! 💪
+צוות טוונטי טו ג'ובס`)
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors font-medium"
+                >
+                  <Heart className="w-4 h-4" />
+                  <span>עדיין מחפשים?</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubject('🎯 הזדמנות תעסוקה חדשה מ-2טו-גדר!')
+                    setMessage(`שלום {name}!
+
+יש לנו הצעת עבודה מעולה עבורך!
+${selectedPosition ? `משרה: {position}` : ''}
+
+האם יש לך עניין לשמוע פרטים?
+
+בברכה,
+צוות טוונטי טו ג'ובס 🚀`)
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition-colors font-medium"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  <span>הצעת עבודה</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubject('✨ חדשות בטוונטי טו ג\'ובס!')
+                    setMessage(`שלום {name}!
+
+רצינו לעדכן אותך שהרחבנו את מאגר המעסיקים שלנו!
+
+עכשיו אצלנו מעסיקים חדשים בבנקאות, שירות לקוחות, מכירות, לוגיסטיקה ועוד!
+
+אשמח להתאים לך את המשרה המושלמת 💼
+
+השיבו למייל הזה או התקשרו אלינו.
+
+בהצלחה!
+צוות טוונטי טו ג'ובס`)
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>חדשות</span>
+                </button>
+              </div>
+              
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

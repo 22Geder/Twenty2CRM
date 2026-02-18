@@ -464,6 +464,60 @@ export async function GET() {
     }
     console.log(`✅ ${totalPositions} positions created`)
 
+    // =============================================================
+    // 6. Update YES contacts based on location
+    // =============================================================
+    console.log('🔧 מעדכן פרטי קשר למשרות YES...')
+    
+    const shirContact = {
+      contactName: 'שיר בניוניס - Shir Benyunes',
+      contactEmail: 'SBenyunes@yes.co.il'
+    }
+    const nofarContact = {
+      contactName: 'נופר קצב אבשרי - Nofar Katzav avshari',
+      contactEmail: 'NKatzavavsha@yes.co.il'
+    }
+
+    const yesEmployer = await prisma.employer.findFirst({
+      where: { name: { contains: 'yes', mode: 'insensitive' } }
+    })
+
+    if (yesEmployer) {
+      const yesPositions = await prisma.position.findMany({
+        where: { employerId: yesEmployer.id }
+      })
+
+      for (const pos of yesPositions) {
+        let contact = null
+        const loc = pos.location?.toLowerCase() || ''
+        const title = pos.title?.toLowerCase() || ''
+
+        // משרות נשר - שיר (ראיון פרונטלי)
+        if (loc.includes('נשר') && !loc.includes('באר שבע')) {
+          contact = shirContact
+        }
+        // משרות באר שבע - נופר (ראיון טלפוני)
+        else if (loc.includes('באר שבע') || loc.includes("ב\"ש") || loc.includes('ב"ש')) {
+          contact = nofarContact
+        }
+        // משרות כפר סבא + שטח עסקי - נופר (ראיון פרונטלי)
+        else if (loc.includes('כפר סבא') || title.includes('שטח') || title.includes('עסקי') || title.includes('קהילה')) {
+          contact = nofarContact
+        }
+
+        if (contact) {
+          await prisma.position.update({
+            where: { id: pos.id },
+            data: {
+              contactName: contact.contactName,
+              contactEmail: contact.contactEmail
+            }
+          })
+        }
+      }
+      console.log('✅ YES contacts updated')
+    }
+
     // Get final counts
     const stats = {
       users: await prisma.user.count(),

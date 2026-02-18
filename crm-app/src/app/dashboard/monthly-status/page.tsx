@@ -40,7 +40,7 @@ export default function MonthlyStatusPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'hired' | 'in-process' | 'rejected'>('all');
+  const [filter, setFilter] = useState<'all' | 'hired' | 'in-process' | 'rejected' | 'new'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -199,6 +199,7 @@ export default function MonthlyStatusPage() {
     hired: candidates.filter(c => getStatus(c) === 'hired').length,
     inProcess: candidates.filter(c => getStatus(c) === 'in-process').length,
     rejected: candidates.filter(c => getStatus(c) === 'rejected').length,
+    new: candidates.filter(c => getStatus(c) === 'new').length,
   };
 
   const statusColors = {
@@ -238,7 +239,7 @@ export default function MonthlyStatusPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card 
           className={`cursor-pointer transition-all ${filter === 'all' ? 'ring-2 ring-purple-500' : 'hover:shadow-md'}`}
           onClick={() => setFilter('all')}
@@ -295,6 +296,21 @@ export default function MonthlyStatusPage() {
                 <p className="text-3xl font-bold text-red-600">{stats.rejected}</p>
               </div>
               <XCircle className="h-8 w-8 text-red-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className={`cursor-pointer transition-all ${filter === 'new' ? 'ring-2 ring-gray-500' : 'hover:shadow-md'}`}
+          onClick={() => setFilter('new')}
+        >
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">חדשים</p>
+                <p className="text-3xl font-bold text-gray-600">{stats.new}</p>
+              </div>
+              <User className="h-8 w-8 text-gray-400" />
             </div>
           </CardContent>
         </Card>

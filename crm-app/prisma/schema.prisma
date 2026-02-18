@@ -54,6 +54,7 @@ model Employer {
   updatedAt   DateTime   @updatedAt
   
   positions   Position[]
+  hiredCandidates Candidate[] @relation("HiredCandidates") // 🆕 מועמדים שהתקבלו למעסיק
 }
 
 model Position {
@@ -128,6 +129,7 @@ model Candidate {
   unsubscribed  Boolean         @default(false)  // האם ביקש הסרה מרשימות התפוצה
   unsubscribedAt DateTime?      // מתי ביקש הסרה
   hiredToEmployerId String?     // 🆕 לאיזה מעסיק התקבל
+  hiredToEmployer   Employer?   @relation("HiredCandidates", fields: [hiredToEmployerId], references: [id])
   inProcessPositionId String?   // 🆕 המשרה שהמועמד בתהליך בה (סטטוס "בתהליך")
   inProcessAt     DateTime?     // 🆕 מתי נכנס לתהליך
   inProcessPosition   Position? @relation("InProcessCandidates", fields: [inProcessPositionId], references: [id])

@@ -24,8 +24,12 @@ interface Candidate {
   hiredToEmployerId: string | null;
   inProcessPositionId: string | null;
   updatedAt: string;
-  hiredToEmployer?: { name: string };
-  inProcessPosition?: { title: string; employer?: { name: string } };
+  hiredToEmployer?: { id: string; name: string };
+  inProcessPosition?: { 
+    id: string;
+    title: string; 
+    employer?: { id: string; name: string } 
+  };
 }
 
 interface Employer {
@@ -482,15 +486,18 @@ export default function MonthlyStatusPage() {
                                 </span>
                               )}
                               {candidate.hiredToEmployer && (
-                                <span className="flex items-center gap-1 text-green-600">
+                                <span className="flex items-center gap-1 text-green-600 font-medium">
                                   <Building2 className="h-3 w-3" />
-                                  {candidate.hiredToEmployer.name}
+                                  התקבל ל: {candidate.hiredToEmployer.name}
                                 </span>
                               )}
                               {candidate.inProcessPosition && (
-                                <span className="flex items-center gap-1 text-blue-600">
+                                <span className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
                                   <Target className="h-3 w-3" />
-                                  {candidate.inProcessPosition.title}
+                                  נשלח ל: {candidate.inProcessPosition.title}
+                                  {candidate.inProcessPosition.employer && (
+                                    <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
+                                  )}
                                 </span>
                               )}
                             </div>

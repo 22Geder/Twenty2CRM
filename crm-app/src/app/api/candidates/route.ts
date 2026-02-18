@@ -112,6 +112,26 @@ export async function GET(request: NextRequest) {
               email: true,
             },
           },
+          // 🆕 לאיזה מעסיק התקבל
+          hiredToEmployer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          // 🆕 לאיזה משרה בתהליך
+          inProcessPosition: {
+            select: {
+              id: true,
+              title: true,
+              employer: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               applications: true,

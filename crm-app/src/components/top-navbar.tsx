@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   BarChart3, Settings, Bell, CheckSquare, Mail, FileText,
-  Search, User, Upload, Sparkles
+  Search, User, Upload, Sparkles, TrendingUp
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +32,13 @@ const navigationItems = [
     name: "העלאה המונית",
     href: "/dashboard/upload",
     icon: Upload,
+  },
+  {
+    name: "סטטוס חודשי",
+    href: "/dashboard/monthly-status",
+    icon: TrendingUp,
+    badge: "NEW",
+    badgeColor: "t22-success"
   },
   {
     name: "משרות",

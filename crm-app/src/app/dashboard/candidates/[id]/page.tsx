@@ -164,19 +164,13 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         hiredToEmployerId: data.hiredToEmployerId || "",
       })
       
-      // 🆕 קביעת סטטוס מועמד
-      if (data.hiredAt) {
+      // 🔧 קביעת סטטוס מועמד לפי employmentStatus
+      if (data.hiredAt || data.employmentStatus === 'EMPLOYED') {
         setCandidateStatus('hired')
-      } else if (data.inProcessPositionId) {
-        // 🆕 אם יש משרה בתהליך - הוא בתהליך
+      } else if (data.employmentStatus === 'REJECTED') {
+        setCandidateStatus('rejected')
+      } else if (data.employmentStatus === 'IN_PROCESS' || data.inProcessPositionId) {
         setCandidateStatus('in-process')
-      } else if (data.applications && data.applications.length > 0) {
-        const hasRejected = data.applications.every((app: any) => app.status === 'REJECTED')
-        if (hasRejected) {
-          setCandidateStatus('rejected')
-        } else {
-          setCandidateStatus('in-process')
-        }
       } else {
         setCandidateStatus('new')
       }
@@ -324,7 +318,7 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       
       if (newStatus === 'hired') {
         updateData.hiredAt = new Date().toISOString()
-        updateData.employmentStatus = 'ACTIVE'
+        updateData.employmentStatus = 'EMPLOYED'
         if (employerId) {
           updateData.hiredToEmployerId = employerId
         }
@@ -334,14 +328,14 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       } else if (newStatus === 'rejected') {
         updateData.hiredAt = null
         updateData.hiredToEmployerId = null
-        updateData.employmentStatus = null
+        updateData.employmentStatus = 'REJECTED'  // 🔧 שמירת סטטוס נדחה
         // 🆕 ניקוי המשרה בתהליך
         updateData.inProcessPositionId = null
         updateData.inProcessAt = null
       } else if (newStatus === 'in-process') {
         updateData.hiredAt = null
         updateData.hiredToEmployerId = null
-        updateData.employmentStatus = null
+        updateData.employmentStatus = 'IN_PROCESS'  // 🔧 שמירת סטטוס בתהליך
         // לא מנקים כאן - זה יקרה דרך handleInProcessClick
       } else {
         // new

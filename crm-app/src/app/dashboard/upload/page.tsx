@@ -27,6 +27,7 @@ interface ProcessedFile {
   name: string;
   status: 'pending' | 'processing' | 'needs-confirm' | 'success' | 'error' | 'skipped';
   progress: number;
+  candidateId?: string;  // 🆕 ID לעריכה
   candidate?: {
     name: string;
     email: string;
@@ -149,6 +150,7 @@ export default function BulkUploadPage() {
                   status: 'success' as const,
                   progress: 100,
                   candidate: saveData.candidate,
+                  candidateId: saveData.candidateId,  // 🆕 שמירת ID לעריכה
                   qualityScore: checkData.qualityScore,
                   dataQuality: checkData.dataQuality,
                   aiExtracted: checkData.aiExtracted
@@ -206,7 +208,7 @@ export default function BulkUploadPage() {
 
       setFiles(prev => prev.map((f, idx) =>
         idx === fileIndex
-          ? { ...f, status: 'success' as const, progress: 100, candidate: data.candidate }
+          ? { ...f, status: 'success' as const, progress: 100, candidate: data.candidate, candidateId: data.candidateId }
           : f
       ));
 
@@ -238,6 +240,44 @@ export default function BulkUploadPage() {
       ...prev,
       [fileName]: { ...candidate }
     }));
+  };
+
+  // 🆕 שמור עריכת מועמד
+  const saveEditedCandidate = async (fileName: string) => {
+    const file = files.find(f => f.name === fileName);
+    if (!file?.candidateId) return;
+
+    const data = editedData[fileName];
+    if (!data) return;
+
+    try {
+      const response = await fetch(`/api/candidates/${file.candidateId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          city: data.city,
+          currentTitle: data.currentTitle,
+        }),
+      });
+
+      if (!response.ok) throw new Error('שגיאה בשמירה');
+
+      // עדכון הרשימה עם הנתונים החדשים
+      setFiles(prev => prev.map(f => 
+        f.name === fileName 
+          ? { ...f, candidate: { ...f.candidate!, ...data } }
+          : f
+      ));
+
+      setEditingFile(null);
+      window.dispatchEvent(new Event('candidates-updated'));
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('שגיאה בשמירת העריכה');
+    }
   };
 
   const stats = {
@@ -528,6 +568,21 @@ export default function BulkUploadPage() {
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
                             {file.candidate.city}
                           </Badge>
+                          {/* 🆕 כפתור עריכה */}
+                          {file.candidateId && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditing(file.name, file.candidate);
+                                setExpandedFile(file.name);
+                              }}
+                            >
+                              <Edit3 className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
                           {expandedFile === file.name ? (
                             <ChevronUp className="h-4 w-4 text-gray-400" />
                           ) : (
@@ -541,72 +596,178 @@ export default function BulkUploadPage() {
                   {/* Expanded Details */}
                   {expandedFile === file.name && file.candidate && (
                     <div className="px-4 pb-4 bg-gray-50 border-t">
-                      <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div className="space-y-3">
-                          <div className="flex items-start gap-2">
-                            <User className="h-4 w-4 text-gray-500 mt-1" />
-                            <div>
-                              <p className="text-xs text-gray-500">שם מלא</p>
-                              <p className="font-medium">{file.candidate.name}</p>
-                            </div>
-                          </div>
+                      {/* 🆕 מצב עריכה */}
+                      {editingFile === file.name ? (
+                        <div className="space-y-4 mt-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-2">
+                                <User className="h-4 w-4 text-gray-500 mt-2" />
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">שם מלא</p>
+                                  <Input
+                                    value={editedData[file.name]?.name || ''}
+                                    onChange={(e) => setEditedData(prev => ({
+                                      ...prev,
+                                      [file.name]: { ...prev[file.name], name: e.target.value }
+                                    }))}
+                                    className="h-9"
+                                  />
+                                </div>
+                              </div>
 
-                          <div className="flex items-start gap-2">
-                            <Mail className="h-4 w-4 text-gray-500 mt-1" />
-                            <div>
-                              <p className="text-xs text-gray-500">אימייל</p>
-                              <p className="font-medium">{file.candidate.email}</p>
-                            </div>
-                          </div>
+                              <div className="flex items-start gap-2">
+                                <Mail className="h-4 w-4 text-gray-500 mt-2" />
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">אימייל</p>
+                                  <Input
+                                    value={editedData[file.name]?.email || ''}
+                                    onChange={(e) => setEditedData(prev => ({
+                                      ...prev,
+                                      [file.name]: { ...prev[file.name], email: e.target.value }
+                                    }))}
+                                    className="h-9"
+                                  />
+                                </div>
+                              </div>
 
-                          <div className="flex items-start gap-2">
-                            <Phone className="h-4 w-4 text-gray-500 mt-1" />
-                            <div>
-                              <p className="text-xs text-gray-500">טלפון</p>
-                              <p className="font-medium">{file.candidate.phone}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-2">
-                            <MapPin className="h-4 w-4 text-gray-500 mt-1" />
-                            <div>
-                              <p className="text-xs text-gray-500">עיר</p>
-                              <p className="font-medium">{file.candidate.city}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex items-start gap-2">
-                            <Briefcase className="h-4 w-4 text-gray-500 mt-1" />
-                            <div>
-                              <p className="text-xs text-gray-500">תפקיד נוכחי</p>
-                              <p className="font-medium">{file.candidate.currentTitle}</p>
-                            </div>
-                          </div>
-
-                          {file.candidate.skills && file.candidate.skills.length > 0 && (
-                            <div className="flex items-start gap-2">
-                              <Tag className="h-4 w-4 text-gray-500 mt-1" />
-                              <div>
-                                <p className="text-xs text-gray-500">כישורים</p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {file.candidate.skills.slice(0, 5).map((skill, i) => (
-                                    <Badge key={i} variant="secondary" className="text-xs">
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                  {file.candidate.skills.length > 5 && (
-                                    <Badge variant="outline" className="text-xs">
-                                      +{file.candidate.skills.length - 5}
-                                    </Badge>
-                                  )}
+                              <div className="flex items-start gap-2">
+                                <Phone className="h-4 w-4 text-gray-500 mt-2" />
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">טלפון</p>
+                                  <Input
+                                    value={editedData[file.name]?.phone || ''}
+                                    onChange={(e) => setEditedData(prev => ({
+                                      ...prev,
+                                      [file.name]: { ...prev[file.name], phone: e.target.value }
+                                    }))}
+                                    className="h-9"
+                                  />
                                 </div>
                               </div>
                             </div>
-                          )}
+
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-2">
+                                <MapPin className="h-4 w-4 text-gray-500 mt-2" />
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">עיר</p>
+                                  <Input
+                                    value={editedData[file.name]?.city || ''}
+                                    onChange={(e) => setEditedData(prev => ({
+                                      ...prev,
+                                      [file.name]: { ...prev[file.name], city: e.target.value }
+                                    }))}
+                                    className="h-9"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex items-start gap-2">
+                                <Briefcase className="h-4 w-4 text-gray-500 mt-2" />
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">תפקיד נוכחי</p>
+                                  <Input
+                                    value={editedData[file.name]?.currentTitle || ''}
+                                    onChange={(e) => setEditedData(prev => ({
+                                      ...prev,
+                                      [file.name]: { ...prev[file.name], currentTitle: e.target.value }
+                                    }))}
+                                    className="h-9"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* כפתורי שמירה/ביטול */}
+                          <div className="flex gap-2 justify-end pt-2 border-t">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingFile(null)}
+                            >
+                              ביטול
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => saveEditedCandidate(file.name)}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              שמור
+                            </Button>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* מצב תצוגה רגיל */
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-2">
+                              <User className="h-4 w-4 text-gray-500 mt-1" />
+                              <div>
+                                <p className="text-xs text-gray-500">שם מלא</p>
+                                <p className="font-medium">{file.candidate.name}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <Mail className="h-4 w-4 text-gray-500 mt-1" />
+                              <div>
+                                <p className="text-xs text-gray-500">אימייל</p>
+                                <p className="font-medium">{file.candidate.email}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <Phone className="h-4 w-4 text-gray-500 mt-1" />
+                              <div>
+                                <p className="text-xs text-gray-500">טלפון</p>
+                                <p className="font-medium">{file.candidate.phone}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-gray-500 mt-1" />
+                              <div>
+                                <p className="text-xs text-gray-500">עיר</p>
+                                <p className="font-medium">{file.candidate.city}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-2">
+                              <Briefcase className="h-4 w-4 text-gray-500 mt-1" />
+                              <div>
+                                <p className="text-xs text-gray-500">תפקיד נוכחי</p>
+                                <p className="font-medium">{file.candidate.currentTitle}</p>
+                              </div>
+                            </div>
+
+                            {file.candidate.skills && file.candidate.skills.length > 0 && (
+                              <div className="flex items-start gap-2">
+                                <Tag className="h-4 w-4 text-gray-500 mt-1" />
+                                <div>
+                                  <p className="text-xs text-gray-500">כישורים</p>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {file.candidate.skills.slice(0, 5).map((skill, i) => (
+                                      <Badge key={i} variant="secondary" className="text-xs">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                    {file.candidate.skills.length > 5 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{file.candidate.skills.length - 5}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

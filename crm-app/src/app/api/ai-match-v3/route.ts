@@ -137,9 +137,16 @@ export async function POST(request: Request) {
       return b.score - a.score
     })
 
-    // סינון - רק משרות עם סיכוי סביר
-    const relevantMatches = allMatches.filter(m => m.score >= 30 || m.locationMatch)
-    const notRelevant = allMatches.filter(m => m.score < 30 && !m.locationMatch)
+    // סינון - מראה את הכל עם ציון 10+ או מיקום מתאים, ולפחות 20 תוצאות
+    let relevantMatches = allMatches.filter(m => m.score >= 10 || m.locationMatch)
+    
+    // אם אין מספיק תוצאות, הוסף את הטובים ביותר
+    if (relevantMatches.length < 20 && allMatches.length > relevantMatches.length) {
+      const remaining = allMatches.filter(m => m.score < 10 && !m.locationMatch)
+      relevantMatches = [...relevantMatches, ...remaining.slice(0, 20 - relevantMatches.length)]
+    }
+    
+    const notRelevant = allMatches.filter(m => !relevantMatches.includes(m))
 
     const totalTime = Date.now() - startTime
     console.log(`✅ סריקה הושלמה ב-${totalTime}ms | ${positions.length} משרות | ${aiResults.length} עם AI`)
@@ -355,9 +362,9 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   humanScore = Math.min(15, humanScore) // מקסימום 15 נקודות
 
   // 🆕 אם אין כישורים כלל - בונוס מינימלי
-  if (!hasHumanMatch && tagMatches === 0 && candidate.skills?.trim() === '') {
-    humanScore = 10
-    strengths.push('מועמד ללא כישורים מוגדרים - התאמה כללית')
+  if (!hasHumanMatch && tagMatches === 0) {
+    humanScore = Math.max(humanScore, 15)
+    strengths.push('התאמה כללית - יש לבדוק ידנית')
   }
 
   // ========================================
@@ -381,6 +388,9 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     shouldProceed = true
   } else if (score >= 30) {
     recommendation = '🔍 התאמה חלקית - לשיקולך'
+    shouldProceed = false
+  } else if (score >= 15) {
+    recommendation = '🔍 התאמה בסיסית - לבדיקה'
     shouldProceed = false
   } else {
     recommendation = '⚠️ התאמה נמוכה'

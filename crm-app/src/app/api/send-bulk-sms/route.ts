@@ -127,10 +127,8 @@ export async function POST(request: NextRequest) {
         if (recipient.candidateId) {
           await prisma.activityLog.create({
             data: {
-              action: 'BULK_SMS_SENT',
+              type: 'BULK_SMS_SENT',
               description: `נשלח SMS המוני: ${positionTitle || 'הודעה כללית'}`,
-              candidateId: recipient.candidateId,
-              positionId: positionId || undefined,
               userId: session.user?.id
             }
           }).catch(() => {}) // Ignore if activity log fails

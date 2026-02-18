@@ -34,6 +34,7 @@ import { MatchingPositionsList } from "@/components/matching-positions-list"
 import { DualMatchingView } from "@/components/dual-matching-view"
 import { AdvancedMatchingView } from "@/components/advanced-matching-view"
 import { SmartAIMatching } from "@/components/smart-ai-matching"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 interface CandidateDetailsProps {
   params: Promise<{
@@ -1462,19 +1463,23 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
 
       {/* סריקה חכמה V3 - ראשונית! */}
       <div className="mt-8">
-        <SmartAIMatching 
-          candidateId={candidateId}
-          candidateName={candidate?.name}
-          candidatePhone={candidate?.phone || undefined}
-          onSendToEmployer={(positionId) => {
-            router.push(`/dashboard/send-candidate?candidateId=${candidateId}&positionId=${positionId}`)
-          }}
-        />
+        <ErrorBoundary componentName="סריקת AI">
+          <SmartAIMatching 
+            candidateId={candidateId}
+            candidateName={candidate?.name}
+            candidatePhone={candidate?.phone || undefined}
+            onSendToEmployer={(positionId) => {
+              router.push(`/dashboard/send-candidate?candidateId=${candidateId}&positionId=${positionId}`)
+            }}
+          />
+        </ErrorBoundary>
       </div>
 
       {/* רשימת משרות מתאימות - לפי תגיות */}
       <div className="mt-8">
-        <MatchingPositionsList candidateId={candidateId} candidateName={candidate?.name} candidatePhone={candidate?.phone || undefined} />
+        <ErrorBoundary componentName="רשימת משרות">
+          <MatchingPositionsList candidateId={candidateId} candidateName={candidate?.name} candidatePhone={candidate?.phone || undefined} />
+        </ErrorBoundary>
       </div>
 
       {/* 🆕 מודל בחירת משרה לתהליך - כל המשרות לפי מעסיק */}

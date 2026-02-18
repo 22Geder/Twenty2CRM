@@ -137,13 +137,20 @@ export async function POST(request: Request) {
       return b.score - a.score
     })
 
+    // 🔍 Debug: הצגת טווח הציונים
+    const scores = allMatches.map(m => m.score).sort((a, b) => b - a)
+    console.log(`📊 ציונים: מקס=${scores[0]}, מין=${scores[scores.length-1]}, מיקום=${allMatches.filter(m => m.locationMatch).length}`)
+
     // סינון - מראה את הכל עם ציון 10+ או מיקום מתאים, ולפחות 20 תוצאות
     let relevantMatches = allMatches.filter(m => m.score >= 10 || m.locationMatch)
+    
+    console.log(`📋 לפני: ${allMatches.length} משרות, אחרי סינון: ${relevantMatches.length}`)
     
     // אם אין מספיק תוצאות, הוסף את הטובים ביותר
     if (relevantMatches.length < 20 && allMatches.length > relevantMatches.length) {
       const remaining = allMatches.filter(m => m.score < 10 && !m.locationMatch)
       relevantMatches = [...relevantMatches, ...remaining.slice(0, 20 - relevantMatches.length)]
+      console.log(`➕ הוספתי ${relevantMatches.length - allMatches.filter(m => m.score >= 10 || m.locationMatch).length} משרות נוספות`)
     }
     
     const notRelevant = allMatches.filter(m => !relevantMatches.includes(m))
@@ -372,6 +379,11 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   // ========================================
   let score = locationScore + tagsScore + humanScore
   score = Math.min(100, Math.round(score))
+  
+  // 🔍 Debug - for first 3 positions
+  if (Math.random() < 0.05) {
+    console.log(`🎯 ${position.title}: מיקום=${locationScore}, תגיות=${tagsScore}, קריאה=${humanScore}, סה"כ=${score}`)
+  }
 
   // קביעת המלצה חכמה
   let recommendation = ''

@@ -1,0 +1,67 @@
+name: Daily CRM Backup
+
+on:
+  schedule:
+    # Run every day at 03:00 UTC (06:00 Israel time)
+    - cron: '0 3 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Trigger Backup Endpoint
+        run: |
+          echo "🔄 Triggering backup at $(date)"
+          
+          # Trigger the cron backup endpoint
+          response=$(curl -s -w "%{http_code}" -o response.txt \
+            "${{ secrets.CRM_URL }}/api/cron/backup?secret=${{ secrets.CRON_SECRET }}")
+          
+          echo "Response code: $response"
+          cat response.txt
+          
+          if [ "$response" != "200" ]; then
+            echo "⚠️ Backup endpoint returned non-200 status"
+          fi
+
+      - name: 💾 Download Full Backup
+        run: |
+          echo "📥 Downloading full backup..."
+          
+          curl -s -o "backup-$(date +%Y-%m-%d).json" \
+            "${{ secrets.CRM_URL }}/api/backup"
+          
+          # Show backup file size
+          ls -lh backup-*.json
+          
+          # Count records
+          if [ -f "backup-$(date +%Y-%m-%d).json" ]; then
+            echo "✅ Backup downloaded successfully"
+            echo "📊 File contents preview:"
+            head -50 "backup-$(date +%Y-%m-%d).json"
+          else
+            echo "❌ Failed to download backup"
+            exit 1
+          fi
+
+      - name: 📤 Upload Backup as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-backup-${{ github.run_number }}-${{ github.run_id }}
+          path: backup-*.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 🔔 Log Success
+        if: success()
+        run: |
+          echo "✅ Backup completed successfully at $(date)"
+          echo "📁 Backup stored as artifact for 30 days"
+
+      - name: ❌ Log Failure
+        if: failure()
+        run: |
+          echo "❌ Backup failed at $(date)"
+          echo "Please check the CRM application logs"

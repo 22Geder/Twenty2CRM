@@ -23,6 +23,9 @@ interface Candidate {
   hiredAt: string | null;
   hiredToEmployerId: string | null;
   inProcessPositionId: string | null;
+  inProcessAt: string | null;
+  interviewDate: string | null;
+  createdAt: string;
   updatedAt: string;
   hiredToEmployer?: { id: string; name: string };
   inProcessPosition?: { 
@@ -116,6 +119,7 @@ export default function MonthlyStatusPage() {
         city: candidate.city,
         employmentStatus: candidate.employmentStatus,
         hiredToEmployerId: candidate.hiredToEmployerId,
+        interviewDate: candidate.interviewDate ? candidate.interviewDate.split('T')[0] : '',
       }
     });
   };
@@ -141,6 +145,13 @@ export default function MonthlyStatusPage() {
       } else if (data.employmentStatus === 'REJECTED' || data.employmentStatus === 'IN_PROCESS' || !data.employmentStatus) {
         updatePayload.hiredAt = null;
         updatePayload.hiredToEmployerId = null;
+      }
+
+      // Add interview date if set
+      if (data.interviewDate) {
+        updatePayload.interviewDate = new Date(data.interviewDate).toISOString();
+      } else {
+        updatePayload.interviewDate = null;
       }
 
       const response = await fetch(`/api/candidates/${candidateId}`, {
@@ -430,6 +441,21 @@ export default function MonthlyStatusPage() {
                               <option value="REJECTED">לא התקבל</option>
                             </select>
                           </div>
+                          <div>
+                            <label className="text-xs text-gray-500">📅 תאריך ראיון</label>
+                            <Input
+                              type="date"
+                              value={editData[candidate.id]?.interviewDate || ''}
+                              onChange={(e) => setEditData({
+                                ...editData,
+                                [candidate.id]: { ...editData[candidate.id], interviewDate: e.target.value }
+                              })}
+                              className="h-9"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
                           {editData[candidate.id]?.employmentStatus === 'EMPLOYED' && (
                             <div>
                               <label className="text-xs text-gray-500">התקבל ל:</label>
@@ -463,50 +489,51 @@ export default function MonthlyStatusPage() {
                       </div>
                     ) : (
                       /* View Mode */
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Badge className={`${statusColors[status]} border`}>
-                            {statusLabels[status]}
-                          </Badge>
-                          <div>
-                            <Link href={`/dashboard/candidates/${candidate.id}`} className="font-medium hover:text-blue-600">
-                              {candidate.name}
-                            </Link>
-                            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                              {candidate.phone && (
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {candidate.phone}
-                                </span>
-                              )}
-                              {candidate.city && (
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {candidate.city}
-                                </span>
-                              )}
-                              {candidate.hiredToEmployer && (
-                                <span className="flex items-center gap-1 text-green-600 font-medium">
-                                  <Building2 className="h-3 w-3" />
-                                  התקבל ל: {candidate.hiredToEmployer.name}
-                                </span>
-                              )}
-                              {candidate.inProcessPosition && (
-                                <span className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
-                                  <Target className="h-3 w-3" />
-                                  נשלח ל: {candidate.inProcessPosition.title}
-                                  {candidate.inProcessPosition.employer && (
-                                    <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
-                                  )}
-                                </span>
-                              )}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Badge className={`${statusColors[status]} border`}>
+                              {statusLabels[status]}
+                            </Badge>
+                            <div>
+                              <Link href={`/dashboard/candidates/${candidate.id}`} className="font-medium hover:text-blue-600">
+                                {candidate.name}
+                              </Link>
+                              <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
+                                {candidate.phone && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="h-3 w-3" />
+                                    {candidate.phone}
+                                  </span>
+                                )}
+                                {candidate.city && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {candidate.city}
+                                  </span>
+                                )}
+                                {candidate.hiredToEmployer && (
+                                  <span className="flex items-center gap-1 text-green-600 font-medium">
+                                    <Building2 className="h-3 w-3" />
+                                    התקבל ל: {candidate.hiredToEmployer.name}
+                                  </span>
+                                )}
+                                {candidate.inProcessPosition && (
+                                  <span className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
+                                    <Target className="h-3 w-3" />
+                                    נשלח ל: {candidate.inProcessPosition.title}
+                                    {candidate.inProcessPosition.employer && (
+                                      <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-2">
-                          {/* Quick status buttons */}
-                          <div className="flex gap-1">
+                          <div className="flex items-center gap-2">
+                            {/* Quick status buttons */}
+                            <div className="flex gap-1">
                             <Button 
                               size="sm" 
                               variant={status === 'in-process' ? 'default' : 'ghost'}
@@ -538,6 +565,36 @@ export default function MonthlyStatusPage() {
                           <Button size="sm" variant="outline" onClick={() => startEdit(candidate)} className="h-7">
                             <Edit3 className="h-3 w-3" />
                           </Button>
+                        </div>
+                        </div>
+                        
+                        {/* Dates row */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2 mt-1">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            הגיע: {new Date(candidate.createdAt).toLocaleDateString('he-IL')}
+                          </span>
+                          {candidate.inProcessAt && (
+                            <span className="flex items-center gap-1 text-blue-600">
+                              <Clock className="h-3 w-3" />
+                              נכנס לתהליך: {new Date(candidate.inProcessAt).toLocaleDateString('he-IL')}
+                            </span>
+                          )}
+                          {candidate.interviewDate && (
+                            <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
+                              📅 ראיון: {new Date(candidate.interviewDate).toLocaleDateString('he-IL')}
+                            </span>
+                          )}
+                          {status === 'in-process' && !candidate.interviewDate && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50"
+                              onClick={() => startEdit(candidate)}
+                            >
+                              + קבע תאריך ראיון
+                            </Button>
+                          )}
                         </div>
                       </div>
                     )}

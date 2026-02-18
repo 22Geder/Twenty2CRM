@@ -113,6 +113,7 @@ export async function PUT(
       hiredToEmployerId,  // 🆕 לאיזה מעסיק התקבל
       inProcessPositionId,  // 🆕 באיזו משרה המועמד בתהליך
       inProcessAt,  // 🆕 מתי נכנס לתהליך
+      interviewDate,  // 🆕 תאריך ראיון מתוכנן
     } = body
 
     // Check if candidate exists
@@ -174,6 +175,8 @@ export async function PUT(
         ...('hiredToEmployerId' in body && { hiredToEmployerId: hiredToEmployerId || null }),
         ...('inProcessPositionId' in body && { inProcessPositionId: inProcessPositionId || null }),
         ...('inProcessAt' in body && { inProcessAt: inProcessAt ? new Date(inProcessAt) : null }),
+        ...('interviewDate' in body && { interviewDate: interviewDate ? new Date(interviewDate) : null }),
+        ...('interviewDate' in body && interviewDate && { interviewReminderSent: false }),  // איפוס תזכורת כשמעדכנים תאריך
       },
       include: {
         applications: {

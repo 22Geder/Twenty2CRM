@@ -163,31 +163,10 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
     fetchPositions()
   }, [])
 
-  // סריקה אוטומטית כשנטען
-  useEffect(() => {
-    // If positions loaded but no candidateId yet, stop loading state
-    if (!loadingPositions && !candidateId) {
-      setLoading(false)
-      setScanStatus("ממתין לטעינת מועמד...")
-      return
-    }
-    
-    if (!loadingPositions && positions.length > 0 && candidateId && candidateId.length > 0 && !autoScanned) {
-      console.log('🚀 Auto-scan triggered for candidate:', candidateId)
-      setAutoScanned(true)
-      setScanStatus("⚡ מתחיל סריקה...")
-      // Use timeout to ensure state is updated
-      setTimeout(() => {
-        runFullScan()
-      }, 100)
-    } else if (!loadingPositions && positions.length === 0) {
-      setLoading(false)
-      setScanStatus("אין משרות פעילות")
-    }
-  }, [loadingPositions, positions.length, candidateId, autoScanned, runFullScan])
-
   // סריקה מלאה של כל המשרות
   const runFullScan = useCallback(async () => {
+    if (!candidateId) return
+    
     setLoading(true)
     setError(null)
     setAllResults([])
@@ -220,7 +199,30 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
     } finally {
       setLoading(false)
     }
-  }, [candidateId, positions.length])
+  }, [candidateId])
+
+  // סריקה אוטומטית כשנטען
+  useEffect(() => {
+    // If positions loaded but no candidateId yet, stop loading state
+    if (!loadingPositions && !candidateId) {
+      setLoading(false)
+      setScanStatus("ממתין לטעינת מועמד...")
+      return
+    }
+    
+    if (!loadingPositions && positions.length > 0 && candidateId && candidateId.length > 0 && !autoScanned) {
+      console.log('🚀 Auto-scan triggered for candidate:', candidateId)
+      setAutoScanned(true)
+      setScanStatus("⚡ מתחיל סריקה...")
+      // Use timeout to ensure state is updated
+      setTimeout(() => {
+        runFullScan()
+      }, 100)
+    } else if (!loadingPositions && positions.length === 0) {
+      setLoading(false)
+      setScanStatus("אין משרות פעילות")
+    }
+  }, [loadingPositions, positions.length, candidateId, autoScanned, runFullScan])
 
   // ניתוח משרה ספציפית
   const analyzePosition = async (positionId: string) => {

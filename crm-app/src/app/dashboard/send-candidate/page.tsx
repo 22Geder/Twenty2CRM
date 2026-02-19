@@ -21,7 +21,9 @@ import {
   XCircle,
   History,
   Clock,
-  AlertTriangle
+  Plus,
+  Trash2,
+  Users
 } from "lucide-react"
 
 // 📧 ממשק לתצוגה מקדימה של המייל
@@ -65,6 +67,12 @@ interface PreviousEmail {
   sentAt: string
 }
 
+// 🆕 ממשק למייל שמור
+interface SavedEmail {
+  email: string
+  name: string
+}
+
 export default function SendCandidatePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -82,14 +90,14 @@ export default function SendCandidatePage() {
   const [previousEmails, setPreviousEmails] = useState<PreviousEmail[]>([])
   const [showPreviousEmails, setShowPreviousEmails] = useState(false)
   
-  // State לבחירת מייל יעד
-  const [selectedEmail, setSelectedEmail] = useState("")
-  const [selectedName, setSelectedName] = useState("")
-  const [customEmail, setCustomEmail] = useState("")
-  const [customName, setCustomName] = useState("")
+  // 🆕 State למיילים מרובים
+  const [savedEmails, setSavedEmails] = useState<SavedEmail[]>([])
+  const [selectedEmails, setSelectedEmails] = useState<SavedEmail[]>([])
+  const [newEmail, setNewEmail] = useState("")
+  const [newName, setNewName] = useState("")
   const [saveEmailToPosition, setSaveEmailToPosition] = useState(true)
-  const [showEmailSelector, setShowEmailSelector] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [sendResult, setSendResult] = useState<{sentTo: string[], failedTo: any[]} | null>(null)
 
   useEffect(() => {
     if (candidateId && positionId) {
@@ -121,11 +129,13 @@ export default function SendCandidatePage() {
       setEditedSubject(data.preview.subject)
       setEditedPoints([...data.preview.matchingPoints])
       
-      // בחירת המייל הראשי
-      const primaryEmail = data.preview.targetEmail || data.preview.position.contactEmail || data.preview.employer.email
-      const primaryName = data.preview.targetName || data.preview.position.contactName || data.preview.employer.name
-      setSelectedEmail(primaryEmail || '')
-      setSelectedName(primaryName || '')
+      // 🆕 הגדרת מיילים שמורים
+      setSavedEmails(data.savedEmails || [])
+      
+      // בחירת המייל הראשון כברירת מחדל
+      if (data.savedEmails && data.savedEmails.length > 0) {
+        setSelectedEmails([data.savedEmails[0]])
+      }
       
       // שמירת מיילים קודמים
       setPreviousEmails(data.previousEmails || [])
@@ -137,14 +147,46 @@ export default function SendCandidatePage() {
     }
   }
 
+  // 🆕 הוספת מייל חדש לרשימה
+  const addNewEmail = () => {
+    if (!newEmail.trim()) return
+    
+    const emailToAdd = { email: newEmail.trim(), name: newName.trim() }
+    
+    // בדיקה שהמייל לא קיים כבר
+    if (!selectedEmails.find(e => e.email === emailToAdd.email)) {
+      setSelectedEmails([...selectedEmails, emailToAdd])
+    }
+    
+    // הוספה גם למיילים השמורים (לתצוגה)
+    if (!savedEmails.find(e => e.email === emailToAdd.email)) {
+      setSavedEmails([...savedEmails, emailToAdd])
+    }
+    
+    setNewEmail("")
+    setNewName("")
+  }
+
+  // 🆕 בחירה/ביטול בחירה של מייל קיים
+  const toggleEmailSelection = (email: SavedEmail) => {
+    const isSelected = selectedEmails.find(e => e.email === email.email)
+    if (isSelected) {
+      setSelectedEmails(selectedEmails.filter(e => e.email !== email.email))
+    } else {
+      setSelectedEmails([...selectedEmails, email])
+    }
+  }
+
+  // 🆕 הסרת מייל מהרשימה הנבחרת
+  const removeSelectedEmail = (email: string) => {
+    setSelectedEmails(selectedEmails.filter(e => e.email !== email))
+  }
+
   const sendEmail = async () => {
     if (!emailPreview) return
 
-    const finalEmail = customEmail || selectedEmail
-    const finalName = customName || selectedName
-    
-    if (!finalEmail) {
-      alert('❌ יש לבחור או להזין מייל יעד')
+    if (selectedEmails.length === 0) {
+      alert('❌ יש לבחור לפחות מייל אחד')
       return
     }
 
@@ -159,9 +201,8 @@ export default function SendCandidatePage() {
           positionId: emailPreview.position.id,
           customSubject: editedSubject,
           customMatchingPoints: editedPoints,
-          targetEmail: finalEmail,
-          targetName: finalName,
-          saveEmailToPosition: saveEmailToPosition && (customEmail || selectedEmail !== emailPreview.position.contactEmail),
+          targetEmails: selectedEmails,  // 🆕 שליחת מערך מיילים
+          saveEmailToPosition,
         }),
       })
 
@@ -172,11 +213,15 @@ export default function SendCandidatePage() {
       }
 
       setSuccess(true)
+      setSendResult({
+        sentTo: data.sentTo || [],
+        failedTo: data.failedTo || []
+      })
       
-      // חזרה לדף המועמד אחרי 2 שניות
+      // חזרה לדף המועמד אחרי 3 שניות
       setTimeout(() => {
         router.push(`/dashboard/candidates/${candidateId}`)
-      }, 2000)
+      }, 3000)
       
     } catch (err: any) {
       alert(`❌ שגיאה: ${err.message}`)
@@ -221,9 +266,26 @@ export default function SendCandidatePage() {
           <CardContent className="pt-6 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-green-700 mb-2">המייל נשלח בהצלחה! 🎉</h2>
-            <p className="text-green-600 mb-4">
-              המועמד {emailPreview?.candidate.name} נשלח ל-{selectedName || selectedEmail}
-            </p>
+            {sendResult && (
+              <div className="text-right mb-4">
+                {sendResult.sentTo.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-green-600 font-medium">✅ נשלח ל:</p>
+                    {sendResult.sentTo.map((email, i) => (
+                      <Badge key={i} variant="outline" className="m-1 bg-green-100">{email}</Badge>
+                    ))}
+                  </div>
+                )}
+                {sendResult.failedTo.length > 0 && (
+                  <div>
+                    <p className="text-red-600 font-medium">❌ נכשל:</p>
+                    {sendResult.failedTo.map((f, i) => (
+                      <Badge key={i} variant="outline" className="m-1 bg-red-100">{f.email}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <p className="text-sm text-gray-500">מעביר אותך לדף המועמד...</p>
           </CardContent>
         </Card>
@@ -236,7 +298,7 @@ export default function SendCandidatePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl" dir="rtl">
+    <div className="container mx-auto py-8 px-4 max-w-5xl" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -282,11 +344,6 @@ export default function SendCandidatePage() {
                   {emailPreview.candidate.city}
                 </p>
               )}
-              {emailPreview.candidate.yearsOfExperience && (
-                <p className="text-gray-500">
-                  {emailPreview.candidate.yearsOfExperience} שנות ניסיון
-                </p>
-              )}
               {emailPreview.candidate.resumeUrl && (
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   ✅ קורות חיים מצורפים
@@ -321,10 +378,10 @@ export default function SendCandidatePage() {
           {/* מיילים קודמים */}
           {previousEmails.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 cursor-pointer" onClick={() => setShowPreviousEmails(!showPreviousEmails)}>
+              <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowPreviousEmails(!showPreviousEmails)}>
+                <CardTitle className="text-lg flex items-center gap-2">
                   <History className="h-5 w-5 text-orange-600" />
-                  מיילים קודמים ({previousEmails.length})
+                  היסטוריית שליחות ({previousEmails.length})
                 </CardTitle>
               </CardHeader>
               {showPreviousEmails && (
@@ -346,36 +403,78 @@ export default function SendCandidatePage() {
 
         {/* עמודה ימנית - עריכת המייל */}
         <div className="lg:col-span-2 space-y-4">
-          {/* מייל יעד */}
-          <Card>
-            <CardHeader className="pb-3">
+          {/* 🆕 בחירת נמענים */}
+          <Card className="border-2 border-blue-200">
+            <CardHeader className="pb-3 bg-blue-50">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Mail className="h-5 w-5 text-green-600" />
-                נמען המייל
+                <Users className="h-5 w-5 text-blue-600" />
+                נמעני המייל
+                <Badge variant="secondary" className="mr-2">{selectedEmails.length} נבחרו</Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">שם איש קשר</label>
-                  <Input
-                    value={customName || selectedName}
-                    onChange={(e) => setCustomName(e.target.value)}
-                    placeholder="שם איש הקשר"
-                  />
+            <CardContent className="space-y-4 pt-4">
+              {/* מיילים שנבחרו */}
+              {selectedEmails.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                  {selectedEmails.map((email, i) => (
+                    <Badge key={i} className="bg-green-600 hover:bg-green-700 pl-1 pr-2 py-1 text-sm flex items-center gap-1">
+                      <button onClick={() => removeSelectedEmail(email.email)} className="hover:bg-green-800 rounded p-0.5">
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                      {email.name ? `${email.name} (${email.email})` : email.email}
+                    </Badge>
+                  ))}
                 </div>
+              )}
+              
+              {/* מיילים שמורים לבחירה */}
+              {savedEmails.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">מייל</label>
+                  <p className="text-sm text-gray-600 mb-2">📧 מיילים שמורים למשרה זו:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {savedEmails.map((email, i) => {
+                      const isSelected = selectedEmails.find(e => e.email === email.email)
+                      return (
+                        <Badge 
+                          key={i} 
+                          variant={isSelected ? "default" : "outline"}
+                          className={`cursor-pointer ${isSelected ? 'bg-blue-600' : 'hover:bg-gray-100'}`}
+                          onClick={() => toggleEmailSelection(email)}
+                        >
+                          {isSelected && <CheckCircle className="h-3 w-3 ml-1" />}
+                          {email.name ? `${email.name}` : email.email}
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* הוספת מייל חדש */}
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-600 mb-2">➕ הוסף מייל חדש:</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="שם (אופציונלי)"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-1/3"
+                  />
                   <Input
                     type="email"
-                    value={customEmail || selectedEmail}
-                    onChange={(e) => setCustomEmail(e.target.value)}
-                    placeholder="example@email.com"
+                    placeholder="מייל"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="flex-1"
+                    onKeyPress={(e) => e.key === 'Enter' && addNewEmail()}
                   />
+                  <Button onClick={addNewEmail} size="sm" disabled={!newEmail.trim()}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
                   id="saveEmail"
@@ -384,7 +483,7 @@ export default function SendCandidatePage() {
                   className="rounded border-gray-300"
                 />
                 <label htmlFor="saveEmail" className="text-sm text-gray-600">
-                  שמור מייל זה למשרה לשימוש עתידי
+                  שמור מיילים חדשים למשרה לשימוש עתידי
                 </label>
               </div>
             </CardContent>
@@ -446,18 +545,18 @@ export default function SendCandidatePage() {
             
             <Button 
               onClick={sendEmail}
-              disabled={sendingEmail || !(customEmail || selectedEmail)}
+              disabled={sendingEmail || selectedEmails.length === 0}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8"
             >
               {sendingEmail ? (
                 <>
                   <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                  שולח...
+                  שולח ל-{selectedEmails.length} נמענים...
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4 ml-2" />
-                  שלח מייל
+                  שלח ל-{selectedEmails.length} {selectedEmails.length === 1 ? 'נמען' : 'נמענים'}
                 </>
               )}
             </Button>

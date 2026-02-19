@@ -83,6 +83,7 @@ model Position {
   // 🆕 שדות מגייס ותנאים
   contactEmail    String?           // מייל לשליחת מועמדים
   contactName     String?           // שם איש קשר/מגייס
+  contactEmails   String?           // 🆕 JSON array של מיילים נוספים [{"email":"...", "name":"..."}]
   workHours       String?           // שעות עבודה
   benefits        String?           // תנאים נלווים (ארוחות, הסעות וכו')
   transportation  String?           // אופן ההגעה (עצמאית/הסעה)

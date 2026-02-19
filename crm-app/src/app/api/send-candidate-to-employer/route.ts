@@ -67,6 +67,24 @@ export async function GET(request: NextRequest) {
     const positionAny = position as any
     const primaryEmail = positionAny.contactEmail || position.employer?.email
     const primaryName = positionAny.contactName || position.employer?.name
+    
+    // 🆕 שליפת כל המיילים השמורים למשרה
+    let savedEmails: Array<{email: string, name: string}> = []
+    try {
+      if (positionAny.contactEmails) {
+        savedEmails = JSON.parse(positionAny.contactEmails)
+      }
+    } catch (e) {
+      savedEmails = []
+    }
+    // הוספת המייל הראשי אם לא קיים
+    if (primaryEmail && !savedEmails.find(e => e.email === primaryEmail)) {
+      savedEmails.unshift({ email: primaryEmail, name: primaryName || '' })
+    }
+    // הוספת מייל המעסיק אם לא קיים
+    if (position.employer?.email && !savedEmails.find(e => e.email === position.employer?.email)) {
+      savedEmails.push({ email: position.employer.email, name: position.employer.name || '' })
+    }
 
     return NextResponse.json({
       success: true,
@@ -101,6 +119,8 @@ export async function GET(request: NextRequest) {
         targetEmail: primaryEmail,
         targetName: primaryName,
       },
+      // 🆕 רשימת כל המיילים השמורים למשרה
+      savedEmails,
       // 📧 היסטוריית מיילים קודמים
       previousEmails: previousEmails.map((email: { id: string; candidateName: string; subject: string; matchingPoints: string; sentAt: Date }) => ({
         id: email.id,
@@ -279,14 +299,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // קבלת נתונים - כולל משפטי התאמה מותאמים אישית (אופציונלי) ומייל יעד
+    // קבלת נתונים - כולל משפטי התאמה מותאמים אישית (אופציונלי) ומיילים יעד
     const { 
       candidateId, 
       positionId, 
       customMatchingPoints, 
       customSubject,
-      targetEmail,      // 📧 המייל שאליו לשלוח (אופציונלי)
+      targetEmail,      // 📧 המייל שאליו לשלוח (אופציונלי) - יחיד
       targetName,       // 📧 שם איש הקשר (אופציונלי)
+      targetEmails,     // 🆕 מערך מיילים: [{email: "...", name: "..."}]
       saveEmailToPosition  // 📧 האם לשמור את המייל למשרה
     } = await request.json()
 
@@ -328,28 +349,69 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 📧 קביעת המייל לשליחה - עדיפות למייל שנבחר, אחר כך contactEmail, ולבסוף מייל המעסיק
+    // 🆕 בניית רשימת מיילים לשליחה
     const positionAny = position as any
-    const emailToSend = targetEmail || positionAny.contactEmail || position.employer?.email
-    const nameToAddress = targetName || positionAny.contactName || position.employer?.name
+    let emailsToSend: Array<{email: string, name: string}> = []
+    
+    // אם יש מערך מיילים - השתמש בו
+    if (targetEmails && Array.isArray(targetEmails) && targetEmails.length > 0) {
+      emailsToSend = targetEmails.filter((e: any) => e.email)
+    }
+    // אחרת - השתמש במייל יחיד
+    else if (targetEmail) {
+      emailsToSend = [{ email: targetEmail, name: targetName || '' }]
+    }
+    // ברירת מחדל - מייל המשרה או המעסיק
+    else {
+      const fallbackEmail = positionAny.contactEmail || position.employer?.email
+      const fallbackName = positionAny.contactName || position.employer?.name
+      if (fallbackEmail) {
+        emailsToSend = [{ email: fallbackEmail, name: fallbackName || '' }]
+      }
+    }
 
-    if (!emailToSend) {
+    if (emailsToSend.length === 0) {
       return NextResponse.json(
         { error: "No email address available for this position" },
         { status: 400 }
       )
     }
 
-    // 📧 אם נבחר לשמור את המייל למשרה ויש מייל חדש
-    if (saveEmailToPosition && targetEmail && targetEmail !== positionAny.contactEmail) {
+    // 🆕 שמירת מיילים חדשים למשרה
+    if (saveEmailToPosition && emailsToSend.length > 0) {
+      // שליפת מיילים קיימים
+      let existingEmails: Array<{email: string, name: string}> = []
+      try {
+        if (positionAny.contactEmails) {
+          existingEmails = JSON.parse(positionAny.contactEmails)
+        }
+      } catch (e) {
+        existingEmails = []
+      }
+      
+      // הוספת המייל הראשי אם קיים
+      if (positionAny.contactEmail && !existingEmails.find((e: any) => e.email === positionAny.contactEmail)) {
+        existingEmails.push({ email: positionAny.contactEmail, name: positionAny.contactName || '' })
+      }
+      
+      // הוספת מיילים חדשים
+      for (const newEmail of emailsToSend) {
+        if (!existingEmails.find((e: any) => e.email === newEmail.email)) {
+          existingEmails.push(newEmail)
+        }
+      }
+      
+      // עדכון המשרה
+      const primaryEmail = emailsToSend[0]
       await prisma.position.update({
         where: { id: positionId },
         data: {
-          contactEmail: targetEmail,
-          contactName: targetName || positionAny.contactName,
+          contactEmail: primaryEmail.email,
+          contactName: primaryEmail.name || positionAny.contactName,
+          contactEmails: JSON.stringify(existingEmails),
         } as any
       })
-      console.log(`📧 Updated position ${positionId} contactEmail to ${targetEmail}`)
+      console.log(`📧 Updated position ${positionId} with ${existingEmails.length} emails`)
     }
 
     // 🚫 בדיקה: האם המועמד עבד בחברה זו בעבר
@@ -382,7 +444,7 @@ export async function POST(request: NextRequest) {
       ? customMatchingPoints
       : analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
 
-    // הגדרת SMTP עם הגדרות timeout משופרות
+    // הגדרת SMTP עם הגדרות timeout מהירות יותר
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -391,12 +453,12 @@ export async function POST(request: NextRequest) {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD,
       },
-      // הגדרות timeout משופרות למניעת שגיאות
-      connectionTimeout: 60000, // 60 שניות לחיבור
-      greetingTimeout: 30000,   // 30 שניות לברכה
-      socketTimeout: 120000,    // 2 דקות לפעולות socket
+      // הגדרות timeout מהירות יותר
+      connectionTimeout: 30000, // 30 שניות לחיבור
+      greetingTimeout: 15000,   // 15 שניות לברכה
+      socketTimeout: 60000,     // 60 שניות לפעולות socket
       pool: true,               // שימוש ב-connection pool
-      maxConnections: 5,        // מקסימום חיבורים
+      maxConnections: 10,       // יותר חיבורים לשליחה מקבילית
       maxMessages: 100,         // מקסימום הודעות לחיבור
     })
 
@@ -718,11 +780,10 @@ export async function POST(request: NextRequest) {
     // שליחת המייל - למייל שנבחר (contactEmail או מייל המעסיק)
     const mailOptions: any = {
       from: `"${process.env.SMTP_FROM_NAME || 'צוות הגיוס'}" <${process.env.SMTP_USER}>`,
-      to: emailToSend,  // 📧 שימוש במייל היעד שנבחר
       subject: emailSubject,
       html: emailHTML,
       text: `
-שלום ${nameToAddress},
+שלום,
 
 מצאנו מועמד/ת מצוין/ת למשרה: ${position.title}
 
@@ -759,56 +820,82 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
       console.log(`📎 Attaching resume from: ${fullResumeUrl}`)
     }
 
-    // 📧 שליחת המייל עם retry אוטומטי
-    let sendAttempts = 0
-    const maxAttempts = 3
-    let lastError: any = null
+    // 🆕 שליחת המייל לכל הנמענים במקביל
+    const sendResults: Array<{email: string, success: boolean, error?: string}> = []
     
-    while (sendAttempts < maxAttempts) {
-      try {
-        sendAttempts++
-        console.log(`📤 Sending email attempt ${sendAttempts}/${maxAttempts} to ${emailToSend}...`)
-        await transporter.sendMail(mailOptions)
-        console.log(`✅ Email sent successfully on attempt ${sendAttempts}`)
-        break // הצלחה - יציאה מהלולאה
-      } catch (sendError: any) {
-        lastError = sendError
-        console.error(`❌ Attempt ${sendAttempts} failed:`, sendError.message)
-        if (sendAttempts < maxAttempts) {
-          // המתנה לפני ניסיון נוסף (2, 4, 6 שניות)
-          await new Promise(resolve => setTimeout(resolve, sendAttempts * 2000))
+    console.log(`📤 Sending email to ${emailsToSend.length} recipients...`)
+    
+    // שליחה מקבילית לכל המיילים
+    const sendPromises = emailsToSend.map(async (recipient) => {
+      const recipientMailOptions = {
+        ...mailOptions,
+        to: recipient.email,
+      }
+      
+      // ניסיון שליחה עם retry
+      let attempts = 0
+      const maxAttempts = 2 // פחות ניסיונות לשליחה מהירה יותר
+      
+      while (attempts < maxAttempts) {
+        try {
+          attempts++
+          await transporter.sendMail(recipientMailOptions)
+          console.log(`✅ Email sent to ${recipient.email}`)
+          sendResults.push({ email: recipient.email, success: true })
+          
+          // שמירה להיסטוריה
+          await prisma.employerEmailHistory.create({
+            data: {
+              candidateId,
+              candidateName: candidate.name,
+              positionId,
+              positionTitle: position.title,
+              employerId: position.employer?.id || '',
+              employerName: recipient.name || position.employer?.name || '',
+              employerEmail: recipient.email,
+              subject: emailSubject,
+              matchingPoints: JSON.stringify(matchingPoints),
+            }
+          })
+          
+          return
+        } catch (error: any) {
+          console.error(`❌ Attempt ${attempts} to ${recipient.email} failed:`, error.message)
+          if (attempts >= maxAttempts) {
+            sendResults.push({ email: recipient.email, success: false, error: error.message })
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 1000)) // המתנה קצרה
+          }
         }
       }
-    }
-    
-    // אם כל הניסיונות נכשלו, זרוק שגיאה
-    if (sendAttempts >= maxAttempts && lastError) {
-      throw new Error(`Failed to send email after ${maxAttempts} attempts: ${lastError.message}`)
-    }
-
-    // 📧 שמירת המייל להיסטוריה
-    await prisma.employerEmailHistory.create({
-      data: {
-        candidateId,
-        candidateName: candidate.name,
-        positionId,
-        positionTitle: position.title,
-        employerId: position.employer?.id || '',
-        employerName: position.employer?.name || nameToAddress || '',
-        employerEmail: emailToSend,  // 📧 שמירת המייל שאליו נשלח בפועל
-        subject: emailSubject,
-        matchingPoints: JSON.stringify(matchingPoints),
-      }
     })
+    
+    // המתנה לכל השליחות עם timeout כולל
+    await Promise.race([
+      Promise.all(sendPromises),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 45000))
+    ]).catch(err => {
+      console.error('Email send timeout or error:', err.message)
+    })
+    
+    // בדיקת תוצאות
+    const successCount = sendResults.filter(r => r.success).length
+    const failedEmails = sendResults.filter(r => !r.success)
+    
+    if (successCount === 0 && emailsToSend.length > 0) {
+      throw new Error(`Failed to send email to all recipients: ${failedEmails.map(f => f.error).join(', ')}`)
+    }
 
     return NextResponse.json({
       success: true,
-      message: `המייל נשלח בהצלחה ל-${emailToSend}`,
-      employerEmail: emailToSend,
-      recipientName: nameToAddress,
+      message: successCount === emailsToSend.length 
+        ? `המייל נשלח בהצלחה ל-${successCount} נמענים`
+        : `המייל נשלח ל-${successCount} מתוך ${emailsToSend.length} נמענים`,
+      sentTo: sendResults.filter(r => r.success).map(r => r.email),
+      failedTo: failedEmails.map(f => ({ email: f.email, error: f.error })),
       candidateName: candidate.name,
       matchingPoints,
-      emailSavedToPosition: saveEmailToPosition && targetEmail ? true : false
+      emailSavedToPosition: saveEmailToPosition
     })
 
   } catch (error: any) {

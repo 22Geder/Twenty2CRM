@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force Node.js runtime (not Edge) to support Prisma
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // =====================================================================
 // CRON BACKUP - גיבוי אוטומטי כל 24 שעות
 // הפעלה: GET /api/cron/backup

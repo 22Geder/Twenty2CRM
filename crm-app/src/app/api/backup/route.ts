@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force Node.js runtime (not Edge) to support Prisma
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // =====================================================================
 // BACKUP API - יצוא כל הנתונים לגיבוי
 // GET /api/backup - מוריד את כל הנתונים כ-JSON

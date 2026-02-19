@@ -27,6 +27,21 @@ import {
   MessageCircle
 } from "lucide-react"
 
+// 🔧 Safe encoder that handles malformed characters
+const safeEncodeURIComponent = (str: string): string => {
+  try {
+    // First sanitize the string to remove any problematic characters
+    const sanitized = String(str || '')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '') // Remove lone high surrogates
+      .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '') // Remove lone low surrogates
+    return encodeURIComponent(sanitized)
+  } catch (e) {
+    console.error('Error encoding:', e)
+    // Fallback: remove all non-BMP characters
+    return encodeURIComponent(String(str || '').replace(/[^\x00-\uFFFF]/g, ''))
+  }
+}
+
 interface SmartAIMatchingProps {
   candidateId: string
   candidateName?: string
@@ -135,7 +150,7 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
 
   const getWhatsAppLink = (phone: string, message: string): string => {
     const normalizedPhone = normalizePhoneForWhatsApp(phone)
-    const encodedMessage = encodeURIComponent(message)
+    const encodedMessage = safeEncodeURIComponent(message)
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
 

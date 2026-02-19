@@ -26,6 +26,18 @@ import {
   Square,
   MessageCircle
 } from "lucide-react"
+
+// 🔧 Safe encoder that handles malformed characters
+const safeEncodeURIComponent = (str: string): string => {
+  try {
+    const sanitized = String(str || '')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+      .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    return encodeURIComponent(sanitized)
+  } catch (e) {
+    return encodeURIComponent(String(str || '').replace(/[^\x00-\uFFFF]/g, ''))
+  }
+}
 import Link from "next/link"
 
 interface MatchingCandidate {
@@ -232,7 +244,7 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
   const getWhatsAppLink = (phone: string, candidateName: string): string => {
     const normalizedPhone = normalizePhoneForWhatsApp(phone)
     const message = `היי ${candidateName}! 👋\n\nאני מטוונטי טו ג'ובס, ויש לי משרה שיכולה להתאים לך:\n\n🎯 ${positionTitle || 'משרה חדשה'}\n\nאשמח לדבר איתך ולספר עוד!\n\nמה אומרת/אומר?`
-    const encodedMessage = encodeURIComponent(message)
+    const encodedMessage = safeEncodeURIComponent(message)
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
 

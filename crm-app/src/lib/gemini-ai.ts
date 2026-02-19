@@ -2,6 +2,22 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
+// 🔧 Rate limiting to prevent 429 errors
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+let lastGeminiCall = 0;
+const MIN_INTERVAL = 200; // Minimum 200ms between calls
+
+async function rateLimitedCall<T>(fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const timeSinceLastCall = now - lastGeminiCall;
+  if (timeSinceLastCall < MIN_INTERVAL) {
+    await sleep(MIN_INTERVAL - timeSinceLastCall);
+  }
+  lastGeminiCall = Date.now();
+  return fn();
+}
+
 /**
  * ניתוח קורות חיים בעזרת Gemini AI
  * מחלץ כישורים, ניסיון, תחומים עיסוקיים ותגיות
@@ -35,7 +51,7 @@ Please provide a JSON response with these exact fields:
 
 Respond ONLY with the JSON, no additional text.`
 
-    const result = await model.generateContent(prompt)
+    const result = await rateLimitedCall(() => model.generateContent(prompt))
     const response = result.response
     const text = response.text()
 
@@ -90,7 +106,7 @@ Please provide a JSON response with these exact fields:
 
 Respond ONLY with the JSON, no additional text.`
 
-    const result = await model.generateContent(prompt)
+    const result = await rateLimitedCall(() => model.generateContent(prompt))
     const response = result.response
     const text = response.text()
 
@@ -120,19 +136,19 @@ Respond ONLY with the JSON, no additional text.`
  */
 export async function calculateMatchScoreWithGemini(
   candidateProfile: {
-    skills: string[]
-    experience: number
-    industries: string[]
-    tags: string[]
-    summary: string
-    keyStrengths: string[]
+    skills?: string[]
+    experience?: number
+    industries?: string[]
+    tags?: string[]
+    summary?: string
+    keyStrengths?: string[]
   },
   jobProfile: {
-    requiredSkills: string[]
-    requiredExperience: number
-    industries: string[]
-    jobTags: string[]
-    keyRequirements: string[]
+    requiredSkills?: string[]
+    requiredExperience?: number
+    industries?: string[]
+    jobTags?: string[]
+    keyRequirements?: string[]
   }
 ): Promise<{
   score: number
@@ -142,24 +158,28 @@ export async function calculateMatchScoreWithGemini(
   experienceFit: string
 }> {
   try {
+    // 🔧 Safe array helper
+    const safeJoin = (arr: string[] | undefined, sep = ", ") => 
+      Array.isArray(arr) ? arr.join(sep) : "לא צוין";
+    
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 
     const prompt = `Analyze the match between a candidate and a job position:
 
 Candidate Profile:
-- Skills: ${candidateProfile.skills.join(", ")}
-- Experience: ${candidateProfile.experience} years
-- Industries: ${candidateProfile.industries.join(", ")}
-- Specializations: ${candidateProfile.tags.join(", ")}
-- Summary: ${candidateProfile.summary}
-- Key Strengths: ${candidateProfile.keyStrengths.join(", ")}
+- Skills: ${safeJoin(candidateProfile?.skills)}
+- Experience: ${candidateProfile?.experience ?? 0} years
+- Industries: ${safeJoin(candidateProfile?.industries)}
+- Specializations: ${safeJoin(candidateProfile?.tags)}
+- Summary: ${candidateProfile?.summary || "לא צוין"}
+- Key Strengths: ${safeJoin(candidateProfile?.keyStrengths)}
 
 Job Requirements:
-- Required Skills: ${jobProfile.requiredSkills.join(", ")}
-- Required Experience: ${jobProfile.requiredExperience} years
-- Industries: ${jobProfile.industries.join(", ")}
-- Specializations: ${jobProfile.jobTags.join(", ")}
-- Key Requirements: ${jobProfile.keyRequirements.join(", ")}
+- Required Skills: ${safeJoin(jobProfile?.requiredSkills)}
+- Required Experience: ${jobProfile?.requiredExperience ?? 0} years
+- Industries: ${safeJoin(jobProfile?.industries)}
+- Specializations: ${safeJoin(jobProfile?.jobTags)}
+- Key Requirements: ${safeJoin(jobProfile?.keyRequirements)}
 
 Please provide a JSON response in Hebrew:
 {
@@ -172,7 +192,7 @@ Please provide a JSON response in Hebrew:
 
 Respond ONLY with the JSON, no additional text.`
 
-    const result = await model.generateContent(prompt)
+    const result = await rateLimitedCall(() => model.generateContent(prompt))
     const response = result.response
     const text = response.text()
 

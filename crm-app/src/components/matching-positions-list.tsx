@@ -28,6 +28,18 @@ import {
   Copy,
   ChevronDown
 } from "lucide-react"
+
+// 🔧 Safe encoder that handles malformed characters
+const safeEncodeURIComponent = (str: string): string => {
+  try {
+    const sanitized = String(str || '')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+      .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    return encodeURIComponent(sanitized)
+  } catch (e) {
+    return encodeURIComponent(String(str || '').replace(/[^\x00-\uFFFF]/g, ''))
+  }
+}
 import Link from "next/link"
 
 // 📧 ממשק לתצוגה מקדימה של המייל
@@ -225,7 +237,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   // יצירת קישור וואטסאפ
   const getWhatsAppLink = (phone: string, message: string): string => {
     const normalizedPhone = normalizePhoneForWhatsApp(phone)
-    const encodedMessage = encodeURIComponent(message)
+    const encodedMessage = safeEncodeURIComponent(message)
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
 

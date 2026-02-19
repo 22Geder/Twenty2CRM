@@ -89,18 +89,30 @@ const TAGS: CandidateTag[] = [
 ];
 
 // ==================== WHATSAPP & EMAIL HELPERS ====================
+// 🔧 Safe encoder that handles malformed characters
+function safeEncodeURIComponent(str: string): string {
+  try {
+    const sanitized = String(str || '')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+      .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    return encodeURIComponent(sanitized)
+  } catch (e) {
+    return encodeURIComponent(String(str || '').replace(/[^\x00-\uFFFF]/g, ''))
+  }
+}
+
 function getWhatsAppLink(phone: string, message?: string): string {
   const cleanPhone = phone.replace(/[-\s]/g, '');
   const israelPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
-  const encodedMessage = message ? `?text=${encodeURIComponent(message)}` : '';
+  const encodedMessage = message ? `?text=${safeEncodeURIComponent(message)}` : '';
   return `https://wa.me/${israelPhone}${encodedMessage}`;
 }
 
 function getEmailLink(email: string, subject?: string, body?: string): string {
   let link = `mailto:${email}`;
   const params: string[] = [];
-  if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
-  if (body) params.push(`body=${encodeURIComponent(body)}`);
+  if (subject) params.push(`subject=${safeEncodeURIComponent(subject)}`);
+  if (body) params.push(`body=${safeEncodeURIComponent(body)}`);
   if (params.length > 0) link += '?' + params.join('&');
   return link;
 }
@@ -1489,7 +1501,7 @@ yossi@email.com
                           {/* כפתור שליחה למעסיק */}
                           <div className="mt-6 flex gap-4">
                             <a
-                              href={`mailto:?subject=מועמד מתאים: ${dualLayerResult.candidateCard.fullName} - ${dualLayerResult.bestMatch.positionTitle}&body=${encodeURIComponent(`שלום,\n\nרציתי להציג בפניכם מועמד מתאים למשרה:\n\n📋 פרטי המועמד:\n• שם: ${dualLayerResult.candidateCard.fullName}\n• טלפון: ${dualLayerResult.candidateCard.phone}\n• עיר: ${dualLayerResult.candidateCard.city}\n• ניסיון: ${dualLayerResult.candidateCard.yearsExperience} שנים\n• כישורים: ${dualLayerResult.candidateCard.hotTags.join(', ')}\n\n🎯 ציון התאמה: ${dualLayerResult.bestMatch.weightedScore}%\n\n📝 סיכום:\n${dualLayerResult.bestMatch.recommendation.summaryForEmployer}\n\nבברכה,\nטוונטי טו ג'ובס`)}`}
+                              href={`mailto:?subject=מועמד מתאים: ${dualLayerResult.candidateCard.fullName || ''} - ${dualLayerResult.bestMatch.positionTitle || ''}&body=${safeEncodeURIComponent(`שלום,\n\nרציתי להציג בפניכם מועמד מתאים למשרה:\n\n📋 פרטי המועמד:\n• שם: ${dualLayerResult.candidateCard.fullName || 'לא זוהה'}\n• טלפון: ${dualLayerResult.candidateCard.phone || 'לא זוהה'}\n• עיר: ${dualLayerResult.candidateCard.city || 'לא זוהה'}\n• ניסיון: ${dualLayerResult.candidateCard.yearsExperience || 0} שנים\n• כישורים: ${(dualLayerResult.candidateCard.hotTags || []).join(', ') || 'לא זוהו'}\n\n🎯 ציון התאמה: ${dualLayerResult.bestMatch.weightedScore || 0}%\n\n📝 סיכום:\n${dualLayerResult.bestMatch.recommendation?.summaryForEmployer || ''}\n\nבברכה,\nטוונטי טו ג'ובס`)}`}
                               className="flex-1 py-4 bg-white hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-lg text-center transition-all flex items-center justify-center gap-2"
                             >
                               <span className="text-2xl">📧</span> שלח למעסיק במייל

@@ -18,7 +18,7 @@ Variables → + New Variable
 ------------------------------------------
 3. NEXTAUTH_URL
 ------------------------------------------
-ערך: https://superb-transformation-production.up.railway.app
+ערך: https://twenty2crm-production-7997.up.railway.app
 
 ------------------------------------------
 4. SMTP_HOST

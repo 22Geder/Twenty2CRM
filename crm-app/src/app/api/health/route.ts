@@ -6,21 +6,32 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   const startTime = Date.now()
   
+  const diagnostics: Record<string, unknown> = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    database_url_set: !!process.env.DATABASE_URL,
+    database_url_prefix: process.env.DATABASE_URL?.substring(0, 20) + '...',
+  }
+  
   try {
     // בדיקת חיבור DB
     const { prisma } = await import('@/lib/prisma')
-    const dbCheck = await prisma.$queryRaw`SELECT 1 as ok`
+    
+    // ספור מועמדים כבדיקה  
+    const candidateCount = await prisma.candidate.count()
+    const positionCount = await prisma.position.count()
     
     const responseTime = Date.now() - startTime
     
     return NextResponse.json({
       status: 'healthy',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
+      ...diagnostics,
       database: 'connected',
       responseTime: `${responseTime}ms`,
-      version: '1.0.0',
-      uptime: process.uptime(),
+      counts: {
+        candidates: candidateCount,
+        positions: positionCount,
+      },
       checks: {
         database: true,
         api: true,
@@ -31,11 +42,11 @@ export async function GET() {
     
     return NextResponse.json({
       status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
+      ...diagnostics,
       database: 'disconnected',
       responseTime: `${responseTime}ms`,
       error: String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
       checks: {
         database: false,
         api: true,

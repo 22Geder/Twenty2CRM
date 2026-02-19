@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   Building2, Mail, Phone, Globe, Briefcase, Users, ArrowRight,
-  MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle, Pencil, Save, Loader2
+  MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle, Pencil, Save, Loader2, Plus
 } from "lucide-react"
 
 interface Employer {
@@ -419,10 +419,18 @@ export default function EmployerDetailPage({ params }: PageProps) {
         <div className="col-span-1">
           <Card className="border-0 shadow-xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white">
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
-                משרות ({totalPositions})
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  משרות ({totalPositions})
+                </CardTitle>
+                <Link href={`/dashboard/positions/new?employerId=${employer.id}`}>
+                  <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                    <Plus className="h-4 w-4 ml-1" />
+                    חדשה
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {employer.positions.length === 0 ? (

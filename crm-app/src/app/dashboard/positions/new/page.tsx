@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,9 @@ import Link from "next/link"
 
 export default function NewPositionPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preSelectedEmployerId = searchParams.get("employerId") || ""
+  
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [employers, setEmployers] = useState<any[]>([])
@@ -25,7 +28,7 @@ export default function NewPositionPage() {
     salaryRange: "",
     employmentType: "Full-time",
     departmentId: "",
-    employerId: "",
+    employerId: preSelectedEmployerId,
     recruiterId: "",
     imageUrl: "",
     active: false,
@@ -39,6 +42,13 @@ export default function NewPositionPage() {
     fetchEmployers()
     fetchDepartments()
   }, [])
+  
+  // עדכון employerId כאשר preSelectedEmployerId משתנה
+  useEffect(() => {
+    if (preSelectedEmployerId && !formData.employerId) {
+      setFormData(prev => ({ ...prev, employerId: preSelectedEmployerId }))
+    }
+  }, [preSelectedEmployerId])
 
   const fetchEmployers = async () => {
     try {

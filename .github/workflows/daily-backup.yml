@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 env:
-  CRM_URL: https://superb-transformation-production.up.railway.app
+  CRM_URL: https://twenty2crm-production-7997.up.railway.app
   CRON_SECRET: twenty2crm-backup-2024
 
 jobs:

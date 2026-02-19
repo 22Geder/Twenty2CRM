@@ -91,6 +91,9 @@ interface MatchingPosition {
   employmentType: string | null
   description: string | null
   requirements: string | null
+  workHours: string | null      // 🆕 שעות עבודה
+  benefits: string | null       // 🆕 תנאים נלווים
+  transportation: string | null // 🆕 אופן הגעה
   active: boolean
   createdAt: string
   employer: {
@@ -179,57 +182,88 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     return cleaned
   }
 
-  // יצירת הודעת וואטסאפ מותאמת אישית למשרה
+  // יצירת הודעת וואטסאפ מותאמת אישית למשרה - מלאה ומפורטת
   const generateWhatsAppMessage = (position: MatchingPosition): string => {
     const lines: string[] = []
     
     // פתיחה אישית עם שם המועמד
     lines.push(`היי ${candidateName || ''}! 👋`)
     lines.push('')
-    lines.push(`מצאתי משרה שיכולה להתאים לך:`)
+    lines.push(`יש לי הצעת עבודה שיכולה להתאים לך מצוין:`)
+    lines.push('')
+    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+    
+    // כותרת המשרה
+    lines.push(`🎯 *${position.title}*`)
+    lines.push(`🏢 *${position.employer.name}*`)
+    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
     lines.push('')
     
-    // פרטי המשרה
-    lines.push(`🎯 *${position.title}*`)
-    lines.push(`🏢 ${position.employer.name}`)
-    
+    // פרטים בסיסיים
+    lines.push(`📌 *פרטי המשרה:*`)
     if (position.location) {
-      lines.push(`📍 ${position.location}`)
+      lines.push(`📍 מיקום: ${position.location}`)
     }
-    
-    if (position.salaryRange) {
-      lines.push(`💰 ${position.salaryRange}`)
-    }
-    
     if (position.employmentType) {
-      lines.push(`⏰ ${position.employmentType}`)
+      lines.push(`📝 היקף: ${position.employmentType}`)
     }
+    if (position.workHours) {
+      lines.push(`🕐 שעות עבודה: ${position.workHours}`)
+    }
+    if (position.salaryRange) {
+      lines.push(`💰 שכר: ${position.salaryRange}`)
+    }
+    lines.push('')
     
-    // תיאור המשרה (קצר)
+    // תיאור המשרה
     if (position.description) {
-      lines.push('')
-      const shortDesc = position.description.length > 200 
-        ? position.description.substring(0, 200) + '...' 
+      lines.push(`📋 *תיאור התפקיד:*`)
+      // מגביל ל-400 תווים לתיאור מלא יותר
+      const desc = position.description.length > 400 
+        ? position.description.substring(0, 400) + '...' 
         : position.description
-      lines.push(`📋 *תיאור:*`)
-      lines.push(shortDesc)
+      lines.push(desc)
+      lines.push('')
     }
     
     // דרישות המשרה
     if (position.requirements) {
-      lines.push('')
-      const shortReq = position.requirements.length > 250 
-        ? position.requirements.substring(0, 250) + '...' 
+      lines.push(`✅ *דרישות התפקיד:*`)
+      // מגביל ל-400 תווים
+      const req = position.requirements.length > 400 
+        ? position.requirements.substring(0, 400) + '...' 
         : position.requirements
-      lines.push(`✅ *דרישות:*`)
-      lines.push(shortReq)
+      lines.push(req)
+      lines.push('')
     }
     
-    // סיום
+    // תנאים והטבות
+    const hasConditions = position.benefits || position.transportation
+    if (hasConditions) {
+      lines.push(`🎁 *תנאים והטבות:*`)
+      if (position.benefits) {
+        lines.push(`• ${position.benefits}`)
+      }
+      if (position.transportation) {
+        lines.push(`🚗 הגעה: ${position.transportation}`)
+      }
+      lines.push('')
+    }
+    
+    // תגיות רלוונטיות
+    if (position.matchingTags && position.matchingTags.length > 0) {
+      const tagNames = position.matchingTags.slice(0, 5).map(t => t.name).join(' | ')
+      lines.push(`🏷️ *מתאים ל:* ${tagNames}`)
+      lines.push('')
+    }
+    
+    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
     lines.push('')
-    lines.push(`האם המשרה מעניינת אותך? 🤔`)
+    lines.push(`💬 *מעניין אותך?*`)
+    lines.push(`אשמח לשמוע ממך ולתאם ראיון!`)
     lines.push('')
-    lines.push(`טוונטי טו ג'ובס 🚀`)
+    lines.push(`בהצלחה! 🍀`)
+    lines.push(`*טוונטי טו ג'ובס* 🚀`)
     
     return lines.join('\n')
   }

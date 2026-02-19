@@ -374,3 +374,18 @@ function NewPositionForm() {
     </div>
   )
 }
+
+export default function NewPositionPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-[#FF8C00] mx-auto mb-4" />
+          <p className="text-muted-foreground">טוען טופס משרה...</p>
+        </div>
+      </div>
+    }>
+      <NewPositionForm />
+    </Suspense>
+  )
+}

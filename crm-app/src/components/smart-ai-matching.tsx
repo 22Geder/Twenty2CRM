@@ -68,6 +68,9 @@ interface MatchResult {
   requirements?: string
   salaryRange?: string
   employmentType?: string
+  workHours?: string      // 🆕 שעות עבודה
+  benefits?: string       // 🆕 תנאים נלווים
+  transportation?: string // 🆕 אופן הגעה
   score: number
   locationMatch?: boolean
   strengths: string[]
@@ -102,48 +105,75 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
   const generateWhatsAppMessage = (match: MatchResult): string => {
     const lines: string[] = []
     
+    // פתיחה אישית עם שם המועמד
     lines.push(`היי ${candidateName || ''}! 👋`)
     lines.push('')
-    lines.push(`מצאתי משרה שיכולה להתאים לך:`)
+    lines.push(`יש לי הצעת עבודה שיכולה להתאים לך מצוין:`)
     lines.push('')
+    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
     
+    // כותרת המשרה
     lines.push(`🎯 *${match.positionTitle}*`)
-    lines.push(`🏢 ${match.employerName}`)
+    lines.push(`🏢 *${match.employerName}*`)
+    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+    lines.push('')
     
+    // פרטים בסיסיים
+    lines.push(`📌 *פרטי המשרה:*`)
     if (match.location) {
-      lines.push(`📍 ${match.location}`)
+      lines.push(`📍 מיקום: ${match.location}`)
     }
-    
-    if (match.salaryRange) {
-      lines.push(`💰 ${match.salaryRange}`)
-    }
-    
     if (match.employmentType) {
-      lines.push(`⏰ ${match.employmentType}`)
+      lines.push(`📝 היקף: ${match.employmentType}`)
     }
+    if (match.workHours) {
+      lines.push(`🕐 שעות עבודה: ${match.workHours}`)
+    }
+    if (match.salaryRange) {
+      lines.push(`💰 שכר: ${match.salaryRange}`)
+    }
+    lines.push('')
     
+    // תיאור המשרה
     if (match.description) {
-      lines.push('')
-      const shortDesc = match.description.length > 200 
-        ? match.description.substring(0, 200) + '...' 
+      lines.push(`📋 *תיאור התפקיד:*`)
+      const desc = match.description.length > 400 
+        ? match.description.substring(0, 400) + '...' 
         : match.description
-      lines.push(`📋 *תיאור:*`)
-      lines.push(shortDesc)
-    }
-    
-    if (match.requirements) {
+      lines.push(desc)
       lines.push('')
-      const shortReq = match.requirements.length > 250 
-        ? match.requirements.substring(0, 250) + '...' 
-        : match.requirements
-      lines.push(`✅ *דרישות:*`)
-      lines.push(shortReq)
     }
     
+    // דרישות המשרה
+    if (match.requirements) {
+      lines.push(`✅ *דרישות התפקיד:*`)
+      const req = match.requirements.length > 400 
+        ? match.requirements.substring(0, 400) + '...' 
+        : match.requirements
+      lines.push(req)
+      lines.push('')
+    }
+    
+    // תנאים והטבות
+    const hasConditions = match.benefits || match.transportation
+    if (hasConditions) {
+      lines.push(`🎁 *תנאים והטבות:*`)
+      if (match.benefits) {
+        lines.push(`• ${match.benefits}`)
+      }
+      if (match.transportation) {
+        lines.push(`🚗 הגעה: ${match.transportation}`)
+      }
+      lines.push('')
+    }
+    
+    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
     lines.push('')
-    lines.push(`האם המשרה מעניינת אותך? 🤔`)
+    lines.push(`💬 *מעניין אותך?*`)
+    lines.push(`אשמח לשמוע ממך ולתאם ראיון!`)
     lines.push('')
-    lines.push(`טוונטי טו ג'ובס 🚀`)
+    lines.push(`בהצלחה! 🍀`)
+    lines.push(`*טוונטי טו ג'ובס* 🚀`)
     
     return lines.join('\n')
   }

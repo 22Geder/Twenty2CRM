@@ -49,6 +49,9 @@ export async function POST(request: Request) {
         requirements: true,
         salaryRange: true,
         employmentType: true,
+        workHours: true,       // 🆕 שעות עבודה
+        benefits: true,        // 🆕 תנאים נלווים
+        transportation: true,  // 🆕 אופן הגעה
         employer: { select: { id: true, name: true } },
         tags: { select: { id: true, name: true } }
       }
@@ -300,6 +303,9 @@ JSON בלבד:`
       requirements: position.requirements || '',
       salaryRange: position.salaryRange || '',
       employmentType: position.employmentType || '',
+      workHours: position.workHours || '',       // 🆕
+      benefits: position.benefits || '',         // 🆕
+      transportation: position.transportation || '', // 🆕
       score: finalScore,
       locationMatch,
       strengths: analysis.strengths || [],
@@ -454,6 +460,9 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     requirements: position.requirements || '',
     salaryRange: position.salaryRange || '',
     employmentType: position.employmentType || '',
+    workHours: position.workHours || '',       // 🆕
+    benefits: position.benefits || '',         // 🆕
+    transportation: position.transportation || '', // 🆕
     score,
     locationMatch,
     strengths: strengths.slice(0, 5),

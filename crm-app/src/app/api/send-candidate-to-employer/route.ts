@@ -382,7 +382,7 @@ export async function POST(request: NextRequest) {
       ? customMatchingPoints
       : analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
 
-    // הגדרת SMTP
+    // הגדרת SMTP עם הגדרות timeout משופרות
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -391,6 +391,13 @@ export async function POST(request: NextRequest) {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD,
       },
+      // הגדרות timeout משופרות למניעת שגיאות
+      connectionTimeout: 60000, // 60 שניות לחיבור
+      greetingTimeout: 30000,   // 30 שניות לברכה
+      socketTimeout: 120000,    // 2 דקות לפעולות socket
+      pool: true,               // שימוש ב-connection pool
+      maxConnections: 5,        // מקסימום חיבורים
+      maxMessages: 100,         // מקסימום הודעות לחיבור
     })
 
     // בניית המייל - עם נושא מותאם או אוטומטי
@@ -735,17 +742,49 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
       `.trim()
     }
 
-    // צירוף קורות חיים אם קיימים
+    // צירוף קורות חיים אם קיימים - בניית URL מלא
     if (candidate.resumeUrl) {
+      // בניית URL מלא לקובץ קורות החיים
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'https://twenty2crm-production-7997.up.railway.app'
+      const fullResumeUrl = candidate.resumeUrl.startsWith('http') 
+        ? candidate.resumeUrl 
+        : `${baseUrl}${candidate.resumeUrl}`
+      
       mailOptions.attachments = [
         {
           filename: `${candidate.name}_CV.pdf`,
-          path: candidate.resumeUrl,
+          path: fullResumeUrl,
         }
       ]
+      console.log(`📎 Attaching resume from: ${fullResumeUrl}`)
     }
 
-    await transporter.sendMail(mailOptions)
+    // 📧 שליחת המייל עם retry אוטומטי
+    let sendAttempts = 0
+    const maxAttempts = 3
+    let lastError: any = null
+    
+    while (sendAttempts < maxAttempts) {
+      try {
+        sendAttempts++
+        console.log(`📤 Sending email attempt ${sendAttempts}/${maxAttempts} to ${emailToSend}...`)
+        await transporter.sendMail(mailOptions)
+        console.log(`✅ Email sent successfully on attempt ${sendAttempts}`)
+        break // הצלחה - יציאה מהלולאה
+      } catch (sendError: any) {
+        lastError = sendError
+        console.error(`❌ Attempt ${sendAttempts} failed:`, sendError.message)
+        if (sendAttempts < maxAttempts) {
+          // המתנה לפני ניסיון נוסף (2, 4, 6 שניות)
+          await new Promise(resolve => setTimeout(resolve, sendAttempts * 2000))
+        }
+      }
+    }
+    
+    // אם כל הניסיונות נכשלו, זרוק שגיאה
+    if (sendAttempts >= maxAttempts && lastError) {
+      throw new Error(`Failed to send email after ${maxAttempts} attempts: ${lastError.message}`)
+    }
 
     // 📧 שמירת המייל להיסטוריה
     await prisma.employerEmailHistory.create({

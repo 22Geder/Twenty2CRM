@@ -256,6 +256,27 @@ model ActivityLog {
   createdAt     DateTime      @default(now())
 }
 
+// 🔐 מערכת Audit Log מקיפה - שמירת היסטוריית שינויים
+model AuditLog {
+  id            String        @id @default(uuid())
+  action        String        // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, EXPORT, IMPORT
+  entityType    String        // CANDIDATE, POSITION, EMPLOYER, USER, APPLICATION, etc.
+  entityId      String?       // מזהה הישות שהשתנתה
+  entityName    String?       // שם הישות (לקריאות קלה)
+  changes       String?       // JSON - שינויים {field: {old: x, new: y}}
+  ipAddress     String?       // כתובת IP
+  userAgent     String?       // דפדפן/אפליקציה
+  userId        String?       // מי ביצע את הפעולה
+  userName      String?       // שם המשתמש (לקריאות קלה)
+  
+  createdAt     DateTime      @default(now())
+  
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model Tag {
   id          String      @id @default(uuid())
   name        String      @unique

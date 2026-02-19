@@ -33,6 +33,7 @@ interface Candidate {
     title: string; 
     employer?: { id: string; name: string } 
   };
+  uploadedBy?: { id: string; name: string; email: string }; // 🆕 מי העלה את המועמד
 }
 
 interface Employer {
@@ -525,6 +526,12 @@ export default function MonthlyStatusPage() {
                                     {candidate.inProcessPosition.employer && (
                                       <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
                                     )}
+                                  </span>
+                                )}
+                                {candidate.uploadedBy && (
+                                  <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
+                                    <User className="h-3 w-3" />
+                                    הועלה ע"י: {candidate.uploadedBy.name}
                                   </span>
                                 )}
                               </div>

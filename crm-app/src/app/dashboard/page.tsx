@@ -261,8 +261,8 @@ export default async function CiviDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-100" dir="rtl">
-      {/* Top Header Bar - Like CIVI */}
-      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white shadow-lg">
+      {/* Top Header Bar - Hidden on mobile (already have TopNavbar) */}
+      <div className="hidden lg:block bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white shadow-lg">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -314,16 +314,16 @@ export default async function CiviDashboardPage() {
 
       {/* Page Title */}
       <div className="bg-white border-b">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <h1 className="text-xl font-semibold text-slate-700">דף הבית - {session.user?.name || 'משתמש'}</h1>
+        <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3 md:py-4">
+          <h1 className="text-lg md:text-xl font-semibold text-slate-700">דף הבית - {session.user?.name || 'משתמש'}</h1>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
         
         {/* Candidate Status Overview - 3 Categories */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {/* In Process - בתהליך */}
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
@@ -407,7 +407,7 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* Top Stats Row - 5 Cards */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {/* Card 1 - Started Work This Month */}
           <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#00A8A8] transition-all cursor-pointer">
             <div className="absolute top-3 left-3 text-slate-400">
@@ -465,7 +465,7 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* Middle Row - 3 Main Sections */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
           {/* Left - Candidates by Stage */}
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
@@ -622,7 +622,7 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* Bottom Row - 3 More Sections */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
           {/* Left - Open Standards/Employers */}
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
@@ -741,8 +741,8 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* Quick Stats Footer */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-6 text-white">
-          <div className="grid grid-cols-5 gap-4 text-center">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-4 md:p-6 text-white">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 text-center">
             <div>
               <div className="text-3xl font-bold text-[#00D4D4]">{stats.totalCandidates}</div>
               <div className="text-sm text-slate-300">סה"כ מועמדים</div>

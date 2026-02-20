@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     
     if (!file) {
       console.log('⚠️ Share Target: No file in request');
-      // Redirect to upload page without file
-      return NextResponse.redirect(new URL('/upload-cv', request.url));
+      // Redirect to app page
+      return NextResponse.redirect(new URL('/app?shared=true', request.url));
     }
     
     console.log('📄 Share Target: File received:', file.name, file.type, file.size);
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ Share Target: Upload failed:', errorText);
       // Redirect with error
       return NextResponse.redirect(
-        new URL(`/upload-cv?error=${encodeURIComponent('שגיאה בהעלאת הקובץ')}`, request.url)
+        new URL(`/app?error=${encodeURIComponent('שגיאה בהעלאת הקובץ')}`, request.url)
       );
     }
     
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Share Target: Upload successful:', result.candidate?.name);
     
     // Redirect with success
-    const successUrl = new URL('/upload-cv', request.url);
+    const successUrl = new URL('/app', request.url);
     successUrl.searchParams.set('success', 'true');
     if (result.candidate?.name) {
       successUrl.searchParams.set('name', result.candidate.name);
@@ -54,12 +54,12 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ Share Target Error:', error);
     return NextResponse.redirect(
-      new URL(`/upload-cv?error=${encodeURIComponent(error.message || 'שגיאה לא צפויה')}`, request.url)
+      new URL(`/app?error=${encodeURIComponent(error.message || 'שגיאה לא צפויה')}`, request.url)
     );
   }
 }
 
 // Handle GET requests (direct navigation)
 export async function GET(request: NextRequest) {
-  return NextResponse.redirect(new URL('/upload-cv', request.url));
+  return NextResponse.redirect(new URL('/app', request.url));
 }

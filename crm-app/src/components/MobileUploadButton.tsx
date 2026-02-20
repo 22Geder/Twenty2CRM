@@ -32,8 +32,8 @@ export default function MobileUploadButton() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Don't show on upload page or install page
-  if (pathname === '/upload-cv' || pathname === '/install') {
+  // Don't show on app pages
+  if (pathname === '/app' || pathname === '/upload-cv' || pathname === '/install') {
     return null;
   }
 
@@ -56,7 +56,7 @@ export default function MobileUploadButton() {
       
       {/* Floating Action Button */}
       <Link
-        href="/upload-cv"
+        href="/app"
         className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-[#00A8A8] to-[#008888] rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-200"
         aria-label="העלאת קורות חיים"
         onClick={() => setShowTooltip(false)}

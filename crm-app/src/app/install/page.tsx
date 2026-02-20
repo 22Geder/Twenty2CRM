@@ -79,7 +79,7 @@ export default function MobileInstallPage() {
             <div className="success-icon">✅</div>
             <h2>האפליקציה מותקנת!</h2>
             <p>תהנו מהגישה המהירה לשליחת קורות חיים</p>
-            <a href="/upload-cv" className="start-btn">
+            <a href="/app" className="start-btn">
               <span>🚀</span>
               התחל להשתמש
             </a>
@@ -146,7 +146,7 @@ export default function MobileInstallPage() {
             {!isIOS && !isAndroid && (
               <div className="desktop-message">
                 <p>📱 לחוויה הטובה ביותר, פתחו בטלפון</p>
-                <a href="/upload-cv" className="upload-link">
+                <a href="/app" className="upload-link">
                   או הכנסו לדף העלאת קורות חיים ←
                 </a>
               </div>
@@ -200,7 +200,7 @@ export default function MobileInstallPage() {
       {/* Quick Access Link */}
       {!isStandalone && (
         <div className="quick-access">
-          <a href="/upload-cv">
+          <a href="/app">
             <span>📄</span>
             המשך לשליחת קורות חיים בינתיים
           </a>

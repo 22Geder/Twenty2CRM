@@ -1,8 +1,8 @@
 {
-  "name": "Twenty2Jobs - שליחת קו\"ח",
+  "name": "Twenty2Jobs",
   "short_name": "Twenty2",
-  "description": "שלח קורות חיים מוואטסאפ, קבצים או מכל מקום - ישירות למערכת הגיוס",
-  "start_url": "/upload-cv",
+  "description": "אפליקציה להעלאת קורות חיים - שתף מוואטסאפ ישירות למערכת",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -94,7 +94,7 @@
   },
   "file_handlers": [
     {
-      "action": "/upload-cv",
+      "action": "/app",
       "accept": {
         "application/pdf": [".pdf"],
         "application/msword": [".doc"],

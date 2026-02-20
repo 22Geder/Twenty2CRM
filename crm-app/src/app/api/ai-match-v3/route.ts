@@ -185,10 +185,12 @@ export async function POST(request: Request) {
       relevantMatches.push(...farWithCarMatches.slice(0, remaining))
     }
     
-    // אם עדיין יש מקום - הוסף משרות רחוקות בלי רכב רק אם ציון גבוה (50+)
+    // אם עדיין יש מקום - הוסף משרות רחוקות בלי רכב
+    // 🔧 תיקון: הורדת הסף מ-50 ל-25 כי ללא התאמת מיקום (65%) מקסימום הציון הוא 35%
+    // זה מאפשר למועמדי מכירות להתאים למשרות מכירות גם בערים שונות
     if (relevantMatches.length < MAX_RESULTS) {
       const remaining = MAX_RESULTS - relevantMatches.length
-      const highScoreFar = farWithoutCarMatches.filter(m => m.score >= 50)
+      const highScoreFar = farWithoutCarMatches.filter(m => m.score >= 25)
       relevantMatches.push(...highScoreFar.slice(0, remaining))
     }
     

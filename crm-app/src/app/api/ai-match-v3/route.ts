@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "מועמד לא נמצא" }, { status: 404 })
     }
 
-    // 🚀 שליפת משרות מהירה - רק שדות הכרחיים!
+    // 🚀 שליפת משרות מהירה - כולל כל השדות לוואטסאפ!
     const positions = await prisma.position.findMany({
       where: { active: true },
       select: {
@@ -52,6 +52,9 @@ export async function POST(request: Request) {
         workHours: true,       // 🆕 שעות עבודה
         benefits: true,        // 🆕 תנאים נלווים
         transportation: true,  // 🆕 אופן הגעה
+        keywords: true,        // 🆕 מילות מפתח
+        openings: true,        // 🆕 מספר משרות פתוחות
+        contactName: true,     // 🆕 שם איש קשר
         employer: { select: { id: true, name: true } },
         tags: { select: { id: true, name: true } }
       }
@@ -306,6 +309,9 @@ JSON בלבד:`
       workHours: position.workHours || '',       // 🆕
       benefits: position.benefits || '',         // 🆕
       transportation: position.transportation || '', // 🆕
+      keywords: position.keywords || '',         // 🆕 מילות מפתח
+      openings: position.openings || 1,          // 🆕 מספר משרות
+      contactName: position.contactName || '',   // 🆕 שם איש קשר
       score: finalScore,
       locationMatch,
       strengths: analysis.strengths || [],
@@ -463,6 +469,9 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     workHours: position.workHours || '',       // 🆕
     benefits: position.benefits || '',         // 🆕
     transportation: position.transportation || '', // 🆕
+    keywords: position.keywords || '',         // 🆕 מילות מפתח
+    openings: position.openings || 1,          // 🆕 מספר משרות
+    contactName: position.contactName || '',   // 🆕 שם איש קשר
     score,
     locationMatch,
     strengths: strengths.slice(0, 5),

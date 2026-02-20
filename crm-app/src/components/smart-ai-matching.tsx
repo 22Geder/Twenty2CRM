@@ -71,6 +71,9 @@ interface MatchResult {
   workHours?: string      // 🆕 שעות עבודה
   benefits?: string       // 🆕 תנאים נלווים
   transportation?: string // 🆕 אופן הגעה
+  keywords?: string       // 🆕 מילות מפתח
+  openings?: number       // 🆕 מספר משרות פתוחות
+  contactName?: string    // 🆕 שם איש קשר
   score: number
   locationMatch?: boolean
   strengths: string[]
@@ -132,25 +135,25 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
     if (match.salaryRange) {
       lines.push(`💰 שכר: ${match.salaryRange}`)
     }
+    if (match.openings && match.openings > 1) {
+      lines.push(`👥 משרות פתוחות: ${match.openings}`)
+    }
+    if (match.contactName) {
+      lines.push(`👤 איש קשר: ${match.contactName}`)
+    }
     lines.push('')
     
-    // תיאור המשרה
+    // תיאור המשרה - מלא!
     if (match.description) {
       lines.push(`📋 *תיאור התפקיד:*`)
-      const desc = match.description.length > 400 
-        ? match.description.substring(0, 400) + '...' 
-        : match.description
-      lines.push(desc)
+      lines.push(match.description)
       lines.push('')
     }
     
-    // דרישות המשרה
+    // דרישות המשרה - מלא!
     if (match.requirements) {
       lines.push(`✅ *דרישות התפקיד:*`)
-      const req = match.requirements.length > 400 
-        ? match.requirements.substring(0, 400) + '...' 
-        : match.requirements
-      lines.push(req)
+      lines.push(match.requirements)
       lines.push('')
     }
     
@@ -165,6 +168,22 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
         lines.push(`🚗 הגעה: ${match.transportation}`)
       }
       lines.push('')
+    }
+    
+    // מילות מפתח (אם יש)
+    if (match.keywords) {
+      try {
+        const keywordsArr = JSON.parse(match.keywords)
+        if (Array.isArray(keywordsArr) && keywordsArr.length > 0) {
+          lines.push(`🔑 *מילות מפתח:* ${keywordsArr.slice(0, 10).join(' | ')}`)
+          lines.push('')
+        }
+      } catch (e) {
+        if (match.keywords.length > 0) {
+          lines.push(`🔑 *מילות מפתח:* ${match.keywords}`)
+          lines.push('')
+        }
+      }
     }
     
     lines.push(`━━━━━━━━━━━━━━━━━━━━`)

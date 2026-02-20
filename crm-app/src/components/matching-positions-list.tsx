@@ -94,6 +94,9 @@ interface MatchingPosition {
   workHours: string | null      // 🆕 שעות עבודה
   benefits: string | null       // 🆕 תנאים נלווים
   transportation: string | null // 🆕 אופן הגעה
+  keywords: string | null       // 🆕 מילות מפתח
+  openings: number | null       // 🆕 מספר משרות פתוחות
+  contactName: string | null    // 🆕 שם איש קשר
   active: boolean
   createdAt: string
   employer: {
@@ -213,27 +216,25 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     if (position.salaryRange) {
       lines.push(`💰 שכר: ${position.salaryRange}`)
     }
+    if (position.openings && position.openings > 1) {
+      lines.push(`👥 משרות פתוחות: ${position.openings}`)
+    }
+    if (position.contactName) {
+      lines.push(`👤 איש קשר: ${position.contactName}`)
+    }
     lines.push('')
     
-    // תיאור המשרה
+    // תיאור המשרה - מלא!
     if (position.description) {
       lines.push(`📋 *תיאור התפקיד:*`)
-      // מגביל ל-400 תווים לתיאור מלא יותר
-      const desc = position.description.length > 400 
-        ? position.description.substring(0, 400) + '...' 
-        : position.description
-      lines.push(desc)
+      lines.push(position.description)
       lines.push('')
     }
     
-    // דרישות המשרה
+    // דרישות המשרה - מלא!
     if (position.requirements) {
       lines.push(`✅ *דרישות התפקיד:*`)
-      // מגביל ל-400 תווים
-      const req = position.requirements.length > 400 
-        ? position.requirements.substring(0, 400) + '...' 
-        : position.requirements
-      lines.push(req)
+      lines.push(position.requirements)
       lines.push('')
     }
     
@@ -250,9 +251,26 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       lines.push('')
     }
     
+    // מילות מפתח (אם יש)
+    if (position.keywords) {
+      try {
+        const keywordsArr = JSON.parse(position.keywords)
+        if (Array.isArray(keywordsArr) && keywordsArr.length > 0) {
+          lines.push(`🔑 *מילות מפתח:* ${keywordsArr.slice(0, 10).join(' | ')}`)
+          lines.push('')
+        }
+      } catch (e) {
+        // אם זה לא JSON, לתפוס כטקסט
+        if (position.keywords.length > 0) {
+          lines.push(`🔑 *מילות מפתח:* ${position.keywords}`)
+          lines.push('')
+        }
+      }
+    }
+    
     // תגיות רלוונטיות
     if (position.matchingTags && position.matchingTags.length > 0) {
-      const tagNames = position.matchingTags.slice(0, 5).map(t => t.name).join(' | ')
+      const tagNames = position.matchingTags.slice(0, 8).map(t => t.name).join(' | ')
       lines.push(`🏷️ *מתאים ל:* ${tagNames}`)
       lines.push('')
     }

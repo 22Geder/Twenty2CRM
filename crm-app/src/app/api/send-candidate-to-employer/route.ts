@@ -465,6 +465,9 @@ export async function POST(request: NextRequest) {
     // בניית המייל - עם נושא מותאם או אוטומטי
     const emailSubject = customSubject || `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
     
+    // 📧 שם לפניה במייל - איש קשר/מעסיק
+    const nameToAddress = emailsToSend[0]?.name || position.employer?.name || 'המעסיק הנכבד'
+    
     const emailHTML = `
       <!DOCTYPE html>
       <html dir="rtl" lang="he">

@@ -486,6 +486,9 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   } else if (score >= 50) {
     recommendation = '✅ התאמה טובה - כדאי לבדוק'
     shouldProceed = true
+  } else if (isFieldSales) {
+    recommendation = '🚗 משרת שטח - מיקום גמיש'
+    shouldProceed = true
   } else if (locationMatch) {
     recommendation = '📍 המיקום מתאים - שווה לבדוק'
     shouldProceed = true
@@ -517,6 +520,7 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     contactName: position.contactName || '',   // 🆕 שם איש קשר
     score,
     locationMatch,
+    isFieldSales,  // 🆕 האם משרת שטח
     strengths: strengths.slice(0, 5),
     weaknesses: weaknesses.slice(0, 3),
     recommendation,

@@ -1,19 +1,22 @@
 // 🔄 Service Worker - Twenty2 CRM PWA
 // =====================================
 
-const CACHE_NAME = 'twenty2-crm-v1'
+const CACHE_NAME = 'twenty2-crm-v3'
 const STATIC_ASSETS = [
   '/',
+  '/upload-cv',
+  '/install',
   '/dashboard',
   '/dashboard/candidates',
   '/dashboard/positions',
   '/dashboard/employers',
   '/manifest.json',
+  '/logo.jpeg',
 ]
 
 // התקנה - שמירת קבצים סטטיים בקאש
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Installing...')
+  console.log('🔧 Service Worker: Installing v3...')
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('📦 Service Worker: Caching static assets')
@@ -25,7 +28,7 @@ self.addEventListener('install', (event) => {
 
 // הפעלה - ניקוי קאשים ישנים
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker: Activated')
+  console.log('✅ Service Worker: Activated v3')
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -41,12 +44,19 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// בקשות - Network First עם fallback לקאש
+// 📤 טיפול בשיתוף קבצים מאפליקציות אחרות (WhatsApp וכו')
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
   
-  // דלג על בקשות API - תמיד נטוורק
+  // 🔗 טיפול בשיתוף קבצים - Share Target
+  if (url.pathname === '/api/share-target' && request.method === 'POST') {
+    console.log('📥 Share Target: Handling shared file...')
+    event.respondWith(handleShareTarget(event))
+    return
+  }
+  
+  // דלג על בקשות API אחרות - תמיד נטוורק
   if (url.pathname.startsWith('/api/')) {
     return
   }
@@ -76,12 +86,70 @@ self.addEventListener('fetch', (event) => {
             console.log('📦 Service Worker: Serving from cache:', request.url)
             return response
           }
-          // דף offline כ-fallback
-          return caches.match('/offline.html')
+          // החזר דף offline אם קיים
+          if (request.destination === 'document') {
+            return caches.match('/upload-cv')
+          }
+          return new Response('Offline', { status: 503 })
         })
       })
   )
 })
+
+// 📤 פונקציית טיפול בשיתוף קבצים
+async function handleShareTarget(event) {
+  try {
+    const formData = await event.request.formData()
+    const file = formData.get('file')
+    
+    if (!file) {
+      console.log('⚠️ Share Target: No file in request')
+      return Response.redirect('/upload-cv', 303)
+    }
+    
+    console.log('📄 Share Target SW: File received:', file.name)
+    
+    // העבר לAPI
+    const uploadFormData = new FormData()
+    uploadFormData.append('file', file)
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: uploadFormData,
+    })
+    
+    if (!response.ok) {
+      console.error('❌ Share Target: Upload failed')
+      return Response.redirect('/upload-cv?error=' + encodeURIComponent('שגיאה בהעלאה'), 303)
+    }
+    
+    const result = await response.json()
+    console.log('✅ Share Target: Success -', result.candidate?.name)
+    
+    // שלח התראה על הצלחה
+    if (self.registration.showNotification) {
+      self.registration.showNotification('קו"ח הועלה בהצלחה! 🎉', {
+        body: result.candidate?.name ? `${result.candidate.name} נוסף למערכת` : 'הקובץ נשמר במערכת',
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-72x72.png',
+        tag: 'upload-success',
+        data: { url: '/dashboard/candidates' }
+      })
+    }
+    
+    // Redirect לדף הצלחה
+    const redirectUrl = new URL('/upload-cv', self.location.origin)
+    redirectUrl.searchParams.set('success', 'true')
+    if (result.candidate?.name) redirectUrl.searchParams.set('name', result.candidate.name)
+    if (result.candidate?.id) redirectUrl.searchParams.set('candidateId', result.candidate.id)
+    
+    return Response.redirect(redirectUrl.toString(), 303)
+    
+  } catch (error) {
+    console.error('❌ Share Target Error:', error)
+    return Response.redirect('/upload-cv?error=' + encodeURIComponent('שגיאה לא צפויה'), 303)
+  }
+}
 
 // Push Notifications
 self.addEventListener('push', (event) => {

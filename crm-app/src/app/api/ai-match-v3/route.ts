@@ -171,9 +171,9 @@ export async function POST(request: Request) {
     farWithCarMatches.sort((a, b) => b.score - a.score)
     farWithoutCarMatches.sort((a, b) => b.score - a.score)
 
-    // 🎯 בניית רשימת 15 המשרות הטובות ביותר
+    // 🎯 בניית רשימת 20 המשרות הטובות ביותר
     // עדיפות: 1) קרובות, 2) רחוקות עם רכב, 3) רחוקות בלי רכב (רק אם ציון גבוה)
-    const MAX_RESULTS = 15
+    const MAX_RESULTS = 20
     let relevantMatches: typeof allMatches = []
     
     // קודם - כל המשרות הקרובות (עד MAX_RESULTS)

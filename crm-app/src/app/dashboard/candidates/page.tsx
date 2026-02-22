@@ -27,7 +27,15 @@ import {
   Clock,
   Filter,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Target,
+  X,
+  Sparkles,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  Send,
+  MessageCircle
 } from 'lucide-react'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 
@@ -83,6 +91,12 @@ export default function CandidatesPageModern() {
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  
+  // 🆕 מודל התאמות טובות ביותר
+  const [showBestMatches, setShowBestMatches] = useState(false)
+  const [bestMatchesData, setBestMatchesData] = useState<any>(null)
+  const [loadingBestMatches, setLoadingBestMatches] = useState(false)
+  const [expandedPositions, setExpandedPositions] = useState<Set<string>>(new Set())
 
   // 🆕 בחירת/ביטול בחירת מועמד
   const toggleSelect = (id: string) => {
@@ -300,6 +314,43 @@ export default function CandidatesPageModern() {
     }
   }
 
+  // 🆕 טעינת התאמות טובות ביותר
+  const loadBestMatches = async () => {
+    setLoadingBestMatches(true)
+    try {
+      const response = await fetch('/api/best-matches')
+      if (response.ok) {
+        const data = await response.json()
+        setBestMatchesData(data)
+        setShowBestMatches(true)
+        // פתח את כל המשרות כברירת מחדל
+        if (data.positions) {
+          setExpandedPositions(new Set(data.positions.map((p: any) => p.position.id)))
+        }
+      } else {
+        alert('❌ שגיאה בטעינת ההתאמות')
+      }
+    } catch (error) {
+      console.error('Error loading best matches:', error)
+      alert('❌ שגיאה בטעינת ההתאמות')
+    } finally {
+      setLoadingBestMatches(false)
+    }
+  }
+
+  // 🆕 פתיחה/סגירה של משרה
+  const togglePositionExpand = (positionId: string) => {
+    setExpandedPositions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(positionId)) {
+        newSet.delete(positionId)
+      } else {
+        newSet.add(positionId)
+      }
+      return newSet
+    })
+  }
+
   const renderStars = (rating: number | null) => {
     if (!rating) return null
     return (
@@ -368,12 +419,27 @@ export default function CandidatesPageModern() {
               </div>
             </div>
           </div>
-          <Link href="/dashboard/candidates/new">
-            <Button className="bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] hover:from-[#008A8A] hover:to-[#00B4B4] shadow-lg shadow-[#00A8A8]/30 text-white border-0">
-              <Plus className="h-4 w-4 ml-2" />
-              הוסף מועמד חדש
+          <div className="flex gap-3">
+            {/* 🆕 כפתור התאמות טובות ביותר */}
+            <Button 
+              onClick={loadBestMatches}
+              disabled={loadingBestMatches}
+              className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] hover:from-[#E65100] hover:to-[#D84315] shadow-lg shadow-[#FF8C00]/30 text-white border-0"
+            >
+              {loadingBestMatches ? (
+                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+              ) : (
+                <Target className="h-4 w-4 ml-2" />
+              )}
+              התאמות טובות ביותר
             </Button>
-          </Link>
+            <Link href="/dashboard/candidates/new">
+              <Button className="bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] hover:from-[#008A8A] hover:to-[#00B4B4] shadow-lg shadow-[#00A8A8]/30 text-white border-0">
+                <Plus className="h-4 w-4 ml-2" />
+                הוסף מועמד חדש
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

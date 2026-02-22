@@ -31,11 +31,10 @@ export async function POST(request: NextRequest) {
     await prisma.employer.update({
       where: { id: unionEmployer.id },
       data: {
-        contactEmail: 'Ranin.Hasnin@uml.co.il',
-        contactEmails: 'Ranin.Hasnin@uml.co.il,sima.p@uml.co.il'
+        email: 'Ranin.Hasnin@uml.co.il'
       }
     });
-    results.push('✅ עודכן מייל UNION: Ranin.Hasnin@uml.co.il + sima.p@uml.co.il');
+    results.push('✅ עודכן מייל UNION: Ranin.Hasnin@uml.co.il');
 
     // רשימת המשרות להוסיף
     const positions = [

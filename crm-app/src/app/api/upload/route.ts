@@ -282,10 +282,27 @@ function analyzeCVText(text: string): any {
   const emailMatch = text.match(emailRegex);
   const email = emailMatch ? emailMatch[0] : '';
 
-  // Extract phone (Israeli format)
-  const phoneRegex = /0(?:5[0-9]|[2-4]|[7-9])[0-9]{7,8}/g;
-  const phoneMatch = text.match(phoneRegex);
-  const phone = phoneMatch ? phoneMatch[0] : '';
+  // Extract phone (Israeli format) - 🆕 תומך בכל הפורמטים
+  // תומך: 05X-XXX-XXXX, 05XXXXXXXXX, +972-XX-XXX-XXXX, 972XXXXXXXXX
+  const phoneRegex = /(?:\+?972[-\s]?|0)(?:5[0-9]|[2-4]|[7-9])[-\s]?[0-9]{3}[-\s]?[0-9]{4}/g;
+  const phoneMatches = text.match(phoneRegex);
+  let phone = '';
+  
+  if (phoneMatches && phoneMatches.length > 0) {
+    // נקה את המספר ונרמל אותו לפורמט ישראלי תקני
+    const rawPhone = phoneMatches[0];
+    // הסר כל מה שאינו ספרה
+    const digits = rawPhone.replace(/\D/g, '');
+    
+    // אם מתחיל ב-972 - המר ל-0
+    if (digits.startsWith('972')) {
+      phone = '0' + digits.slice(3);
+    } else if (digits.startsWith('0')) {
+      phone = digits;
+    } else {
+      phone = '0' + digits;
+    }
+  }
 
   // Extract name (usually first line or after certain keywords)
   let name = '';

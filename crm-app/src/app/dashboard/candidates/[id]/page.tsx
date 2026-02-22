@@ -253,11 +253,28 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
     }
   }
 
-  const normalizePhoneForWhatsApp = (phone: string) => {
-    const digits = phone.replace(/\D/g, "")
-    if (digits.startsWith("972")) return digits
-    if (digits.startsWith("0")) return `972${digits.slice(1)}`
-    return digits
+  // 🆕 ניקוי מספר טלפון לוואטסאפ - תומך בכל הפורמטים
+  const normalizePhoneForWhatsApp = (phone: string): string => {
+    if (!phone) return '';
+    
+    // הסרת תווים מיוחדים (unicode LTR/RTL markers) וכל מה שאינו ספרה
+    let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '');
+    
+    // הסרת כל התווים שאינם ספרות
+    cleaned = cleaned.replace(/\D/g, '');
+    
+    // אם מתחיל ב-972, זה כבר בפורמט הנכון
+    if (cleaned.startsWith('972')) {
+      return cleaned;
+    }
+    
+    // אם מתחיל ב-0, החלף ל-972
+    if (cleaned.startsWith('0')) {
+      return '972' + cleaned.slice(1);
+    }
+    
+    // אחרת - הוסף 972 בהתחלה
+    return '972' + cleaned;
   }
 
   const getDocByType = (type: string) => {

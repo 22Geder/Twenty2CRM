@@ -101,9 +101,33 @@ function safeEncodeURIComponent(str: string): string {
   }
 }
 
+// 🆕 ניקוי מספר טלפון לוואטסאפ - תומך בכל הפורמטים
+function normalizePhoneForWhatsApp(phone: string): string {
+  if (!phone) return '';
+  
+  // הסרת תווים מיוחדים (unicode LTR/RTL markers) וכל מה שאינו ספרה
+  let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '');
+  
+  // הסרת כל התווים שאינם ספרות
+  cleaned = cleaned.replace(/\D/g, '');
+  
+  // אם מתחיל ב-972, זה כבר בפורמט הנכון
+  if (cleaned.startsWith('972')) {
+    return cleaned;
+  }
+  
+  // אם מתחיל ב-0, החלף ל-972
+  if (cleaned.startsWith('0')) {
+    return '972' + cleaned.slice(1);
+  }
+  
+  // אחרת - הוסף 972 בהתחלה
+  return '972' + cleaned;
+}
+
 function getWhatsAppLink(phone: string, message?: string): string {
-  const cleanPhone = phone.replace(/[-\s]/g, '');
-  const israelPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
+  const israelPhone = normalizePhoneForWhatsApp(phone);
+  if (!israelPhone) return '#';
   const encodedMessage = message ? `?text=${safeEncodeURIComponent(message)}` : '';
   return `https://wa.me/${israelPhone}${encodedMessage}`;
 }

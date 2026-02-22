@@ -233,12 +233,28 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
     return 'text-gray-600 bg-gray-50'
   }
 
-  // 📱 WhatsApp Helper
+  // 📱 WhatsApp Helper - 🆕 תומך בכל הפורמטים
   const normalizePhoneForWhatsApp = (phone: string): string => {
-    const cleaned = phone.replace(/[^0-9]/g, '')
-    if (cleaned.startsWith('972')) return cleaned
-    if (cleaned.startsWith('0')) return '972' + cleaned.slice(1)
-    return '972' + cleaned
+    if (!phone) return '';
+    
+    // הסרת תווים מיוחדים (unicode LTR/RTL markers) וכל מה שאינו ספרה
+    let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '');
+    
+    // הסרת כל התווים שאינם ספרות
+    cleaned = cleaned.replace(/\D/g, '');
+    
+    // אם מתחיל ב-972, זה כבר בפורמט הנכון
+    if (cleaned.startsWith('972')) {
+      return cleaned;
+    }
+    
+    // אם מתחיל ב-0, החלף ל-972
+    if (cleaned.startsWith('0')) {
+      return '972' + cleaned.slice(1);
+    }
+    
+    // אחרת - הוסף 972 בהתחלה
+    return '972' + cleaned;
   }
 
   const getWhatsAppLink = (phone: string, candidateName: string): string => {

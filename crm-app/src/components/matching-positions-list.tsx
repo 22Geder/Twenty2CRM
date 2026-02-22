@@ -172,17 +172,28 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   const [saveEmailToPosition, setSaveEmailToPosition] = useState(true)
   const [showEmailSelector, setShowEmailSelector] = useState(false)
 
-  // 📱 WhatsApp Helpers
+  // 📱 WhatsApp Helpers - 🆕 תומך בכל הפורמטים
   const normalizePhoneForWhatsApp = (phone: string): string => {
-    // הסרת תווים לא נחוצים
-    let cleaned = phone.replace(/[\s\-\(\)\.]/g, '')
-    // הסרת + מההתחלה אם יש
-    if (cleaned.startsWith('+')) cleaned = cleaned.substring(1)
+    if (!phone) return '';
+    
+    // הסרת תווים מיוחדים (unicode LTR/RTL markers) וכל מה שאינו ספרה
+    let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '');
+    
+    // הסרת כל התווים שאינם ספרות
+    cleaned = cleaned.replace(/\D/g, '');
+    
+    // אם מתחיל ב-972, זה כבר בפורמט הנכון
+    if (cleaned.startsWith('972')) {
+      return cleaned;
+    }
+    
     // אם מתחיל ב-0, החלף ל-972
-    if (cleaned.startsWith('0')) cleaned = '972' + cleaned.substring(1)
-    // אם לא מתחיל ב-972, הוסף
-    if (!cleaned.startsWith('972')) cleaned = '972' + cleaned
-    return cleaned
+    if (cleaned.startsWith('0')) {
+      return '972' + cleaned.slice(1);
+    }
+    
+    // אחרת - הוסף 972 בהתחלה
+    return '972' + cleaned;
   }
 
   // יצירת הודעת וואטסאפ מותאמת אישית למשרה - מלאה ומפורטת

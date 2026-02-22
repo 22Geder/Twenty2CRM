@@ -460,11 +460,23 @@ function extractConcernPoints(candidate: CandidateDetails): string[] {
 }
 
 // ========================================================================
-// יצירת לינק וואטסאפ
+// יצירת לינק וואטסאפ - 🆕 תומך בכל הפורמטים
 // ========================================================================
 export function generateWhatsAppLink(phone: string, message: string): string {
-  const cleanPhone = phone.replace(/[^\d]/g, '');
-  const israelPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
+  if (!phone) return '#';
+  
+  // הסרת תווים מיוחדים (unicode LTR/RTL markers) וכל מה שאינו ספרה
+  let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '');
+  cleaned = cleaned.replace(/\D/g, '');
+  
+  // אם מתחיל ב-972, זה כבר בפורמט הנכון
+  let israelPhone = cleaned;
+  if (cleaned.startsWith('0')) {
+    israelPhone = '972' + cleaned.slice(1);
+  } else if (!cleaned.startsWith('972')) {
+    israelPhone = '972' + cleaned;
+  }
+  
   const encodedMessage = encodeURIComponent(message);
   return `https://wa.me/${israelPhone}?text=${encodedMessage}`;
 }

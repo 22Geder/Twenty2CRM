@@ -134,6 +134,35 @@ export default function EmployerDetailPage({ params }: PageProps) {
     }
   }
 
+  const handleTogglePosition = async (e: React.MouseEvent, positionId: string, currentActive: boolean) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!employer) return
+    
+    try {
+      const response = await fetch(`/api/positions/${positionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !currentActive })
+      })
+      
+      if (response.ok) {
+        // Update local state
+        setEmployer({
+          ...employer,
+          positions: employer.positions.map(p => 
+            p.id === positionId ? { ...p, active: !currentActive } : p
+          )
+        })
+      } else {
+        alert("שגיאה בעדכון המשרה")
+      }
+    } catch (err) {
+      console.error("Error toggling position:", err)
+      alert("שגיאה בעדכון המשרה")
+    }
+  }
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       NEW: "bg-blue-100 text-blue-700 border-blue-300",
@@ -441,24 +470,30 @@ export default function EmployerDetailPage({ params }: PageProps) {
               ) : (
                 <div className="divide-y divide-slate-100">
                   {employer.positions.map((position) => (
-                    <Link 
+                    <div 
                       key={position.id} 
-                      href={`/dashboard/positions/${position.id}`}
-                      className="block p-4 hover:bg-slate-50 transition-colors"
+                      className="p-4 hover:bg-slate-50 transition-colors"
                     >
                       <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-slate-800">{position.title}</h3>
+                        <Link href={`/dashboard/positions/${position.id}`} className="flex-1">
+                          <h3 className="font-semibold text-slate-800 hover:text-[#FF8C00]">{position.title}</h3>
                           {position.location && (
                             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                               <MapPin className="h-3 w-3" />
                               {position.location}
                             </p>
                           )}
-                        </div>
-                        <Badge className={position.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                        </Link>
+                        <button
+                          onClick={(e) => handleTogglePosition(e, position.id, position.active)}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                            position.active 
+                              ? "bg-green-100 text-green-700 hover:bg-green-200" 
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
                           {position.active ? "פעילה" : "סגורה"}
-                        </Badge>
+                        </button>
                       </div>
                       <div className="flex items-center gap-3 mt-2">
                         <Badge variant="outline" className="text-xs">
@@ -468,7 +503,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                           {new Date(position.createdAt).toLocaleDateString('he-IL')}
                         </span>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               )}

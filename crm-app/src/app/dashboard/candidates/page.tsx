@@ -805,6 +805,203 @@ export default function CandidatesPageModern() {
           ))}
         </div>
       )}
+
+      {/* 🆕 מודל התאמות טובות ביותר */}
+      {showBestMatches && bestMatchesData && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Target className="h-6 w-6" />
+                  🎯 התאמות טובות ביותר
+                </h2>
+                <p className="text-white/80 mt-1">
+                  {bestMatchesData.positionsWithMatches} משרות עם התאמות | 
+                  {bestMatchesData.totalCandidatesNotInProcess} מועמדים פנויים |
+                  ⚡ {bestMatchesData.processingTime}ms
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowBestMatches(false)}
+                className="text-white hover:bg-white/20 rounded-full"
+              >
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {bestMatchesData.positions.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <Target className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                  <p className="text-lg">לא נמצאו התאמות</p>
+                  <p className="text-sm">אין מועמדים פנויים או משרות פעילות</p>
+                </div>
+              ) : (
+                bestMatchesData.positions.map((item: any) => (
+                  <Card key={item.position.id} className="border-0 shadow-lg overflow-hidden">
+                    {/* Position Header */}
+                    <div 
+                      className="bg-gradient-to-r from-slate-800 to-slate-900 p-4 cursor-pointer hover:from-slate-700 hover:to-slate-800 transition-colors"
+                      onClick={() => togglePositionExpand(item.position.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-xl flex items-center justify-center">
+                            <Briefcase className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-white">{item.position.title}</h3>
+                            <div className="flex items-center gap-3 text-slate-300 text-sm">
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-4 w-4" />
+                                {item.position.employer.name}
+                              </span>
+                              {item.position.location && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-4 w-4" />
+                                  {item.position.location}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-[#FF8C00]">{item.candidates.length}</div>
+                            <div className="text-xs text-slate-400">מועמדים מתאימים</div>
+                          </div>
+                          {expandedPositions.has(item.position.id) ? (
+                            <ChevronUp className="h-6 w-6 text-slate-400" />
+                          ) : (
+                            <ChevronDown className="h-6 w-6 text-slate-400" />
+                          )}
+                        </div>
+                      </div>
+                      {/* Position Tags */}
+                      {item.position.tags && item.position.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-3">
+                          {item.position.tags.slice(0, 6).map((tag: any) => (
+                            <Badge key={tag.id} variant="outline" className="bg-white/10 text-white border-white/20 text-xs">
+                              {tag.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Candidates List */}
+                    {expandedPositions.has(item.position.id) && (
+                      <div className="p-4 bg-slate-50 space-y-2">
+                        {item.candidates.map((candidate: any, index: number) => (
+                          <div 
+                            key={candidate.id}
+                            className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                {/* Rank Badge */}
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
+                                  ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 
+                                    index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-500' :
+                                    index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                                    'bg-slate-400'}`}>
+                                  {index + 1}
+                                </div>
+                                
+                                {/* Candidate Info */}
+                                <div>
+                                  <Link 
+                                    href={`/dashboard/candidates/${candidate.id}`}
+                                    className="font-semibold text-slate-800 hover:text-[#00A8A8] transition-colors"
+                                  >
+                                    {candidate.name}
+                                  </Link>
+                                  <div className="flex items-center gap-3 text-sm text-slate-500">
+                                    {candidate.currentTitle && <span>{candidate.currentTitle}</span>}
+                                    {candidate.city && (
+                                      <span className={`flex items-center gap-1 ${candidate.locationMatch ? 'text-green-600 font-medium' : ''}`}>
+                                        <MapPin className="h-3 w-3" />
+                                        {candidate.city}
+                                        {candidate.locationMatch && <CheckCircle className="h-3 w-3" />}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                {/* Matching Tags */}
+                                {candidate.matchingTags && candidate.matchingTags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                    {candidate.matchingTags.slice(0, 3).map((tag: any) => (
+                                      <Badge key={tag.id} variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                        {tag.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Score */}
+                                <div className={`px-3 py-1 rounded-full text-sm font-bold
+                                  ${candidate.score >= 70 ? 'bg-green-100 text-green-700' :
+                                    candidate.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-slate-100 text-slate-600'}`}>
+                                  {candidate.score}%
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex gap-2">
+                                  {candidate.phone && (
+                                    <a
+                                      href={`https://wa.me/972${candidate.phone.replace(/^0/, '').replace(/[-\s]/g, '')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 hover:bg-green-100 rounded-lg transition-colors"
+                                      title="וואטסאפ"
+                                    >
+                                      <MessageCircle className="h-4 w-4 text-green-600" />
+                                    </a>
+                                  )}
+                                  <Link
+                                    href={`/dashboard/send-candidate?candidateId=${candidate.id}&positionId=${item.position.id}`}
+                                    className="p-2 hover:bg-[#00A8A8]/10 rounded-lg transition-colors"
+                                    title="שלח למעסיק"
+                                  >
+                                    <Send className="h-4 w-4 text-[#00A8A8]" />
+                                  </Link>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
+              <div className="text-sm text-slate-500">
+                <Sparkles className="h-4 w-4 inline ml-1 text-[#FF8C00]" />
+                מציג רק מועמדים שאינם בתהליך עבור אף משרה
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowBestMatches(false)}
+              >
+                סגור
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

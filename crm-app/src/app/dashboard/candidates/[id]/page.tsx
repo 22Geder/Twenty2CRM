@@ -27,7 +27,9 @@ import {
   XCircle,
   Building2,
   Star,
-  Target
+  Target,
+  ChevronDown,
+  Search
 } from "lucide-react"
 import Link from "next/link"
 import { MatchingPositionsList } from "@/components/matching-positions-list"
@@ -62,6 +64,8 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   const [matchingPositions, setMatchingPositions] = useState<any[]>([])
   const [loadingPositions, setLoadingPositions] = useState(false)
   const [inProcessPosition, setInProcessPosition] = useState<any>(null)
+  const [positionSearch, setPositionSearch] = useState('')  // 🆕 חיפוש במשרות
+  const [expandedEmployers, setExpandedEmployers] = useState<Set<string>>(new Set())  // 🆕 מעסיקים פתוחים
   
   const [formData, setFormData] = useState({
     name: "",
@@ -371,6 +375,8 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   const handleInProcessClick = async () => {
     setLoadingPositions(true)
     setShowPositionModal(true)
+    setPositionSearch('')  // 🆕 איפוס חיפוש
+    setExpandedEmployers(new Set())  // 🆕 איפוס הרחבות
     
     try {
       // 🆕 שליפת כל המשרות הפעילות (לא רק מתאימות!)
@@ -1476,7 +1482,7 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
         </ErrorBoundary>
       </div>
 
-      {/* 🆕 מודל בחירת משרה לתהליך - כל המשרות לפי מעסיק */}
+      {/* 🆕 מודל בחירת משרה לתהליך - לקוחות ואז משרות */}
       {showPositionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPositionModal(false)}>
           <div 
@@ -1486,18 +1492,31 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
             <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                בחר משרה לתהליך - כל המשרות הפעילות
+                בחר משרה לתהליך
               </h3>
               <Button variant="ghost" size="sm" onClick={() => setShowPositionModal(false)} className="text-white hover:bg-white/20">
                 <X className="h-4 w-4" />
               </Button>
             </div>
             
-            <div className="p-4 overflow-y-auto max-h-[65vh]">
+            {/* 🆕 שדה חיפוש */}
+            <div className="p-4 border-b bg-gray-50">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="חפש לקוח או משרה..."
+                  value={positionSearch}
+                  onChange={(e) => setPositionSearch(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+            </div>
+            
+            <div className="p-4 overflow-y-auto max-h-[55vh]">
               {loadingPositions ? (
                 <div className="flex justify-center items-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="mr-2 text-gray-600">טוען את כל המשרות...</span>
+                  <span className="mr-2 text-gray-600">טוען לקוחות ומשרות...</span>
                 </div>
               ) : matchingPositions.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
@@ -1505,14 +1524,21 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                   <p>לא נמצאו משרות פעילות</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600 mb-4 bg-blue-50 p-2 rounded">
-                    🎯 נמצאו {matchingPositions.length} משרות פעילות מ-{[...new Set(matchingPositions.map((p: any) => p.employer?.id))].length} מעסיקים. בחר את המשרה שהמועמד בתהליך אליה:
-                  </p>
-                  
-                  {/* קיבוץ לפי מעסיק */}
+                <div className="space-y-2">
+                  {/* קיבוץ לפי מעסיק - אקורדיון */}
                   {(() => {
-                    const grouped = matchingPositions.reduce((acc: any, pos: any) => {
+                    const searchLower = positionSearch.toLowerCase()
+                    
+                    // סינון לפי חיפוש
+                    const filteredPositions = positionSearch
+                      ? matchingPositions.filter(pos => 
+                          pos.title?.toLowerCase().includes(searchLower) ||
+                          pos.employer?.name?.toLowerCase().includes(searchLower) ||
+                          pos.location?.toLowerCase().includes(searchLower)
+                        )
+                      : matchingPositions
+                    
+                    const grouped = filteredPositions.reduce((acc: any, pos: any) => {
                       const empId = pos.employer?.id || 'unknown'
                       const empName = pos.employer?.name || 'ללא מעסיק'
                       if (!acc[empId]) {
@@ -1522,45 +1548,84 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                       return acc
                     }, {} as Record<string, { name: string; positions: any[] }>)
                     
-                    return Object.entries(grouped).map(([empId, { name, positions }]: [string, any]) => (
-                      <div key={empId} className="border rounded-lg overflow-hidden">
-                        <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-2 font-semibold flex items-center gap-2 sticky top-0">
-                          <Building2 className="h-4 w-4 text-blue-600" />
-                          {name}
-                          <Badge variant="secondary" className="mr-auto">{positions.length} משרות</Badge>
+                    const entries = Object.entries(grouped).sort((a: any, b: any) => 
+                      a[1].name.localeCompare(b[1].name, 'he')
+                    )
+                    
+                    if (entries.length === 0) {
+                      return (
+                        <div className="text-center py-4 text-gray-500">
+                          <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                          <p>לא נמצאו תוצאות לחיפוש "{positionSearch}"</p>
                         </div>
-                        <div className="divide-y">
-                          {positions.map((position: any) => (
-                            <div
-                              key={position.id}
-                              className="p-3 hover:bg-blue-50 cursor-pointer transition-all"
-                              onClick={() => selectPositionForProcess(position.id)}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <h4 className="font-medium text-gray-900">{position.title}</h4>
-                                  {position.location && (
-                                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                                      <MapPin className="h-3 w-3" />
-                                      {position.location}
-                                    </p>
-                                  )}
+                      )
+                    }
+                    
+                    return entries.map(([empId, { name, positions }]: [string, any]) => {
+                      const isExpanded = expandedEmployers.has(empId) || positionSearch.length > 0
+                      
+                      return (
+                        <div key={empId} className="border rounded-lg overflow-hidden">
+                          {/* כותרת לקוח - לחיצה פותחת/סוגרת */}
+                          <div 
+                            className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-3 font-semibold flex items-center gap-2 cursor-pointer hover:from-blue-50 hover:to-blue-100 transition-colors"
+                            onClick={() => {
+                              setExpandedEmployers(prev => {
+                                const newSet = new Set(prev)
+                                if (newSet.has(empId)) {
+                                  newSet.delete(empId)
+                                } else {
+                                  newSet.add(empId)
+                                }
+                                return newSet
+                              })
+                            }}
+                          >
+                            <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
+                            <Building2 className="h-4 w-4 text-blue-600" />
+                            <span className="flex-1">{name}</span>
+                            <Badge variant="secondary">{positions.length} משרות</Badge>
+                          </div>
+                          
+                          {/* משרות - מוצגות רק כשהלקוח פתוח */}
+                          {isExpanded && (
+                            <div className="divide-y bg-white">
+                              {positions.map((position: any) => (
+                                <div
+                                  key={position.id}
+                                  className="p-3 hover:bg-blue-50 cursor-pointer transition-all"
+                                  onClick={() => selectPositionForProcess(position.id)}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 pr-4">
+                                      <h4 className="font-medium text-gray-900">{position.title}</h4>
+                                      {position.location && (
+                                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                                          <MapPin className="h-3 w-3" />
+                                          {position.location}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button size="sm" variant="outline" className="bg-blue-500 text-white hover:bg-blue-600 border-none text-xs">
+                                      בחר
+                                    </Button>
+                                  </div>
                                 </div>
-                                <Button size="sm" variant="outline" className="bg-blue-500 text-white hover:bg-blue-600 border-none text-xs">
-                                  בחר
-                                </Button>
-                              </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   })()}
                 </div>
               )}
             </div>
             
-            <div className="flex justify-end gap-2 p-4 border-t bg-gray-50">
+            <div className="flex justify-between items-center gap-2 p-4 border-t bg-gray-50">
+              <p className="text-sm text-gray-500">
+                {matchingPositions.length} משרות מ-{[...new Set(matchingPositions.map((p: any) => p.employer?.id))].length} לקוחות
+              </p>
               <Button variant="outline" onClick={() => setShowPositionModal(false)}>
                 ביטול
               </Button>

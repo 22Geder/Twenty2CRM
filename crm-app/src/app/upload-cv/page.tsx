@@ -160,25 +160,37 @@ export default function MobileUploadPage() {
 
   // בדיקה וטיפול בקובץ
   const handleFile = (file: File) => {
-    // בדיקת סוג קובץ
+    // בדיקת סוג קובץ - כולל תמונות!
     const allowedTypes = [
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
+      'text/plain',
+      // 🆕 תמיכה בתמונות (קורות חיים סרוקים)
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/heic',
+      'image/heif',
     ]
     
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt']
+    const allowedExtensions = [
+      '.pdf', '.doc', '.docx', '.txt',
+      // 🆕 סיומות תמונה
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'
+    ]
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
     
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('קובץ לא נתמך. אנא העלו PDF, Word או TXT')
+      setError('קובץ לא נתמך. אנא העלו PDF, Word, תמונה או TXT')
       return
     }
     
-    // בדיקת גודל (מקסימום 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('הקובץ גדול מדי. מקסימום 10MB')
+    // בדיקת גודל (מקסימום 20MB לתמונות גדולות)
+    if (file.size > 20 * 1024 * 1024) {
+      setError('הקובץ גדול מדי. מקסימום 20MB')
       return
     }
     
@@ -323,7 +335,7 @@ export default function MobileUploadPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
                 onChange={handleFileSelect}
                 className="file-input"
               />
@@ -332,7 +344,8 @@ export default function MobileUploadPage() {
                 <div className="selected-file">
                   <div className="file-icon">
                     {selectedFile.name.endsWith('.pdf') ? '📕' : 
-                     selectedFile.name.endsWith('.doc') || selectedFile.name.endsWith('.docx') ? '📘' : '📄'}
+                     selectedFile.name.endsWith('.doc') || selectedFile.name.endsWith('.docx') ? '📘' :
+                     selectedFile.type?.startsWith('image/') || ['.jpg','.jpeg','.png','.gif','.webp','.heic'].some(ext => selectedFile.name.toLowerCase().endsWith(ext)) ? '🖼️' : '📄'}
                   </div>
                   <div className="file-info">
                     <span className="file-name">{selectedFile.name}</span>

@@ -598,16 +598,38 @@ export async function POST(request: NextRequest) {
     const mimeType = file.type;
 
     if (fileExtension === 'pdf') {
+      console.log('📄 Processing PDF:', file.name, 'Size:', buffer.length);
       text = await extractTextFromPDF(buffer);
+      console.log('📄 PDF extraction result length:', text?.length || 0);
+      
+      if (!text || text.length < 20) {
+        console.error('❌ PDF text extraction failed or returned too little text');
+        return NextResponse.json(
+          { error: 'לא הצלחנו לקרוא את קובץ ה-PDF. ייתכן שהקובץ מוגן או שהוא קובץ סרוק באיכות נמוכה. נסה להעלות קובץ PDF אחר או תמונה.' },
+          { status: 400 }
+        );
+      }
     } else if (fileExtension === 'docx' || fileExtension === 'doc') {
       text = await extractTextFromDOCX(buffer);
     } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(fileExtension || '')) {
       // 🆕 OCR for images using Gemini Vision
-      console.log('🖼️ Processing image with OCR:', file.name);
-      text = await extractTextFromImage(buffer, mimeType || 'image/jpeg');
-      if (!text) {
+      console.log('🖼️ Processing image with OCR:', file.name, 'MIME:', mimeType, 'Size:', buffer.length);
+      
+      // נסה לזהות MIME type נכון לתמונות מ-WhatsApp
+      let actualMimeType = mimeType || 'image/jpeg';
+      if (fileExtension === 'heic' || fileExtension === 'heif') {
+        actualMimeType = 'image/heic';
+      } else if (!actualMimeType.startsWith('image/')) {
+        actualMimeType = `image/${fileExtension}`;
+      }
+      
+      text = await extractTextFromImage(buffer, actualMimeType);
+      console.log('🖼️ OCR result length:', text?.length || 0);
+      
+      if (!text || text.length < 20) {
+        console.error('❌ OCR failed or returned too little text');
         return NextResponse.json(
-          { error: 'לא הצלחנו לקרוא את התמונה. נסה תמונה באיכות גבוהה יותר או קובץ PDF' },
+          { error: 'לא הצלחנו לקרוא את התמונה. נסה תמונה באיכות גבוהה יותר, וודא שהטקסט קריא, או העלה קובץ PDF' },
           { status: 400 }
         );
       }
@@ -708,6 +730,19 @@ export async function POST(request: NextRequest) {
         aiExtracted,
         fileName: file.name
       });
+    }
+
+    // 🆕 בדיקה - האם יש מספיק מידע ליצירת מועמד?
+    const hasMinimalData = dataQuality.hasName || dataQuality.hasPhone || dataQuality.hasEmail;
+    
+    if (!hasMinimalData && qualityScore < 25) {
+      console.error('❌ Not enough data extracted from CV');
+      return NextResponse.json({
+        error: 'לא הצלחנו לחלץ מספיק פרטים מקורות החיים. ודא שהקובץ קריא ומכיל שם, טלפון או אימייל.',
+        extractedText: text.substring(0, 500),
+        qualityScore,
+        dataQuality
+      }, { status: 400 });
     }
 
     // Save file to uploads directory

@@ -18,18 +18,31 @@ export async function POST(request: NextRequest) {
     
     console.log('📄 Share Target: File received:', file.name, file.type, file.size);
     
-    // Forward the file to the main upload API
+    // Forward the file to the main upload API - WITH COOKIES for auth!
     const uploadFormData = new FormData();
     uploadFormData.append('file', file);
+    
+    // 🔑 העברת cookies לשמירת הסשן
+    const cookies = request.headers.get('cookie') || '';
     
     const uploadResponse = await fetch(new URL('/api/upload', request.url).toString(), {
       method: 'POST',
       body: uploadFormData,
+      headers: {
+        'Cookie': cookies,  // 🔑 העברת cookies לאימות
+      },
     });
     
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
       console.error('❌ Share Target: Upload failed:', errorText);
+      
+      // אם הבעיה היא אימות - נפנה לדף התחברות
+      if (uploadResponse.status === 401) {
+        console.log('🔐 Share Target: Not authenticated, redirecting to login');
+        return NextResponse.redirect(new URL('/login?redirect=/dashboard/upload', request.url));
+      }
+      
       // Redirect with error
       return NextResponse.redirect(
         new URL(`/app?error=${encodeURIComponent('שגיאה בהעלאת הקובץ')}`, request.url)
@@ -39,8 +52,8 @@ export async function POST(request: NextRequest) {
     const result = await uploadResponse.json();
     console.log('✅ Share Target: Upload successful:', result.candidate?.name);
     
-    // Redirect with success
-    const successUrl = new URL('/app', request.url);
+    // Redirect with success - לדשבורד המועמדים
+    const successUrl = new URL('/dashboard/candidates', request.url);
     successUrl.searchParams.set('success', 'true');
     if (result.candidate?.name) {
       successUrl.searchParams.set('name', result.candidate.name);

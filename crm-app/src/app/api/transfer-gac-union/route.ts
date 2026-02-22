@@ -1,14 +1,15 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // 🔧 העברת משרות GAC ל-UNION והוספת משרה חדשה
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // סודי פשוט לביצוע חד פעמי
+    const { searchParams } = new URL(request.url);
+    const secret = searchParams.get('secret');
+    
+    if (secret !== 'gac2union2026') {
+      return NextResponse.json({ error: 'Unauthorized - use secret param' }, { status: 401 });
     }
 
     const results: string[] = [];

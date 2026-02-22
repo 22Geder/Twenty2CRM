@@ -84,7 +84,12 @@ export async function GET(
       },
     })
 
-    // 🔥🧠 אלגוריתם AI ULTRA - מוח מלא של המערכת
+    // 🔥🧠 אלגוריתם AI ULTRA V2 - משקולות מאוזנים יותר! (פברואר 2026)
+    // סה"כ 100 נקודות: 
+    // - תגיות: 35 נקודות (35%)
+    // - מיקום: 25 נקודות (25%) 
+    // - ניסיון + כישורים: 25 נקודות (25%)
+    // - מידע נוסף: 15 נקודות (15%)
     const candidatesWithScore = await Promise.all(candidates.map(async (candidate) => {
       const candidateTagIds = candidate.tags.map(tag => tag.id)
       const candidateTagNames = candidate.tags.map(tag => tag.name.toLowerCase())
@@ -98,34 +103,37 @@ export async function GET(
       const candidateCategories = getUniqueCategories(candidateRecruitmentTags)
       const candidateTagKeywords = candidateRecruitmentTags.map(t => t.keyword)
 
-      // 🧠 שיטה 1: התאמת תגיות בסיסית (15 נקודות - הופחת מ-25)
+      // ============================================
+      // 🏷️ בלוק תגיות - 35 נקודות מקסימום
+      // ============================================
+      
+      // 🧠 שיטה 1: התאמת תגיות בסיסית (20 נקודות)
       const matchingTags = position.tags.filter(tag => 
         candidateTagIds.includes(tag.id)
       )
-      const basicTagScore = position.tags.length > 0 
-        ? (matchingTags.length / position.tags.length) * 15 
-        : 6
-
-      // 🧠 שיטה 2: התאמת תגיות גיוס חכמות (10 נקודות - הופחת מ-20)
+      let basicTagScore = 0
+      if (position.tags.length > 0) {
+        const matchRatio = matchingTags.length / position.tags.length
+        // יותר תגיות תואמות = ציון גבוה יותר באופן אקספוננציאלי
+        basicTagScore = Math.pow(matchRatio, 0.7) * 20 // pow<1 נותן יתרון למי שיש כמה תגיות
+      } else {
+        basicTagScore = 8 // אם אין תגיות למשרה
+      }
+      
+      // 🧠 שיטה 2: התאמת תגיות גיוס חכמות (10 נקודות)
       const recruitmentTagMatch = calculateTagMatchScore(candidateTagKeywords, positionTagKeywords)
-      const recruitmentTagScore = recruitmentTagMatch.score * 0.1
+      const recruitmentTagScore = Math.min(recruitmentTagMatch.score * 0.1, 10)
 
-      // 🧠 שיטה 3: התאמת קטגוריות מקצועיות (5 נקודות - הופחת מ-10)
+      // 🧠 שיטה 3: קטגוריות מקצועיות (5 נקודות)
       const categoryOverlap = candidateCategories.filter(c => positionCategories.includes(c))
-      const categoryScore = Math.min(categoryOverlap.length * 1.7, 5)
+      const categoryScore = Math.min(categoryOverlap.length * 2.5, 5)
 
-      // 🧠 שיטה 4: התאמה חלקית של תגיות (3 נקודות - הופחת מ-5)
-      let partialMatchScore = 0
-      positionTagNames.forEach(posTag => {
-        candidateTagNames.forEach(canTag => {
-          if (canTag.includes(posTag) || posTag.includes(canTag)) {
-            partialMatchScore += 0.3
-          }
-        })
-      })
-      partialMatchScore = Math.min(partialMatchScore, 3)
+      // 🎯 בונוס תגיות מושלם! (+5 נקודות אם 3+ תגיות תואמות)
+      const tagBonus = matchingTags.length >= 3 ? 5 : matchingTags.length >= 2 ? 3 : matchingTags.length === 1 ? 1 : 0
 
-      // 🧠🔥 שיטה 5: התאמת מיקום (40 נקודות! - 40% מסך הציון!)
+      // ============================================
+      // 📍 בלוק מיקום - 25 נקודות מקסימום
+      // ============================================
       let locationScore = 0
       let locationMatch = false
       let locationMatchType = 'none'
@@ -133,19 +141,19 @@ export async function GET(
       if (positionLocation && candidateCity) {
         // התאמה מושלמת - אותה עיר
         if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
-          locationScore = 40
+          locationScore = 25
           locationMatch = true
           locationMatchType = 'exact'
         } 
         // ערים קרובות מאוד (עד 15 דקות נסיעה)
         else if (areNearbyLocations(candidateCity, positionLocation)) {
-          locationScore = 32
+          locationScore = 20
           locationMatch = true
           locationMatchType = 'nearby'
         } 
         // אותו אזור כללי (עד 30 דקות)
         else if (areSameRegion(candidateCity, positionLocation)) {
-          locationScore = 20
+          locationScore = 15
           locationMatchType = 'region'
         }
         // אזור סמוך (עד 45 דקות)
@@ -154,47 +162,65 @@ export async function GET(
           locationMatchType = 'adjacent'
         }
       } else if (!candidateCity && positionLocation) {
-        // אם אין מיקום למועמד - ניתן ציון בסיסי
-        locationScore = 5
+        // אם אין מיקום למועמד - ניתן ציון בסיסי קטן
+        locationScore = 8
         locationMatchType = 'unknown'
+      } else if (!positionLocation) {
+        // אם אין מיקום למשרה - לא מוריד נקודות
+        locationScore = 12
+        locationMatchType = 'no_position_location'
       }
 
-      // 🧠 שיטה 6: ניסיון רלוונטי (10 נקודות)
+      // ============================================
+      // 💼 בלוק ניסיון וכישורים - 25 נקודות מקסימום
+      // ============================================
+      
+      // 🧠 ניסיון רלוונטי (12 נקודות)
       let experienceScore = 0
       if (candidate.yearsOfExperience) {
-        if (candidate.yearsOfExperience >= 5) experienceScore = 10
-        else if (candidate.yearsOfExperience >= 3) experienceScore = 8
-        else if (candidate.yearsOfExperience >= 1) experienceScore = 5
-        else experienceScore = 3
+        if (candidate.yearsOfExperience >= 5) experienceScore = 12
+        else if (candidate.yearsOfExperience >= 3) experienceScore = 10
+        else if (candidate.yearsOfExperience >= 1) experienceScore = 7
+        else experienceScore = 4
+      } else {
+        experienceScore = 3 // ציון בסיסי גם בלי ניסיון מפורש
       }
 
-      // 🧠 שיטה 7: דירוג מועמד (5 נקודות)
+      // 🧠 דירוג מועמד (5 נקודות)
       const ratingScore = candidate.rating ? (candidate.rating / 5) * 5 : 2.5
 
-      // 🧠 שיטה 8: התאמת תפקיד נוכחי (5 נקודות)
+      // 🧠 התאמת תפקיד נוכחי (8 נקודות)
       let titleScore = 0
       if (candidate.currentTitle && position.title) {
         const canTitle = candidate.currentTitle.toLowerCase()
         const posTitle = position.title.toLowerCase()
-        const titleWords = posTitle.split(' ')
-        const matchingWords = titleWords.filter(word => 
-          canTitle.includes(word) && word.length > 2
-        )
-        titleScore = Math.min((matchingWords.length / titleWords.length) * 5, 5)
+        const titleWords = posTitle.split(' ').filter(w => w.length > 2)
+        const matchingWords = titleWords.filter(word => canTitle.includes(word))
+        if (titleWords.length > 0) {
+          titleScore = Math.min((matchingWords.length / titleWords.length) * 8, 8)
+        }
       }
 
-      // 🧠 שיטה 9: רלוונטיות לפי זמן (1 נקודה - הורדנו)
+      // ============================================
+      // 📋 בלוק מידע נוסף - 15 נקודות מקסימום  
+      // ============================================
+      
+      // 🧠 רלוונטיות לפי זמן (5 נקודות)
       const daysSinceCreated = Math.floor(
         (new Date().getTime() - new Date(candidate.createdAt).getTime()) / (1000 * 60 * 60 * 24)
       )
-      const freshnessScore = daysSinceCreated <= 7 ? 1 : daysSinceCreated <= 14 ? 0.5 : 0
+      const freshnessScore = daysSinceCreated <= 3 ? 5 : daysSinceCreated <= 7 ? 4 : daysSinceCreated <= 14 ? 2 : 0
 
-      // 🧠 שיטה 10: פרטי קשר ומסמכים (1 נקודה - הורדנו)
+      // 🧠 פרטי קשר ומסמכים (5 נקודות)
       let contactScore = 0
-      if (candidate.email) contactScore += 0.25
-      if (candidate.phone || candidate.alternatePhone) contactScore += 0.25
-      if (candidate.resumeUrl) contactScore += 0.25
-      if (candidate.linkedinUrl) contactScore += 0.25
+      if (candidate.email) contactScore += 1
+      if (candidate.phone || candidate.alternatePhone) contactScore += 1.5
+      if (candidate.resumeUrl) contactScore += 2
+      if (candidate.linkedinUrl) contactScore += 0.5
+
+      // 🧠 בונוס קורות חיים מפורטים (5 נקודות)
+      const resumeLength = (candidate.resume || '').length
+      const resumeBonus = resumeLength > 1000 ? 5 : resumeLength > 500 ? 3 : resumeLength > 100 ? 1 : 0
 
       // 🎓 חילוץ מצב השכלה מקורות החיים
       const resumeText = (candidate.resume || '').toLowerCase()
@@ -221,18 +247,27 @@ export async function GET(
         candidateRecruitmentTags
       )
 
-      // חישוב ציון סופי (מקסימום 100)
+      // ============================================
+      // 🎯 חישוב ציון סופי - מקסימום 100 נקודות
+      // ============================================
+      // תגיות: basicTagScore (20) + recruitmentTagScore (10) + categoryScore (5) + tagBonus (5) = 40
+      // מיקום: locationScore = 25
+      // ניסיון: experienceScore (12) + ratingScore (5) + titleScore (8) = 25
+      // מידע: freshnessScore (5) + contactScore (5) + resumeBonus (5) = 15
+      // סה"כ: ~105 מקסימום (משולב עם min 100)
+      
       const rawScore = 
-        basicTagScore + 
-        recruitmentTagScore + 
-        categoryScore +
-        partialMatchScore + 
-        locationScore +
-        experienceScore + 
-        ratingScore + 
-        titleScore + 
-        freshnessScore + 
-        contactScore
+        basicTagScore +        // מקס 20
+        recruitmentTagScore +  // מקס 10
+        categoryScore +        // מקס 5
+        tagBonus +             // מקס 5
+        locationScore +        // מקס 25
+        experienceScore +      // מקס 12
+        ratingScore +          // מקס 5
+        titleScore +           // מקס 8
+        freshnessScore +       // מקס 5
+        contactScore +         // מקס 5
+        resumeBonus            // מקס 5
 
       const finalScore = Math.min(Math.round(rawScore), 100)
 
@@ -254,17 +289,17 @@ export async function GET(
         whySuitable,
         candidateRecruitmentTags: candidateRecruitmentTags.slice(0, 15).map(t => t.keyword),
         scoreBreakdown: {
-          tags: Math.round(basicTagScore),
+          tags: Math.round(basicTagScore + tagBonus),
           recruitmentTags: Math.round(recruitmentTagScore),
           categories: Math.round(categoryScore),
-          partial: Math.round(partialMatchScore),
           location: Math.round(locationScore),
-          locationMaxPossible: 40, // 🆕 הציון המקסימלי למיקום
+          locationMaxPossible: 25, // 🆕 הציון המקסימלי למיקום
           experience: experienceScore,
           rating: Math.round(ratingScore),
           title: Math.round(titleScore),
           freshness: freshnessScore,
           contact: Math.round(contactScore),
+          resume: Math.round(resumeBonus),
         }
       }
     }))

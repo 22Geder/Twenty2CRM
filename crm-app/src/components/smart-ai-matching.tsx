@@ -490,6 +490,8 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
   const recommendedMatches = allResults.filter(r => r.shouldProceed)
   const locationMatches = allResults.filter(r => r.locationMatch)
   const otherMatches = allResults.filter(r => !r.shouldProceed)
+  // 🆕 מיון לפי ציון - הגבוה ביותר ראשון, עד 20 משרות
+  const sortedMatches = [...allResults].sort((a, b) => b.score - a.score).slice(0, 20)
 
   // Show loading state when component first loads
   if (loadingPositions) {
@@ -667,7 +669,7 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-bold text-lg">
-                            ✅ נמצאו {recommendedMatches.length} משרות מומלצות
+                            ✅ נמצאו {sortedMatches.length} משרות מתאימות (ממוינות לפי %)
                           </h3>
                           {locationMatches.length > 0 && (
                             <p className="text-sm text-blue-600">
@@ -683,40 +685,15 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
                       </div>
                     </div>
 
-                    {/* משרות מומלצות */}
-                    {recommendedMatches.length > 0 && (
+                    {/* 🆕 הצגת כל המשרות ממוינות לפי ציון - עד 20 */}
+                    {sortedMatches.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="text-green-700 font-bold flex items-center gap-2">
-                          <CheckCircle2 className="h-5 w-5" />
-                          משרות מומלצות ({recommendedMatches.length}):
+                        <h4 className="text-purple-700 font-bold flex items-center gap-2">
+                          <Target className="h-5 w-5" />
+                          משרות מתאימות - לפי אחוזי התאמה ({sortedMatches.length}):
                         </h4>
                         <div className="space-y-2">
-                          {recommendedMatches
-                            .sort((a, b) => {
-                              // מיקום קרוב קודם
-                              if (a.locationMatch && !b.locationMatch) return -1
-                              if (!a.locationMatch && b.locationMatch) return 1
-                              return b.score - a.score
-                            })
-                            .map(match => renderMatchResult(match))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* משרות לא מתאימות */}
-                    {otherMatches.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-gray-500 font-semibold flex items-center gap-2">
-                          <AlertTriangle className="h-5 w-5" />
-                          פחות מתאימות ({otherMatches.length}):
-                        </h4>
-                        <div className="space-y-2">
-                          {otherMatches.slice(0, 5).map(match => renderMatchResult(match))}
-                          {otherMatches.length > 5 && (
-                            <p className="text-sm text-gray-400 text-center">
-                              ועוד {otherMatches.length - 5} משרות...
-                            </p>
-                          )}
+                          {sortedMatches.map(match => renderMatchResult(match))}
                         </div>
                       </div>
                     )}

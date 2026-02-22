@@ -242,15 +242,24 @@ export default function MobileUploadPage() {
       
       setProgress(100)
       setStatus('success')
+      
+      // 🆕 תיקון - candidateId נמצא ברמה העליונה, לא בתוך candidate
+      const candidateId = data.candidateId || data.candidate?.id
+      console.log('✅ Upload success:', { candidateId, name: data.candidate?.name })
+      
       setResult({
         name: data.candidate?.name,
         phone: data.candidate?.phone,
         email: data.candidate?.email,
         experience: data.candidate?.experience ? [data.candidate.experience] : [],
         skills: data.tags?.map((t: any) => t.name) || [],
-        candidateId: data.candidate?.id,
-        message: data.message
+        candidateId: candidateId,
+        message: data.createdCandidate ? 'מועמד חדש נוצר בהצלחה!' : 'מועמד קיים עודכן בהצלחה!'
       })
+      
+      // 🆕 הפעלת אירוע רענון לדף המועמדים
+      window.dispatchEvent(new Event('candidates-updated'))
+      localStorage.setItem('lastCandidateAdded', Date.now().toString())
       
     } catch (err: any) {
       setStatus('error')

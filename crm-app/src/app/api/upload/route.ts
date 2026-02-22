@@ -785,73 +785,16 @@ export async function POST(request: NextRequest) {
 
     let candidateRecord: { id: string } | null = null;
 
-    if (normalizedEmail) {
-      const existing = await prisma.candidate.findUnique({ where: { email: normalizedEmail }, select: { id: true } });
-      createdCandidate = !existing;
+    try {
+      if (normalizedEmail) {
+        const existing = await prisma.candidate.findUnique({ where: { email: normalizedEmail }, select: { id: true } });
+        createdCandidate = !existing;
 
-      candidateRecord = await prisma.candidate.upsert({
-        where: { email: normalizedEmail },
-        create: {
-          name,
-          email: normalizedEmail,
-          phone,
-          city,
-          currentTitle,
-          yearsOfExperience,
-          skills: skills.length ? skills.join(', ') : null,
-          resumeUrl,
-          resume: text,  // 🆕 שמירת טקסט קורות חיים המקורי
-          aiProfile: aiProfileJson,  // 🆕 שמירת פרופיל AI משופר
-          source: 'UPLOAD',
-          notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name}`,
-          uploadedById,  // 🆕 מי העלה את המועמד
-        },
-        update: {
-          name,
-          phone: phone ?? undefined,
-          city: city ?? undefined,
-          currentTitle: currentTitle ?? undefined,
-          yearsOfExperience: yearsOfExperience ?? undefined,
-          skills: skills.length ? skills.join(', ') : undefined,
-          resumeUrl,
-          resume: text,  // 🆕 עדכון טקסט קורות חיים
-          aiProfile: aiProfileJson,  // 🆕 עדכון פרופיל AI משופר
-        },
-        select: { id: true },
-      });
-    } else {
-      // No email: best-effort dedupe by phone
-      const existingByPhone = phone
-        ? await prisma.candidate.findFirst({ where: { phone }, select: { id: true }, orderBy: { updatedAt: 'desc' } })
-        : null;
-
-      if (existingByPhone) {
-        createdCandidate = false;
-        candidateRecord = await prisma.candidate.update({
-          where: { id: existingByPhone.id },
-          data: {
+        candidateRecord = await prisma.candidate.upsert({
+          where: { email: normalizedEmail },
+          create: {
             name,
-            phone,
-            city,
-            currentTitle,
-            yearsOfExperience,
-            skills: skills.length ? skills.join(', ') : undefined,
-            resumeUrl,
-            resume: text,  // 🆕 עדכון טקסט קורות חיים
-            aiProfile: aiProfileJson,  // 🆕 עדכון פרופיל AI משופר
-          },
-          select: { id: true },
-        });
-      } else {
-        createdCandidate = true;
-        
-        // Generate unique email placeholder if no email found
-        const placeholderEmail = `no-email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}@twenty2jobs.local`;
-        
-        candidateRecord = await prisma.candidate.create({
-          data: {
-            name,
-            email: placeholderEmail,
+            email: normalizedEmail,
             phone,
             city,
             currentTitle,
@@ -861,15 +804,99 @@ export async function POST(request: NextRequest) {
             resume: text,  // 🆕 שמירת טקסט קורות חיים המקורי
             aiProfile: aiProfileJson,  // 🆕 שמירת פרופיל AI משופר
             source: 'UPLOAD',
-            notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name} (ללא אימייל)`,
+            notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name}`,
             uploadedById,  // 🆕 מי העלה את המועמד
+          },
+          update: {
+            name,
+            phone: phone ?? undefined,
+            city: city ?? undefined,
+            currentTitle: currentTitle ?? undefined,
+            yearsOfExperience: yearsOfExperience ?? undefined,
+            skills: skills.length ? skills.join(', ') : undefined,
+            resumeUrl,
+            resume: text,  // 🆕 עדכון טקסט קורות חיים
+            aiProfile: aiProfileJson,  // 🆕 עדכון פרופיל AI משופר
           },
           select: { id: true },
         });
+      } else {
+        // No email: best-effort dedupe by phone
+        const existingByPhone = phone
+          ? await prisma.candidate.findFirst({ where: { phone }, select: { id: true }, orderBy: { updatedAt: 'desc' } })
+          : null;
+
+        if (existingByPhone) {
+          createdCandidate = false;
+          candidateRecord = await prisma.candidate.update({
+            where: { id: existingByPhone.id },
+            data: {
+              name,
+              phone,
+              city,
+              currentTitle,
+              yearsOfExperience,
+              skills: skills.length ? skills.join(', ') : undefined,
+              resumeUrl,
+              resume: text,  // 🆕 עדכון טקסט קורות חיים
+              aiProfile: aiProfileJson,  // 🆕 עדכון פרופיל AI משופר
+            },
+            select: { id: true },
+          });
+        } else {
+          createdCandidate = true;
+          
+          // Generate unique email placeholder if no email found
+          const placeholderEmail = `no-email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}@twenty2jobs.local`;
+          
+          candidateRecord = await prisma.candidate.create({
+            data: {
+              name,
+              email: placeholderEmail,
+              phone,
+              city,
+              currentTitle,
+              yearsOfExperience,
+              skills: skills.length ? skills.join(', ') : null,
+              resumeUrl,
+              resume: text,  // 🆕 שמירת טקסט קורות חיים המקורי
+              aiProfile: aiProfileJson,  // 🆕 שמירת פרופיל AI משופר
+              source: 'UPLOAD',
+              notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name} (ללא אימייל)`,
+              uploadedById,  // 🆕 מי העלה את המועמד
+            },
+            select: { id: true },
+          });
+        }
       }
+    } catch (dbError: any) {
+      console.error('❌ Database error saving candidate:', dbError);
+      return NextResponse.json({
+        error: 'שגיאה בשמירת המועמד למסד הנתונים: ' + (dbError.message || 'שגיאה לא ידועה'),
+        extractedData: candidateData
+      }, { status: 500 });
     }
 
     candidateId = candidateRecord?.id ?? null;
+    
+    // 🆕 לוג חשוב - בדיקה שהמועמד נוצר
+    console.log('💾 Candidate saved to DB:', {
+      candidateId,
+      createdCandidate,
+      name,
+      phone,
+      email: normalizedEmail,
+      hasRecord: !!candidateRecord
+    });
+
+    // 🚨 בדיקת ביטחון - אם אין candidateId, השמירה נכשלה
+    if (!candidateId) {
+      console.error('❌ Failed to save candidate to DB - no candidateId returned');
+      return NextResponse.json({
+        error: 'שגיאה בשמירת המועמד למסד הנתונים. נסה שוב.',
+        extractedData: candidateData  // נחזיר את המידע שחולץ למקרה שהמשתמש רוצה לשמור ידנית
+      }, { status: 500 });
+    }
 
     // Create + attach tags derived from the CV text (all extracted tags)
     if (candidateId && Array.isArray(candidateData?.tags)) {
@@ -1067,11 +1094,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Return extracted data
+    // 🔧 נוסיף id לאובייקט candidate כדי שיהיה קל יותר לגשת אליו
+    const candidateWithId = {
+      ...candidateData,
+      id: candidateId
+    };
+    
     return NextResponse.json({
       success: true,
       fileName: fileName,
       resumeUrl,
-      candidate: candidateData,
+      candidate: candidateWithId,  // 🔧 עכשיו כולל id
       candidateId,
       createdCandidate,
       extractedText: text.substring(0, 500), // First 500 chars for preview

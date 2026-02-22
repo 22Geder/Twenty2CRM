@@ -50,7 +50,11 @@ export async function POST(request: NextRequest) {
     }
     
     const result = await uploadResponse.json();
-    console.log('✅ Share Target: Upload successful:', result.candidate?.name);
+    console.log('✅ Share Target: Upload successful:', {
+      name: result.candidate?.name,
+      candidateId: result.candidateId,
+      createdCandidate: result.createdCandidate
+    });
     
     // Redirect with success - לדשבורד המועמדים
     const successUrl = new URL('/dashboard/candidates', request.url);
@@ -58,8 +62,9 @@ export async function POST(request: NextRequest) {
     if (result.candidate?.name) {
       successUrl.searchParams.set('name', result.candidate.name);
     }
-    if (result.candidate?.id) {
-      successUrl.searchParams.set('candidateId', result.candidate.id);
+    // 🔧 תיקון - candidateId נמצא ברמה העליונה, לא בתוך candidate
+    if (result.candidateId) {
+      successUrl.searchParams.set('candidateId', result.candidateId);
     }
     
     return NextResponse.redirect(successUrl);

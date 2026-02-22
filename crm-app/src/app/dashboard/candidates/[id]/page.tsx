@@ -67,6 +67,11 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   const [positionSearch, setPositionSearch] = useState('')  // 🆕 חיפוש במשרות
   const [expandedEmployers, setExpandedEmployers] = useState<Set<string>>(new Set())  // 🆕 מעסיקים פתוחים
   
+  // 🆕 משרות מרובות בתהליך
+  const [selectedPositionIds, setSelectedPositionIds] = useState<Set<string>>(new Set())
+  const [inProcessPositions, setInProcessPositions] = useState<any[]>([])  // כל המשרות שהמועמד בתהליך עבורן
+  const [isAddingMode, setIsAddingMode] = useState(false)  // האם אנחנו במצב "הוספת משרות נוספות"
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -185,10 +190,26 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
       } else {
         setInProcessPosition(null)
       }
+      
+      // 🆕 טעינת כל המשרות שהמועמד בתהליך עבורן
+      fetchInProcessPositions()
     } catch (err: any) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 🆕 פונקציה לטעינת כל המשרות שהמועמד בתהליך עבורן
+  const fetchInProcessPositions = async () => {
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/add-positions`)
+      if (response.ok) {
+        const data = await response.json()
+        setInProcessPositions(data.positions || [])
+      }
+    } catch (error) {
+      console.error('Error fetching in-process positions:', error)
     }
   }
 
@@ -389,11 +410,20 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   }
 
   // 🆕 טיפול בלחיצה על "בתהליך" - פותח מודל לבחירת משרה מכל המשרות
-  const handleInProcessClick = async () => {
+  const handleInProcessClick = async (addingMode = false) => {
     setLoadingPositions(true)
     setShowPositionModal(true)
     setPositionSearch('')  // 🆕 איפוס חיפוש
     setExpandedEmployers(new Set())  // 🆕 איפוס הרחבות
+    setIsAddingMode(addingMode)
+    
+    // 🆕 אם במצב הוספה, מסמנים את המשרות שכבר בתהליך
+    if (addingMode) {
+      const existingIds = new Set(inProcessPositions.map((p: any) => p.id))
+      setSelectedPositionIds(existingIds)
+    } else {
+      setSelectedPositionIds(new Set())
+    }
     
     try {
       // 🆕 שליפת כל המשרות הפעילות (לא רק מתאימות!)
@@ -417,19 +447,89 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
     }
   }
 
-  // 🆕 בחירת משרה לתהליך
+  // 🆕 toggle בחירת משרה
+  const togglePositionSelection = (positionId: string) => {
+    setSelectedPositionIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(positionId)) {
+        newSet.delete(positionId)
+      } else {
+        newSet.add(positionId)
+      }
+      return newSet
+    })
+  }
+
+  // 🆕 שמירת המשרות שנבחרו
+  const saveSelectedPositions = async () => {
+    if (selectedPositionIds.size === 0) {
+      alert('יש לבחור לפחות משרה אחת')
+      return
+    }
+    
+    setStatusSaving(true)
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/add-positions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          positionIds: Array.from(selectedPositionIds),
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to add positions")
+      }
+
+      const result = await response.json()
+      setCandidateStatus('in-process')
+      setShowPositionModal(false)
+      await fetchCandidate()
+      
+      // הודעת הצלחה
+      const msg = result.addedCount > 0 
+        ? `✅ נוספו ${result.addedCount} משרות לתהליך`
+        : '✅ המשרות עודכנו'
+      alert(msg)
+    } catch (err: any) {
+      setError(err.message)
+      alert(`❌ שגיאה: ${err.message}`)
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
+  // 🆕 הסרת משרה מהתהליך
+  const removePositionFromProcess = async (positionId: string) => {
+    if (!confirm('להסיר את המשרה מהתהליך?')) return
+    
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/add-positions`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positionId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to remove position')
+      }
+
+      await fetchCandidate()
+    } catch (err: any) {
+      alert(`❌ שגיאה: ${err.message}`)
+    }
+  }
+
+  // 🆕 בחירת משרה לתהליך (לאחור תאימות - לחיצה בודדת)
   const selectPositionForProcess = async (positionId: string) => {
     setStatusSaving(true)
     try {
-      const response = await fetch(`/api/candidates/${candidateId}`, {
-        method: "PUT",
+      const response = await fetch(`/api/candidates/${candidateId}/add-positions`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inProcessPositionId: positionId,
-          inProcessAt: new Date().toISOString(),
-          hiredAt: null,
-          hiredToEmployerId: null,
-          employmentStatus: null,
+          positionIds: [positionId],
         }),
       })
 
@@ -574,7 +674,7 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                 size="sm"
                 variant={candidateStatus === 'in-process' ? 'default' : 'outline'}
                 className={candidateStatus === 'in-process' ? 'bg-blue-500 hover:bg-blue-600' : 'hover:bg-blue-100'}
-                onClick={handleInProcessClick}
+                onClick={() => handleInProcessClick(false)}
                 disabled={statusSaving}
               >
                 <Clock className="h-4 w-4 ml-1" />
@@ -637,27 +737,86 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
             )}
           </div>
           
-          {/* 🆕 הצגת משרה בתהליך */}
-          {inProcessPosition && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-800">בתהליך למשרה:</span>
-                <Link 
-                  href={`/dashboard/positions/${inProcessPosition.id}`}
-                  className="text-blue-600 hover:underline font-medium"
-                >
-                  {inProcessPosition.title}
-                </Link>
-                {inProcessPosition.employer && (
-                  <span className="text-gray-600">
-                    ({inProcessPosition.employer.name})
-                  </span>
-                )}
-                {candidate.inProcessAt && (
-                  <Badge variant="outline" className="bg-blue-100 text-blue-700 text-xs">
-                    מתאריך {new Date(candidate.inProcessAt).toLocaleDateString('he-IL')}
+          {/* 🆕 הצגת כל המשרות בתהליך */}
+          {(inProcessPositions.length > 0 || inProcessPosition) && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold text-blue-800">בתהליך למשרות:</span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                    {inProcessPositions.length || 1} משרות
                   </Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                  onClick={() => handleInProcessClick(true)}
+                >
+                  <Target className="h-4 w-4 ml-1" />
+                  הוסף משרות
+                </Button>
+              </div>
+              
+              {/* רשימת המשרות */}
+              <div className="space-y-2">
+                {inProcessPositions.length > 0 ? (
+                  inProcessPositions.map((pos: any) => (
+                    <div key={pos.id} className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Briefcase className="h-4 w-4 text-blue-500" />
+                        <Link 
+                          href={`/dashboard/positions/${pos.id}`}
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          {pos.title}
+                        </Link>
+                        {pos.employer && (
+                          <span className="text-gray-500 text-sm">
+                            ({pos.employer.name})
+                          </span>
+                        )}
+                        {pos.appliedAt && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-600 text-xs">
+                            {new Date(pos.appliedAt).toLocaleDateString('he-IL')}
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
+                        onClick={() => removePositionFromProcess(pos.id)}
+                        title="הסר מהתהליך"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                ) : inProcessPosition && (
+                  // תצוגת משרה יחידה (תאימות לאחור)
+                  <div className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
+                    <div className="flex items-center gap-2 flex-1">
+                      <Briefcase className="h-4 w-4 text-blue-500" />
+                      <Link 
+                        href={`/dashboard/positions/${inProcessPosition.id}`}
+                        className="text-blue-600 hover:underline font-medium"
+                      >
+                        {inProcessPosition.title}
+                      </Link>
+                      {inProcessPosition.employer && (
+                        <span className="text-gray-500 text-sm">
+                          ({inProcessPosition.employer.name})
+                        </span>
+                      )}
+                      {candidate.inProcessAt && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600 text-xs">
+                          {new Date(candidate.inProcessAt).toLocaleDateString('he-IL')}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -1509,11 +1668,18 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
             <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                בחר משרה לתהליך
+                {isAddingMode ? 'הוסף משרות לתהליך' : 'בחר משרות לתהליך'}
               </h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowPositionModal(false)} className="text-white hover:bg-white/20">
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                {selectedPositionIds.size > 0 && (
+                  <Badge className="bg-white/20 text-white">
+                    {selectedPositionIds.size} משרות נבחרו
+                  </Badge>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => setShowPositionModal(false)} className="text-white hover:bg-white/20">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             
             {/* 🆕 שדה חיפוש */}
@@ -1580,6 +1746,8 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                     
                     return entries.map(([empId, { name, positions }]: [string, any]) => {
                       const isExpanded = expandedEmployers.has(empId) || positionSearch.length > 0
+                      // כמה משרות מהמעסיק הזה נבחרו
+                      const selectedFromEmployer = positions.filter((p: any) => selectedPositionIds.has(p.id)).length
                       
                       return (
                         <div key={empId} className="border rounded-lg overflow-hidden">
@@ -1601,34 +1769,63 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                             <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                             <Building2 className="h-4 w-4 text-blue-600" />
                             <span className="flex-1">{name}</span>
-                            <Badge variant="secondary">{positions.length} משרות</Badge>
+                            <div className="flex gap-2">
+                              {selectedFromEmployer > 0 && (
+                                <Badge variant="default" className="bg-blue-500">
+                                  {selectedFromEmployer} נבחרו
+                                </Badge>
+                              )}
+                              <Badge variant="secondary">{positions.length} משרות</Badge>
+                            </div>
                           </div>
                           
                           {/* משרות - מוצגות רק כשהלקוח פתוח */}
                           {isExpanded && (
                             <div className="divide-y bg-white">
-                              {positions.map((position: any) => (
-                                <div
-                                  key={position.id}
-                                  className="p-3 hover:bg-blue-50 cursor-pointer transition-all"
-                                  onClick={() => selectPositionForProcess(position.id)}
-                                >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 pr-4">
-                                      <h4 className="font-medium text-gray-900">{position.title}</h4>
-                                      {position.location && (
-                                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                                          <MapPin className="h-3 w-3" />
-                                          {position.location}
-                                        </p>
-                                      )}
+                              {positions.map((position: any) => {
+                                const isSelected = selectedPositionIds.has(position.id)
+                                const isAlreadyInProcess = inProcessPositions.some((p: any) => p.id === position.id)
+                                
+                                return (
+                                  <div
+                                    key={position.id}
+                                    className={`p-3 transition-all cursor-pointer ${
+                                      isSelected 
+                                        ? 'bg-blue-100 border-r-4 border-blue-500' 
+                                        : 'hover:bg-blue-50'
+                                    } ${isAlreadyInProcess && !isAddingMode ? 'opacity-50' : ''}`}
+                                    onClick={() => togglePositionSelection(position.id)}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      {/* Checkbox */}
+                                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                        isSelected 
+                                          ? 'bg-blue-500 border-blue-500 text-white' 
+                                          : 'border-gray-300 hover:border-blue-400'
+                                      }`}>
+                                        {isSelected && <CheckCircle className="h-4 w-4" />}
+                                      </div>
+                                      
+                                      <div className="flex-1">
+                                        <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                                          {position.title}
+                                          {isAlreadyInProcess && (
+                                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600">
+                                              כבר בתהליך
+                                            </Badge>
+                                          )}
+                                        </h4>
+                                        {position.location && (
+                                          <p className="text-sm text-gray-600 flex items-center gap-1">
+                                            <MapPin className="h-3 w-3" />
+                                            {position.location}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
-                                    <Button size="sm" variant="outline" className="bg-blue-500 text-white hover:bg-blue-600 border-none text-xs">
-                                      בחר
-                                    </Button>
                                   </div>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           )}
                         </div>
@@ -1642,10 +1839,34 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
             <div className="flex justify-between items-center gap-2 p-4 border-t bg-gray-50">
               <p className="text-sm text-gray-500">
                 {matchingPositions.length} משרות מ-{[...new Set(matchingPositions.map((p: any) => p.employer?.id))].length} לקוחות
+                {selectedPositionIds.size > 0 && (
+                  <span className="font-medium text-blue-600 mr-2">
+                    • {selectedPositionIds.size} נבחרו
+                  </span>
+                )}
               </p>
-              <Button variant="outline" onClick={() => setShowPositionModal(false)}>
-                ביטול
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowPositionModal(false)}>
+                  ביטול
+                </Button>
+                <Button 
+                  onClick={saveSelectedPositions}
+                  disabled={selectedPositionIds.size === 0 || statusSaving}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  {statusSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      שומר...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 ml-2" />
+                      שמור {selectedPositionIds.size > 0 && `(${selectedPositionIds.size})`}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

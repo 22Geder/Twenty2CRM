@@ -110,6 +110,7 @@ export async function POST(
     await prisma.candidate.update({
       where: { id: candidateId },
       data: {
+        employmentStatus: 'IN_PROCESS', // 🆕 עדכון סטטוס המועמד לבתהליך!
         inProcessPositionId: candidate.inProcessPositionId || firstPositionId,
         inProcessAt: candidate.inProcessAt || new Date(),
       },

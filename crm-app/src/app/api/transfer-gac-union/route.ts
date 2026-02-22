@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 • רישיון נהיגה - חובה`,
           salaryRange: 'בסיס 8,000 ₪ + עמלות 4-5K',
           employmentType: 'FULL_TIME',
-          isActive: true,
+          active: true,
           priority: 3,
           keywords: 'מכירות B2B, ציי רכב, מנהל לקוחות, מו"מ, ניהול תיקים, רכב, GAC, UNION, יוניון, רעננה, שטח, גמישות, עמלות, רישיון נהיגה, לקוחות מוסדיים, תיאום, שירות, Excel'
         }

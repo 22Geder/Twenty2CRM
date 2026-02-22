@@ -101,7 +101,16 @@ export async function GET(request: NextRequest) {
         include: {
           applications: {
             include: {
-              position: true,
+              position: {
+                include: {
+                  employer: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
           },
           tags: true,  // הוסף תגיות למועמדים

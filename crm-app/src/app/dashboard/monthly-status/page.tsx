@@ -12,6 +12,17 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface Application {
+  id: string;
+  status: string;
+  stage?: string;
+  position: {
+    id: string;
+    title: string;
+    employer?: { id: string; name: string };
+  };
+}
+
 interface Candidate {
   id: string;
   name: string;
@@ -33,6 +44,7 @@ interface Candidate {
     title: string; 
     employer?: { id: string; name: string } 
   };
+  applications?: Application[]; // 🆕 כל הפניות של המועמד
   uploadedBy?: { id: string; name: string; email: string }; // 🆕 מי העלה את המועמד
 }
 
@@ -519,15 +531,37 @@ export default function MonthlyStatusPage() {
                                     התקבל ל: {candidate.hiredToEmployer.name}
                                   </span>
                                 )}
-                                {candidate.inProcessPosition && (
-                                  <span className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
-                                    <Target className="h-3 w-3" />
-                                    נשלח ל: {candidate.inProcessPosition.title}
-                                    {candidate.inProcessPosition.employer && (
-                                      <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
-                                    )}
-                                  </span>
-                                )}
+                                {/* הצגת כל המשרות שהמועמד בתהליך עבורן */}
+                                {(() => {
+                                  // סינון כל הפניות שבתהליך
+                                  const inProcessApps = candidate.applications?.filter(
+                                    app => app.status === 'IN_PROCESS' || app.stage === 'IN_PROCESS'
+                                  ) || [];
+                                  
+                                  if (inProcessApps.length > 0) {
+                                    return inProcessApps.map((app, idx) => (
+                                      <span key={app.id} className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
+                                        <Target className="h-3 w-3" />
+                                        נשלח ל: {app.position.title}
+                                        {app.position.employer && (
+                                          <span className="text-blue-500">({app.position.employer.name})</span>
+                                        )}
+                                      </span>
+                                    ));
+                                  } else if (candidate.inProcessPosition) {
+                                    // אם אין פניות בתהליך, נציג את המשרה הישנה
+                                    return (
+                                      <span className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
+                                        <Target className="h-3 w-3" />
+                                        נשלח ל: {candidate.inProcessPosition.title}
+                                        {candidate.inProcessPosition.employer && (
+                                          <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
+                                        )}
+                                      </span>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                                 {candidate.uploadedBy && (
                                   <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
                                     <User className="h-3 w-3" />

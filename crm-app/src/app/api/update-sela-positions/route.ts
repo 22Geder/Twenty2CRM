@@ -93,10 +93,10 @@ function generateKeywordsForPosition(title: string, description: string, locatio
 // GET /api/update-sela-positions
 export async function GET() {
   try {
-    console.log('🔧 מעדכן משרות סלע לוגיסטיקה...')
+    console.log('🔧 מסנכרן משרות סלע לוגיסטיקה - דצמבר 2025...')
 
     // מצא את המעסיק סלע לוגיסטיקה
-    const selaEmployer = await prisma.employer.findFirst({
+    let selaEmployer = await prisma.employer.findFirst({
       where: { 
         OR: [
           { name: { contains: 'סלע', mode: 'insensitive' } },
@@ -107,12 +107,24 @@ export async function GET() {
     })
 
     if (!selaEmployer) {
-      return NextResponse.json({ error: 'לא נמצא מעסיק סלע לוגיסטיקה' }, { status: 404 })
+      // צור מעסיק חדש
+      selaEmployer = await prisma.employer.create({
+        data: {
+          name: 'סלע לוגיסטיקה',
+          email: 'pninit@selabonded.co.il',
+          phone: '',
+          company: 'סלע לוגיסטיקה',
+          status: 'active'
+        }
+      })
+      console.log('✅ נוצר מעסיק חדש: סלע לוגיסטיקה')
     }
 
     console.log(`✅ נמצא מעסיק: ${selaEmployer.name} (${selaEmployer.id})`)
 
-    // רשימת המשרות החדשות - Pninit Roitman
+    // ================================
+    // 📋 משרות פנינית - pninit@selabonded.co.il
+    // ================================
     const pninitPositions = [
       {
         title: 'מלגזן היגש - בני דרום',
@@ -124,13 +136,13 @@ export async function GET() {
 עבודה על מלגזת היגש וליקוטים במחסן לוגיסטי.
 
 🍽️ ארוחות חמות
-🚌 הסעה מאשקלון ואשדוד
+🚌 הסעות מאשדוד
 
-📞 איש קשר: Pninit Roitman`,
+📞 איש קשר: פנינית רויטמן`,
         requirements: `רישיון מלגזה - חובה
 ניסיון על מלגזת היגש - יתרון
 רצון לעבוד ונכונות ללמוד`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
@@ -150,14 +162,16 @@ export async function GET() {
 🍽️ ארוחות חמות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Pninit Roitman`,
+⚠️ נדרשת שליטה בשפה הרוסית!
+
+📞 איש קשר: פנינית רויטמן`,
         requirements: `נדרשת שליטה בשפה הרוסית - חובה! (עבודה מול גורמים דוברי רוסית)
 ניסיון קודם בתפקיד דומה - חובה
 ניסיון במערכת WMS - יתרון משמעותי
 יכולת עבודה בסביבה ממוחשבת
 עבודה באקסל - חובה
 ניידות - חובה`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
@@ -179,17 +193,17 @@ export async function GET() {
 🍽️ ארוחות חמות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Pninit Roitman`,
+📞 איש קשר: פנינית רויטמן`,
         requirements: `ניסיון קודם בתפקיד דומה - חובה
 ניסיון במערכת WMS - יתרון משמעותי
 יכולת עבודה בסביבה ממוחשבת
 עבודה באקסל - חובה
 ניידות - חובה`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
-        title: 'מלקט/ת - אשדוד',
+        title: 'מלקט/ת - אשדוד המדע 2',
         location: 'אשדוד - המדע 2',
         workHours: '08:00-17:00',
         salaryRange: '38 ₪/שעה',
@@ -198,17 +212,17 @@ export async function GET() {
 ליקוט סחורה והכנת הזמנות, עבודה עם מסופון.
 
 🍽️ ארוחות
-🚗 הגעה עצמאית
+🚌 הסעות מבאר שבע
 
-📞 איש קשר: Pninit Roitman`,
+📞 איש קשר: פנינית רויטמן`,
         requirements: `נכונות למשרה מלאה
 ראש גדול
 ניסיון בליקוט - יתרון`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
-        title: 'מחסנאי/ת לילה - אשדוד',
+        title: 'מחסנאי/ת לילה - אשדוד המדע 2',
         location: 'אשדוד - המדע 2',
         workHours: '16:30-01:30',
         salaryRange: '42 ₪/שעה',
@@ -223,14 +237,14 @@ export async function GET() {
 
 🚗 הגעה עצמאית
 
-📞 איש קשר: Pninit Roitman`,
+📞 איש קשר: פנינית רויטמן`,
         requirements: `נכונות לעבודה פיזית
 נכונות למשמרת לילה`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
-        title: 'מלגזן היגש - אשדוד',
+        title: 'מלגזן היגש - אשדוד המדע 2',
         location: 'אשדוד - המדע 2',
         workHours: '08:00-17:00',
         salaryRange: '47 ₪/שעה',
@@ -242,15 +256,15 @@ export async function GET() {
 🍽️ ארוחות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Pninit Roitman`,
+📞 איש קשר: פנינית רויטמן`,
         requirements: `רישיון למלגזה - חובה
 ניסיון על מלגזת היגש / נכונות ללמוד
 נכונות לירידה מהמלגזה וביצוע משימות נוספות`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
-        title: 'בקר/ית סחורה - אשדוד סלע ישן',
+        title: 'בקר/ית סחורה - אשדוד המתכת 5 (סלע ישן)',
         location: 'אשדוד - המתכת 5 (סלע ישן)',
         workHours: '06:00-12:00',
         salaryRange: '40 ₪/שעה',
@@ -265,43 +279,46 @@ export async function GET() {
 
 🚗 הגעה עצמאית
 
-📞 איש קשר: Pninit Roitman`,
+📞 איש קשר: פנינית רויטמן`,
         requirements: `בקרת סחורה על ידי סריקת המוצרים עם מסופון
 אחריות ורצינות`,
-        contactName: 'Pninit Roitman',
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       },
       {
-        title: 'בקר/ית הזמנות - בית שמש',
+        title: 'אורז/ת - בית שמש הר טוב',
         location: 'בית שמש - אזור תעשייה הר טוב',
-        workHours: '06:30-15:30/16:00 או 11:00/12:00 עד ~20:00',
-        salaryRange: '42 ₪/שעה',
-        description: `🔍 בקר/ית הזמנות - סלע לוגיסטיקה בית שמש
+        workHours: 'משמרות: 06:30-15:30/16:00 או 11:00/12:00-20:00',
+        salaryRange: '38 ₪/שעה',
+        description: `📦 אורז/ת - סלע לוגיסטיקה בית שמש
 
-בקרה ובדיקה של ההזמנות לפני ההפצה:
-• בדיקה מוקפדת של פריטים לפני העמסתם למשאיות
-• הבדיקה מתבצעת עם מסופון לפי מקט על הפריט ומול ההזמנה
+עבודת אריזה במחסן לוגיסטי.
+
+משמרות גמישות:
+• בוקר: 06:30-15:30/16:00
+• או: 11:00/12:00 עד ~20:00
 
 🍽️ ארוחות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Pninit Roitman`,
-        requirements: `אחריות ורצינות
-עבודה עם מסופון - חובה
-דיוק ותשומת לב לפרטים קטנים
-יכולת עבודה תחת לחץ`,
-        contactName: 'Pninit Roitman',
+📞 איש קשר: פנינית רויטמן`,
+        requirements: `נכונות לעבודה פיזית
+דיוק ותשומת לב
+עבודת צוות`,
+        contactName: 'פנינית רויטמן',
         contactEmail: 'pninit@selabonded.co.il'
       }
     ]
 
-    // רשימת המשרות החדשות - Dana Shapiro (לוגיסטים)
+    // ================================
+    // 📋 משרות דנה - danav@selabonded.co.il
+    // ================================
     const danaPositions = [
       {
-        title: 'נציג/ת שירות לקוחות - אשדוד',
+        title: 'נציג/ת שירות לקוחות - לוגיסטים אשדוד',
         location: 'אשדוד - המדע 2 (לוגיסטים)',
-        workHours: '13:00/14:00-20:00',
-        salaryRange: '38 ₪/שעה',
+        workHours: '08:00-17:00',
+        salaryRange: '37 ₪/שעה',
         description: `📞 נציג/ת שירות לקוחות - לוגיסטים אשדוד
 
 • תיאום מועדי אספקה
@@ -310,17 +327,17 @@ export async function GET() {
 🍽️ ארוחות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Dana Shapiro`,
+📞 איש קשר: דנה שפירו`,
         requirements: `ניסיון במוקד שירות - יתרון
 ידע והכרה בעבודה על מחשב - חובה
 תודעת שירות`,
-        contactName: 'Dana Shapiro',
+        contactName: 'דנה שפירו',
         contactEmail: 'danav@selabonded.co.il'
       },
       {
-        title: 'רפרנט/ית שטח - בית שמש',
+        title: 'רפרנט/ית שטח - לוגיסטים בית שמש',
         location: 'בית שמש - אזור תעשייה הר טוב (לוגיסטים)',
-        workHours: '06:00-15:00',
+        workHours: '05:00-14:00',
         salaryRange: '50 ₪/שעה',
         description: `🚛 רפרנט/ית שטח - לוגיסטים בית שמש
 
@@ -334,18 +351,18 @@ export async function GET() {
 
 🚗 הגעה עצמאית
 
-📞 איש קשר: Dana Shapiro`,
+📞 איש קשר: דנה שפירו`,
         requirements: `ניסיון בתפעול מערך הפצה - חובה
 יכולת רתימת עובדים
 יכולת התנהלות עם חשבוניות ומסמכים מרובים
 סדר וארגון
 אסרטיביות - חובה
 ניידות - חובה`,
-        contactName: 'Dana Shapiro',
+        contactName: 'דנה שפירו',
         contactEmail: 'danav@selabonded.co.il'
       },
       {
-        title: 'סדרן/ית הפצה - אשדוד/בית שמש',
+        title: 'סדרן/ית הפצה - לוגיסטים אשדוד/בית שמש',
         location: 'אשדוד המדע 2 / בית שמש הר טוב (לוגיסטים)',
         workHours: '06:00-16:00',
         salaryRange: '13,000 ₪ גלובלי',
@@ -363,18 +380,18 @@ export async function GET() {
 🍽️ ארוחות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Dana Shapiro`,
+📞 איש קשר: דנה שפירו`,
         requirements: `ניסיון מוכח בתכנון קווי הפצה רבים - חובה
 חשיבה לוגית ופתרון בעיות
 תפקוד מעולה תחת לחץ
 ניידות - חובה`,
-        contactName: 'Dana Shapiro',
+        contactName: 'דנה שפירו',
         contactEmail: 'danav@selabonded.co.il'
       },
       {
-        title: 'רפרנט/ית שטח - מבקיעים',
+        title: 'רפרנט/ית שטח - לוגיסטים מבקיעים',
         location: 'מבקיעים (לוגיסטים)',
-        workHours: '05:00-14:00',
+        workHours: '06:00-14:00',
         salaryRange: '50 ₪/שעה',
         description: `🚛 רפרנט/ית שטח - לוגיסטים מבקיעים
 
@@ -384,18 +401,18 @@ export async function GET() {
 • פתרון תקלות בהעמסה ונזקים
 • דיווח על אי אספקות
 
-📞 איש קשר: Dana Shapiro`,
+📞 איש קשר: דנה שפירו`,
         requirements: `ניסיון עבודה במערך הפצה - חובה
 ניסיון קודם בתפקיד בק אופיס לוגיסטי - חובה
 אחריות סדר וארגון - חובה
 יכולת עבודה בכמה ממשקים במקביל
 תודעת שירות מעולה
 נכונות לעבודה בשעות נוספות`,
-        contactName: 'Dana Shapiro',
-        contactEmail: 'dana@logistim.co.il'
+        contactName: 'דנה שפירו',
+        contactEmail: 'danav@selabonded.co.il'
       },
       {
-        title: 'נציג/ת לקוח - אשדוד',
+        title: 'נציג/ת לקוח - לוגיסטים אשדוד',
         location: 'אשדוד - המדע 2 (לוגיסטים)',
         workHours: '08:00-17:00',
         salaryRange: '42 ₪/שעה',
@@ -408,10 +425,37 @@ export async function GET() {
 🍽️ ארוחות
 🚗 הגעה עצמאית
 
-📞 איש קשר: Dana Shapiro`,
+📞 איש קשר: דנה שפירו`,
         requirements: `ניסיון בתחום הלוגיסטיקה - חובה
 שליטה ביישומי אופיס - חובה`,
-        contactName: 'Dana Shapiro',
+        contactName: 'דנה שפירו',
+        contactEmail: 'danav@selabonded.co.il'
+      },
+      {
+        title: 'נציג/ה שירות ורפרנטיות - לוגיסטים בית שמש',
+        location: 'בית שמש - אזור תעשייה הר טוב (לוגיסטים)',
+        workHours: '06:00-15:00',
+        salaryRange: '13,000 ₪ גלובלי',
+        description: `📞🚛 נציג/ה שירות ורפרנטיות - לוגיסטים בית שמש
+
+תפקיד משולב הכולל:
+• שירות לקוחות
+• רפרנטיות שטח
+• מענה טלפוני
+• תיאום משלוחים
+
+תפקיד ניהולי בשכר גלובלי!
+
+🍽️ ארוחות
+🚗 הגעה עצמאית
+
+📞 איש קשר: דנה שפירו`,
+        requirements: `ניסיון בשירות לקוחות - חובה
+ניסיון בלוגיסטיקה/הפצה - יתרון משמעותי
+יכולת עבודה תחת לחץ
+תודעת שירות גבוהה
+ניידות - חובה`,
+        contactName: 'דנה שפירו',
         contactEmail: 'danav@selabonded.co.il'
       }
     ]
@@ -419,98 +463,60 @@ export async function GET() {
     const allNewPositions = [...pninitPositions, ...danaPositions]
     const results: { position: string; action: string; keywords: number }[] = []
 
-    // 1. עדכן/צור משרות חדשות
+    // 1️⃣ מחק את כל המשרות הישנות של סלע
+    const deletedCount = await prisma.position.deleteMany({
+      where: { employerId: selaEmployer.id }
+    })
+    console.log(`🗑️ נמחקו ${deletedCount.count} משרות ישנות`)
+
+    // 2️⃣ צור את כל המשרות החדשות
     for (const pos of allNewPositions) {
       const keywords = generateKeywordsForPosition(pos.title, pos.description, pos.location)
       
-      // חפש משרה קיימת עם שם דומה
-      const existingPosition = await prisma.position.findFirst({
-        where: {
+      await prisma.position.create({
+        data: {
+          title: pos.title,
+          location: pos.location,
+          description: pos.description,
+          requirements: pos.requirements,
+          salaryRange: pos.salaryRange,
+          contactName: pos.contactName,
+          contactEmail: pos.contactEmail,
+          keywords: JSON.stringify(keywords),
           employerId: selaEmployer.id,
-          title: { contains: pos.title.split(' - ')[0], mode: 'insensitive' }
+          employmentType: 'משרה מלאה',
+          active: true,
+          openings: 1,
+          priority: 5
         }
       })
-
-      if (existingPosition) {
-        // עדכן משרה קיימת
-        await prisma.position.update({
-          where: { id: existingPosition.id },
-          data: {
-            title: pos.title,
-            location: pos.location,
-            description: pos.description,
-            requirements: pos.requirements,
-            salaryRange: pos.salaryRange,
-            contactName: pos.contactName,
-            contactEmail: pos.contactEmail,
-            keywords: JSON.stringify(keywords),
-            active: true,
-            updatedAt: new Date()
-          }
-        })
-        results.push({ position: pos.title, action: '✅ עודכן', keywords: keywords.length })
-      } else {
-        // צור משרה חדשה
-        await prisma.position.create({
-          data: {
-            title: pos.title,
-            location: pos.location,
-            description: pos.description,
-            requirements: pos.requirements,
-            salaryRange: pos.salaryRange,
-            contactName: pos.contactName,
-            contactEmail: pos.contactEmail,
-            keywords: JSON.stringify(keywords),
-            employerId: selaEmployer.id,
-            employmentType: 'משרה מלאה',
-            active: true,
-            openings: 1,
-            priority: 5
-          }
-        })
-        results.push({ position: pos.title, action: '🆕 נוצר', keywords: keywords.length })
-      }
+      results.push({ position: pos.title, action: '✅ נוצר', keywords: keywords.length })
     }
 
-    // 2. בטל משרות שלא ברשימה החדשה
-    const newTitles = allNewPositions.map(p => p.title)
-    const allSelaPositions = await prisma.position.findMany({
-      where: { employerId: selaEmployer.id, active: true }
-    })
-
-    for (const pos of allSelaPositions) {
-      const isInNewList = newTitles.some(t => 
-        pos.title.includes(t.split(' - ')[0]) || t.includes(pos.title.split(' - ')[0])
-      )
-      
-      if (!isInNewList) {
-        await prisma.position.update({
-          where: { id: pos.id },
-          data: { active: false }
-        })
-        results.push({ position: pos.title, action: '❌ הושבת', keywords: 0 })
-      }
-    }
-
-    // 3. קבל סטטיסטיקות
-    const stats = {
-      total: await prisma.position.count({ where: { employerId: selaEmployer.id } }),
-      active: await prisma.position.count({ where: { employerId: selaEmployer.id, active: true } }),
-      inactive: await prisma.position.count({ where: { employerId: selaEmployer.id, active: false } })
-    }
+    // 3️⃣ סטטיסטיקות
+    const pninitCount = pninitPositions.length
+    const danaCount = danaPositions.length
 
     return NextResponse.json({
       success: true,
-      message: '✅ משרות סלע לוגיסטיקה עודכנו בהצלחה!',
+      message: '✅ משרות סלע לוגיסטיקה סונכרנו בהצלחה!',
       employer: selaEmployer.name,
-      stats,
-      results
+      stats: {
+        deleted: deletedCount.count,
+        created: results.length,
+        pninitPositions: pninitCount,
+        danaPositions: danaCount
+      },
+      positions: {
+        pninit: results.filter((_, i) => i < pninitCount).map(r => r.position),
+        dana: results.filter((_, i) => i >= pninitCount).map(r => r.position)
+      }
     })
 
   } catch (error) {
     console.error('❌ שגיאה:', error)
     return NextResponse.json(
-      { error: 'שגיאה בעדכון משרות', details: String(error) },
+      { error: 'שגיאה בסנכרון משרות', details: String(error) },
       { status: 500 }
     )
   }

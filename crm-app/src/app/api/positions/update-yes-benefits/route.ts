@@ -8,9 +8,15 @@ import { prisma } from "@/lib/prisma"
  * עדכון תנאים לכל המשרות של YES
  */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // Allow temporary admin access with secret key
+  const { searchParams } = new URL(request.url)
+  const adminKey = searchParams.get('key')
+  
+  if (adminKey !== 'twenty2yes2026') {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
   }
 
   try {

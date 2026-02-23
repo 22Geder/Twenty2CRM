@@ -23,9 +23,20 @@ interface DataQuality {
   confidence: { name: number; phone: number; email: number; city: number };
 }
 
+interface ExistingCandidate {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  currentTitle: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProcessedFile {
   name: string;
-  status: 'pending' | 'processing' | 'needs-confirm' | 'success' | 'error' | 'skipped';
+  status: 'pending' | 'processing' | 'needs-confirm' | 'success' | 'error' | 'skipped' | 'duplicate';
   progress: number;
   candidateId?: string;  // 🆕 ID לעריכה
   candidate?: {
@@ -43,6 +54,7 @@ interface ProcessedFile {
   dataQuality?: DataQuality;
   extractedText?: string;
   aiExtracted?: boolean;
+  existingCandidate?: ExistingCandidate; // 🆕 מועמד קיים לכפילות
 }
 
 export default function BulkUploadPage() {
@@ -111,8 +123,26 @@ export default function BulkUploadPage() {
           throw new Error(checkData?.error || 'שגיאה בקריאת הקובץ');
         }
 
+        // 🆕 בדיקת כפילויות - אם יש מועמד קיים
+        if (checkData.existingCandidate) {
+          setFiles(prev => prev.map((f, idx) =>
+            idx === i
+              ? {
+                  ...f,
+                  status: 'duplicate' as const,
+                  progress: 100,
+                  candidate: checkData.candidate,
+                  existingCandidate: checkData.existingCandidate,
+                  qualityScore: checkData.qualityScore,
+                  dataQuality: checkData.dataQuality,
+                  extractedText: checkData.extractedText,
+                  aiExtracted: checkData.aiExtracted
+                }
+              : f
+          ));
+        }
         // בדיקת איכות הנתונים
-        if (checkData.needsConfirmation || checkData.qualityScore < 50) {
+        else if (checkData.needsConfirmation || checkData.qualityScore < 50) {
           // 🆕 הקובץ דורש אישור - לא נקלט כראוי
           setFiles(prev => prev.map((f, idx) =>
             idx === i
@@ -233,6 +263,51 @@ export default function BulkUploadPage() {
     ));
   };
 
+  // 🆕 עדכון מועמד קיים (לכפילויות)
+  const updateExistingCandidate = async (fileName: string) => {
+    const fileIndex = files.findIndex(f => f.name === fileName);
+    if (fileIndex === -1) return;
+
+    const originalFile = rawFiles[fileIndex];
+    if (!originalFile) return;
+
+    setFiles(prev => prev.map((f, idx) => 
+      idx === fileIndex ? { ...f, status: 'processing' as const, progress: 50 } : f
+    ));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', originalFile);
+      formData.append('forceUpdate', 'true'); // כפה עדכון
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || 'שגיאה בעדכון המועמד');
+      }
+
+      setFiles(prev => prev.map((f, idx) =>
+        idx === fileIndex
+          ? { ...f, status: 'success' as const, progress: 100, candidate: data.candidate, candidateId: data.candidateId }
+          : f
+      ));
+
+      window.dispatchEvent(new Event('candidates-updated'));
+    } catch (error) {
+      setFiles(prev => prev.map((f, idx) => 
+        idx === fileIndex ? { 
+          ...f, 
+          status: 'error' as const, 
+          error: error instanceof Error ? error.message : 'שגיאה בעדכון'
+        } : f
+      ));
+    }
+  };
+
   // 🆕 התחל עריכה
   const startEditing = (fileName: string, candidate: any) => {
     setEditingFile(fileName);
@@ -286,7 +361,8 @@ export default function BulkUploadPage() {
     error: files.filter(f => f.status === 'error').length,
     pending: files.filter(f => f.status === 'pending').length,
     needsConfirm: files.filter(f => f.status === 'needs-confirm').length,
-    skipped: files.filter(f => f.status === 'skipped').length
+    skipped: files.filter(f => f.status === 'skipped').length,
+    duplicate: files.filter(f => f.status === 'duplicate').length
   };
 
   return (
@@ -306,7 +382,7 @@ export default function BulkUploadPage() {
 
       {/* Stats Cards */}
       {files.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
@@ -330,6 +406,15 @@ export default function BulkUploadPage() {
               <div className="text-center">
                 <p className="text-xs text-amber-600 font-medium">⚠️ לאישור</p>
                 <p className="text-2xl font-bold text-amber-900">{stats.needsConfirm}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <CardContent className="pt-4 pb-4">
+              <div className="text-center">
+                <p className="text-xs text-orange-600 font-medium">🔄 כפילויות</p>
+                <p className="text-2xl font-bold text-orange-900">{stats.duplicate}</p>
               </div>
             </CardContent>
           </Card>
@@ -513,6 +598,123 @@ export default function BulkUploadPage() {
         </Card>
       )}
 
+      {/* 🆕 Duplicate Candidates Section */}
+      {stats.duplicate > 0 && (
+        <Card className="border-2 border-orange-400 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertCircle className="h-5 w-5" />
+              מועמדים כפולים ({stats.duplicate})
+            </CardTitle>
+            <CardDescription>
+              המועמדים הבאים כבר קיימים במערכת. בחר האם לעדכן את הפרטים או לדלג.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {files.filter(f => f.status === 'duplicate').map((file, index) => (
+                <div key={index} className="border-2 border-orange-300 rounded-lg p-4 bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-orange-600" />
+                      <span className="font-medium">{file.name}</span>
+                      {file.aiExtracted && (
+                        <Badge className="bg-purple-100 text-purple-700">AI קרא</Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-gray-600"
+                        onClick={() => skipFile(file.name)}
+                      >
+                        <SkipForward className="h-4 w-4 mr-1" />
+                        דלג
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-orange-600 hover:bg-orange-700"
+                        onClick={() => updateExistingCandidate(file.name)}
+                      >
+                        <Edit3 className="h-4 w-4 mr-1" />
+                        עדכן מועמד קיים
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* השוואה בין מועמד קיים לחדש */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* מועמד קיים */}
+                    <div className="bg-gray-100 rounded-lg p-3">
+                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        מועמד קיים במערכת
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span>{file.existingCandidate?.name || 'לא ידוע'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-gray-500" />
+                          <span>{file.existingCandidate?.phone || 'לא ידוע'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-gray-500" />
+                          <span className="truncate">{file.existingCandidate?.email || 'לא ידוע'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          <span>{file.existingCandidate?.city || 'לא ידוע'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-gray-500" />
+                          <span>{file.existingCandidate?.currentTitle || 'לא ידוע'}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2">
+                          נוסף: {file.existingCandidate?.createdAt ? new Date(file.existingCandidate.createdAt).toLocaleDateString('he-IL') : 'לא ידוע'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* מועמד מהקובץ החדש */}
+                    <div className="bg-orange-100 rounded-lg p-3">
+                      <h4 className="font-semibold text-orange-700 mb-2 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        פרטים מקורות החיים החדשים
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-orange-500" />
+                          <span>{file.candidate?.name || 'לא זוהה'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-orange-500" />
+                          <span>{file.candidate?.phone || 'לא זוהה'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-orange-500" />
+                          <span className="truncate">{file.candidate?.email || 'לא זוהה'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-orange-500" />
+                          <span>{file.candidate?.city || 'לא זוהה'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-orange-500" />
+                          <span>{file.candidate?.currentTitle || 'לא זוהה'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Files List */}
       {files.length > 0 && (
         <Card>
@@ -522,7 +724,7 @@ export default function BulkUploadPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {files.filter(f => f.status !== 'needs-confirm').map((file, index) => (
+              {files.filter(f => f.status !== 'needs-confirm' && f.status !== 'duplicate').map((file, index) => (
                 <div key={index} className={`border rounded-lg overflow-hidden ${
                   file.status === 'skipped' ? 'opacity-50' : ''
                 }`}>

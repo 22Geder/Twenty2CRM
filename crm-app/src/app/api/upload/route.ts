@@ -597,6 +597,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const confirmOnly = formData.get('confirmOnly') === 'true'; // 🆕 מצב אישור בלבד
+    const forceUpdate = formData.get('forceUpdate') === 'true'; // 🆕 עדכון בכפייה למועמד קיים
+    const allowDuplicate = formData.get('allowDuplicate') === 'true'; // 🆕 התעלם מכפילות
 
     if (!file) {
       return NextResponse.json(
@@ -735,6 +737,44 @@ export async function POST(request: NextRequest) {
       dataQuality.hasSkills ? 5 : 0
     ].reduce((a, b) => a + b, 0);
 
+    // 🆕 בדיקת כפילויות - חיפוש מועמד קיים לפי אימייל או טלפון
+    let existingCandidate = null;
+    const normalizedEmailForCheck = isLikelyEmail(candidateData?.email) ? (candidateData.email as string) : null;
+    const phoneForCheck = normalizeMaybeValue(candidateData?.phone);
+    
+    if (normalizedEmailForCheck) {
+      existingCandidate = await prisma.candidate.findUnique({
+        where: { email: normalizedEmailForCheck },
+        select: { 
+          id: true, 
+          name: true, 
+          email: true, 
+          phone: true, 
+          city: true, 
+          currentTitle: true,
+          createdAt: true,
+          updatedAt: true 
+        }
+      });
+    }
+    
+    if (!existingCandidate && phoneForCheck) {
+      existingCandidate = await prisma.candidate.findFirst({
+        where: { phone: phoneForCheck },
+        select: { 
+          id: true, 
+          name: true, 
+          email: true, 
+          phone: true, 
+          city: true, 
+          currentTitle: true,
+          createdAt: true,
+          updatedAt: true 
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+    }
+
     // 🆕 אם זה רק בדיקה (confirmOnly), החזר את הנתונים בלי לשמור
     if (confirmOnly) {
       return NextResponse.json({
@@ -745,8 +785,41 @@ export async function POST(request: NextRequest) {
         candidate: candidateData,
         extractedText: text.substring(0, 1000),
         aiExtracted,
-        fileName: file.name
+        fileName: file.name,
+        // 🆕 מידע על מועמד קיים
+        existingCandidate: existingCandidate ? {
+          id: existingCandidate.id,
+          name: existingCandidate.name,
+          email: existingCandidate.email,
+          phone: existingCandidate.phone,
+          city: existingCandidate.city,
+          currentTitle: existingCandidate.currentTitle,
+          createdAt: existingCandidate.createdAt,
+          updatedAt: existingCandidate.updatedAt
+        } : null
       });
+    }
+    
+    // 🆕 אם יש מועמד קיים ולא ביקשו לעדכן - החזר שגיאה עם פרטי הכפילות
+    if (existingCandidate && !forceUpdate && !allowDuplicate) {
+      return NextResponse.json({
+        success: false,
+        isDuplicate: true,
+        message: 'מועמד עם פרטים זהים כבר קיים במערכת',
+        existingCandidate: {
+          id: existingCandidate.id,
+          name: existingCandidate.name,
+          email: existingCandidate.email,
+          phone: existingCandidate.phone,
+          city: existingCandidate.city,
+          currentTitle: existingCandidate.currentTitle,
+          createdAt: existingCandidate.createdAt,
+          updatedAt: existingCandidate.updatedAt
+        },
+        newCandidate: candidateData,
+        qualityScore,
+        dataQuality
+      }, { status: 409 });
     }
 
     // 🆕 בדיקה - האם יש מספיק מידע ליצירת מועמד?

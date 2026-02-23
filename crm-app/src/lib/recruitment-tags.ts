@@ -253,6 +253,26 @@ export const RECRUITMENT_TAGS: RecruitmentTagsType = {
     icon: "🔬"
   },
   
+  "Port_Workers": {
+    displayName: "עובדי נמל ולוגיסטיקה ימית",
+    positive: [
+      "סוור", "סוורים", "סוורת", "סוורות", "לאשינג", "lashing",
+      "אתת", "אתתים", "אתתית", "איתות", "פינר", "פינרים", "פינרית",
+      "טלמן", "טלימאן", "מונה", "טלמנית", "טלמניות",
+      "נמל", "נמל חיפה", "נמל אשדוד", "עבודת נמל", "עובד נמל",
+      "עובדים כלליים", "עבודה כללית", "עובד כללי", "עובדת כללית",
+      "עבודה פיזית", "עבודה במשמרות", "משמרות", "מכולות",
+      "ספירה", "ספירת מכולות", "פריקה", "טעינה", "קשירה",
+      "שחרור מטענים", "בטיחות", "עגורן", "משאיות",
+      "כושר גופני", "עבודה בגובה", "עבודה בים", "לוגיסטיקה ימית",
+      "ללא ניסיון", "עבודה מיידית", "עבודה זמנית", "עבודה קבועה",
+      "קשרי גל ים", "גל ים", "שירותי נמל"
+    ],
+    negative: [],
+    color: "#0077B6",
+    icon: "⚓"
+  },
+
   "Warehouse_Worker": {
     displayName: "עבודת מחסן",
     positive: [
@@ -263,7 +283,8 @@ export const RECRUITMENT_TAGS: RecruitmentTagsType = {
       "עבודה זמנית", "עבודה קבועה", "עבודה מיידית", "עבודה פיזית",
       "עבודה תחת לחץ", "צוות", "קבלה והוצאה של סחורה",
       "קריאת ברקודים", "רישום תעודות משלוח", "רישיון מלגזה",
-      "רישיון נהיגה", "שכר מתגמלת", "תנאים טובים"
+      "רישיון נהיגה", "שכר מתגמלת", "תנאים טובים",
+      "עובדים כלליים", "עובד כללי", "עבודה כללית"
     ],
     negative: [],
     color: "#8BC34A",
@@ -629,9 +650,10 @@ export function calculateTagMatchScore(
  */
 export function findRelatedCategories(categories: string[]): string[] {
   const relations: Record<string, string[]> = {
-    "WMS_Logistics": ["Logistics_Operations", "Warehouse_Worker", "Drivers"],
-    "Logistics_Operations": ["WMS_Logistics", "Warehouse_Worker", "Drivers"],
-    "Warehouse_Worker": ["Logistics_Operations", "WMS_Logistics", "Drivers"],
+    "WMS_Logistics": ["Logistics_Operations", "Warehouse_Worker", "Drivers", "Port_Workers"],
+    "Logistics_Operations": ["WMS_Logistics", "Warehouse_Worker", "Drivers", "Port_Workers"],
+    "Warehouse_Worker": ["Logistics_Operations", "WMS_Logistics", "Drivers", "Port_Workers"],
+    "Port_Workers": ["Warehouse_Worker", "Logistics_Operations", "Drivers", "WMS_Logistics"],
     "Maintenance": ["Electromechanics", "Electrician", "Mechanic_Technician"],
     "Electromechanics": ["Maintenance", "Electrician", "Engineer"],
     "Electrician": ["Maintenance", "Electromechanics", "Engineer"],

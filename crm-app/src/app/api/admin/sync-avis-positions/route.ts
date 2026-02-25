@@ -1011,6 +1011,7 @@ export async function POST(request: NextRequest) {
       employer = await prisma.employer.create({
         data: {
           name: 'קבוצת UMI AVIS',
+          email: 'HasamaJobs@avis.co.il',
           contactEmail: 'HasamaJobs@avis.co.il',
           contactName: 'מחלקת גיוס',
           phone: '',
@@ -1036,6 +1037,7 @@ export async function POST(request: NextRequest) {
       await prisma.employer.update({
         where: { id: employer.id },
         data: {
+          email: 'HasamaJobs@avis.co.il',
           contactEmail: 'HasamaJobs@avis.co.il',
           name: 'קבוצת UMI AVIS'
         }

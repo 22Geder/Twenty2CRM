@@ -1,9 +1,15 @@
-const { PrismaClient } = require('@prisma/client');
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
+
+/**
+ * API endpoint to update Mizrahi Bank positions - February 2026
+ * POST /api/admin/sync-mizrahi-positions
+ */
 
 // ========== שכר עדכני ==========
 
-// שכר טלרים - עדכני
 const TELLER_SALARY_CONTINUOUS = {
   monthly: 8200,
   yearly: 9500,
@@ -16,7 +22,6 @@ const TELLER_SALARY_SPLIT = {
   details: 'כולל 8 פיצולים, 10 שעות נוספות בחודש ונסיעות'
 };
 
-// שכר בנקאים - עדכני
 const BANKER_SALARY_CONTINUOUS = {
   monthly: 8400,
   yearly: 9800,
@@ -29,14 +34,13 @@ const BANKER_SALARY_SPLIT = {
   details: 'כולל 8 פיצולים, 10 שעות נוספות בחודש ונסיעות + קרן השתלמות מיום ראשון'
 };
 
-// שכר LIVE - עדכני
 const LIVE_SALARY = {
   monthly: 9700,
   yearly: 11100,
   details: 'עבודה במשמרות 07:00-20:00, 2 משמרות ערב בשבוע, שישי אחת ל-3 שבועות'
 };
 
-// מענקי התמדה - עדכני
+// מענקי התמדה
 const TELLER_BONUS_REGULAR = `• 3,500 ₪ לאחר חצי שנה\n• 3,500 ₪ לאחר שנה\n• סה"כ: 7,000 ₪`;
 const TELLER_BONUS_TLV = `• 3,000 ₪ אחרי 3 חודשים\n• 5,000 ₪ אחרי 6 חודשים\n• 5,000 ₪ אחרי שנה\n• סה"כ: 13,000 ₪`;
 
@@ -75,24 +79,31 @@ const LIVE_KEYWORDS = JSON.stringify([
   'תקשורת', 'שירותיות', 'יכולת מכירה', 'טכנולוגיה', 'מזרחי טפחות'
 ]);
 
-// פונקציית עזר לבניית תיאור
-function buildDescription(title, branchType, employmentType, location, region, regionCode, additionalInfo, salary, bonus) {
+function buildDescription(
+  title: string, 
+  branchType: string, 
+  employmentType: string, 
+  location: string, 
+  region: string, 
+  regionCode: string, 
+  additionalInfo: string | null, 
+  salary: { monthly: number; yearly: number; details: string }, 
+  bonus: string | null
+) {
   let desc = `📍 ${title}\n\n`;
   
-  // סוג העסקה
-  const employmentLabel = {
+  const employmentLabel: Record<string, string> = {
     'קבוע': '✅ תקן קבוע',
     'חל"ד': '🔄 החלפת חל"ד (אפשרות לקליטה בתקן קבוע)',
     'זמני': '⏳ תקן זמני'
   };
   desc += `${employmentLabel[employmentType] || employmentType}\n`;
   
-  // סוג סניף
   if (branchType === 'רצוף') {
     desc += `🏢 סניף רצוף (ללא פיצולים)\n`;
   } else if (branchType === 'מפוצל') {
     desc += `🏢 סניף מפוצל\n`;
-  } else if (branchType === 'מפוצל ב\'-ו\'') {
+  } else if (branchType === "מפוצל ב'-ו'") {
     desc += `🏢 סניף מפוצל ב'-ו'\n`;
   }
   
@@ -103,25 +114,21 @@ function buildDescription(title, branchType, employmentType, location, region, r
     desc += `ℹ️ ${additionalInfo}\n\n`;
   }
   
-  // שכר
   desc += `💰 שכר:\n`;
   desc += `• שכר חודשי: ${salary.monthly.toLocaleString()} ₪\n`;
   desc += `• ממוצע שנתי: ${salary.yearly.toLocaleString()} ₪\n`;
   desc += `• ${salary.details}\n\n`;
   
-  // מענק התמדה
   if (bonus) {
     desc += `🎁 מענק התמדה:\n${bonus}\n\n`;
   }
   
-  // דרישות
   desc += `📋 דרישות:\n`;
   desc += `• עדיפות לבוגרי תואר בכלכלה/מנה"ס/ניהול/מדעי החברה\n`;
   desc += `• ניסיון בשירות ו/או מכירות - יתרון משמעותי\n`;
   desc += `• זמינות לעבודה באזור הגיאוגרפי\n`;
   desc += `• יכולת עבודה בצוות ותקשורת בינאישית\n\n`;
   
-  // הערות שליחת מועמדים
   desc += `📧 שליחת מועמדים:\n`;
   desc += `• יש לשלוח קו"ח למייל: orpazsm@gmail.com\n`;
   desc += `• העתק למערכת הגיוס: umtb-hr@cvwebmail.com\n`;
@@ -131,7 +138,7 @@ function buildDescription(title, branchType, employmentType, location, region, r
   return desc;
 }
 
-// כל המשרות החדשות - פברואר 2026
+// כל המשרות - פברואר 2026
 const ALL_POSITIONS = [
   // ==================== מרחב מרכז JB-107 ====================
   {
@@ -149,7 +156,7 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר בסניף קרית עתידים רמת החייל - בנק מזרחי (דחוף!)',
+    title: 'טלר בסניף קרית עתידים רמת החייל - בנק מזרחי (דחוף!!!)',
     location: 'תל אביב - רמת החייל',
     region: 'מרכז',
     regionCode: 'JB-107',
@@ -304,17 +311,17 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי משכנתאות בסניף גן העיר תל אביב - בנק מזרחי',
-    location: 'תל אביב - גן העיר',
+    title: 'בנקאי משכנתאות מתנייד מרחב מרכז - בנק מזרחי',
+    location: 'תל אביב, רמת גן, בת ים',
     region: 'מרכז',
     regionCode: 'JB-107',
-    branchType: 'רצוף',
+    branchType: 'מעורב',
     employmentType: 'קבוע',
-    additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_CONTINUOUS,
+    additionalInfo: 'התניידות בין הסניפים בת"א, ר"ג, בת ים. עבודה בסניפים רצופים או מפוצלים לפי הצורך. נדרש תואר פיננסי, יכולת מכירתית, סדר וארגון',
+    salary: BANKER_SALARY_SPLIT,
     bonus: null,
     keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '8,400-9,800 ₪',
+    salaryRange: '9,600-10,900 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
@@ -339,20 +346,6 @@ const ALL_POSITIONS = [
     branchType: 'מפוצל',
     employmentType: 'חל"ד',
     additionalInfo: 'החלפת חל"ד - נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות מתנייד מרחב מרכז - בנק מזרחי',
-    location: 'תל אביב, רמת גן, בת ים',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'התניידות בין הסניפים בת"א, ר"ג, בת ים. עבודה בסניפים רצופים או מפוצלים לפי הצורך',
     salary: BANKER_SALARY_SPLIT,
     bonus: null,
     keywords: MORTGAGE_KEYWORDS,
@@ -408,7 +401,7 @@ const ALL_POSITIONS = [
     location: 'אלעד',
     region: 'דן',
     regionCode: 'JB-110',
-    branchType: 'מפוצל ב\'-ו\'',
+    branchType: "מפוצל ב'-ו'",
     employmentType: 'קבוע',
     additionalInfo: '🚨 דחוף! טלר יחיד בסניף - צריך מועמד זמין לעבודה ללא אילוצים, יכולות גבוהות',
     salary: TELLER_SALARY_SPLIT,
@@ -431,13 +424,12 @@ const ALL_POSITIONS = [
     salaryRange: '9,300-10,700 ₪',
     employmentTypeField: 'משרה מלאה'
   },
-  // בנקאים מרחב דן
   {
     title: 'בנקאי לקוחות בסניף קרית אילון חולון - בנק מזרחי',
     location: 'חולון - קרית אילון',
     region: 'דן',
     regionCode: 'JB-110',
-    branchType: 'מפוצל ב\'-ו\'',
+    branchType: "מפוצל ב'-ו'",
     employmentType: 'קבוע',
     additionalInfo: null,
     salary: BANKER_SALARY_SPLIT,
@@ -451,7 +443,7 @@ const ALL_POSITIONS = [
     location: 'קרית אונו',
     region: 'דן',
     regionCode: 'JB-110',
-    branchType: 'מפוצל ב\'-ו\'',
+    branchType: "מפוצל ב'-ו'",
     employmentType: 'חל"ד',
     additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
     salary: BANKER_SALARY_SPLIT,
@@ -475,20 +467,6 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי לקוחות בסניף בני ברק ירושלים - בנק מזרחי',
-    location: 'בני ברק - רחוב ירושלים',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: 'מפוצל',
-    employmentType: 'זמני',
-    additionalInfo: 'תקן זמני',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
     title: 'בנקאי עסקי בסניף בר אילן - בנק מזרחי',
     location: 'רמת גן - בר אילן',
     region: 'דן',
@@ -499,20 +477,6 @@ const ALL_POSITIONS = [
     salary: BANKER_SALARY_SPLIT,
     bonus: null,
     keywords: BUSINESS_BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות במרכז עסקים בני ברק - בנק מזרחי',
-    location: 'בני ברק',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
     salaryRange: '9,600-10,900 ₪',
     employmentTypeField: 'משרה מלאה'
   },
@@ -532,7 +496,6 @@ const ALL_POSITIONS = [
   },
 
   // ==================== מרחב יהודה JB-109 ====================
-  // משרות ירושלים
   {
     title: 'טלר מתנייד מרחב ירושלים - בנק מזרחי',
     location: 'ירושלים והסביבה',
@@ -562,34 +525,6 @@ const ALL_POSITIONS = [
     employmentTypeField: 'חלקית'
   },
   {
-    title: 'בנקאי משכנתאות מרחבי ירושלים - בנק מזרחי',
-    location: 'ירושלים - התניידות',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'עבודה בעיקר בסניפים מפוצלים, החלפת חל"ד עם אפשרות לקליטה',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות במרכז עסקים ירושלים - בנק מזרחי',
-    location: 'ירושלים',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
     title: 'טלר בסניף קרית עסקים ירושלים - בנק מזרחי',
     location: 'ירושלים - קרית עסקים',
     region: 'יהודה',
@@ -608,13 +543,27 @@ const ALL_POSITIONS = [
     location: 'ירושלים - רוממה',
     region: 'יהודה',
     regionCode: 'JB-109',
-    branchType: 'מפוצל ב\'-ו\'',
+    branchType: "מפוצל ב'-ו'",
     employmentType: 'חל"ד',
     additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
     salary: TELLER_SALARY_SPLIT,
     bonus: TELLER_BONUS_REGULAR,
     keywords: TELLER_KEYWORDS,
     salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+  {
+    title: 'בנקאי משכנתאות מרחבי ירושלים - בנק מזרחי',
+    location: 'ירושלים - התניידות',
+    region: 'יהודה',
+    regionCode: 'JB-109',
+    branchType: 'מפוצל',
+    employmentType: 'חל"ד',
+    additionalInfo: 'עבודה בעיקר בסניפים מפוצלים, החלפת חל"ד עם אפשרות לקליטה',
+    salary: BANKER_SALARY_SPLIT,
+    bonus: null,
+    keywords: MORTGAGE_KEYWORDS,
+    salaryRange: '9,600-10,900 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
@@ -631,7 +580,6 @@ const ALL_POSITIONS = [
     salaryRange: '9,600-10,900 ₪',
     employmentTypeField: 'משרה מלאה'
   },
-  // משרות שפלת יהודה
   {
     title: 'בנקאי עסקי בסניף קש"ת אירפורט סיטי - בנק מזרחי',
     location: 'אירפורט סיטי - קרית שדה התעופה',
@@ -651,7 +599,7 @@ const ALL_POSITIONS = [
     location: 'מודיעין',
     region: 'יהודה',
     regionCode: 'JB-109',
-    branchType: 'מפוצל ב\'-ו\'',
+    branchType: "מפוצל ב'-ו'",
     employmentType: 'חל"ד',
     additionalInfo: 'החלפת חל"ד - נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
     salary: BANKER_SALARY_SPLIT,
@@ -731,8 +679,8 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר במרכז עסקים באר שבע - בנק מזרחי',
-    location: 'באר שבע',
+    title: 'טלר בסניף דימונה - בנק מזרחי',
+    location: 'דימונה',
     region: 'דרום',
     regionCode: 'JB-111',
     branchType: 'מפוצל',
@@ -773,27 +721,13 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר בסניף דימונה - בנק מזרחי',
-    location: 'דימונה',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
     title: 'טלר מתנייד שפלה - בנק מזרחי',
     location: 'ראשון לציון, רחובות, נס ציונה, יבנה',
     region: 'דרום',
     regionCode: 'JB-111',
     branchType: 'מעורב',
     employmentType: 'זמני',
-    additionalInfo: 'התניידות בין הסניפים בראשל"צ, רחובות, נס ציונה ויבנה - רובם סניפים מפוצלים',
+    additionalInfo: 'תקן זמני - התניידות בין הסניפים בראשל"צ, רחובות, נס ציונה ויבנה - רובם סניפים מפוצלים',
     salary: TELLER_SALARY_SPLIT,
     bonus: TELLER_BONUS_REGULAR,
     keywords: TELLER_KEYWORDS,
@@ -875,20 +809,6 @@ const ALL_POSITIONS = [
 
   // ==================== מרחב שרון JB-108 ====================
   {
-    title: 'טלר בסניף ערים כפר סבא - בנק מזרחי',
-    location: 'כפר סבא - ערים',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'מפוצל ב\'-ו\'',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
     title: 'טלר בסניף א.ת כפר סבא - בנק מזרחי',
     location: 'כפר סבא - אזור תעשיה',
     region: 'שרון',
@@ -921,7 +841,7 @@ const ALL_POSITIONS = [
     location: 'רעננה - אחוזה מערב',
     region: 'שרון',
     regionCode: 'JB-108',
-    branchType: 'מפוצל ב\'-ו\'',
+    branchType: "מפוצל ב'-ו'",
     employmentType: 'קבוע',
     additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
     salary: BANKER_SALARY_SPLIT,
@@ -938,20 +858,6 @@ const ALL_POSITIONS = [
     branchType: 'מפוצל',
     employmentType: 'זמני',
     additionalInfo: 'תקן זמני',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף רמת השרון - בנק מזרחי',
-    location: 'רמת השרון',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
     salary: TELLER_SALARY_SPLIT,
     bonus: TELLER_BONUS_REGULAR,
     keywords: TELLER_KEYWORDS,
@@ -988,10 +894,8 @@ const ALL_POSITIONS = [
   }
 ];
 
-// פונקציה ראשית
-async function updateMizrahiPositions() {
+export async function POST(request: NextRequest) {
   console.log('🏦 מעדכן משרות בנק מזרחי טפחות - פברואר 2026\n');
-  console.log('='.repeat(60));
 
   try {
     // מציאת מעסיק בנק מזרחי
@@ -1011,21 +915,16 @@ async function updateMizrahiPositions() {
         }
       });
     }
-    console.log(`✅ מעסיק: ${employer.name}\n`);
+    console.log(`✅ מעסיק: ${employer.name}`);
 
     // קבלת כל המשרות הקיימות
     const existingPositions = await prisma.position.findMany({
       where: { employerId: employer.id }
     });
-    console.log(`📋 משרות קיימות: ${existingPositions.length}\n`);
-
-    // סימון כל המשרות הקיימות כלא פעילות, נפעיל רק את אלה שברשימה
-    const existingTitles = new Set(existingPositions.map(p => p.title));
-    const newTitles = new Set(ALL_POSITIONS.map(p => p.title));
+    console.log(`📋 משרות קיימות: ${existingPositions.length}`);
 
     let created = 0;
     let updated = 0;
-    let deactivated = 0;
 
     // עדכון או יצירת משרות
     for (const pos of ALL_POSITIONS) {
@@ -1043,11 +942,10 @@ async function updateMizrahiPositions() {
 
       const existingPosition = existingPositions.find(p => 
         p.title === pos.title || 
-        p.title.includes(pos.location.split(' - ')[0]) && p.title.includes(pos.title.split(' ')[0])
+        (p.title.includes(pos.location.split(' - ')[0]) && p.title.includes(pos.title.split(' ')[0]))
       );
 
       if (existingPosition) {
-        // עדכון משרה קיימת
         await prisma.position.update({
           where: { id: existingPosition.id },
           data: {
@@ -1063,7 +961,6 @@ async function updateMizrahiPositions() {
         updated++;
         console.log(`🔄 עודכן: ${pos.title}`);
       } else {
-        // יצירת משרה חדשה
         await prisma.position.create({
           data: {
             title: pos.title,
@@ -1081,36 +978,32 @@ async function updateMizrahiPositions() {
       }
     }
 
-    // סימון משרות שלא ברשימה כלא פעילות
-    for (const existingPos of existingPositions) {
-      const stillExists = ALL_POSITIONS.some(p => 
-        p.title === existingPos.title ||
-        existingPos.title.includes(p.location.split(' - ')[0]) && existingPos.title.includes(p.title.split(' ')[0])
-      );
-
-      if (!stillExists && existingPos.active) {
-        await prisma.position.update({
-          where: { id: existingPos.id },
-          data: { active: false }
-        });
-        deactivated++;
-        console.log(`❌ הושבת: ${existingPos.title}`);
+    const result = {
+      success: true,
+      message: `עדכון משרות בנק מזרחי הושלם בהצלחה!`,
+      stats: {
+        created,
+        updated,
+        total: ALL_POSITIONS.length
       }
-    }
+    };
 
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 סיכום:');
-    console.log(`   ✨ נוצרו: ${created} משרות`);
-    console.log(`   🔄 עודכנו: ${updated} משרות`);
-    console.log(`   ❌ הושבתו: ${deactivated} משרות`);
-    console.log(`   📋 סה"כ משרות פעילות: ${ALL_POSITIONS.length}`);
-    console.log('='.repeat(60));
+    console.log('\n📊 סיכום:', result);
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('❌ שגיאה:', error);
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json(
+      { success: false, error: String(error) },
+      { status: 500 }
+    );
   }
 }
 
-updateMizrahiPositions();
+export async function GET() {
+  return NextResponse.json({
+    message: 'Use POST to sync Mizrahi positions',
+    positionsCount: ALL_POSITIONS.length,
+    regions: ['מרכז (JB-107)', 'דן (JB-110)', 'יהודה (JB-109)', 'LIVE (JB-4100)', 'דרום (JB-111)', 'צפון (JB-113)', 'שרון (JB-108)']
+  });
+}

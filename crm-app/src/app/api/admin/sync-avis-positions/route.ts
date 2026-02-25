@@ -1012,8 +1012,6 @@ export async function POST(request: NextRequest) {
         data: {
           name: 'קבוצת UMI AVIS',
           email: 'HasamaJobs@avis.co.il',
-          contactEmail: 'HasamaJobs@avis.co.il',
-          contactName: 'מחלקת גיוס',
           phone: '',
           description: `קבוצת UMI AVIS - מובילה בתחום הרכב בישראל
 • השכרת רכב
@@ -1037,8 +1035,6 @@ export async function POST(request: NextRequest) {
       await prisma.employer.update({
         where: { id: employer.id },
         data: {
-          email: 'HasamaJobs@avis.co.il',
-          contactEmail: 'HasamaJobs@avis.co.il',
           name: 'קבוצת UMI AVIS'
         }
       });
@@ -1070,6 +1066,8 @@ export async function POST(request: NextRequest) {
             salaryRange: pos.salaryRange,
             employmentType: pos.employmentType,
             keywords: pos.keywords,
+            contactEmail: 'HasamaJobs@avis.co.il',
+            contactName: 'מחלקת גיוס - קבוצת UMI AVIS',
             active: true
           }
         });
@@ -1084,6 +1082,8 @@ export async function POST(request: NextRequest) {
             salaryRange: pos.salaryRange,
             employmentType: pos.employmentType,
             keywords: pos.keywords,
+            contactEmail: 'HasamaJobs@avis.co.il',
+            contactName: 'מחלקת גיוס - קבוצת UMI AVIS',
             active: true,
             employerId: employer.id
           }

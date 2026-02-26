@@ -10,58 +10,77 @@ export async function GET() {
     console.log('🔧 מעדכן מיקומי משרות...')
 
     const updates: { title: string; oldLocation: string; newLocation: string }[] = []
+    const debug: string[] = []
 
-    // עדכון משרות סלע - מיקומים קטנים
-    const selaLocationUpdates: Record<string, string> = {
-      'בני דרום': 'בני דרום, אשדוד, אשקלון, קריית גת',
-      'חפץ חיים': 'חפץ חיים, קריית מלאכי, גדרה, אשדוד',
-      'מבקיעים': 'מבקיעים, אשקלון, קריית גת, שדרות',
-      'מבקיעים (לוגיסטים)': 'מבקיעים, אשקלון, קריית גת, שדרות',
-    }
-
-    for (const [oldLoc, newLoc] of Object.entries(selaLocationUpdates)) {
-      const positions = await prisma.position.findMany({
-        where: { 
-          location: oldLoc,
-          employer: { name: { contains: 'סלע' } }
+    // מצא את כל המשרות של אופרייט
+    const uprightPositions = await prisma.position.findMany({
+      where: { 
+        employer: { 
+          OR: [
+            { name: { contains: 'אופרייט' } },
+            { name: { contains: 'Operait' } }
+          ]
         }
-      })
+      },
+      include: { employer: true }
+    })
+    debug.push(`Found ${uprightPositions.length} Upright positions`)
+
+    // עדכון ידני של כל משרת אופרייט
+    for (const pos of uprightPositions) {
+      const loc = (pos.location || '').toLowerCase()
+      let newLoc = pos.location
       
-      for (const pos of positions) {
+      if (loc.includes('גלילות') && !loc.includes('תל אביב')) {
+        newLoc = 'גלילות, תל אביב, רמת השרון, הרצליה, רעננה'
+      } else if (loc.includes('חדרה') && !loc.includes('נתניה')) {
+        newLoc = 'חדרה, נתניה, כפר יונה, פרדס חנה'
+      }
+      
+      if (newLoc !== pos.location) {
         await prisma.position.update({
           where: { id: pos.id },
           data: { location: newLoc }
         })
-        updates.push({ title: pos.title, oldLocation: oldLoc, newLocation: newLoc })
+        updates.push({ title: pos.title, oldLocation: pos.location || '', newLocation: newLoc })
       }
     }
 
-    // עדכון משרות אופרייט
-    const uprightLocationUpdates: Record<string, string> = {
-      'גלילות': 'גלילות, תל אביב, רמת השרון, הרצליה, רעננה',
-      'חדרה': 'חדרה, נתניה, כפר יונה, פרדס חנה',
-    }
+    // מצא את כל המשרות של סלע
+    const selaPositions = await prisma.position.findMany({
+      where: { 
+        employer: { name: { contains: 'סלע' } }
+      }
+    })
+    debug.push(`Found ${selaPositions.length} Sela positions`)
 
-    for (const [oldLoc, newLoc] of Object.entries(uprightLocationUpdates)) {
-      const positions = await prisma.position.findMany({
-        where: { 
-          location: oldLoc,
-          employer: { name: { contains: 'אופרייט' } }
-        }
-      })
+    // עדכון ידני של משרות סלע עם מיקומים קטנים
+    for (const pos of selaPositions) {
+      const loc = (pos.location || '').toLowerCase()
+      let newLoc = pos.location
       
-      for (const pos of positions) {
+      // עדכון רק אם אין כבר ערים נוספות
+      if (loc === 'בני דרום' || (loc.includes('בני דרום') && !loc.includes('אשדוד'))) {
+        newLoc = 'בני דרום, אשדוד, אשקלון, קריית גת'
+      } else if (loc === 'חפץ חיים' || (loc.includes('חפץ חיים') && !loc.includes('אשדוד'))) {
+        newLoc = 'חפץ חיים, קריית מלאכי, גדרה, אשדוד'
+      } else if ((loc === 'מבקיעים' || loc.includes('מבקיעים')) && !loc.includes('אשקלון')) {
+        newLoc = 'מבקיעים, אשקלון, קריית גת, שדרות'
+      }
+      
+      if (newLoc !== pos.location) {
         await prisma.position.update({
           where: { id: pos.id },
           data: { location: newLoc }
         })
-        updates.push({ title: pos.title, oldLocation: oldLoc, newLocation: newLoc })
+        updates.push({ title: pos.title, oldLocation: pos.location || '', newLocation: newLoc })
       }
     }
 
     return NextResponse.json({
       success: true,
       message: `עודכנו ${updates.length} משרות`,
+      debug,
       updates
     })
 

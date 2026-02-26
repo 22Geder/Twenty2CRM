@@ -12,6 +12,131 @@ import {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
+// 🧠 פונקציה לקבלת ציוני התאמה מ-Gemini AI (25 נקודות מקסימום)
+async function getGeminiMatchScores(
+  candidates: Array<{
+    candidate: {
+      id: string
+      name: string
+      resume?: string | null
+      currentTitle?: string | null
+      skills?: string | null
+    }
+    tagScore: number
+    locationScore: number
+  }>,
+  position: {
+    title: string
+    description?: string | null
+    requirements?: string | null
+    location?: string | null
+  }
+): Promise<Record<string, { score: number; reason: string }>> {
+  const results: Record<string, { score: number; reason: string }> = {}
+  
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    
+    // יצירת תיאור המשרה
+    const jobDescription = `
+שם המשרה: ${position.title}
+תיאור: ${position.description || 'לא צוין'}
+דרישות: ${position.requirements || 'לא צוין'}
+מיקום: ${position.location || 'לא צוין'}
+`.trim()
+
+    // מעבד מועמדים בקבוצות של 10 (לחסוך rate limits)
+    const batchSize = 10
+    for (let i = 0; i < candidates.length; i += batchSize) {
+      const batch = candidates.slice(i, i + batchSize)
+      
+      // יצירת prompt לקבוצה
+      const candidatesList = batch.map((item, idx) => {
+        const cv = item.candidate.resume || ''
+        const cvSummary = cv.length > 1500 ? cv.substring(0, 1500) + '...' : cv
+        return `
+מועמד ${idx + 1} (ID: ${item.candidate.id}):
+שם: ${item.candidate.name}
+תפקיד נוכחי: ${item.candidate.currentTitle || 'לא צוין'}
+כישורים: ${item.candidate.skills || 'לא צוין'}
+קורות חיים:
+${cvSummary}
+---`
+      }).join('\n')
+
+      const prompt = `אתה מומחה גיוס. נתח את ההתאמה בין המועמדים הבאים למשרה.
+
+פרטי המשרה:
+${jobDescription}
+
+רשימת מועמדים:
+${candidatesList}
+
+לכל מועמד, תן ציון מ-0 עד 25 לפי התאמת קורות החיים למשרה:
+- 20-25: התאמה מצוינת - ניסיון ישיר בתחום, כישורים מתאימים מאוד
+- 15-19: התאמה טובה - ניסיון רלוונטי, רוב הכישורים מתאימים
+- 10-14: התאמה בינונית - ניסיון חלקי, יש פוטנציאל
+- 5-9: התאמה נמוכה - מעט קשר לתחום
+- 0-4: אין התאמה - תחום שונה לגמרי
+
+החזר JSON בפורמט:
+{
+  "candidates": [
+    {"id": "ID של המועמד", "score": ציון 0-25, "reason": "הסבר קצר בעברית למה הציון הזה"}
+  ]
+}
+
+החזר רק את ה-JSON, ללא טקסט נוסף.`
+
+      try {
+        const result = await model.generateContent(prompt)
+        const text = result.response.text()
+        
+        // חילוץ JSON מהתשובה
+        const jsonMatch = text.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0])
+          if (parsed.candidates && Array.isArray(parsed.candidates)) {
+            for (const c of parsed.candidates) {
+              if (c.id && typeof c.score === 'number') {
+                results[c.id] = {
+                  score: Math.min(Math.max(c.score, 0), 25), // בין 0-25
+                  reason: c.reason || ''
+                }
+              }
+            }
+          }
+        }
+      } catch (batchError) {
+        console.error(`Gemini batch error:`, batchError)
+        // בשגיאה - נותן ציון בסיסי לכל הקבוצה
+        for (const item of batch) {
+          results[item.candidate.id] = {
+            score: Math.min(item.tagScore / 25 * 15, 15),
+            reason: 'ציון אוטומטי - לא ניתח ע"י AI'
+          }
+        }
+      }
+      
+      // המתנה קצרה בין קבוצות
+      if (i + batchSize < candidates.length) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    }
+  } catch (error) {
+    console.error('Gemini scoring error:', error)
+    // בשגיאה כללית - ציון בסיסי לכולם
+    for (const item of candidates) {
+      results[item.candidate.id] = {
+        score: Math.min(item.tagScore / 25 * 15, 15),
+        reason: 'ציון אוטומטי'
+      }
+    }
+  }
+  
+  return results
+}
+
 interface RouteParams {
   params: Promise<{
     id: string
@@ -84,12 +209,14 @@ export async function GET(
       },
     })
 
-    // 🔥🧠 אלגוריתם AI ULTRA V4 - 50% מיקום / 25% תגיות / 25% ניסיון (פברואר 2026)
+    // 🔥🧠 אלגוריתם AI ULTRA V5 - 50% מיקום / 25% תגיות / 25% GEMINI AI (פברואר 2026)
     // סה"כ 100 נקודות: 
     // - מיקום: 50 נקודות (50%) - הכי חשוב!
     // - תגיות: 25 נקודות (25%) - 5 תגיות תואמות = מלא
-    // - ניסיון: 25 נקודות (25%)
-    const candidatesWithScore = await Promise.all(candidates.map(async (candidate) => {
+    // - GEMINI AI: 25 נקודות (25%) - קריאת קורות חיים והתאמה למשרה!
+    
+    // שלב 1: חישוב מיקום ותגיות לכל המועמדים
+    const candidatesWithBasicScore = candidates.map((candidate) => {
       const candidateTagIds = candidate.tags.map(tag => tag.id)
       const candidateTagNames = candidate.tags.map(tag => tag.name.toLowerCase())
       const positionTagNames = position.tags.map(tag => tag.name.toLowerCase())
@@ -159,39 +286,52 @@ export async function GET(
         locationMatchType = 'no_position_location'
       }
 
-      // ============================================
-      // 💼 בלוק ניסיון - 25 נקודות מקסימום (25%)
-      // ============================================
-      let experienceScore = 0
-      
-      // ניסיון לפי שנים (15 נקודות)
-      if (candidate.yearsOfExperience) {
-        if (candidate.yearsOfExperience >= 5) experienceScore = 15
-        else if (candidate.yearsOfExperience >= 3) experienceScore = 12
-        else if (candidate.yearsOfExperience >= 2) experienceScore = 10
-        else if (candidate.yearsOfExperience >= 1) experienceScore = 7
-        else experienceScore = 5
-      } else {
-        experienceScore = 5 // ציון בסיסי גם בלי ניסיון מפורש
-      }
-
-      // התאמת תפקיד נוכחי (10 נקודות)
-      let titleScore = 0
-      if (candidate.currentTitle && position.title) {
-        const canTitle = candidate.currentTitle.toLowerCase()
-        const posTitle = position.title.toLowerCase()
-        const titleWords = posTitle.split(' ').filter(w => w.length > 2)
-        const matchingWords = titleWords.filter(word => canTitle.includes(word))
-        if (titleWords.length > 0) {
-          titleScore = Math.min((matchingWords.length / titleWords.length) * 10, 10)
-        }
-      }
-      
-      const totalExperienceScore = Math.min(experienceScore + titleScore, 25)
-
       // 🎓 חילוץ מצב השכלה מקורות החיים (למידע בלבד)
       const resumeText = (candidate.resume || '').toLowerCase()
       const educationStatus = extractEducationStatus(resumeText)
+
+      return {
+        candidate,
+        tagScore,
+        locationScore,
+        locationMatch,
+        locationMatchType,
+        matchingTags,
+        categoryOverlap,
+        candidateRecruitmentTags,
+        candidateCategories,
+        recruitmentTagMatch,
+        educationStatus,
+        candidateCity,
+      }
+    })
+
+    // מיון לפי ציון בסיסי (מיקום + תגיות) כדי לקבוע מי יקבל ניתוח Gemini
+    candidatesWithBasicScore.sort((a, b) => (b.locationScore + b.tagScore) - (a.locationScore + a.tagScore))
+
+    // שלב 2: שליחת TOP 50 מועמדים ל-Gemini לניתוח AI
+    const top50Candidates = candidatesWithBasicScore.slice(0, 50)
+    
+    // יצירת prompts בבת אחת ל-Gemini
+    const geminiScores = await getGeminiMatchScores(top50Candidates, position)
+
+    // שלב 3: חיבור הציונים - מיקום + תגיות + Gemini
+    const candidatesWithScore = candidatesWithBasicScore.map((item, index) => {
+      const { candidate, tagScore, locationScore, locationMatch, locationMatchType, 
+              matchingTags, categoryOverlap, candidateRecruitmentTags, candidateCategories,
+              recruitmentTagMatch, educationStatus, candidateCity } = item
+
+      // ציון Gemini - רק ל-50 המועמדים הראשונים, אחרים מקבלים ציון בסיסי
+      let geminiScore = 0
+      let geminiReason = ''
+      
+      if (index < 50 && geminiScores[candidate.id]) {
+        geminiScore = geminiScores[candidate.id].score
+        geminiReason = geminiScores[candidate.id].reason
+      } else {
+        // ציון בסיסי למועמדים שלא נבדקו ע"י Gemini
+        geminiScore = Math.min(tagScore / 25 * 15, 15) // עד 15 נקודות בסיסיות
+      }
 
       // 🔑 יצירת עד 30 תגיות השוואה
       const comparisonTags = generateComparisonTags(
@@ -204,7 +344,7 @@ export async function GET(
       )
 
       // 📝 יצירת הסבר למה מתאים
-      const whySuitable = generateWhySuitable(
+      const whySuitable = geminiReason || generateWhySuitable(
         candidate,
         position,
         matchingTags,
@@ -218,10 +358,10 @@ export async function GET(
       // 🎯 חישוב ציון סופי:
       // מיקום: 50 נקודות (50%)
       // תגיות: 25 נקודות (25%) - 5 תגיות = מלא
-      // ניסיון: 25 נקודות (25%)
+      // GEMINI AI: 25 נקודות (25%) - קריאת CV והתאמה
       // ============================================
       
-      const rawScore = locationScore + tagScore + totalExperienceScore
+      const rawScore = locationScore + tagScore + geminiScore
 
       const finalScore = Math.min(Math.round(rawScore), 100)
 
@@ -248,13 +388,13 @@ export async function GET(
           tags: tagScore,
           matchingTagsCount: matchingTags.length,
           tagsMaxPossible: 25,
-          // 25% ניסיון
-          experience: Math.round(totalExperienceScore),
-          experienceYears: candidate.yearsOfExperience || 0,
-          experienceMaxPossible: 25,
+          // 25% GEMINI AI - קריאת CV
+          geminiAI: Math.round(geminiScore),
+          geminiMaxPossible: 25,
+          geminiAnalyzed: index < 50,
         }
       }
-    }))
+    })
 
     // מיון - קודם לפי ציון התאמה, אחר כך לפי מיקום
     candidatesWithScore.sort((a, b) => {
@@ -279,6 +419,8 @@ export async function GET(
       totalCount: relevantCandidates.length,
       daysBack: 21,
       aiPowered: true,
+      geminiAnalyzed: Math.min(candidates.length, 50),
+      algorithm: '50% מיקום / 25% תגיות / 25% GEMINI AI',
     })
   } catch (error) {
     console.error("Error fetching matching candidates:", error)

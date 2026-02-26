@@ -995,9 +995,8 @@ export async function GET() {
       avisEmployer = await prisma.employer.create({
         data: {
           name: 'AVIS ישראל',
-          email: 'moran.vashler@avis.co.il',
+          email: 'avis@avis.co.il',
           phone: '',
-          status: 'active'
         }
       })
       console.log('✅ נוצר מעסיק: AVIS ישראל')
@@ -1017,9 +1016,8 @@ export async function GET() {
       umiEmployer = await prisma.employer.create({
         data: {
           name: 'UMI',
-          email: 'moran.vashler@avis.co.il',
+          email: 'umi@umi.co.il',
           phone: '',
-          status: 'active'
         }
       })
       console.log('✅ נוצר מעסיק: UMI')
@@ -1050,8 +1048,11 @@ export async function GET() {
           salaryRange: pos.salaryRange,
           employmentType: pos.employmentType,
           benefits: pos.benefits,
+          workHours: pos.workHours,
+          contactEmail: pos.contactEmail,
           keywords: `${pos.title}, ${pos.location}, AVIS, UMI, רכב, ליסינג, השכרה, מכירות, שירות`,
-          status: 'active',
+          active: true,
+          openings: pos.openPositions,
           employerId: employer.id,
         }
       })

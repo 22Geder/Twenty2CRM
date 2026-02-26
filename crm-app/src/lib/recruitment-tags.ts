@@ -591,11 +591,13 @@ export interface MatchedTag {
   icon: string;
 }
 
-export function findMatchingTags(text: string): MatchedTag[] {
+export function findMatchingTags(text: string, minTags: number = 10): MatchedTag[] {
   const matches: MatchedTag[] = [];
   const textLower = text.toLowerCase();
   const foundKeywords = new Set<string>();
+  const foundCategories = new Set<string>();
 
+  // Phase 1: Exact keyword matching
   for (const [categoryKey, category] of Object.entries(RECRUITMENT_TAGS)) {
     for (const keyword of category.positive) {
       const keywordLower = keyword.toLowerCase();
@@ -603,6 +605,7 @@ export function findMatchingTags(text: string): MatchedTag[] {
       // Check if keyword exists in text and wasn't already found
       if (textLower.includes(keywordLower) && !foundKeywords.has(keywordLower)) {
         foundKeywords.add(keywordLower);
+        foundCategories.add(categoryKey);
         matches.push({
           category: categoryKey,
           categoryDisplayName: category.displayName,
@@ -614,7 +617,143 @@ export function findMatchingTags(text: string): MatchedTag[] {
     }
   }
 
+  // Phase 2: If less than minTags, try partial word matching
+  if (matches.length < minTags) {
+    const textWords = textLower.split(/[\s,.\-\/()]+/).filter(w => w.length > 2);
+    
+    for (const [categoryKey, category] of Object.entries(RECRUITMENT_TAGS)) {
+      for (const keyword of category.positive) {
+        const keywordLower = keyword.toLowerCase();
+        if (foundKeywords.has(keywordLower)) continue;
+        
+        // Check if any word in text starts with the keyword or keyword starts with word
+        for (const word of textWords) {
+          if (word.length > 3 && (word.startsWith(keywordLower) || keywordLower.startsWith(word))) {
+            foundKeywords.add(keywordLower);
+            foundCategories.add(categoryKey);
+            matches.push({
+              category: categoryKey,
+              categoryDisplayName: category.displayName,
+              keyword: keyword,
+              color: category.color,
+              icon: category.icon
+            });
+            break;
+          }
+        }
+        
+        if (matches.length >= minTags) break;
+      }
+      if (matches.length >= minTags) break;
+    }
+  }
+
+  // Phase 3: If still less than minTags, add related category tags
+  if (matches.length < minTags) {
+    const categoriesArray = Array.from(foundCategories);
+    const relatedCategories = findRelatedCategoriesForTags(categoriesArray);
+    
+    for (const relatedCategory of relatedCategories) {
+      const category = RECRUITMENT_TAGS[relatedCategory];
+      if (!category) continue;
+      
+      // Add most common keywords from related categories
+      const commonKeywords = category.positive.slice(0, 3);
+      for (const keyword of commonKeywords) {
+        const keywordLower = keyword.toLowerCase();
+        if (foundKeywords.has(keywordLower)) continue;
+        
+        foundKeywords.add(keywordLower);
+        matches.push({
+          category: relatedCategory,
+          categoryDisplayName: category.displayName,
+          keyword: keyword,
+          color: category.color,
+          icon: category.icon
+        });
+        
+        if (matches.length >= minTags) break;
+      }
+      if (matches.length >= minTags) break;
+    }
+  }
+
+  // Phase 4: If still not enough, detect general skills from text
+  if (matches.length < minTags) {
+    const genericSkills = detectGenericSkills(textLower, foundKeywords);
+    matches.push(...genericSkills.slice(0, minTags - matches.length));
+  }
+
   return matches;
+}
+
+// Helper function for finding related categories
+function findRelatedCategoriesForTags(categories: string[]): string[] {
+  const relations: Record<string, string[]> = {
+    "General_Office_Admin": ["CustomerService", "Finance_Accounting", "HR_Recruitment"],
+    "CustomerService": ["General_Office_Admin", "Banking"],
+    "Vehicle_Automotive": ["Drivers", "Mechanic_Technician", "General_Office_Admin"],
+    "Logistics_Operations": ["Warehouse_Worker", "Drivers", "WMS_Logistics"],
+    "Finance_Accounting": ["General_Office_Admin", "Banking"],
+    "Production": ["Warehouse_Worker", "Maintenance"],
+    "HighTech": ["Engineer", "General_Office_Admin"],
+    "Banking": ["CustomerService", "Finance_Accounting", "General_Office_Admin"],
+  };
+  
+  const related = new Set<string>();
+  for (const cat of categories) {
+    if (relations[cat]) {
+      relations[cat].forEach(r => related.add(r));
+    }
+  }
+  categories.forEach(c => related.delete(c));
+  return Array.from(related);
+}
+
+// Helper function to detect generic skills
+function detectGenericSkills(textLower: string, foundKeywords: Set<string>): MatchedTag[] {
+  const genericDetection: Array<{
+    patterns: string[];
+    category: string;
+    keyword: string;
+  }> = [
+    { patterns: ["ניסיון", "שנות", "שנים"], category: "General_Office_Admin", keyword: "ניסיון תעסוקתי" },
+    { patterns: ["אנגלית", "english"], category: "General_Office_Admin", keyword: "אנגלית" },
+    { patterns: ["עברית", "hebrew"], category: "General_Office_Admin", keyword: "עברית שפת אם" },
+    { patterns: ["מחשב", "computer", "אופיס", "office"], category: "General_Office_Admin", keyword: "עבודה עם מחשב" },
+    { patterns: ["צוות", "team"], category: "General_Office_Admin", keyword: "עבודה בצוות" },
+    { patterns: ["לקוחות", "customers", "client"], category: "CustomerService", keyword: "שירות לקוחות" },
+    { patterns: ["טלפון", "phone", "תקשורת"], category: "CustomerService", keyword: "תקשורת טלפונית" },
+    { patterns: ["ניהול", "מנהל", "manager"], category: "General_Office_Admin", keyword: "ניהול" },
+    { patterns: ["רישיון", "נהיגה", "license"], category: "Drivers", keyword: "רישיון נהיגה" },
+    { patterns: ["תקשורת", "יחסי אנוש", "בין אישי"], category: "CustomerService", keyword: "תקשורת בין אישית" },
+    { patterns: ["לחץ", "דדליין", "deadline"], category: "General_Office_Admin", keyword: "עבודה תחת לחץ" },
+    { patterns: ["excel", "אקסל"], category: "General_Office_Admin", keyword: "Excel" },
+    { patterns: ["word", "וורד"], category: "General_Office_Admin", keyword: "Microsoft Office" },
+  ];
+  
+  const results: MatchedTag[] = [];
+  
+  for (const detection of genericDetection) {
+    if (foundKeywords.has(detection.keyword.toLowerCase())) continue;
+    
+    const hasPattern = detection.patterns.some(p => textLower.includes(p.toLowerCase()));
+    if (hasPattern) {
+      const category = RECRUITMENT_TAGS[detection.category];
+      if (category) {
+        foundKeywords.add(detection.keyword.toLowerCase());
+        results.push({
+          category: detection.category,
+          categoryDisplayName: category.displayName,
+          keyword: detection.keyword,
+          color: category.color,
+          icon: category.icon
+        });
+      }
+    }
+  }
+  
+  return results;
 }
 
 /**

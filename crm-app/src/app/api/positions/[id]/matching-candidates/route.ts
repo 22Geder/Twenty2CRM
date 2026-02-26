@@ -321,7 +321,7 @@ export async function GET(
               matchingTags, categoryOverlap, candidateRecruitmentTags, candidateCategories,
               recruitmentTagMatch, educationStatus, candidateCity } = item
 
-      // ציון Gemini - רק ל-50 המועמדים הראשונים, אחרים מקבלים ציון בסיסי
+      // ציון Gemini - רק ל-50 המועמדים הראשונים, אחרים מקבלים ציון על בסיס תגיות
       let geminiScore = 0
       let geminiReason = ''
       
@@ -329,8 +329,9 @@ export async function GET(
         geminiScore = geminiScores[candidate.id].score
         geminiReason = geminiScores[candidate.id].reason
       } else {
-        // ציון בסיסי למועמדים שלא נבדקו ע"י Gemini
-        geminiScore = Math.min(tagScore / 25 * 15, 15) // עד 15 נקודות בסיסיות
+        // ציון בסיסי למועמדים שלא נבדקו ע"י Gemini - יחסי לתגיות
+        // אם יש 5 תגיות תואמות (25 נק') -> מקבל 25 נק' גם ב-Gemini (מקסימום אפשרי)
+        geminiScore = tagScore // עד 25 נקודות - יחסי לתגיות
       }
 
       // 🔑 יצירת עד 30 תגיות השוואה

@@ -128,7 +128,7 @@ export async function GET() {
     const pninitPositions = [
       {
         title: 'מלגזן היגש - בני דרום',
-        location: 'בני דרום',
+        location: 'בני דרום, אשדוד, אשקלון, קריית גת',
         workHours: '08:00-17:00',
         salaryRange: '47 ₪/שעה',
         description: `🏭 מלגזן היגש - סלע לוגיסטיקה בני דרום
@@ -147,7 +147,7 @@ export async function GET() {
       },
       {
         title: 'פקיד/ה מחסן - בני דרום',
-        location: 'בני דרום',
+        location: 'בני דרום, אשדוד, אשקלון, קריית גת',
         workHours: '08:00-17:00',
         salaryRange: '42 ₪/שעה',
         description: `📋 פקיד/ה מחסן - סלע לוגיסטיקה בני דרום
@@ -176,7 +176,7 @@ export async function GET() {
       },
       {
         title: 'פקיד/ה מלאי - חפץ חיים',
-        location: 'חפץ חיים',
+        location: 'חפץ חיים, קריית מלאכי, גדרה, אשדוד',
         workHours: '08:00-17:00',
         salaryRange: '45 ₪/שעה',
         description: `📋 פקיד/ה מלאי - סלע לוגיסטיקה חפץ חיים
@@ -390,7 +390,7 @@ export async function GET() {
       },
       {
         title: 'רפרנט/ית שטח - לוגיסטים מבקיעים',
-        location: 'מבקיעים (לוגיסטים)',
+        location: 'מבקיעים, אשקלון, קריית גת, שדרות',
         workHours: '06:00-14:00',
         salaryRange: '50 ₪/שעה',
         description: `🚛 רפרנט/ית שטח - לוגיסטים מבקיעים

@@ -4,27 +4,42 @@ import { prisma } from '@/lib/prisma'
 /**
  * API לדיבוג מועמד
  * GET /api/debug-candidate?name=נסר&phone=0586336399
+ * GET /api/debug-candidate?latest=10  - 10 המועמדים האחרונים
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const name = searchParams.get('name') || ''
   const phone = searchParams.get('phone') || ''
+  const email = searchParams.get('email') || ''
+  const latest = searchParams.get('latest')
 
   try {
-    // חיפוש מועמד
-    const candidates = await prisma.candidate.findMany({
-      where: {
-        OR: [
-          { name: { contains: name } },
-          { phone: { contains: phone } },
-          { phone: { contains: phone.replace(/^0/, '') } }
-        ]
-      },
-      include: {
-        tags: true
-      },
-      take: 10
-    })
+    let candidates
+
+    if (latest) {
+      // הבא את X המועמדים האחרונים לפי תאריך יצירה
+      candidates = await prisma.candidate.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: { tags: true },
+        take: parseInt(latest) || 10
+      })
+    } else {
+      // חיפוש מועמד לפי שם/טלפון/אימייל
+      candidates = await prisma.candidate.findMany({
+        where: {
+          OR: [
+            { name: { contains: name, mode: 'insensitive' } },
+            { phone: { contains: phone } },
+            { phone: { contains: phone.replace(/^0/, '') } },
+            { email: { contains: email, mode: 'insensitive' } }
+          ]
+        },
+        include: {
+          tags: true
+        },
+        take: 10
+      })
+    }
 
     if (candidates.length === 0) {
       return NextResponse.json({

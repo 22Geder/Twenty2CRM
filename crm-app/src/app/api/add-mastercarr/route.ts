@@ -20,14 +20,10 @@ export async function GET() {
       employer = await prisma.employer.create({
         data: {
           name: "MASTERCARR - מוסך מאסטר קאר",
-          industry: "רכב ומכונאות",
-          contactName: "עודד גוזלן",
-          contactEmail: "",
-          contactPhone: "0537223722",
-          address: "המלאכה 5, טירת כרמל",
-          description: "מוסך מקצועי לתיקון ואחזקת רכבים",
+          email: "mastercarr.garage@gmail.com",
+          phone: "0537223722",
+          description: "מוסך מקצועי לתיקון ואחזקת רכבים - עודד גוזלן, המלאכה 5, טירת כרמל",
           website: "",
-          isActive: true,
         }
       })
       console.log("✅ נוצר מעסיק חדש:", employer.name)
@@ -44,8 +40,7 @@ export async function GET() {
         location: "טירת כרמל",
         salaryRange: "לפי ניסיון",
         employmentType: "משרה מלאה",
-        experienceRequired: "5 שנים",
-        isActive: true,
+        active: true,
         priority: 1,
       },
       {
@@ -55,8 +50,7 @@ export async function GET() {
         location: "טירת כרמל",
         salaryRange: "לפי ניסיון",
         employmentType: "משרה מלאה",
-        experienceRequired: "ללא ניסיון / מינימלי",
-        isActive: true,
+        active: true,
         priority: 1,
       },
       {
@@ -66,8 +60,7 @@ export async function GET() {
         location: "טירת כרמל",
         salaryRange: "לפי ניסיון",
         employmentType: "משרה מלאה",
-        experienceRequired: "2+ שנים",
-        isActive: true,
+        active: true,
         priority: 1,
       },
     ]
@@ -130,7 +123,7 @@ export async function GET() {
 
     // ספירת משרות פעילות של המעסיק
     const totalPositions = await prisma.position.count({
-      where: { employerId: employer.id, isActive: true }
+      where: { employerId: employer.id, active: true }
     })
 
     return NextResponse.json({

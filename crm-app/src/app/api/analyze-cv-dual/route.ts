@@ -136,37 +136,126 @@ function detectIndustries(text: string): string[] {
     .map(d => d.industry)
 }
 
+// 🗺️ מיפוי ערים קרובות - לחישוב מיקום 50%
+const NEARBY_CITIES: Record<string, string[]> = {
+  'תל אביב': ['רמת גן', 'גבעתיים', 'בני ברק', 'חולון', 'בת ים', 'יפו', 'רמת השרון', 'הרצליה', 'פתח תקווה'],
+  'חיפה': ['קריית אתא', 'קריית ביאליק', 'קריית מוצקין', 'קריית ים', 'נשר', 'טירת כרמל', 'עכו', 'נהריה', 'כרמיאל', 'יקנעם', 'שפרעם', 'טמרה', 'נוף הגליל', 'נצרת'],
+  'ירושלים': ['בית שמש', 'מעלה אדומים', 'מבשרת ציון', 'מודיעין', 'גוש עציון'],
+  'באר שבע': ['אופקים', 'נתיבות', 'שדרות', 'דימונה', 'ערד', 'רהט'],
+  'אשדוד': ['אשקלון', 'קריית גת', 'גדרה', 'יבנה', 'קריית מלאכי', 'שדרות', 'נס ציונה', 'רחובות'],
+  'אשקלון': ['אשדוד', 'קריית גת', 'שדרות', 'נתיבות'],
+  'נתניה': ['חדרה', 'כפר יונה', 'פרדס חנה', 'הרצליה', 'כפר סבא', 'רעננה'],
+  'ראשון לציון': ['נס ציונה', 'רחובות', 'יבנה', 'חולון', 'בת ים', 'אשדוד', 'גדרה'],
+  'פתח תקווה': ['כפר סבא', 'רעננה', 'הוד השרון', 'ראש העין', 'רמת גן', 'בני ברק'],
+  'רחובות': ['נס ציונה', 'ראשון לציון', 'יבנה', 'גדרה', 'אשדוד'],
+  'כפר סבא': ['רעננה', 'הוד השרון', 'פתח תקווה', 'ראש העין', 'נתניה', 'הרצליה'],
+  'הרצליה': ['רעננה', 'כפר סבא', 'רמת השרון', 'תל אביב', 'נתניה'],
+}
+
+// 🗺️ אזורים כלליים
+const REGIONS: Record<string, string[]> = {
+  'מרכז': ['תל אביב', 'רמת גן', 'גבעתיים', 'בני ברק', 'חולון', 'בת ים', 'פתח תקווה', 'ראשון לציון', 'הרצליה', 'רעננה', 'כפר סבא', 'הוד השרון', 'ראש העין', 'לוד', 'רמלה', 'רחובות', 'נס ציונה', 'יבנה', 'מודיעין'],
+  'צפון': ['חיפה', 'קריית אתא', 'קריית ביאליק', 'קריית מוצקין', 'קריית ים', 'נשר', 'טירת כרמל', 'עכו', 'נהריה', 'כרמיאל', 'נצרת', 'עפולה', 'יקנעם', 'מגדל העמק', 'טבריה', 'צפת', 'שפרעם', 'טמרה', 'נוף הגליל'],
+  'דרום': ['באר שבע', 'אשדוד', 'אשקלון', 'קריית גת', 'דימונה', 'ערד', 'אופקים', 'נתיבות', 'שדרות', 'גדרה', 'קריית מלאכי', 'אילת'],
+  'ירושלים': ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת ציון', 'גוש עציון'],
+  'שרון': ['נתניה', 'חדרה', 'כפר יונה', 'פרדס חנה', 'רמת השרון'],
+}
+
 /**
- * מחשב ציון התאמה בין CV למשרה לפי תגיות ותחום
+ * 🗺️ חילוץ עיר מטקסט קורות חיים
+ */
+function extractCityFromCV(cvText: string): string {
+  const lowText = cvText.toLowerCase()
+  
+  // רשימת כל הערים בישראל
+  const allCities = [
+    'תל אביב', 'ירושלים', 'חיפה', 'ראשון לציון', 'פתח תקווה', 'אשדוד', 'נתניה', 'באר שבע', 'בני ברק',
+    'חולון', 'רמת גן', 'אשקלון', 'רחובות', 'בת ים', 'הרצליה', 'כפר סבא', 'מודיעין', 'נצרת',
+    'רעננה', 'לוד', 'רמלה', 'הוד השרון', 'ראש העין', 'קריית גת', 'גבעתיים', 'אור יהודה',
+    'נס ציונה', 'יבנה', 'גדרה', 'קריית אתא', 'קריית ביאליק', 'קריית מוצקין', 'קריית ים',
+    'עכו', 'נהריה', 'כרמיאל', 'צפת', 'טבריה', 'עפולה', 'מגדל העמק', 'יקנעם', 'נשר', 'טירת כרמל',
+    'דימונה', 'ערד', 'אופקים', 'נתיבות', 'שדרות', 'אילת', 'קריית מלאכי', 'בית שמש',
+    'מעלה אדומים', 'מבשרת ציון', 'שפרעם', 'טמרה', 'נוף הגליל', 'כפר יונה', 'פרדס חנה',
+    // יישובים ערביים
+    'אום אל פחם', 'סחנין', 'עראבה', 'דיר חנא', 'מגאר', 'כאבול', 'טייבה', 'טירה', 'קלנסווה',
+    'כפר קאסם', 'באקה אל גרבייה', 'ערערה', 'כפר קרע', 'דאלית אל כרמל', 'עוספיא', 'ריינה', 'כפר כנא',
+    // בדואים
+    'רהט', 'כסייפה', 'לקייה', 'תל שבע', 'שגב שלום',
+  ]
+  
+  // מיון לפי אורך (ערים ארוכות קודם)
+  const sortedCities = allCities.sort((a, b) => b.length - a.length)
+  
+  for (const city of sortedCities) {
+    if (lowText.includes(city.toLowerCase())) {
+      return city
+    }
+  }
+  return ''
+}
+
+/**
+ * 🗺️ בדיקת קרבת מיקום בין מועמד למשרה
+ * מחזיר ציון 0-50 (50% מהציון הכולל!)
+ */
+function calculateLocationScore(candidateCity: string, positionLocation: string): { score: number; type: string } {
+  if (!candidateCity || !positionLocation) {
+    return { score: 15, type: 'unknown' } // ציון בסיסי אם אין מידע
+  }
+  
+  const candLower = candidateCity.toLowerCase()
+  const posLower = positionLocation.toLowerCase()
+  
+  // 1. התאמה מדויקת - 50 נקודות!
+  if (posLower.includes(candLower) || candLower.includes(posLower)) {
+    return { score: 50, type: 'exact' }
+  }
+  
+  // 2. ערים קרובות - 40 נקודות
+  for (const [mainCity, nearby] of Object.entries(NEARBY_CITIES)) {
+    const isCandiateInGroup = candLower.includes(mainCity.toLowerCase()) || nearby.some(n => candLower.includes(n.toLowerCase()))
+    const isPositionInGroup = posLower.includes(mainCity.toLowerCase()) || nearby.some(n => posLower.includes(n.toLowerCase()))
+    
+    if (isCandiateInGroup && isPositionInGroup) {
+      return { score: 40, type: 'nearby' }
+    }
+  }
+  
+  // 3. אותו אזור - 30 נקודות
+  for (const [region, cities] of Object.entries(REGIONS)) {
+    const isCandidateInRegion = cities.some(c => candLower.includes(c.toLowerCase()))
+    const isPositionInRegion = cities.some(c => posLower.includes(c.toLowerCase()))
+    
+    if (isCandidateInRegion && isPositionInRegion) {
+      return { score: 30, type: 'region' }
+    }
+  }
+  
+  // 4. לא באותו אזור - 0 נקודות
+  return { score: 0, type: 'far' }
+}
+
+/**
+ * 🎯 מחשב ציון התאמה: 50% מיקום + 25% תגיות + 25% AI (יחושב מאוחר יותר)
  */
 function calculateMatchScore(
   cvText: string,
   cvIndustries: string[],
-  position: { title: string; description: string | null; requirements: string | null; tags: { name: string }[] }
-): { score: number; matchedTags: string[]; reason: string } {
+  candidateCity: string,
+  position: { title: string; description: string | null; requirements: string | null; location: string | null; tags: { name: string }[] }
+): { score: number; matchedTags: string[]; reason: string; locationScore: number; tagScore: number } {
   const lowCv = cvText.toLowerCase()
   const positionText = `${position.title} ${position.description || ''} ${position.requirements || ''}`.toLowerCase()
   
-  // בדיקת תחום - קריטי!
-  let industryScore = 0
-  let industryMatch = ''
+  // ============================================
+  // 📍 מיקום - 50 נקודות מקסימום (50%)
+  // ============================================
+  const locationResult = calculateLocationScore(candidateCity, position.location || '')
+  const locationScore = locationResult.score
   
-  for (const industry of cvIndustries) {
-    const industryKeywords = INDUSTRY_KEYWORDS[industry] || []
-    const matchCount = industryKeywords.filter(kw => positionText.includes(kw.toLowerCase())).length
-    if (matchCount > 0) {
-      industryScore = Math.min(50, matchCount * 15) // עד 50 נקודות על תחום נכון
-      industryMatch = industry
-      break
-    }
-  }
-  
-  // אם אין התאמת תחום בסיסית - ציון נמוך מאוד
-  if (industryScore === 0) {
-    return { score: 5, matchedTags: [], reason: 'אין התאמת תחום' }
-  }
-  
-  // בדיקת תגיות
+  // ============================================
+  // 🏷️ תגיות - 25 נקודות מקסימום (25%)
+  // ============================================
   const matchedTags: string[] = []
   const positionTags = position.tags.map(t => t.name.toLowerCase())
   
@@ -176,35 +265,43 @@ function calculateMatchScore(
     }
   }
   
-  // בונוס על תגיות תואמות
-  const tagScore = Math.min(30, matchedTags.length * 10) // עד 30 נקודות
+  // 5 תגיות תואמות = 25 נקודות (5 נק' לכל תגית)
+  const tagScore = Math.min(matchedTags.length * 5, 25)
   
-  // בדיקת מיקום (אם מופיע ב-CV)
-  let locationScore = 0
-  const cities = ['תל אביב', 'חיפה', 'ירושלים', 'באר שבע', 'אשדוד', 'נתניה', 'ראשון לציון', 'פתח תקווה', 'נשר', 'כפר סבא', 'רחובות', 'בית שמש', 'לוד', 'רמלה', 'מודיעין']
-  for (const city of cities) {
-    if (lowCv.includes(city) && positionText.includes(city)) {
-      locationScore = 10
+  // ============================================
+  // 🧠 תחום (בונוס) - לא נספר בציון, אבל לסינון
+  // ============================================
+  let industryMatch = false
+  for (const industry of cvIndustries) {
+    const industryKeywords = INDUSTRY_KEYWORDS[industry] || []
+    if (industryKeywords.some(kw => positionText.includes(kw.toLowerCase()))) {
+      industryMatch = true
       break
     }
   }
   
-  // בדיקת ניסיון (מילות מפתח)
-  let experienceScore = 0
-  const expKeywords = ['שנה', 'שנים', 'ניסיון', 'עבדתי', 'עובד ב', 'באחריות']
-  for (const kw of expKeywords) {
-    if (lowCv.includes(kw)) {
-      experienceScore += 2
-    }
-  }
-  experienceScore = Math.min(10, experienceScore)
+  // ציון ראשוני = מיקום + תגיות (AI יוסיף עוד 25 נקודות)
+  const preliminaryScore = locationScore + tagScore
   
-  const totalScore = industryScore + tagScore + locationScore + experienceScore
+  // בונוס קטן על התאמת תחום
+  const industryBonus = industryMatch ? 5 : 0
+  
+  const totalScore = Math.min(preliminaryScore + industryBonus, 80) // מקסימום 80, השאר יגיע מ-AI
+  
+  const locationTypeHebrew: Record<string, string> = {
+    'exact': 'מדויק',
+    'nearby': 'קרוב',
+    'region': 'אזורי',
+    'far': 'מרוחק',
+    'unknown': 'לא ידוע'
+  }
   
   return {
-    score: Math.min(100, totalScore),
+    score: totalScore,
     matchedTags,
-    reason: `התאמת תחום: ${industryMatch} (${industryScore} נק'), תגיות: ${matchedTags.length} (${tagScore} נק')`
+    reason: `מיקום: ${locationTypeHebrew[locationResult.type]} (${locationScore}/50), תגיות: ${matchedTags.length} (${tagScore}/25)`,
+    locationScore,
+    tagScore
   }
 }
 
@@ -223,6 +320,10 @@ export async function POST(request: Request) {
     // 🔍 שלב 1: זיהוי התחומים של המועמד
     const candidateIndustries = detectIndustries(cvText)
     console.log('Detected industries:', candidateIndustries)
+    
+    // 🗺️ שלב 1.5: חילוץ עיר המועמד מה-CV
+    const candidateCity = extractCityFromCV(cvText)
+    console.log('Detected city:', candidateCity)
 
     // 📊 שלב 2: שליפת כל המשרות הפתוחות
     const dbPositions = await prisma.position.findMany({
@@ -235,15 +336,17 @@ export async function POST(request: Request) {
 
     console.log(`Found ${dbPositions.length} active positions`)
 
-    // 📈 שלב 3: חישוב ציון התאמה לכל משרה (מבוסס תחום ותגיות)
+    // 📈 שלב 3: חישוב ציון התאמה לכל משרה (50% מיקום + 25% תגיות + 25% AI)
     const scoredPositions = dbPositions.map(p => {
-      const { score, matchedTags, reason } = calculateMatchScore(
+      const { score, matchedTags, reason, locationScore, tagScore } = calculateMatchScore(
         cvText, 
         candidateIndustries,
+        candidateCity,
         {
           title: p.title,
           description: p.description,
           requirements: p.requirements,
+          location: p.location,
           tags: p.tags
         }
       )
@@ -251,7 +354,9 @@ export async function POST(request: Request) {
         ...p,
         matchScore: score,
         matchedTags,
-        matchReason: reason
+        matchReason: reason,
+        locationScore,
+        tagScore
       }
     })
     .sort((a, b) => b.matchScore - a.matchScore)

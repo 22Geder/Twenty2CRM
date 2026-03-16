@@ -3,36 +3,32 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * POST /api/positions/update-ofir-tags
- * עדכון תגיות נרחב למשרת סוכן ביטוח - אופיר
+ * עדכון תגיות למשרת אופיר סוכנויות ביטוח - 30 תגיות!
  */
 
-// תגיות מורחבות - 30 תגיות למשרת מכירות ביטוח
-const EXTENDED_INSURANCE_TAGS = [
-  // מכירות כללי
-  'מכירות', 'sales', 'נציג מכירות', 'איש מכירות', 'אשת מכירות',
-  'מכירות טלפוניות', 'telesales', 'טלמרקטינג', 'telemarketing',
-  'מוקד מכירות', 'call center', 'קול סנטר',
-  
+// 30 תגיות למשרת מכירות ביטוח
+const EXPANDED_INSURANCE_TAGS = [
   // ביטוח
-  'ביטוח', 'insurance', 'סוכן ביטוח', 'סוכנת ביטוח',
-  'ביטוח חיים', 'ביטוח בריאות', 'ביטוח משכנתא',
-  'פוליסות', 'פוליסה', 'תביעות',
+  'ביטוח', 'insurance', 'סוכן ביטוח', 'פוליסה', 'פוליסות',
+  'ביטוח חיים', 'ביטוח בריאות', 'ביטוח משכנתא', 'כיסוי ביטוחי',
+  
+  // מכירות
+  'מכירות', 'sales', 'מכירות טלפוניות', 'telesales', 'טלמרקטינג',
+  'נציג מכירות', 'איש מכירות', 'אשת מכירות', 'מכירות B2C',
+  
+  // כישורים
+  'שכנוע', 'משא ומתן', 'negotiation', 'סגירת עסקאות', 'closing',
+  'לידים', 'leads', 'יעדים', 'targets', 'עמלות', 'commission',
+  
+  // שירות
+  'שירות לקוחות', 'customer service', 'תודעת שירות', 'יחסי אנוש',
   
   // פיננסי
-  'פיננסי', 'finance', 'פיננסים', 'פנסיה', 'pension',
-  'קרן השתלמות', 'גמל', 'השקעות', 'חיסכון',
+  'פיננסי', 'finance', 'פנסיה', 'pension', 'חסכון', 'השקעות',
   
-  // מיומנויות מכירה
-  'עמלות', 'commission', 'יעדים', 'targets', 'בונוסים',
-  'לידים', 'leads', 'שכנוע', 'משא ומתן', 'negotiation',
-  'סגירת עסקאות', 'closing', 'יחסי לקוחות',
-  
-  // תכונות
-  'תקשורת', 'communication', 'שירות לקוחות', 'customer service',
-  'יחסי אנוש', 'רעב להצלחה', 'הישגיות', 'מוטיבציה',
-  
-  // מיקום
-  'אשדוד', 'דרום', 'south', 'משרה מלאה', 'full time'
+  // מיקום ותנאים
+  'אשדוד', 'דרום', 'משרה מלאה', 'קידום', 'אווירה משפחתית',
+  'שכר גבוה', 'בונוסים', 'טיסות', 'רווחה'
 ]
 
 export async function POST(request: Request) {
@@ -43,25 +39,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('🛡️ מעדכן תגיות למשרת סוכן ביטוח - אופיר...')
+    console.log('🛡️ מעדכן תגיות למשרת אופיר ביטוח...')
+
+    // מציאת מעסיק אופיר
+    const employer = await prisma.employer.findFirst({
+      where: {
+        OR: [
+          { name: { contains: 'אופיר' } },
+          { name: { contains: 'Ofir' } }
+        ]
+      }
+    })
+
+    if (!employer) {
+      return NextResponse.json({ error: 'Employer not found' }, { status: 404 })
+    }
 
     // מציאת המשרה
     const position = await prisma.position.findFirst({
-      where: {
-        title: { contains: 'מכירות ביטוח' }
-      },
-      include: { employer: true, tags: true }
+      where: { employerId: employer.id },
+      include: { tags: true }
     })
 
     if (!position) {
       return NextResponse.json({ error: 'Position not found' }, { status: 404 })
     }
 
-    console.log(`✅ נמצאה משרה: ${position.title} (${position.employer?.name})`)
-
     // יצירת כל התגיות
     const tags = await Promise.all(
-      EXTENDED_INSURANCE_TAGS.map(tagName => 
+      EXPANDED_INSURANCE_TAGS.map(tagName => 
         prisma.tag.upsert({
           where: { name: tagName },
           update: {},
@@ -69,28 +75,23 @@ export async function POST(request: Request) {
         })
       )
     )
-    
-    console.log(`✅ נוצרו/עודכנו ${tags.length} תגיות`)
+    const tagIds = tags.map(t => t.id)
 
-    // עדכון המשרה עם כל התגיות
+    // עדכון המשרה עם התגיות החדשות
     const updatedPosition = await prisma.position.update({
       where: { id: position.id },
       data: {
-        tags: {
-          set: tags.map(t => ({ id: t.id }))
-        }
+        tags: { set: tagIds.map(id => ({ id })) }
       },
-      include: { tags: true, employer: true }
+      include: { tags: true }
     })
 
     return NextResponse.json({
       success: true,
-      message: `עודכנו ${tags.length} תגיות למשרת סוכן ביטוח`,
+      message: `עודכנו ${tagIds.length} תגיות למשרת ${position.title}`,
       position: {
         id: updatedPosition.id,
         title: updatedPosition.title,
-        employer: updatedPosition.employer?.name,
-        location: updatedPosition.location,
         tagsCount: updatedPosition.tags.length,
         tags: updatedPosition.tags.map(t => t.name)
       }

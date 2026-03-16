@@ -103,9 +103,29 @@ interface MatchingCandidate {
 interface MatchingCandidatesSidebarProps {
   positionId: string
   positionTitle?: string
+  positionLocation?: string
+  positionDescription?: string
+  positionRequirements?: string
+  positionSalary?: string
+  positionBenefits?: string
+  positionWorkHours?: string
+  employerName?: string
 }
 
-export function MatchingCandidatesSidebar({ positionId, positionTitle }: MatchingCandidatesSidebarProps) {
+// 🔥 מספר מועמדים להצגה בברירת מחדל
+const DEFAULT_DISPLAY_COUNT = 30
+
+export function MatchingCandidatesSidebar({ 
+  positionId, 
+  positionTitle,
+  positionLocation,
+  positionDescription,
+  positionRequirements,
+  positionSalary,
+  positionBenefits,
+  positionWorkHours,
+  employerName
+}: MatchingCandidatesSidebarProps) {
   const [candidates, setCandidates] = useState<MatchingCandidate[]>([])
   const [positionTags, setPositionTags] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -117,6 +137,8 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
   const [showScoreDetails, setShowScoreDetails] = useState<string | null>(null)
   const [sendingToEmployer, setSendingToEmployer] = useState<string | null>(null)
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
+  const [displayCount, setDisplayCount] = useState(DEFAULT_DISPLAY_COUNT)
+  const [sortBy, setSortBy] = useState<'score' | 'date' | 'location'>('score')
 
   useEffect(() => {
     if (positionId) {
@@ -257,12 +279,68 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
     return '972' + cleaned;
   }
 
+  // 📱 יצירת לינק וואטסאפ עם כל פרטי המשרה!
   const getWhatsAppLink = (phone: string, candidateName: string): string => {
     const normalizedPhone = normalizePhoneForWhatsApp(phone)
-    const message = `היי ${candidateName}! 👋\n\nאני מטוונטי טו ג'ובס, ויש לי משרה שיכולה להתאים לך:\n\n🎯 ${positionTitle || 'משרה חדשה'}\n\nאשמח לדבר איתך ולספר עוד!\n\nמה אומרת/אומר?`
+    
+    // 🔥 הודעה מפורטת עם כל פרטי המשרה
+    let message = `היי ${candidateName}! 👋\n\nאני מטוונטי טו ג'ובס, ויש לי משרה שיכולה להתאים לך:`
+    
+    message += `\n\n🎯 *${positionTitle || 'משרה חדשה'}*`
+    
+    if (employerName) {
+      message += `\n🏢 *חברה:* ${employerName}`
+    }
+    
+    if (positionLocation) {
+      message += `\n📍 *מיקום:* ${positionLocation}`
+    }
+    
+    if (positionSalary) {
+      message += `\n💰 *שכר:* ${positionSalary}`
+    }
+    
+    if (positionWorkHours) {
+      message += `\n⏰ *שעות:* ${positionWorkHours}`
+    }
+    
+    if (positionBenefits) {
+      // קיצור הטבות ל-100 תווים ראשונים
+      const shortBenefits = positionBenefits.length > 100 
+        ? positionBenefits.substring(0, 100) + '...' 
+        : positionBenefits
+      message += `\n✨ *הטבות:* ${shortBenefits}`
+    }
+    
+    if (positionRequirements) {
+      // קיצור דרישות ל-150 תווים
+      const shortReq = positionRequirements.length > 150 
+        ? positionRequirements.substring(0, 150) + '...' 
+        : positionRequirements
+      message += `\n\n📝 *דרישות:*\n${shortReq}`
+    }
+    
+    message += `\n\nאשמח לדבר איתך ולספר עוד!\nמה אומרת/אומר? 😊`
+    
     const encodedMessage = safeEncodeURIComponent(message)
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
+  
+  // 🔄 מיון מועמדים
+  const sortedCandidates = [...candidates].sort((a, b) => {
+    if (sortBy === 'score') {
+      return b.matchScore - a.matchScore
+    } else if (sortBy === 'location') {
+      if (a.locationMatch && !b.locationMatch) return -1
+      if (!a.locationMatch && b.locationMatch) return 1
+      return b.matchScore - a.matchScore
+    } else {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    }
+  })
+  
+  // מועמדים להצגה
+  const displayedCandidates = sortedCandidates.slice(0, displayCount)
 
   const getMatchScoreLabel = (score: number) => {
     if (score >= 80) return 'התאמה מעולה'
@@ -463,8 +541,22 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
             <span className="text-sm">🧠</span>
             <TrendingUp className="h-3 w-3" />
-            AI ULTRA - התאמה חכמה לפי 10 פרמטרים + מיקום
-        </p>
+            50% מיקום | 25% תגיות | 25% AI Gemini
+          </p>
+          
+          {/* 🔄 סורטר */}
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-xs text-gray-500">מיין לפי:</span>
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="text-xs border rounded px-2 py-1 bg-white"
+            >
+              <option value="score">⭐ אחוז התאמה גבוה</option>
+              <option value="location">📍 מיקום קודם</option>
+              <option value="date">📅 חדש ביותר</option>
+            </select>
+          </div>
         
         {/* כפתורי בחירה */}
         {candidates.length > 0 && (
@@ -570,7 +662,8 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
           </div>
         ) : (
           <div className="divide-y">
-            {candidates.map((candidate) => (
+            {/* 🔥 מציג רק את המועמדים הממויינים והמוגבלים */}
+            {displayedCandidates.map((candidate) => (
               <div 
                 key={candidate.id} 
                 className={`p-4 transition-colors ${selectedCandidates.has(candidate.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}
@@ -938,6 +1031,30 @@ export function MatchingCandidatesSidebar({ positionId, positionTitle }: Matchin
                 </div>
               </div>
             ))}
+            
+            {/* 🔥 כפתור "הצג עוד" אם יש עוד מועמדים */}
+            {sortedCandidates.length > displayCount && (
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-t">
+                <Button
+                  onClick={() => setDisplayCount(prev => prev + 30)}
+                  variant="outline"
+                  className="w-full bg-white hover:bg-blue-50 border-blue-200"
+                >
+                  <Users className="h-4 w-4 ml-2" />
+                  הצג עוד 30 מועמדים ({sortedCandidates.length - displayCount} נוספים)
+                </Button>
+              </div>
+            )}
+            
+            {/* סיכום */}
+            <div className="p-3 bg-gray-50 border-t text-center text-xs text-gray-500">
+              מציג {Math.min(displayCount, sortedCandidates.length)} מתוך {sortedCandidates.length} מועמדים
+              {sortedCandidates.length > 0 && (
+                <span className="block mt-1">
+                  ציון ממוצע: {Math.round(sortedCandidates.reduce((a, b) => a + b.matchScore, 0) / sortedCandidates.length)}%
+                </span>
+              )}
+            </div>
           </div>
         )}
       </CardContent>

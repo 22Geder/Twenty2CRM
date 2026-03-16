@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // תגיות לפי סוג משרה
 const tellerTags = [
   'טלר', 'טלרית', 'קופאי', 'קופאית', 'בנק', 'בנקאות', 'שירות לקוחות', 'קופה',
   'פעולות בנקאיות', 'הפקדות', 'משיכות', 'שיקים', 'מזומן', 'עבודה מול קהל',
-  'ללא ניסיון', 'ג\'וניור', 'junior', 'מתחילים', 'הכשרה', 'קבלת קהל',
+  'ללא ניסיון', 'junior', 'מתחילים', 'הכשרה', 'קבלת קהל',
   'עמידה בתור', 'עבודה בסניף', 'bank teller', 'cashier', 'פרונט'
 ];
 
@@ -21,7 +19,7 @@ const bankerTags = [
 const liveTags = [
   'בנקאי דיגיטלי', 'בנקאות דיגיטלית', 'LIVE', 'לייב', 'שירות מרחוק',
   'צאט', 'וידאו', 'שירות לקוחות טלפוני', 'מוקד', 'קול סנטר', 'call center',
-  'משמרות', 'עבודה בבית', 'היברידי', 'digital banking', 'remote service',
+  'משמרות', 'עבודה מהבית', 'היברידי', 'digital banking', 'remote service',
   'טכנולוגיה', 'אפליקציה', 'online banking', 'עבודה במרכז שירות'
 ];
 
@@ -152,7 +150,7 @@ export async function GET() {
       for (const pos of regionData.positions) {
         const isTeller = pos.type === 'טלר';
         const isLive = pos.type === 'בנקאי דיגיטלי';
-        const tags = isLive ? liveTags : (isTeller ? tellerTags : bankerTags);
+        const positionTagNames = isLive ? liveTags : (isTeller ? tellerTags : bankerTags);
         
         const scheduleHebrew = pos.schedule === 'רצוף' ? 'יום עבודה רצוף' : 
                               pos.schedule === 'מפוצל' ? 'יום עבודה מפוצל' : 'משמרות';
@@ -192,20 +190,32 @@ export async function GET() {
         description += `• קידום מהיר\n`;
         description += `• תנאים סוציאליים מלאים מיום ראשון\n`;
 
+        // יצירת/מציאת תגיות
+        const tags = await Promise.all(
+          positionTagNames.map(tagName => 
+            prisma.tag.upsert({
+              where: { name: tagName },
+              update: {},
+              create: { name: tagName }
+            })
+          )
+        );
+        const tagIds = tags.map(t => ({ id: t.id }));
+
         await prisma.position.create({
           data: {
             title,
             description,
             location: regionData.locations,
             requirements: isTeller ? 'ללא ניסיון, הכשרה מלאה' : 'ניסיון בשירות לקוחות - יתרון',
-            salary: pos.salary,
-            jobType: 'משרה מלאה',
-            isActive: true,
+            salaryRange: pos.salary,
+            employmentType: 'משרה מלאה',
+            active: true,
             employerId: employer.id,
-            contactEmail: 'noreply-mizrahi@twenty2jobs.co.il', // מייל פנימי - לא לשלוח התראות אוטומטיות
-            tags: tags,
-            source: 'מזרחי טפחות',
-            externalId: `${regionData.code}-${pos.type}-${pos.location}-${pos.schedule}`.replace(/\s+/g, '-')
+            contactEmail: '', // ללא מייל - לא לשלוח התראות אוטומטיות
+            tags: { connect: tagIds },
+            workHours: scheduleHebrew,
+            benefits: pos.bonus || 'שכר 13, תנאים סוציאליים מלאים'
           }
         });
         positionCount++;

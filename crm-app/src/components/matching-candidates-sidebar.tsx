@@ -735,70 +735,77 @@ export function MatchingCandidatesSidebar({
                       )}
                     </div>
                   </div>
-                  {/* Score Breakdown - פירוט הציון */}
+                  {/* Score Breakdown - פירוט הציון 50/25/25 */}
                   {showScoreDetails === candidate.id && candidate.scoreBreakdown && (
-                    <div className="bg-blue-50 rounded-lg p-3 text-xs space-y-1">
-                      <div className="font-bold text-blue-900 mb-2 flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        פירוט ציון ההתאמה:
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 text-xs space-y-2 border border-blue-200">
+                      <div className="font-bold text-blue-900 mb-3 flex items-center gap-1 text-sm">
+                        <TrendingUp className="h-4 w-4" />
+                        פירוט ציון ההתאמה (אלגוריתם 50/25/25):
                       </div>
-                      {candidate.scoreBreakdown.tags > 0 && (
-                        <div className="flex justify-between">
-                          <span>תגיות תואמות:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.tags}</span>
+                      
+                      {/* מיקום - 50% */}
+                      <div className="bg-white rounded p-2 border">
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-1">
+                            <span className="text-lg">📍</span>
+                            <span className="font-medium">מיקום (50%)</span>
+                          </span>
+                          <span className="font-bold text-lg text-green-600">
+                            {candidate.scoreBreakdown.location || 0}/50
+                          </span>
                         </div>
-                      )}
-                      {candidate.scoreBreakdown.recruitmentTags > 0 && (
-                        <div className="flex justify-between">
-                          <span>🧠 תגיות AI:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.recruitmentTags}</span>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ width: `${((candidate.scoreBreakdown.location || 0) / 50) * 100}%` }}
+                          />
                         </div>
-                      )}
-                      {candidate.scoreBreakdown.categories > 0 && (
-                        <div className="flex justify-between">
-                          <span>📂 קטגוריות:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.categories}</span>
+                      </div>
+                      
+                      {/* תגיות - 25% */}
+                      <div className="bg-white rounded p-2 border">
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-1">
+                            <span className="text-lg">🏷️</span>
+                            <span className="font-medium">תגיות (25%)</span>
+                          </span>
+                          <span className="font-bold text-lg text-blue-600">
+                            {candidate.scoreBreakdown.tags || 0}/25
+                          </span>
                         </div>
-                      )}
-                      {candidate.scoreBreakdown.partial > 0 && (
-                        <div className="flex justify-between">
-                          <span>התאמה חלקית:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.partial}</span>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full" 
+                            style={{ width: `${((candidate.scoreBreakdown.tags || 0) / 25) * 100}%` }}
+                          />
                         </div>
-                      )}
-                      {candidate.scoreBreakdown.location > 0 && (
-                        <div className="flex justify-between">
-                          <span>📍 מיקום:</span>
-                          <span className="font-bold text-green-600">{candidate.scoreBreakdown.location}</span>
+                      </div>
+                      
+                      {/* AI Gemini - 25% */}
+                      <div className="bg-white rounded p-2 border">
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-1">
+                            <span className="text-lg">🤖</span>
+                            <span className="font-medium">AI Gemini (25%)</span>
+                          </span>
+                          <span className="font-bold text-lg text-purple-600">
+                            {candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || 0}/25
+                          </span>
                         </div>
-                      )}
-                      {candidate.scoreBreakdown.experience > 0 && (
-                        <div className="flex justify-between">
-                          <span>ניסיון רלוונטי:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.experience}</span>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className="bg-purple-500 h-2 rounded-full" 
+                            style={{ width: `${((candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || 0) / 25) * 100}%` }}
+                          />
                         </div>
-                      )}
-                      {candidate.scoreBreakdown.title > 0 && (
-                        <div className="flex justify-between">
-                          <span>תפקיד נוכחי:</span>
-                          <span className="font-bold">{Math.round(candidate.scoreBreakdown.title)}</span>
-                        </div>
-                      )}
-                      {candidate.scoreBreakdown.rating > 0 && (
-                        <div className="flex justify-between">
-                          <span>דירוג:</span>
-                          <span className="font-bold">{Math.round(candidate.scoreBreakdown.rating)}</span>
-                        </div>
-                      )}
-                      {candidate.scoreBreakdown.freshness > 0 && (
-                        <div className="flex justify-between">
-                          <span>רלוונטיות זמן:</span>
-                          <span className="font-bold">{candidate.scoreBreakdown.freshness}</span>
-                        </div>
-                      )}
-                      <div className="border-t border-blue-200 mt-2 pt-2 flex justify-between font-bold text-blue-900">
-                        <span>סה"כ:</span>
-                        <span>{candidate.matchScore}%</span>
+                      </div>
+                      
+                      {/* סיכום */}
+                      <div className="border-t border-blue-300 mt-3 pt-2 flex justify-between font-bold text-blue-900 text-base">
+                        <span>סה"כ התאמה:</span>
+                        <span className={`text-xl ${candidate.matchScore >= 70 ? 'text-green-600' : candidate.matchScore >= 50 ? 'text-blue-600' : 'text-orange-600'}`}>
+                          {candidate.matchScore}%
+                        </span>
                       </div>
                     </div>
                   )}

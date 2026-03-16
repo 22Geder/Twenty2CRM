@@ -158,6 +158,13 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
       <MatchingCandidatesSidebar 
         positionId={positionId} 
         positionTitle={position.title}
+        positionLocation={position.location}
+        positionDescription={position.description}
+        positionRequirements={position.requirements}
+        positionSalary={position.salaryRange}
+        positionBenefits={position.benefits}
+        positionWorkHours={position.workHours}
+        employerName={position.employer?.name}
       />
       
       <div className="p-8 max-w-6xl mx-auto xl:pl-[420px]">

@@ -137,12 +137,6 @@ export async function GET() {
           address: 'ישראל'
         }
       });
-    } else {
-      // עדכון המעסיק ללא מייל
-      await prisma.employer.update({
-        where: { id: employer.id },
-        data: { email: '' }
-      });
     }
 
     // מחיקת משרות מזרחי קיימות

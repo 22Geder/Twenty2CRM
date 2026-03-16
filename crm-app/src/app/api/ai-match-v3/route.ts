@@ -278,16 +278,39 @@ JSON בלבד:`
     const analysis = JSON.parse(jsonMatch[0])
     
     // ========================================
-    // 🆕 משקולות חדשים (פברואר 2026):
-    // 50% מיקום | 25% תגיות | 20% AI | 5% דיוק נוסף
-    // ⚠️ סוכני מכירות שטח - פטור ממיקום!
+    // 🔥 אלגוריתם מאוחד (מרץ 2026):
+    // 50% מיקום | 25% תגיות | 25% AI GEMINI
+    // בדיוק כמו matching-candidates!
     // ========================================
     
     // בדיקה אם זו משרת מכירות שטח (לא דורשת מיקום)
     const positionText = `${position.title} ${position.description || ''} ${position.requirements || ''}`.toLowerCase()
     const isFieldSales = /מכירות שטח|סוכן.*(שטח|מכירות)|field sales|b2b.*(שטח|sales)|סוכנ.*(מכירות|שטח)/.test(positionText)
     
-    // חישוב ציון תגיות (25%)
+    // ========================================
+    // 📍 מיקום - 50 נקודות מקסימום (50%)
+    // ========================================
+    let locationScore = 0
+    if (isFieldSales) {
+      locationScore = 50 // סוכני שטח לא תלויים במיקום
+    } else if (locationMatch) {
+      locationScore = 50 // התאמה מושלמת
+    } else if (candidateCity && positionLocality) {
+      // בדיקת קרבה - ערים קרובות = 40, אזור = 30
+      const nearbyCheck = areLocationsNearby(candidateCity, positionLocality)
+      if (nearbyCheck) {
+        locationScore = 40 // קרוב
+      } else {
+        locationScore = 0 // רחוק
+      }
+    } else {
+      locationScore = 15 // אין מידע
+    }
+    
+    // ========================================
+    // 🏷️ תגיות - 25 נקודות מקסימום (25%)
+    // 5 תגיות תואמות = 25 נקודות!
+    // ========================================
     const candidateTagNames = candidate.tags?.map((t: any) => t.name.toLowerCase()) || []
     const positionTagNames = position.tags?.map((t: any) => t.name.toLowerCase()) || []
     let tagMatchCount = 0
@@ -296,31 +319,18 @@ JSON בלבד:`
         tagMatchCount++
       }
     }
-    const tagsScore = positionTagNames.length > 0 
-      ? Math.min(25, Math.round((tagMatchCount / positionTagNames.length) * 25))
-      : 0
+    // 5 נקודות לכל תגית, מקסימום 25 (5 תגיות)
+    const tagsScore = Math.min(tagMatchCount * 5, 25)
     
-    // ציון AI (20%) - מתוך הציון שהוחזר מגמיני
-    const aiScore = Math.round((analysis.score || 0) * 0.20)
+    // ========================================
+    // 🤖 AI GEMINI - 25 נקודות מקסימום (25%)
+    // קריאת CV והתאמה חכמה!
+    // ========================================
+    // המרת ציון Gemini (0-100) ל-0-25
+    const aiScore = Math.round((analysis.score || 0) * 0.25)
     
-    // ציון מיקום (50%) - סוכני שטח מקבלים מלא!
-    let locationScore = 0
-    if (isFieldSales) {
-      locationScore = 50 // סוכני שטח לא תלויים במיקום
-    } else if (locationMatch) {
-      locationScore = 50
-    } else {
-      locationScore = 0 // מרוחק - אין נקודות מיקום
-    }
-    
-    // ציון דיוק נוסף (5%) - קורות חיים וניסיון
-    let precisionScore = 0
-    if (hasResume) precisionScore += 3
-    if ((candidate.yearsOfExperience || 0) >= 2) precisionScore += 2
-    precisionScore = Math.min(5, precisionScore)
-    
-    // ציון סופי
-    let finalScore = locationScore + tagsScore + aiScore + precisionScore
+    // ציון סופי = מיקום + תגיות + AI
+    let finalScore = locationScore + tagsScore + aiScore
     finalScore = Math.min(100, finalScore)
 
     return {
@@ -352,8 +362,8 @@ JSON בלבד:`
   }
 }
 
-// התאמה חכמה בלי AI
-// 🆕 משקולות חדשים (פברואר 2026): 50% מיקום | 25% תגיות | 20% AI | 5% דיוק
+// התאמה חכמה בלי AI - Fallback
+// 🔥 אלגוריתם מאוחד (מרץ 2026): 50% מיקום | 25% תגיות | 25% קריאת CV
 function smartFallbackMatch(candidate: any, position: any, candidateCity: string, locationMatch: boolean) {
   const candidateText = buildCandidateText(candidate).toLowerCase()
   const positionTitle = (position.title || '').toLowerCase()
@@ -363,11 +373,12 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
   const positionFullText = `${position.title} ${position.description || ''} ${position.requirements || ''}`.toLowerCase()
   const isFieldSales = /מכירות שטח|סוכן.*(שטח|מכירות)|field sales|b2b.*(שטח|sales)|סוכנ.*(מכירות|שטח)/.test(positionFullText)
   
-  // ציון בסיסי
-  let locationScore = 0
-  let tagsScore = 0      // 25 נקודות מקסימום
-  let humanScore = 0     // 20 נקודות מקסימום (במקום AI)
-  let precisionScore = 0 // 5 נקודות מקסימום
+  // ========================================
+  // 🔥 אלגוריתם מאוחד: 50% מיקום | 25% תגיות | 25% קריאה
+  // ========================================
+  let locationScore = 0    // 50 נקודות מקסימום
+  let tagsScore = 0        // 25 נקודות מקסימום
+  let readingScore = 0     // 25 נקודות מקסימום (במקום AI)
   const strengths: string[] = []
   const weaknesses: string[] = []
 
@@ -410,70 +421,57 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
     : 0
 
   // ========================================
-  // 🧠 קריאה אנושית (במקום AI) - 20 נקודות מקסימום (20%)
+  // � קריאת CV (במקום AI) - 25 נקודות מקסימום (25%)
   // ========================================
-  let hasHumanMatch = false
+  let hasMatch = false
 
-  // התאמת תפקיד (עד 10 נקודות)
+  // התאמת תפקיד (עד 12 נקודות)
   const titleWords = positionTitle.split(/\s+/).filter((w: string) => w.length > 2)
   let titleMatches = 0
   for (const word of titleWords) {
     if (candidateText.includes(word)) {
       titleMatches++
-      hasHumanMatch = true
+      hasMatch = true
     }
   }
   if (titleMatches > 0) {
-    humanScore += Math.min(10, titleMatches * 4)
+    readingScore += Math.min(12, titleMatches * 4)
     strengths.push(`התאמה לתפקיד ${position.title}`)
   }
 
-  // כישורים מקורות חיים (עד 10 נקודות)
+  // כישורים מקורות חיים (עד 13 נקודות)
   const skills = (candidate.skills || '').toLowerCase().split(',')
   let skillMatches = 0
   for (const skill of skills) {
     if (skill.trim() && skill.trim().length > 2 && positionDesc.includes(skill.trim())) {
       skillMatches++
-      hasHumanMatch = true
+      hasMatch = true
     }
   }
-  humanScore += Math.min(10, skillMatches * 3)
+  readingScore += Math.min(13, skillMatches * 4)
 
-  humanScore = Math.min(20, humanScore) // מקסימום 20 נקודות
+  readingScore = Math.min(25, readingScore) // מקסימום 25 נקודות
 
-  // ========================================
-  // 🎯 דיוק נוסף - 5 נקודות מקסימום (5%)
-  // ========================================
+  // ניסיון - למידע בלבד (לא משפיע על הציון)
   const years = candidate.yearsOfExperience || 0
-  if (years >= 5) {
-    precisionScore += 3
-    strengths.push(`${years} שנות ניסיון`)
-  } else if (years >= 2) {
-    precisionScore += 2
+  if (years >= 2) {
     strengths.push(`${years} שנות ניסיון`)
   }
-  
-  // בונוס אם יש קורות חיים
-  if (candidate.resume && candidate.resume.length > 100) {
-    precisionScore += 2
-  }
-  
-  precisionScore = Math.min(5, precisionScore)
 
-  // 🆕 אם אין התאמה כלל - ציון מינימלי
-  if (!hasHumanMatch && tagMatches === 0 && !isFieldSales) {
+  // 🆕 אם אין התאמה כלל
+  if (!hasMatch && tagMatches === 0 && !isFieldSales) {
     weaknesses.push('לא נמצאה התאמה ברורה - יש לבדוק ידנית')
   }
 
   // ========================================
-  // ציון סופי: 50% מיקום + 25% תגיות + 20% קריאה + 5% דיוק
+  // ציון סופי: 50% מיקום + 25% תגיות + 25% קריאה
   // ========================================
-  let score = locationScore + tagsScore + humanScore + precisionScore
+  let score = locationScore + tagsScore + readingScore
   score = Math.min(100, Math.round(score))
   
   // 🔍 Debug
   if (Math.random() < 0.05) {
-    console.log(`🎯 ${position.title}: מיקום=${locationScore}${isFieldSales ? '(שטח)' : ''}, תגיות=${tagsScore}, קריאה=${humanScore}, דיוק=${precisionScore}, סה"כ=${score}`)
+    console.log(`🎯 ${position.title}: מיקום=${locationScore}${isFieldSales ? '(שטח)' : ''}, תגיות=${tagsScore}, קריאה=${readingScore}, סה"כ=${score}`)
   }
 
   // קביעת המלצה חכמה

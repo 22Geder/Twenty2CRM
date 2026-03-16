@@ -353,16 +353,13 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
         locationMatch: match.locationMatch || false,
         shouldProceed: match.shouldProceed || false,
         scoreBreakdown: {
-          tags: 0,
-          partial: 0,
-          experience: 0,
-          rating: 0,
-          location: match.locationMatch ? 25 : 0,
-          title: 0,
-          freshness: 0,
-          contact: 0,
-          resume: 0,
-          linkedin: 0,
+          // 🔥 אלגוריתם מאוחד: 50% מיקום | 25% תגיות | 25% AI
+          location: match.locationMatch ? 50 : (match.isFieldSales ? 50 : 0),
+          locationMaxPossible: 50,
+          tags: 0, // יחושב מהתגיות התואמות
+          tagsMaxPossible: 25,
+          geminiAI: Math.round(match.score * 0.25) || 0,
+          geminiMaxPossible: 25,
         },
       }))
       

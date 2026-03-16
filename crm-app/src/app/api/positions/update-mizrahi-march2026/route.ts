@@ -132,7 +132,7 @@ export async function GET() {
           name: 'מזרחי טפחות',
           industry: 'בנקאות',
           contactPerson: '',
-          email: '', // ללא מייל - לא לשלוח התראות
+          email: 'noreply-mizrahi@twenty2jobs.co.il', // מייל פנימי - לא לשלוח התראות
           phone: '',
           address: 'ישראל'
         }
@@ -202,7 +202,7 @@ export async function GET() {
             jobType: 'משרה מלאה',
             isActive: true,
             employerId: employer.id,
-            contactEmail: '', // ללא מייל - לא לשלוח התראות
+            contactEmail: 'noreply-mizrahi@twenty2jobs.co.il', // מייל פנימי - לא לשלוח התראות אוטומטיות
             tags: tags,
             source: 'מזרחי טפחות',
             externalId: `${regionData.code}-${pos.type}-${pos.location}-${pos.schedule}`.replace(/\s+/g, '-')

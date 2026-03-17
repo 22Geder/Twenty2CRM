@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { syncPositionToWebsite, deactivatePositionOnWebsite } from "@/lib/twenty2jobs-sync"
 
 function generatePositionKeywords(input: string, maxKeywords = 30): string[] {
   const stopwords = new Set([
@@ -196,6 +197,15 @@ export async function PUT(
         },
       },
     })
+
+    // 🔄 Auto-sync to Twenty2Jobs website (async, don't wait)
+    if (process.env.TWENTY2JOBS_AUTO_SYNC === 'true') {
+      if (position.active) {
+        syncPositionToWebsite(id).catch(err => console.log('Sync warning:', err.message))
+      } else {
+        deactivatePositionOnWebsite(id).catch(err => console.log('Deactivate warning:', err.message))
+      }
+    }
 
     return NextResponse.json(position)
   } catch (error) {

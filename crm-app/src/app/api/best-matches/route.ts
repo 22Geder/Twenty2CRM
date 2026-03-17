@@ -10,7 +10,8 @@ import {
 
 /**
  * 🎯 GET /api/best-matches
- * מחזיר את 10 ההתאמות הטובות ביותר לכל משרה פעילה
+ * מחזיר את 20 ההתאמות הטובות ביותר לכל משרה פעילה
+ * ממוין לפי ציון התאמה - הגבוה ביותר ראשון!
  * רק מועמדים שלא בתהליך כלל!
  */
 export async function GET(request: NextRequest) {
@@ -138,19 +139,21 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // מיון לפי ציון (הגבוה ביותר ראשון) + מיקום
+      // 🎯 מיון לפי ציון - הגבוה ביותר ראשון! (מיקום רק כשוברי שוויון)
       candidatesWithScores.sort((a, b) => {
-        // קודם לפי מיקום
+        // קודם כל לפי ציון - הגבוה ביותר ראשון!
+        if (b.score !== a.score) return b.score - a.score
+        // שוברי שוויון: מיקום
         if (a.locationMatch && !b.locationMatch) return -1
         if (!a.locationMatch && b.locationMatch) return 1
-        // אחר כך לפי ציון
-        return b.score - a.score
+        // שוברי שוויון: דירוג
+        return (b.rating || 0) - (a.rating || 0)
       })
 
-      // לקיחת 10 הראשונים עם ציון מעל 20
+      // 🔢 לקיחת 20 הראשונים עם ציון מעל 20
       const topCandidates = candidatesWithScores
         .filter(c => c.score >= 20)
-        .slice(0, 10)
+        .slice(0, 20)
 
       if (topCandidates.length > 0) {
         positionsWithMatches.push({

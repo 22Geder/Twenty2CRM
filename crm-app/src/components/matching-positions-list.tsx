@@ -26,7 +26,9 @@ import {
   History,
   Clock,
   Copy,
-  ChevronDown
+  ChevronDown,
+  SortAsc,
+  Calendar
 } from "lucide-react"
 
 // 🔧 Safe encoder that handles malformed characters
@@ -135,6 +137,11 @@ interface MatchingPosition {
     contact: number
     resume: number
     linkedin: number
+    // 🆕 שדות אלגוריתם מאוחד 50/25/25
+    locationMaxPossible?: number
+    tagsMaxPossible?: number
+    geminiAI?: number
+    geminiMaxPossible?: number
   }
 }
 
@@ -153,6 +160,10 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   const [showScoreDetails, setShowScoreDetails] = useState<string | null>(null)
   const [aiAnalysis, setAiAnalysis] = useState<any>(null)
   const [analyzingPosition, setAnalyzingPosition] = useState<string | null>(null)
+  
+  // 🆕 מיון והצגה
+  const [sortBy, setSortBy] = useState<'score' | 'location' | 'date'>('score')
+  const [displayCount, setDisplayCount] = useState(20)
 
   // 📧 State לתצוגה מקדימה של מייל
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null)
@@ -536,6 +547,24 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     return "התאמה חלשה"
   }
 
+  // 🆕 מיון המשרות
+  const sortedPositions = [...positions].sort((a, b) => {
+    switch (sortBy) {
+      case 'score':
+        return b.matchScore - a.matchScore
+      case 'location':
+        // מיקום תואם קודם, אחר כך לפי ציון
+        if (a.locationMatch && !b.locationMatch) return -1
+        if (!a.locationMatch && b.locationMatch) return 1
+        return b.matchScore - a.matchScore
+      case 'date':
+        // הכי חדש קודם
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      default:
+        return b.matchScore - a.matchScore
+    }
+  })
+
   if (loading) {
     return (
       <Card>
@@ -572,9 +601,47 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
             {totalCount} נבדקו
           </Badge>
         </CardTitle>
+        
+        {/* 🆕 אפשרויות מיון */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
+          <div className="flex items-center gap-2">
+            <SortAsc className="h-4 w-4 text-gray-500" />
+            <span className="text-xs text-gray-600">מיון:</span>
+            <div className="flex gap-1">
+              <Button
+                variant={sortBy === 'score' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortBy('score')}
+                className={`h-7 text-xs ${sortBy === 'score' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+              >
+                📊 ציון
+              </Button>
+              <Button
+                variant={sortBy === 'location' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortBy('location')}
+                className={`h-7 text-xs ${sortBy === 'location' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+              >
+                📍 מיקום
+              </Button>
+              <Button
+                variant={sortBy === 'date' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortBy('date')}
+                className={`h-7 text-xs ${sortBy === 'date' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+              >
+                📅 תאריך
+              </Button>
+            </div>
+          </div>
+          <Badge className="bg-purple-100 text-purple-700">
+            מציג: {Math.min(displayCount, positions.length)} / {positions.length}
+          </Badge>
+        </div>
+        
         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
-          🤖 סריקת Gemini AI - בודק את כל המשרות
+          🤖 סריקת Gemini AI - האלגוריתם: 50% מיקום | 25% תגיות | 25% AI
         </p>
       </CardHeader>
 
@@ -587,7 +654,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
           </div>
         ) : (
           <div className="max-h-[600px] overflow-y-auto">
-            {positions.map(position => (
+            {sortedPositions.slice(0, displayCount).map(position => (
               <div
                 key={position.id}
                 className={`p-4 border-b hover:bg-gray-50 transition-colors ${
@@ -681,13 +748,82 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
 
                 {/* Score Breakdown */}
                 {showScoreDetails === position.id && (
-                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-xs font-semibold mb-2 text-blue-900">
-                      🤖 ניתוח AI - {position.aiRecommendation || 'לא זמין'}
+                  <div className="mb-3 p-3 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                    {/* 🆕 פירוט ציון ויזואלי 50/25/25 */}
+                    <p className="text-xs font-bold mb-3 text-purple-900 flex items-center gap-1">
+                      📊 פירוט ציון - אלגוריתם מאוחד
                     </p>
                     
+                    <div className="space-y-2 mb-3">
+                      {/* מיקום - 50 נקודות */}
+                      <div>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium flex items-center gap-1">
+                            📍 מיקום
+                          </span>
+                          <span className={`font-bold ${position.locationMatch ? 'text-green-600' : 'text-gray-500'}`}>
+                            {position.locationMatch ? '50' : '0'} / 50
+                          </span>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all ${position.locationMatch ? 'bg-green-500' : 'bg-gray-400'}`}
+                            style={{ width: position.locationMatch ? '100%' : '0%' }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* תגיות - 25 נקודות */}
+                      <div>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium flex items-center gap-1">
+                            🏷️ תגיות תואמות
+                          </span>
+                          <span className="font-bold text-blue-600">
+                            {position.matchingTags?.length || 0} תגיות ({Math.min((position.matchingTags?.length || 0) * 5, 25)} / 25)
+                          </span>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 transition-all"
+                            style={{ width: `${Math.min(((position.matchingTags?.length || 0) * 5) / 25 * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* AI Gemini - 25 נקודות */}
+                      <div>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium flex items-center gap-1">
+                            🤖 AI Gemini
+                          </span>
+                          <span className="font-bold text-purple-600">
+                            {position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)} / 25
+                          </span>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-purple-500 transition-all"
+                            style={{ width: `${((position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)) / 25) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* הסבר */}
+                    <div className="text-xs text-gray-600 bg-white/50 p-2 rounded border border-gray-200">
+                      <span className="font-semibold">סה"כ:</span> {position.matchScore}% מתוך 100 אפשרי
+                    </div>
+                    
+                    {/* AI המלצה */}
+                    {position.aiRecommendation && (
+                      <p className="text-xs font-semibold mt-2 text-blue-900">
+                        🤖 המלצת AI: {position.aiRecommendation}
+                      </p>
+                    )}
+                    
                     {position.aiStrengths && position.aiStrengths.length > 0 && (
-                      <div className="mb-2">
+                      <div className="mt-2">
                         <p className="text-xs font-semibold text-green-700 flex items-center gap-1 mb-1">
                           <CheckCircle className="h-3 w-3" /> יתרונות:
                         </p>
@@ -700,7 +836,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     )}
                     
                     {position.aiWeaknesses && position.aiWeaknesses.length > 0 && (
-                      <div>
+                      <div className="mt-2">
                         <p className="text-xs font-semibold text-orange-700 flex items-center gap-1 mb-1">
                           <AlertCircle className="h-3 w-3" /> חסרונות:
                         </p>
@@ -713,7 +849,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     )}
                     
                     {position.locationMatch && (
-                      <p className="text-xs text-blue-600 font-medium mt-2">📍 מיקום מתאים למועמד!</p>
+                      <p className="text-xs text-green-600 font-medium mt-2">✅ מיקום המועמד תואם למשרה!</p>
                     )}
                   </div>
                 )}
@@ -851,6 +987,22 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 </div>
               </div>
             ))}
+            
+            {/* 🆕 כפתור הצג עוד */}
+            {displayCount < positions.length && (
+              <div className="p-4 text-center border-t bg-gray-50">
+                <Button
+                  variant="outline"
+                  onClick={() => setDisplayCount(prev => prev + 20)}
+                  className="w-full max-w-xs"
+                >
+                  הצג עוד {Math.min(20, positions.length - displayCount)} משרות
+                  <span className="text-xs text-gray-500 mr-2">
+                    ({positions.length - displayCount} נותרו)
+                  </span>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

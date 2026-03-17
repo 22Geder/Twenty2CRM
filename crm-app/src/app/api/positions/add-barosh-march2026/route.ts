@@ -58,16 +58,13 @@ export async function GET() {
       where: { email: 'barosh-iron@twenty2jobs.co.il' },
       update: {
         name: 'ברוש סחר בברזל בע"מ',
-        industry: 'חומרי בניין',
-        address: 'אשדוד, אזור התעשייה, רחוב העבודה'
+        description: 'חברת חומרי בניין וברזל - אשדוד, אזור התעשייה, רחוב העבודה'
       },
       create: {
         name: 'ברוש סחר בברזל בע"מ',
-        industry: 'חומרי בניין',
-        contactPerson: '',
         email: 'barosh-iron@twenty2jobs.co.il',
         phone: '',
-        address: 'אשדוד, אזור התעשייה, רחוב העבודה'
+        description: 'חברת חומרי בניין וברזל - אשדוד, אזור התעשייה, רחוב העבודה'
       }
     });
     results.push({ action: 'employer', name: employer.name });

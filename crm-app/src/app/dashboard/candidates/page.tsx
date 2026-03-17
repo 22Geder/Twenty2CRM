@@ -820,7 +820,8 @@ export default function CandidatesPageModern() {
                 <p className="text-white/80 mt-1">
                   {bestMatchesData.positionsWithMatches} משרות עם התאמות | 
                   {bestMatchesData.totalCandidatesNotInProcess} מועמדים פנויים |
-                  ⚡ {bestMatchesData.processingTime}ms
+                  ⚡ {bestMatchesData.processingTime}ms |
+                  📊 ממוין לפי ציון (גבוה ראשון)
                 </p>
               </div>
               <Button
@@ -990,7 +991,7 @@ export default function CandidatesPageModern() {
             <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
               <div className="text-sm text-slate-500">
                 <Sparkles className="h-4 w-4 inline ml-1 text-[#FF8C00]" />
-                מציג רק מועמדים שאינם בתהליך עבור אף משרה
+                מציג עד 20 מועמדים למשרה, ממוינים לפי ציון התאמה (הגבוה ביותר ראשון) 🎯
               </div>
               <Button
                 variant="outline"

@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`👥 Found ${candidatesNotInProcess.length} candidates not in process`)
 
-    // 3️⃣ לכל משרה - מצא את 10 המועמדים הכי מתאימים
+    // 3️⃣ לכל משרה - מצא את 20 המועמדים הכי מתאימים (ממוין לפי ציון גבוה!)
     const positionsWithMatches = []
 
     for (const position of positions) {

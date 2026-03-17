@@ -815,13 +815,15 @@ export default function CandidatesPageModern() {
               <div>
                 <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                   <Target className="h-6 w-6" />
-                  🎯 התאמות טובות ביותר
+                  🎯 התאמות טובות ביותר (AI ULTRA V5)
                 </h2>
                 <p className="text-white/80 mt-1">
-                  {bestMatchesData.positionsWithMatches} משרות עם התאמות | 
+                  {bestMatchesData.positionsWithMatches} משרות | 
                   {bestMatchesData.totalCandidatesNotInProcess} מועמדים פנויים |
-                  ⚡ {bestMatchesData.processingTime}ms |
-                  📊 ממוין לפי ציון (גבוה ראשון)
+                  ⚡ {bestMatchesData.processingTime}ms
+                </p>
+                <p className="text-xs text-white/60 mt-1">
+                  📍 מיקום 50% | 🏷️ תגיות 25% | 🤖 AI 25%
                 </p>
               </div>
               <Button
@@ -947,12 +949,24 @@ export default function CandidatesPageModern() {
                                   </div>
                                 )}
 
-                                {/* Score */}
-                                <div className={`px-3 py-1 rounded-full text-sm font-bold
-                                  ${candidate.score >= 70 ? 'bg-green-100 text-green-700' :
-                                    candidate.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-slate-100 text-slate-600'}`}>
-                                  {candidate.score}%
+                                {/* Score with Breakdown */}
+                                <div className="flex items-center gap-2">
+                                  {/* פירוט ציון */}
+                                  {candidate.scoreBreakdown && (
+                                    <div className="text-[10px] text-slate-500 flex gap-1">
+                                      <span title="מיקום 50%">📍{candidate.scoreBreakdown.location}</span>
+                                      <span title="תגיות 25%">🏷️{candidate.scoreBreakdown.tags}</span>
+                                      <span title="AI 25%">🤖{candidate.scoreBreakdown.aiEstimate}</span>
+                                    </div>
+                                  )}
+                                  {/* ציון כולל */}
+                                  <div className={`px-3 py-1 rounded-full text-sm font-bold
+                                    ${candidate.score >= 70 ? 'bg-green-100 text-green-700' :
+                                      candidate.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                      candidate.score >= 30 ? 'bg-orange-100 text-orange-700' :
+                                      'bg-slate-100 text-slate-600'}`}>
+                                    {candidate.score}%
+                                  </div>
                                 </div>
 
                                 {/* Actions */}
@@ -991,7 +1005,7 @@ export default function CandidatesPageModern() {
             <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
               <div className="text-sm text-slate-500">
                 <Sparkles className="h-4 w-4 inline ml-1 text-[#FF8C00]" />
-                מציג עד 20 מועמדים למשרה, ממוינים לפי ציון התאמה (הגבוה ביותר ראשון) 🎯
+                אלגוריתם: 📍 מיקום 50% | 🏷️ תגיות 25% | 🤖 AI 25% - {bestMatchesData.algorithm || ''}
               </div>
               <Button
                 variant="outline"

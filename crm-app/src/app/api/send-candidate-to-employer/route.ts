@@ -416,10 +416,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 🚫 בדיקה: האם המועמד עבד בחברה זו בעבר
-    const employerName = position.employer.name.toLowerCase()
+    const employerName = (position.employer?.name || '').toLowerCase()
     const candidateCompany = candidate.currentCompany?.toLowerCase() || ''
     
-    if (candidateCompany && (
+    if (candidateCompany && employerName && (
       employerName.includes(candidateCompany) || 
       candidateCompany.includes(employerName)
     )) {
@@ -868,20 +868,25 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
               text: mailOptions.text,
             }
             
-            // צירוף קורות חיים ל-Resend
+            // צירוף קורות חיים ל-Resend (לא חובה - לא ייכשל אם אין)
             if (mailOptions.attachments && mailOptions.attachments.length > 0) {
               try {
                 const attachUrl = mailOptions.attachments[0].path
-                const response = await fetch(attachUrl)
+                const controller = new AbortController()
+                const timeout = setTimeout(() => controller.abort(), 10000)
+                const response = await fetch(attachUrl, { signal: controller.signal })
+                clearTimeout(timeout)
                 if (response.ok) {
                   const buffer = Buffer.from(await response.arrayBuffer())
                   resendOptions.attachments = [{
                     filename: mailOptions.attachments[0].filename,
                     content: buffer,
                   }]
+                } else {
+                  console.warn('⚠️ Resume fetch returned', response.status)
                 }
-              } catch (attachErr) {
-                console.warn('⚠️ Could not attach resume via Resend:', attachErr)
+              } catch (attachErr: any) {
+                console.warn('⚠️ Could not attach resume via Resend (sending without):', attachErr.message)
               }
             }
             
@@ -1001,6 +1006,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
         : `המייל נשלח ל-${successCount} מתוך ${emailsToSend.length} נמענים`,
       sentTo: sendResults.filter(r => r.success).map(r => r.email),
       failedTo: failedEmails.map(f => ({ email: f.email, error: f.error })),
+      employerEmail: emailsToSend.map(e => e.email).join(', '),
       candidateName: candidate.name,
       candidateMovedToProcess: successCount > 0,
       positionTitle: position.title,
@@ -1009,9 +1015,9 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
     })
 
   } catch (error: any) {
-    console.error("Error sending candidate to employer:", error)
+    console.error("Error sending candidate to employer:", error?.message || error, error?.stack)
     return NextResponse.json(
-      { error: "Failed to send email", details: error.message },
+      { error: `Failed to send email: ${error?.message || 'Unknown error'}`, details: error?.message },
       { status: 500 }
     )
   }

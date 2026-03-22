@@ -237,9 +237,9 @@ export function MatchingCandidatesSidebar({
       const result = await response.json()
 
       if (response.ok) {
-        alert(`✅ המייל נשלח בהצלחה למעסיק!\n\n📧 נשלח ל: ${result.employerEmail}\n\n💡 המייל כולל:\n- פרטי המועמד\n- 5 משפטי התאמה מדויקים\n- קורות חיים (אם קיימים)`)
+        alert(`✅ המייל נשלח בהצלחה למעסיק!\n\n📧 נשלח ל: ${result.employerEmail || result.sentTo?.join(', ') || 'המעסיק'}\n\n${result.candidateMovedToProcess ? '🔄 המועמד הועבר לסטטוס "בתהליך"\n' : ''}💡 המייל כולל:\n- פרטי המועמד\n- 5 משפטי התאמה מדויקים\n- קורות חיים (אם קיימים)`)
       } else {
-        throw new Error(result.error || 'Failed to send email')
+        throw new Error(result.error || result.details || 'Failed to send email')
       }
     } catch (error: any) {
       alert(`❌ שגיאה בשליחת המייל: ${error.message}`)

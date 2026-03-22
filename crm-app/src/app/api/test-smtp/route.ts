@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
+import { prisma } from '@/lib/prisma';
 
 // GET /api/test-smtp - בדיקת חיבור מייל (Resend או SMTP)
 export async function GET() {
@@ -129,5 +130,75 @@ export async function GET() {
         ? 'Connection failed - check SMTP_HOST and SMTP_PORT values.'
         : 'Check all SMTP environment variables in Railway.'
     }, { status: 500 })
+  }
+}
+
+// POST /api/test-smtp - diagnostic: test the real send flow step by step
+export async function POST(request: NextRequest) {
+  const steps: string[] = []
+  try {
+    const { candidateId, positionId } = await request.json()
+    steps.push('1. Parsed request body')
+
+    if (!candidateId || !positionId) {
+      return NextResponse.json({ error: 'Need candidateId and positionId', steps })
+    }
+
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      include: { tags: true },
+    })
+    steps.push(`2. Candidate: ${candidate ? candidate.name : 'NOT FOUND'}`)
+
+    if (!candidate) {
+      return NextResponse.json({ error: 'Candidate not found', steps })
+    }
+
+    const position = await prisma.position.findUnique({
+      where: { id: positionId },
+      include: { employer: true, tags: true },
+    })
+    steps.push(`3. Position: ${position ? position.title : 'NOT FOUND'}`)
+    steps.push(`3b. Employer: ${position?.employer ? position.employer.name : 'NO EMPLOYER'}`)
+    steps.push(`3c. Employer email: ${position?.employer?.email || 'NONE'}`)
+    steps.push(`3d. Contact email: ${(position as any)?.contactEmail || 'NONE'}`)
+
+    if (!position) {
+      return NextResponse.json({ error: 'Position not found', steps })
+    }
+
+    const targetEmail = (position as any)?.contactEmail || position.employer?.email
+    steps.push(`4. Target email resolved: ${targetEmail || 'NONE!'}`)
+
+    if (!targetEmail) {
+      return NextResponse.json({ error: 'No email address for this position/employer!', steps })
+    }
+
+    const useResend = !!process.env.RESEND_API_KEY
+    steps.push(`5. Using Resend: ${useResend}`)
+    steps.push(`5b. RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || 'NOT SET'}`)
+
+    if (useResend) {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER || 'onboarding@resend.dev'
+      steps.push(`6. From email: ${fromEmail}`)
+      steps.push(`6b. Sending to: ${targetEmail}`)
+
+      const result = await resend.emails.send({
+        from: `צוות הגיוס <${fromEmail}>`,
+        to: [targetEmail],
+        subject: `[בדיקה] מועמד/ת: ${candidate.name} - ${position.title}`,
+        html: `<div dir="rtl"><h2>בדיקת שליחה</h2><p>מועמד: ${candidate.name}</p><p>משרה: ${position.title}</p><p>מעסיק: ${position.employer?.name}</p></div>`,
+      })
+      steps.push(`7. Resend result: ${JSON.stringify(result)}`)
+
+      return NextResponse.json({ success: true, steps, resendId: result.data?.id })
+    }
+
+    return NextResponse.json({ error: 'No Resend configured', steps })
+  } catch (error: any) {
+    steps.push(`ERROR: ${error.message}`)
+    steps.push(`STACK: ${error.stack?.substring(0, 500)}`)
+    return NextResponse.json({ error: error.message, steps }, { status: 500 })
   }
 }

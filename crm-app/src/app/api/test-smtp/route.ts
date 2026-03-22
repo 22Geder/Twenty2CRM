@@ -28,7 +28,7 @@ export async function GET() {
         const resend = new Resend(process.env.RESEND_API_KEY)
         const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
         
-        const result = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
           from: `TWENTY2CRM Test <${fromEmail}>`,
           to: [smtpUser || '22geder@gmail.com'],
           subject: '✅ בדיקת Resend - TWENTY2CRM',
@@ -41,12 +41,21 @@ export async function GET() {
           `
         })
 
+        if (error) {
+          return NextResponse.json({
+            success: false,
+            method: 'Resend HTTP API',
+            error: error.message || error.name || JSON.stringify(error),
+            envCheck,
+          }, { status: 500 })
+        }
+
         return NextResponse.json({
           success: true,
           method: 'Resend HTTP API',
           message: '✅ Resend works! Test email sent successfully',
           envCheck,
-          resendId: result.data?.id,
+          resendId: data?.id,
         })
       } catch (resendErr: any) {
         return NextResponse.json({

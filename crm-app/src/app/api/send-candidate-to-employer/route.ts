@@ -881,7 +881,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
                   const buffer = Buffer.from(await response.arrayBuffer())
                   resendOptions.attachments = [{
                     filename: mailOptions.attachments[0].filename,
-                    content: buffer,
+                    content: buffer.toString('base64'),
                   }]
                 } else {
                   console.warn('⚠️ Resume fetch returned', response.status)
@@ -891,7 +891,12 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
               }
             }
             
-            await resendClient.emails.send(resendOptions)
+            // Resend SDK returns { data, error } - it NEVER throws
+            const { data: resendData, error: resendError } = await resendClient.emails.send(resendOptions)
+            if (resendError) {
+              throw new Error(`Resend API error: ${resendError.message || resendError.name || JSON.stringify(resendError)}`)
+            }
+            console.log(`✅ Resend sent email ID: ${resendData?.id}`)
           } else {
             // 📧 שליחה דרך SMTP
             await transporter.sendMail({
@@ -924,9 +929,10 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
           
           return
         } catch (error: any) {
-          console.error(`❌ Attempt ${attempts} to ${recipient.email} failed:`, error.message, error.stack?.substring(0, 300))
+          const errMsg = error?.message || error?.name || (typeof error === 'string' ? error : JSON.stringify(error))
+          console.error(`❌ Attempt ${attempts} to ${recipient.email} failed:`, errMsg)
           if (attempts >= maxAttempts) {
-            sendResults.push({ email: recipient.email, success: false, error: error.message })
+            sendResults.push({ email: recipient.email, success: false, error: errMsg })
           } else {
             await new Promise(resolve => setTimeout(resolve, 1000)) // המתנה קצרה
           }

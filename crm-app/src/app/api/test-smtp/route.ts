@@ -35,47 +35,73 @@ export async function GET() {
     }
 
     // בדיקה 2: ניסיון חיבור SMTP
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: false,
-      auth: {
-        user: smtpUser,
-        pass: smtpPassword,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 10000,
-    })
+    // Railway חוסמת פורט 587, ננסה 465 (SSL) קודם
+    const configs = [
+      { host: smtpHost, port: 465, secure: true, label: 'SSL (465)' },
+      { host: smtpHost, port: smtpPort, secure: false, label: `STARTTLS (${smtpPort})` },
+      { host: 'smtp.gmail.com', port: 465, secure: true, label: 'Gmail SSL (465)' },
+    ]
 
-    // בדיקת חיבור
-    await transporter.verify()
+    let workingConfig = null
+    let lastError = null
 
-    // בדיקה 3: שליחת מייל בדיקה לעצמנו
-    await transporter.sendMail({
-      from: `"${smtpFromName}" <${smtpUser}>`,
-      to: smtpUser,
-      subject: '✅ בדיקת SMTP - TWENTY2CRM',
-      html: `
-        <div dir="rtl" style="font-family: Arial; padding: 20px;">
-          <h2>✅ מערכת המיילים עובדת!</h2>
-          <p>המייל הזה נשלח מ-TWENTY2CRM בתאריך ${new Date().toLocaleDateString('he-IL')}</p>
-          <p>הגדרות:</p>
-          <ul>
-            <li>SMTP Host: ${smtpHost}</li>
-            <li>SMTP Port: ${smtpPort}</li>
-            <li>From: ${smtpUser}</li>
-          </ul>
-        </div>
-      `
-    })
+    for (const config of configs) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          auth: {
+            user: smtpUser,
+            pass: smtpPassword,
+          },
+          connectionTimeout: 10000,
+          greetingTimeout: 8000,
+        })
+
+        await transporter.verify()
+
+        // שליחת מייל בדיקה
+        await transporter.sendMail({
+          from: `"${smtpFromName}" <${smtpUser}>`,
+          to: smtpUser,
+          subject: '✅ בדיקת SMTP - TWENTY2CRM',
+          html: `
+            <div dir="rtl" style="font-family: Arial; padding: 20px;">
+              <h2>✅ מערכת המיילים עובדת!</h2>
+              <p>המייל הזה נשלח מ-TWENTY2CRM בתאריך ${new Date().toLocaleDateString('he-IL')}</p>
+              <p>הגדרות שעובדות: ${config.label}</p>
+            </div>
+          `
+        })
+
+        workingConfig = config
+        break
+      } catch (err: any) {
+        lastError = { config: config.label, error: err.message, code: err.code }
+        continue
+      }
+    }
+
+    if (!workingConfig) {
+      return NextResponse.json({
+        success: false,
+        error: 'All SMTP configurations failed',
+        envCheck,
+        lastError,
+        fix: 'Railway may block outbound SMTP. Try adding SMTP_PORT=465 and SMTP_SECURE=true to Railway environment variables.'
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
       message: '✅ SMTP works! Test email sent successfully',
       envCheck,
+      workingConfig: workingConfig.label,
       config: {
-        host: smtpHost,
-        port: smtpPort,
+        host: workingConfig.host,
+        port: workingConfig.port,
+        secure: workingConfig.secure,
         user: smtpUser,
         fromName: smtpFromName,
       }

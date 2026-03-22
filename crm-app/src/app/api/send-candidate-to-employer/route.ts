@@ -446,22 +446,25 @@ export async function POST(request: NextRequest) {
       ? customMatchingPoints
       : analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
 
-    // הגדרת SMTP עם הגדרות timeout מהירות יותר
+    // הגדרת SMTP - ניסיון SSL (465) לפני STARTTLS (587) כי Railway חוסמת 587
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
+    const smtpPort = parseInt(process.env.SMTP_PORT || '465')
+    const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
+    
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
       auth: {
         user: process.env.SMTP_USER,
         pass: smtpPassword,
       },
-      // הגדרות timeout מהירות יותר
-      connectionTimeout: 30000, // 30 שניות לחיבור
-      greetingTimeout: 15000,   // 15 שניות לברכה
-      socketTimeout: 60000,     // 60 שניות לפעולות socket
-      pool: true,               // שימוש ב-connection pool
-      maxConnections: 10,       // יותר חיבורים לשליחה מקבילית
-      maxMessages: 100,         // מקסימום הודעות לחיבור
+      connectionTimeout: 30000,
+      greetingTimeout: 15000,
+      socketTimeout: 60000,
+      pool: true,
+      maxConnections: 10,
+      maxMessages: 100,
     })
 
     // בניית המייל - עם נושא מותאם או אוטומטי

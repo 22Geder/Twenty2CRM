@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
       inProcessReminders: [],
     }
 
-    // בדיקת הגדרות SMTP
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    // בדיקת הגדרות SMTP (תומך גם ב-SMTP_PASS וגם ב-SMTP_PASSWORD)
+    const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
+    if (!process.env.SMTP_USER || !smtpPassword) {
       return NextResponse.json({ error: "SMTP not configured" }, { status: 500 })
     }
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        pass: smtpPassword,
       },
     })
 

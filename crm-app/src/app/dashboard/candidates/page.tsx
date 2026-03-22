@@ -234,14 +234,18 @@ export default function CandidatesPageModern() {
       result = result.filter(c => getCandidateStatus(c) === statusFilter)
     }
 
-    // חיפוש טקסט
+    // חיפוש טקסט - כולל עיר ותגיות!
     if (search) {
-      result = result.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
-        c.currentTitle?.toLowerCase().includes(search.toLowerCase()) ||
-        c.skills?.toLowerCase().includes(search.toLowerCase())
-      )
+      const searchLower = search.toLowerCase()
+      result = result.filter(c => {
+        const nameMatch = c.name.toLowerCase().includes(searchLower)
+        const emailMatch = (c.email || '').toLowerCase().includes(searchLower)
+        const titleMatch = c.currentTitle?.toLowerCase().includes(searchLower) || false
+        const skillsMatch = c.skills?.toLowerCase().includes(searchLower) || false
+        const cityMatch = (c.city || '').toLowerCase().includes(searchLower)
+        const tagMatch = c.tags?.some(t => t.name.toLowerCase().includes(searchLower)) || false
+        return nameMatch || emailMatch || titleMatch || skillsMatch || cityMatch || tagMatch
+      })
     }
 
     // תגיות
@@ -250,6 +254,14 @@ export default function CandidatesPageModern() {
         filters.tags.some((tag: string) =>
           c.tags.some(ct => ct.name === tag)
         )
+      )
+    }
+
+    // עיר
+    if (filters.city) {
+      const cityLower = filters.city.toLowerCase()
+      result = result.filter(c =>
+        (c.city || '').toLowerCase().includes(cityLower)
       )
     }
 
@@ -410,13 +422,20 @@ export default function CandidatesPageModern() {
             <p className="text-slate-300 mt-2 text-lg">
               <span className="font-semibold text-[#00D4D4]">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-[#FF8C00]">{candidates.length}</span> מועמדים
             </p>
-            <div className="mt-4 flex items-center gap-2 text-sm">
+            <div className="mt-4 flex items-center gap-2 text-sm flex-wrap">
               <div className="bg-[#00A8A8]/20 text-[#00D4D4] px-4 py-2 rounded-full flex items-center gap-1 border border-[#00A8A8]/30">
                 ⚡ החדשים ראשונים
               </div>
               <div className="bg-[#7CB342]/20 text-[#7CB342] px-4 py-2 rounded-full border border-[#7CB342]/30">
                 🔄 מתעדכן אוטומטית
               </div>
+              <Link 
+                href="/clear-cache"
+                className="bg-slate-700/50 text-slate-300 px-3 py-2 rounded-full border border-slate-600/30 hover:bg-slate-600/50 transition-colors text-xs"
+                title="רענן אפליקציה (ניקוי מטמון)"
+              >
+                🔧 רענן אפליקציה
+              </Link>
             </div>
           </div>
           <div className="flex gap-3">
@@ -451,7 +470,7 @@ export default function CandidatesPageModern() {
             <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#00A8A8] h-5 w-5" />
             <Input
               type="text"
-              placeholder="חפש מועמד לפי שם, אימייל, כישורים..."
+              placeholder="חפש מועמד לפי שם, אימייל, כישורים, עיר, תגית..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#00A8A8] rounded-xl bg-slate-50/50"
@@ -815,7 +834,7 @@ export default function CandidatesPageModern() {
               <div>
                 <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                   <Target className="h-6 w-6" />
-                  🎯 התאמות טובות ביותר (AI ULTRA V5)
+                  🎯 התאמות טובות ביותר
                 </h2>
                 <p className="text-white/80 mt-1">
                   {bestMatchesData.positionsWithMatches} משרות | 
@@ -823,7 +842,7 @@ export default function CandidatesPageModern() {
                   ⚡ {bestMatchesData.processingTime}ms
                 </p>
                 <p className="text-xs text-white/60 mt-1">
-                  📍 מיקום 50% | 🏷️ תגיות 25% | 🤖 AI 25%
+                  🏷️ תגיות 40 | 📊 ניסיון 15 | ⭐ דירוג 10 | 💼 תפקיד 10 | 🔗 חלקי 10 | 📍 מיקום 5 | 🆕 עדכניות 5 | +5 נוסף
                 </p>
               </div>
               <Button
@@ -949,14 +968,14 @@ export default function CandidatesPageModern() {
                                   </div>
                                 )}
 
-                                {/* Score with Breakdown */}
+                                {/* Score with Breakdown - אותו אלגוריתם כמו matching-positions */}
                                 <div className="flex items-center gap-2">
-                                  {/* פירוט ציון */}
+                                  {/* פירוט ציון מקוצר */}
                                   {candidate.scoreBreakdown && (
-                                    <div className="text-[10px] text-slate-500 flex gap-1">
-                                      <span title="מיקום 50%">📍{candidate.scoreBreakdown.location}</span>
-                                      <span title="תגיות 25%">🏷️{candidate.scoreBreakdown.tags}</span>
-                                      <span title="AI 25%">🤖{candidate.scoreBreakdown.aiEstimate}</span>
+                                    <div className="text-[9px] text-slate-500 flex gap-1" title={`תגיות:${candidate.scoreBreakdown.tags}/40 | חלקי:${candidate.scoreBreakdown.partial}/10 | ניסיון:${candidate.scoreBreakdown.experience}/15 | דירוג:${candidate.scoreBreakdown.rating}/10 | מיקום:${candidate.scoreBreakdown.location}/5 | תפקיד:${candidate.scoreBreakdown.title}/10`}>
+                                      <span>🏷️{candidate.scoreBreakdown.tags}</span>
+                                      <span>📊{candidate.scoreBreakdown.experience}</span>
+                                      <span>📍{candidate.scoreBreakdown.location}</span>
                                     </div>
                                   )}
                                   {/* ציון כולל */}
@@ -1005,7 +1024,7 @@ export default function CandidatesPageModern() {
             <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
               <div className="text-sm text-slate-500">
                 <Sparkles className="h-4 w-4 inline ml-1 text-[#FF8C00]" />
-                אלגוריתם: 📍 מיקום 50% | 🏷️ תגיות 25% | 🤖 AI 25% - {bestMatchesData.algorithm || ''}
+                אותו אלגוריתם כמו כשפותחים מועמד - עד 100 נקודות
               </div>
               <Button
                 variant="outline"

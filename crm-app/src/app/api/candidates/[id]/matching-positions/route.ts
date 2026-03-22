@@ -72,7 +72,6 @@ export async function GET(
         orderBy: {
           createdAt: "desc",
         },
-        take: 20,
         include: {
           employer: true,
           tags: true,
@@ -107,31 +106,26 @@ export async function GET(
         },
       }))
 
+      // מיון לפי תאריך ולקיחת 20 הראשונים
+      const top20 = positionsWithScore.slice(0, 20)
+
       return NextResponse.json({
-        positions: positionsWithScore,
+        positions: top20,
         candidateTags: [],
-        totalCount: positionsWithScore.length,
+        totalCount: positions.length,
       })
     }
 
-    // חיפוש משרות פעילות עם תגיות תואמות
+    // חיפוש כל המשרות הפעילות - סריקה מלאה!
     const candidateTagIds = candidate.tags.map(tag => tag.id)
 
     const positions = await prisma.position.findMany({
       where: {
         active: true,
-        tags: {
-          some: {
-            id: {
-              in: candidateTagIds,
-            },
-          },
-        },
       },
       orderBy: {
         createdAt: "desc",
       },
-      take: 50,
       include: {
         employer: true,
         tags: true,
@@ -317,13 +311,17 @@ export async function GET(
       }
     })
 
-    // מיון לפי ציון התאמה
+    // מיון לפי ציון התאמה - הגבוה ביותר ראשון
     positionsWithScore.sort((a, b) => b.matchScore - a.matchScore)
 
+    // החזרת 20 המשרות הטובות ביותר מתוך כל המשרות שנסרקו
+    const top20 = positionsWithScore.slice(0, 20)
+
     return NextResponse.json({
-      positions: positionsWithScore,
+      positions: top20,
       candidateTags: candidate.tags,
-      totalCount: positionsWithScore.length,
+      totalCount: positions.length,
+      totalScanned: positions.length,
       previousCompanies,
     })
 

@@ -431,10 +431,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // בדיקת הגדרות SMTP
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    // בדיקת הגדרות SMTP (תומך גם ב-SMTP_PASS וגם ב-SMTP_PASSWORD)
+    const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
+    if (!process.env.SMTP_USER || !smtpPassword) {
+      console.error('❌ SMTP not configured. SMTP_USER:', !!process.env.SMTP_USER, 'SMTP_PASSWORD:', !!process.env.SMTP_PASSWORD, 'SMTP_PASS:', !!process.env.SMTP_PASS)
       return NextResponse.json(
-        { error: "SMTP not configured" },
+        { error: "SMTP not configured - missing SMTP_USER or SMTP_PASSWORD/SMTP_PASS" },
         { status: 500 }
       )
     }
@@ -451,7 +453,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        pass: smtpPassword,
       },
       // הגדרות timeout מהירות יותר
       connectionTimeout: 30000, // 30 שניות לחיבור

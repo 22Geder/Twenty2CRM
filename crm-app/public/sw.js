@@ -1,7 +1,8 @@
 // 🔄 Service Worker - Twenty2 CRM PWA
 // =====================================
+// עודכן: מרץ 2026 - תיקון בעיות cache בטלפונים חדשים
 
-const CACHE_NAME = 'twenty2-crm-v3'
+const CACHE_NAME = 'twenty2-crm-v5-march2026'
 const STATIC_ASSETS = [
   '/',
   '/upload-cv',
@@ -16,19 +17,20 @@ const STATIC_ASSETS = [
 
 // התקנה - שמירת קבצים סטטיים בקאש
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Installing v3...')
+  console.log('🔧 Service Worker: Installing v5 (March 2026)...')
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('📦 Service Worker: Caching static assets')
       return cache.addAll(STATIC_ASSETS)
     })
   )
+  // מיידית - לא לחכות לסגירת החלון
   self.skipWaiting()
 })
 
-// הפעלה - ניקוי קאשים ישנים
+// הפעלה - ניקוי קאשים ישנים (כולל v3, v4)
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker: Activated v3')
+  console.log('✅ Service Worker: Activated v5 - March 2026')
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -41,6 +43,7 @@ self.addEventListener('activate', (event) => {
       )
     })
   )
+  // השתלט מיד על כל הדפים הפתוחים
   self.clients.claim()
 })
 
@@ -228,4 +231,40 @@ async function syncCandidates() {
   console.log('📤 Syncing offline data...')
 }
 
-console.log('🚀 Twenty2 CRM Service Worker loaded')
+// 🔄 מנגנון עדכון כפוי - לתמיכה בטלפונים חדשים
+self.addEventListener('message', (event) => {
+  console.log('📨 SW received message:', event.data)
+  
+  if (event.data === 'SKIP_WAITING') {
+    console.log('⚡ Force activating new service worker...')
+    self.skipWaiting()
+  }
+  
+  if (event.data === 'CLEAR_CACHE') {
+    console.log('🗑️ Force clearing all caches...')
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((name) => {
+            console.log('🗑️ Deleting cache:', name)
+            return caches.delete(name)
+          })
+        )
+      }).then(() => {
+        console.log('✅ All caches cleared!')
+        // שלח הודעה בחזרה
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: true, message: 'All caches cleared' })
+        }
+      })
+    )
+  }
+  
+  if (event.data === 'GET_VERSION') {
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ version: CACHE_NAME })
+    }
+  }
+})
+
+console.log('🚀 Twenty2 CRM Service Worker v5 (March 2026) loaded')

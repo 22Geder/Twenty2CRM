@@ -185,8 +185,8 @@ export async function GET(request: NextRequest) {
           const candidateTitleWords = candidateTitle.split(' ')
           const positionTitleWords = positionTitle.split(' ')
           
-          const matchingWords = candidateTitleWords.filter(word => 
-            word.length > 2 && positionTitleWords.some(pWord => pWord.includes(word) || word.includes(pWord))
+          const matchingWords = candidateTitleWords.filter((word: string) => 
+            word.length > 2 && positionTitleWords.some((pWord: string) => pWord.includes(word) || word.includes(pWord))
           ).length
           
           if (matchingWords > 0) {

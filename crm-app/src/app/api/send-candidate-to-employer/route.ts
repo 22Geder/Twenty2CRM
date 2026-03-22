@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
+import { Resend } from "resend"
 
 // 🔍 GET - תצוגה מקדימה של המייל לפני שליחה
 export async function GET(request: NextRequest) {
@@ -431,12 +432,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // בדיקת הגדרות SMTP (תומך גם ב-SMTP_PASS וגם ב-SMTP_PASSWORD)
+    // בדיקת הגדרות מייל - Resend (HTTP) או SMTP
+    const useResend = !!process.env.RESEND_API_KEY
     const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
-    if (!process.env.SMTP_USER || !smtpPassword) {
-      console.error('❌ SMTP not configured. SMTP_USER:', !!process.env.SMTP_USER, 'SMTP_PASSWORD:', !!process.env.SMTP_PASSWORD, 'SMTP_PASS:', !!process.env.SMTP_PASS)
+    
+    if (!useResend && (!process.env.SMTP_USER || !smtpPassword)) {
+      console.error('❌ Email not configured. RESEND_API_KEY:', !!process.env.RESEND_API_KEY, 'SMTP_USER:', !!process.env.SMTP_USER, 'SMTP_PASSWORD:', !!process.env.SMTP_PASSWORD, 'SMTP_PASS:', !!process.env.SMTP_PASS)
       return NextResponse.json(
-        { error: "SMTP not configured - missing SMTP_USER or SMTP_PASSWORD/SMTP_PASS" },
+        { error: "Email not configured - set RESEND_API_KEY or SMTP_USER + SMTP_PASSWORD" },
         { status: 500 }
       )
     }
@@ -446,26 +449,35 @@ export async function POST(request: NextRequest) {
       ? customMatchingPoints
       : analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
 
-    // הגדרת SMTP - ניסיון SSL (465) לפני STARTTLS (587) כי Railway חוסמת 587
-    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
-    const smtpPort = parseInt(process.env.SMTP_PORT || '465')
-    const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
+    // הגדרת שליחת מייל - Resend (HTTP API) או SMTP
+    let transporter: any = null
+    let resendClient: Resend | null = null
     
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: smtpPassword,
-      },
-      connectionTimeout: 30000,
-      greetingTimeout: 15000,
-      socketTimeout: 60000,
-      pool: true,
-      maxConnections: 10,
-      maxMessages: 100,
-    })
+    if (useResend) {
+      resendClient = new Resend(process.env.RESEND_API_KEY)
+      console.log('📧 Using Resend HTTP API for email delivery')
+    } else {
+      const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
+      const smtpPort = parseInt(process.env.SMTP_PORT || '465')
+      const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
+      
+      transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: smtpPassword,
+        },
+        connectionTimeout: 30000,
+        greetingTimeout: 15000,
+        socketTimeout: 60000,
+        pool: true,
+        maxConnections: 10,
+        maxMessages: 100,
+      })
+      console.log(`📧 Using SMTP: ${smtpHost}:${smtpPort} (secure: ${smtpSecure})`)
+    }
 
     // בניית המייל - עם נושא מותאם או אוטומטי
     const emailSubject = customSubject || `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
@@ -835,19 +847,53 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
     
     // שליחה מקבילית לכל המיילים
     const sendPromises = emailsToSend.map(async (recipient) => {
-      const recipientMailOptions = {
-        ...mailOptions,
-        to: recipient.email,
-      }
-      
       // ניסיון שליחה עם retry
       let attempts = 0
-      const maxAttempts = 2 // פחות ניסיונות לשליחה מהירה יותר
+      const maxAttempts = 2
       
       while (attempts < maxAttempts) {
         try {
           attempts++
-          await transporter.sendMail(recipientMailOptions)
+          
+          if (resendClient) {
+            // 📧 שליחה דרך Resend HTTP API (עובד ב-Railway)
+            const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER || 'onboarding@resend.dev'
+            const fromName = process.env.SMTP_FROM_NAME || 'צוות הגיוס'
+            
+            const resendOptions: any = {
+              from: `${fromName} <${fromEmail}>`,
+              to: [recipient.email],
+              subject: emailSubject,
+              html: emailHTML,
+              text: mailOptions.text,
+            }
+            
+            // צירוף קורות חיים ל-Resend
+            if (mailOptions.attachments && mailOptions.attachments.length > 0) {
+              try {
+                const attachUrl = mailOptions.attachments[0].path
+                const response = await fetch(attachUrl)
+                if (response.ok) {
+                  const buffer = Buffer.from(await response.arrayBuffer())
+                  resendOptions.attachments = [{
+                    filename: mailOptions.attachments[0].filename,
+                    content: buffer,
+                  }]
+                }
+              } catch (attachErr) {
+                console.warn('⚠️ Could not attach resume via Resend:', attachErr)
+              }
+            }
+            
+            await resendClient.emails.send(resendOptions)
+          } else {
+            // 📧 שליחה דרך SMTP
+            await transporter.sendMail({
+              ...mailOptions,
+              to: recipient.email,
+            })
+          }
+          
           console.log(`✅ Email sent to ${recipient.email}`)
           sendResults.push({ email: recipient.email, success: true })
           

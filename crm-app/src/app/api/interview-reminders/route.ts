@@ -1,6 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
+import { Resend } from "resend"
+
+// פונקציית שליחת מייל - Resend (HTTP) או SMTP
+async function sendEmail(options: { from: string, to: string, subject: string, html: string }) {
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER || 'onboarding@resend.dev'
+    const fromName = options.from.match(/"([^"]+)"/)?.[1] || 'Twenty2CRM'
+    await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: [options.to],
+      subject: options.subject,
+      html: options.html,
+    })
+    return
+  }
+  
+  const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
+  if (!process.env.SMTP_USER || !smtpPassword) {
+    throw new Error("Email not configured - set RESEND_API_KEY or SMTP_USER + SMTP_PASSWORD")
+  }
+  
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465'),
+    secure: process.env.SMTP_SECURE === 'true' || parseInt(process.env.SMTP_PORT || '465') === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: smtpPassword,
+    },
+  })
+  
+  await transporter.sendMail(options)
+}
 
 // API לשליחת תזכורות ראיונות ומועמדים בתהליך
 // GET - בדיקה ושליחת תזכורות
@@ -14,21 +48,11 @@ export async function GET(request: NextRequest) {
       inProcessReminders: [],
     }
 
-    // בדיקת הגדרות SMTP (תומך גם ב-SMTP_PASS וגם ב-SMTP_PASSWORD)
+    // בדיקת הגדרות מייל
     const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
-    if (!process.env.SMTP_USER || !smtpPassword) {
-      return NextResponse.json({ error: "SMTP not configured" }, { status: 500 })
+    if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !smtpPassword)) {
+      return NextResponse.json({ error: "Email not configured - set RESEND_API_KEY or SMTP credentials" }, { status: 500 })
     }
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '465'),
-      secure: process.env.SMTP_SECURE === 'true' || parseInt(process.env.SMTP_PORT || '465') === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: smtpPassword,
-      },
-    })
 
     // 📅 תזכורות לראיונות היום
     if (type === 'interviews' || type === 'both') {
@@ -84,9 +108,9 @@ export async function GET(request: NextRequest) {
           </html>
         `
 
-        await transporter.sendMail({
+        await sendEmail({
           from: `"תזכורות Twenty2CRM" <${process.env.SMTP_USER}>`,
-          to: process.env.SMTP_USER, // שולח למייל שלך
+          to: process.env.SMTP_USER!, // שולח למייל שלך
           subject: `📅 ${interviewsToday.length} ראיונות היום - ${today.toLocaleDateString('he-IL')}`,
           html: emailHtml,
         })
@@ -155,9 +179,9 @@ export async function GET(request: NextRequest) {
           </html>
         `
 
-        await transporter.sendMail({
+        await sendEmail({
           from: `"מעקב Twenty2CRM" <${process.env.SMTP_USER}>`,
-          to: process.env.SMTP_USER,
+          to: process.env.SMTP_USER!,
           subject: `🔄 ${inProcessCandidates.length} מועמדים בתהליך - עדכון`,
           html: emailHtml,
         })

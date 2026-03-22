@@ -843,7 +843,8 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
     // 🆕 שליחת המייל לכל הנמענים במקביל
     const sendResults: Array<{email: string, success: boolean, error?: string}> = []
     
-    console.log(`📤 Sending email to ${emailsToSend.length} recipients...`)
+    console.log(`📤 Sending email to ${emailsToSend.length} recipients: ${emailsToSend.map(e => e.email).join(', ')}`)
+    console.log(`📧 Method: ${useResend ? 'Resend' : 'SMTP'}, From: ${process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER}`)
     
     // שליחה מקבילית לכל המיילים
     const sendPromises = emailsToSend.map(async (recipient) => {
@@ -902,24 +903,28 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
           console.log(`✅ Email sent to ${recipient.email}`)
           sendResults.push({ email: recipient.email, success: true })
           
-          // שמירה להיסטוריה
-          await prisma.employerEmailHistory.create({
-            data: {
-              candidateId,
-              candidateName: candidate.name,
-              positionId,
-              positionTitle: position.title,
-              employerId: position.employer?.id || '',
-              employerName: recipient.name || position.employer?.name || '',
-              employerEmail: recipient.email,
-              subject: emailSubject,
-              matchingPoints: JSON.stringify(matchingPoints),
-            }
-          })
+          // שמירה להיסטוריה (לא חובה - לא ייכשל בגלל זה)
+          try {
+            await prisma.employerEmailHistory.create({
+              data: {
+                candidateId,
+                candidateName: candidate.name,
+                positionId,
+                positionTitle: position.title,
+                employerId: position.employer?.id || '',
+                employerName: recipient.name || position.employer?.name || '',
+                employerEmail: recipient.email,
+                subject: emailSubject,
+                matchingPoints: JSON.stringify(matchingPoints),
+              }
+            })
+          } catch (historyErr: any) {
+            console.warn('⚠️ Failed to save email history (non-critical):', historyErr.message)
+          }
           
           return
         } catch (error: any) {
-          console.error(`❌ Attempt ${attempts} to ${recipient.email} failed:`, error.message)
+          console.error(`❌ Attempt ${attempts} to ${recipient.email} failed:`, error.message, error.stack?.substring(0, 300))
           if (attempts >= maxAttempts) {
             sendResults.push({ email: recipient.email, success: false, error: error.message })
           } else {

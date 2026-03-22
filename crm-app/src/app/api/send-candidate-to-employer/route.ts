@@ -940,6 +940,60 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
       throw new Error(`Failed to send email to all recipients: ${failedEmails.map(f => f.error).join(', ')}`)
     }
 
+    // 🔄 העברת המועמד לסטטוס "בתהליך" אוטומטית אחרי שליחת מייל מוצלחת
+    if (successCount > 0) {
+      try {
+        // עדכון המועמד - קישור למשרה כ"בתהליך"
+        await prisma.candidate.update({
+          where: { id: candidateId },
+          data: {
+            inProcessPositionId: positionId,
+            inProcessAt: new Date(),
+          }
+        })
+
+        // יצירת/עדכון Application - אם לא קיים כבר
+        const existingApplication = await prisma.application.findUnique({
+          where: {
+            candidateId_positionId: {
+              candidateId,
+              positionId,
+            }
+          }
+        })
+
+        if (existingApplication) {
+          // עדכון סטטוס אם עדיין NEW
+          if (existingApplication.stage === 'NEW') {
+            await prisma.application.update({
+              where: { id: existingApplication.id },
+              data: {
+                stage: 'SCREENING',
+                status: 'SCREENING',
+                source: existingApplication.source || 'EMAIL_AUTO',
+              }
+            })
+          }
+        } else {
+          // יצירת Application חדשה
+          await prisma.application.create({
+            data: {
+              candidateId,
+              positionId,
+              stage: 'SCREENING',
+              status: 'SCREENING',
+              source: 'EMAIL_AUTO',
+            }
+          })
+        }
+
+        console.log(`🔄 Candidate ${candidate.name} moved to in-process for position ${position.title}`)
+      } catch (processError: any) {
+        console.error('⚠️ Failed to update candidate status:', processError.message)
+        // לא נכשיל את כל הפעולה אם העדכון נכשל
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: successCount === emailsToSend.length 
@@ -948,6 +1002,8 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
       sentTo: sendResults.filter(r => r.success).map(r => r.email),
       failedTo: failedEmails.map(f => ({ email: f.email, error: f.error })),
       candidateName: candidate.name,
+      candidateMovedToProcess: successCount > 0,
+      positionTitle: position.title,
       matchingPoints,
       emailSavedToPosition: saveEmailToPosition
     })

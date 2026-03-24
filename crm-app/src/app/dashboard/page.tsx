@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle } from "lucide-react"
+import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle, AlertTriangle, Clock } from "lucide-react"
 
 // Get comprehensive dashboard stats
 async function getDashboardStats() {
@@ -221,6 +221,23 @@ async function getCandidateSources() {
   return sources
 }
 
+// Get candidates in process for more than 24 hours without follow-up (התראות)
+async function getUntreatedInProcessCandidates() {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  return await prisma.candidate.findMany({
+    where: {
+      inProcessPositionId: { not: null },
+      inProcessAt: { lt: cutoff },
+    },
+    orderBy: { inProcessAt: 'asc' }, // oldest first
+    include: {
+      inProcessPosition: {
+        include: { employer: true }
+      }
+    }
+  })
+}
+
 export default async function CiviDashboardPage() {
   const session = await getServerSession(authOptions)
 
@@ -228,13 +245,25 @@ export default async function CiviDashboardPage() {
     redirect("/login")
   }
 
-  const stats = await getDashboardStats()
-  const recentPositions = await getRecentPositions()
-  const upcomingTasks = await getUpcomingTasks()
-  const candidateSources = await getCandidateSources()
-  const inProcessCandidates = await getCandidatesInProcess()
-  const rejectedCandidates = await getRejectedCandidates()
-  const hiredCandidates = await getHiredCandidates()
+  const [
+    stats,
+    recentPositions,
+    upcomingTasks,
+    candidateSources,
+    inProcessCandidates,
+    rejectedCandidates,
+    hiredCandidates,
+    untreatedInProcess,
+  ] = await Promise.all([
+    getDashboardStats(),
+    getRecentPositions(),
+    getUpcomingTasks(),
+    getCandidateSources(),
+    getCandidatesInProcess(),
+    getRejectedCandidates(),
+    getHiredCandidates(),
+    getUntreatedInProcessCandidates(),
+  ])
 
   // Calculate percentages for status bars
   const totalInProcess = stats.inProcess || 1
@@ -318,6 +347,52 @@ export default async function CiviDashboardPage() {
           <h1 className="text-lg md:text-xl font-semibold text-slate-700">דף הבית - {session.user?.name || 'משתמש'}</h1>
         </div>
       </div>
+
+      {/* 🔔 ALERT BANNER - עדיין לא טופלו מעל 24 שעות */}
+      {untreatedInProcess.length > 0 && (
+        <div className="bg-amber-50 border-b-2 border-amber-400">
+          <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 bg-amber-400 text-white rounded-lg p-2 mt-0.5">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-amber-800 text-base">
+                    ⚠️ {untreatedInProcess.length} מועמד{untreatedInProcess.length !== 1 ? 'ים' : ''} בתהליך לא טופל{untreatedInProcess.length !== 1 ? 'ו' : ''} מעל 24 שעות!
+                  </span>
+                  <span className="text-xs bg-amber-400 text-white px-2 py-0.5 rounded-full font-bold">
+                    דורש טיפול מיידי
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {untreatedInProcess.map((c: any) => {
+                    const hoursAgo = Math.floor((Date.now() - new Date(c.inProcessAt).getTime()) / (60 * 60 * 1000))
+                    const daysAgo = Math.floor(hoursAgo / 24)
+                    const timeLabel = daysAgo >= 1 ? `${daysAgo} ימים` : `${hoursAgo} שעות`
+                    return (
+                      <Link
+                        key={c.id}
+                        href={`/dashboard/candidates/${c.id}`}
+                        className="flex items-center gap-1.5 bg-white border border-amber-300 rounded-lg px-3 py-1.5 hover:bg-amber-50 hover:border-amber-500 transition-all shadow-sm"
+                      >
+                        <span className="font-semibold text-slate-800 text-sm">{c.name}</span>
+                        <span className="text-slate-400 text-xs">|</span>
+                        <span className="text-blue-600 text-xs">{c.inProcessPosition?.title || 'משרה'}</span>
+                        <span className="text-slate-400 text-xs">|</span>
+                        <span className="flex items-center gap-0.5 text-amber-600 text-xs font-medium">
+                          <Clock className="h-3 w-3" />
+                          {timeLabel}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
@@ -737,6 +812,101 @@ export default async function CiviDashboardPage() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+
+        {/* 🔍 In-Process Tracking Panel - מעקב מועמדים בתהליך */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              <span className="font-bold text-lg">מעקב מועמדים בתהליך</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {untreatedInProcess.length > 0 && (
+                <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full animate-pulse">
+                  {untreatedInProcess.length} לא טופלו !
+                </span>
+              )}
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                סה&quot;כ {inProcessCandidates.length} בתהליך
+              </span>
+            </div>
+          </div>
+
+          {untreatedInProcess.length === 0 ? (
+            <div className="p-6 text-center text-green-600 flex items-center justify-center gap-2">
+              <span className="text-2xl">✅</span>
+              <span className="font-medium">כל המועמדים בתהליך טופלו תוך 24 שעות - כל הכבוד!</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-amber-50 border-b border-amber-200">
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">המתנה</th>
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">נכנס לתהליך</th>
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">מעסיק</th>
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">משרה</th>
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">טלפון</th>
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">שם מועמד</th>
+                    <th className="text-right py-3 px-4 font-semibold text-amber-800">#</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {untreatedInProcess.map((c: any, idx: number) => {
+                    const hoursAgo = Math.floor((Date.now() - new Date(c.inProcessAt).getTime()) / (60 * 60 * 1000))
+                    const daysAgo = Math.floor(hoursAgo / 24)
+                    const isUrgent = hoursAgo >= 48
+                    return (
+                      <tr key={c.id} className={`border-b transition-colors ${
+                        isUrgent ? 'bg-red-50 hover:bg-red-100' : 'bg-amber-50/40 hover:bg-amber-50'
+                      }`}>
+                        <td className="py-3 px-4">
+                          <span className={`flex items-center gap-1 font-bold text-sm ${
+                            isUrgent ? 'text-red-600' : 'text-amber-600'
+                          }`}>
+                            <Clock className="h-3.5 w-3.5" />
+                            {daysAgo >= 1 ? `${daysAgo} ימים` : `${hoursAgo} שעות`}
+                            {isUrgent && <AlertTriangle className="h-3.5 w-3.5" />}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-500 text-xs">
+                          {new Date(c.inProcessAt).toLocaleDateString('he-IL')}{' '}
+                          {new Date(c.inProcessAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 text-xs">
+                          {c.inProcessPosition?.employer?.name || '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-blue-700 font-medium text-xs">
+                            {c.inProcessPosition?.title || '—'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 text-xs dir-ltr text-left">
+                          {c.phone || '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Link href={`/dashboard/candidates/${c.id}`}
+                            className="font-semibold text-slate-800 hover:text-[#00A8A8] hover:underline">
+                            {c.name}
+                          </Link>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 text-xs">{idx + 1}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="px-4 py-3 border-t bg-slate-50 flex justify-between items-center">
+            <Link href="/dashboard/candidates?status=in-process"
+              className="flex items-center gap-1 text-[#00A8A8] text-sm hover:underline font-medium">
+              <ChevronLeft className="h-4 w-4" />
+              כל המועמדים בתהליך
+            </Link>
+            <span className="text-xs text-slate-400">מרענן בכל כניסה לדף הבית</span>
           </div>
         </div>
 

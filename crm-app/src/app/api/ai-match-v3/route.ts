@@ -193,7 +193,41 @@ export async function POST(request: Request) {
       const highScoreFar = farWithoutCarMatches.filter(m => m.score >= 25)
       relevantMatches.push(...highScoreFar.slice(0, remaining))
     }
-    
+
+    // 🏦 הגבלת טלרים/בנקאים - לא יותר מ-5 ביחד ברשימת 20 המשרות
+    const MAX_TELLERS = 5
+    const TELLER_REGEX = /טלר|בנקאי/i
+    let tellerCount = 0
+    const cappedMatches: typeof relevantMatches = []
+    const removedTellers: typeof relevantMatches = []
+
+    for (const match of relevantMatches) {
+      const pos = positions.find(p => p.id === match.positionId)
+      const isTeller = pos && TELLER_REGEX.test(pos.title || '')
+      if (isTeller && tellerCount >= MAX_TELLERS) {
+        removedTellers.push(match)
+      } else {
+        if (isTeller) tellerCount++
+        cappedMatches.push(match)
+      }
+    }
+
+    // אם הוסרו טלרים - מלא את המקומות מהמשרות הטובות הבאות
+    if (removedTellers.length > 0) {
+      const inList = new Set(cappedMatches.map(m => m.positionId))
+      const removedIds = new Set(removedTellers.map(m => m.positionId))
+      const fillFrom = allMatches.filter(m => !inList.has(m.positionId) && !removedIds.has(m.positionId))
+      cappedMatches.push(...fillFrom.slice(0, removedTellers.length))
+      cappedMatches.sort((a, b) => {
+        if (a.locationMatch && !b.locationMatch) return -1
+        if (!a.locationMatch && b.locationMatch) return 1
+        return b.score - a.score
+      })
+      console.log(`🏦 הוגבלו ${removedTellers.length} טלרים/בנקאים (נשארו ${tellerCount}), מולאו ${Math.min(removedTellers.length, fillFrom.length)} משרות אחרות`)
+    }
+
+    relevantMatches = cappedMatches
+
     console.log(`📋 לפני: ${allMatches.length} משרות, אחרי סינון: ${relevantMatches.length}`)
     console.log(`  📍 קרובות: ${nearbyMatches.length}, 🚗 עם רכב: ${farWithCarMatches.length}, 🚶 בלי רכב: ${farWithoutCarMatches.length}`)
     

@@ -1,308 +1,380 @@
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const { PrismaClient } = require('@prisma/client');
 
-async function main() {
-  console.log('🏢 Adding קבוצת מאיר employer and positions...')
+const prisma = new PrismaClient();
 
-  // Create or get קבוצת מאיר employer
-  const meirGroup = await prisma.employer.upsert({
-    where: { email: 'hr@meir-group.co.il' },
-    update: {},
-    create: {
-      name: 'קבוצת מאיר',
-      email: 'hr@meir-group.co.il',
-      phone: '',
-      description: 'קבוצת מאיר - מרכזי שירות רכב ברחבי הארץ',
-    },
-  })
-  console.log('✅ Added employer: קבוצת מאיר', meirGroup.id)
-
-  const commonBenefits = `חדר אוכל - ארוחות צהריים מסובסדות
+const BENEFITS_STANDARD = `חדר אוכל - ארוחות צהריים מסובסדות
 ביטוח רפואי פרטי במימון החברה
 ביגוד
-חניה`
+חניה`;
 
-  const commonBenefitsWithBonus = `${commonBenefits}
-מענק התמדה במשך שנתיים`
+const BENEFITS_WITH_BONUS = `חדר אוכל - ארוחות צהריים מסובסדות
+ביטוח רפואי פרטי במימון החברה
+ביגוד
+חניה
+מענק התמדה במשך שנתיים`;
 
-  const positions = [
-    // === מרכז שירות עמק חפר ===
-    {
-      title: 'יועץ שירות - מרכז שירות עמק חפר',
-      location: 'עמק חפר',
+const HOURS_FULL = 'משרה מלאה 5 ימים בשבוע, 7:30–16:30, ימי שישי לסירוגין 7:30–12:00';
+const HOURS_MOBILE = 'עבודה מהשעה 7:30 עד 14:00 במרכז השירות ולאחר מכן כוננות, ימי שישי לסירוגין כולל כוננות';
+
+async function main() {
+  console.log('🏢 מוסיף קבוצת מאיר ומשרות...');
+
+  // ── יצירת המעסיק ──────────────────────────────────────────────────
+  const meir = await prisma.employer.upsert({
+    where: { email: 'hr@meirgroup.co.il' },
+    update: { name: 'קבוצת מאיר', phone: '', description: 'קבוצת מאיר - מרכזי שירות רכב' },
+    create: {
+      name: 'קבוצת מאיר',
+      email: 'hr@meirgroup.co.il',
+      phone: '',
+      description: 'קבוצת מאיר - מרכזי שירות רכב',
+    },
+  });
+  console.log('✅ מעסיק נוסף: קבוצת מאיר');
+
+  // ── משרות ─────────────────────────────────────────────────────────
+
+  // 1. יועץ שירות – עמק חפר
+  await prisma.position.create({
+    data: {
+      title: 'יועץ שירות',
+      employerId: meir.id,
+      location: 'מרכז שירות עמק חפר',
+      employmentType: 'Full-time',
+      active: true,
+      openings: 1,
+      priority: 1,
       description: `ליווי הלקוח מהגעתו למרכז השירות ועד לשחרורו.
 מתן מענה מקצועי ללקוחות החברה.
-עבודה עם ממשקים.`,
-      requirements: `ניסיון בשירות לקוחות - חובה
+עבודה עם ממשקים`,
+      requirements: `ניסיון בשירות לקוחות – חובה
 תודעה גבוהה למתן שירות`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefits,
-      employmentType: 'משרה מלאה',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_STANDARD,
+      keywords: JSON.stringify([
+        'יועץ שירות','שירות לקוחות','מרכז שירות','ממשקים','עמק חפר','תודעת שירות'
+      ]),
+    },
+  });
+  console.log('✅ יועץ שירות – עמק חפר');
+
+  // 2. דיאגנוסטיקה – עמק חפר
+  await prisma.position.create({
+    data: {
+      title: 'דיאגנוסטיקה',
+      employerId: meir.id,
+      location: 'מרכז שירות עמק חפר',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['יועץ שירות', 'שירות לקוחות', 'עמק חפר', 'רכב'],
-    },
-    {
-      title: 'דיאגנוסטיקאי - מרכז שירות עמק חפר',
-      location: 'עמק חפר',
-      description: `עבודת דיאגנוסטיקה ואבחון תקלות ברכבים במרכז השירות.`,
-      requirements: `ניסיון בדיאגנוסטיקה ברמה טובה מאוד - חובה
+      priority: 1,
+      description: 'אבחון תקלות ברכבים באמצעות ציוד דיאגנוסטי',
+      requirements: `ניסיון בדיאגנוסטיקה ברמה טובה מאוד
 אנגלית טכנית`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'דיאגנוסטיקה','אבחון תקלות','טכנאי רכב','אנגלית טכנית','עמק חפר','מרכז שירות'
+      ]),
+    },
+  });
+  console.log('✅ דיאגנוסטיקה – עמק חפר');
+
+  // 3. מכונאי ניידת – רמלה
+  await prisma.position.create({
+    data: {
+      title: 'מכונאי ניידת',
+      employerId: meir.id,
+      location: 'מרכז שירות רמלה',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['דיאגנוסטיקה', 'אבחון תקלות', 'עמק חפר', 'רכב', 'אנגלית טכנית'],
+      priority: 1,
+      description: 'עבודת מכונאות בשטח – ניידת שירות',
+      requirements: `ניסיון במכונאות – חובה
+רישיון נהיגה ג' – חובה`,
+      workHours: HOURS_MOBILE,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'מכונאי','מכונאות','ניידת','רישיון ג','כוננות','רמלה','מרכז שירות'
+      ]),
     },
+  });
+  console.log('✅ מכונאי ניידת – רמלה');
 
-    // === מרכז שירות רמלה ===
-    {
-      title: 'מכונאי ניידת - מרכז שירות רמלה',
-      location: 'רמלה',
-      description: `מכונאי ניידת שירות. עבודה מהשעה 7:30 עד 14:00 במרכז השירות ולאחר מכן כוננות.`,
-      requirements: `ניסיון במכונאות - חובה
-רישיון נהיגה ג' - חובה`,
-      workHours: '7:30-14:00 במרכז השירות + כוננות. ימי שישי לסירוגין כולל כוננות',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
+  // 4. מכונאי צמ"ה – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מכונאי צמ"ה',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['מכונאי', 'ניידת שירות', 'רמלה', 'כוננות', 'רישיון ג'],
-    },
-
-    // === מרכז שירות אשדוד ===
-    {
-      title: 'מכונאי צמ"ה - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `מכונאי ציוד מכני הנדסי (צמ"ה) במרכז השירות.`,
-      requirements: `ניסיון במכונאות - חובה
-ניסיון כמכונאי ברמה טובה מאוד
+      priority: 1,
+      description: 'עבודת מכונאות על ציוד מכני הנדסי (צמ"ה)',
+      requirements: `ניסיון כמכונאי ברמה טובה מאוד
 רישיון נהיגה מעל 15 טון`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'מכונאי','צמ"ה','ציוד מכני הנדסי','רישיון כבד','15 טון','אשדוד','מרכז שירות'
+      ]),
+    },
+  });
+  console.log('✅ מכונאי צמ"ה – אשדוד');
+
+  // 5. בוחן – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'בוחן',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['מכונאי', 'צמ"ה', 'אשדוד', 'רישיון 15 טון', 'ציוד מכני'],
+      priority: 1,
+      description: `בחינת רכבים של לקוחות מרכז השירות
+בדיקה מכאנית של תקלות
+נסיעות מבחן
+עדכון כרטיסי עבודה לאחר בחינה`,
+      requirements: 'ניסיון בבחינה בבור (לא במכון רישוי)',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_STANDARD,
+      keywords: JSON.stringify([
+        'בוחן','בחינת רכבים','נסיעות מבחן','בדיקה מכאנית','כרטיסי עבודה','אשדוד','מרכז שירות'
+      ]),
     },
-    {
-      title: 'בוחן רכב - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `בחינת רכבים של לקוחות מרכז השירות.
-בדיקה מכאנית של תקלות.
-נסיעות מבחן.
-עדכון כרטיסי עבודה לאחר בחינה.`,
-      requirements: `ניסיון בבחינה בבור (לא במכון רישוי) - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefits,
-      employmentType: 'משרה מלאה',
+  });
+  console.log('✅ בוחן – אשדוד');
+
+  // 6. מכונאי ניידת שירות 24/7 – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מכונאי ניידת שירות 24/7',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['בוחן רכב', 'אשדוד', 'בדיקה מכאנית', 'נסיעות מבחן'],
+      priority: 2,
+      description: 'עבודת מכונאות בשטח בכוננות 24/7 – ניידת שירות',
+      requirements: `ניסיון במכונאות – חובה
+רישיון נהיגה ג' – חובה`,
+      workHours: HOURS_MOBILE,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'מכונאי','ניידת','24/7','כוננות','רישיון ג','אשדוד','מרכז שירות','שירות שטח'
+      ]),
     },
-    {
-      title: 'מכונאי ניידת שירות 24/7 - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `מכונאי ניידת שירות 24/7. עבודה מהשעה 7:30 עד 14:00 במרכז השירות ולאחר מכן כוננות.`,
-      requirements: `ניסיון במכונאות - חובה
-רישיון נהיגה ג' - חובה`,
-      workHours: '7:30-14:00 במרכז השירות + כוננות. ימי שישי לסירוגין כולל כוננות',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
-      active: true,
-      openings: 1,
-      tags: ['מכונאי', 'ניידת שירות', 'אשדוד', 'כוננות', '24/7', 'רישיון ג'],
-    },
-    {
-      title: 'מכונאי רכב - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `עבודת מכונאות רכב במרכז השירות.`,
-      requirements: `ניסיון כמכונאי ברמה טובה מאוד - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
+  });
+  console.log('✅ מכונאי ניידת שירות 24/7 – אשדוד');
+
+  // 7. מכונאים (4 משרות) – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מכונאי',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 4,
-      tags: ['מכונאי', 'אשדוד', 'רכב', 'מוסך'],
+      priority: 2,
+      description: 'עבודת מכונאות במרכז שירות',
+      requirements: 'ניסיון כמכונאי ברמה טובה מאוד',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'מכונאי','מכונאות','טכנאי רכב','אשדוד','מרכז שירות','משרה מלאה'
+      ]),
     },
-    {
-      title: 'נהג שינוע - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `נהג/ת שינוע משאיות ואוטובוסים ונסיעות מבחן.`,
-      requirements: `רישיון נהיגה E+D - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefits,
-      employmentType: 'משרה מלאה',
+  });
+  console.log('✅ מכונאים (4) – אשדוד');
+
+  // 8. נהג – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'נהג',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['נהג', 'שינוע', 'אשדוד', 'משאיות', 'אוטובוסים', 'רישיון E', 'רישיון D'],
+      priority: 1,
+      description: 'נהג/ת שינוע משאיות ואוטובוסים ונסיעות מבחן',
+      requirements: 'רישיון נהיגה E+D – חובה',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_STANDARD,
+      keywords: JSON.stringify([
+        'נהג','רישיון E','רישיון D','שינוע','משאיות','אוטובוסים','נסיעות מבחן','אשדוד'
+      ]),
     },
-    {
-      title: 'מחסנאי - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `עבודת מחסן בסביבת עבודה ממוחשבת.
-ליקוט חלפים, סידור, ספירות מלאי.
-הבנה בחלקי חילוף לרכב - יתרון משמעותי.`,
-      requirements: `ניסיון בעבודת מחסן
-הבנה בחלקי חילוף לרכב - יתרון משמעותי`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefits,
-      employmentType: 'משרה מלאה',
+  });
+  console.log('✅ נהג – אשדוד');
+
+  // 9. מחסנאים (2 משרות) – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מחסנאי',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 2,
-      tags: ['מחסנאי', 'אשדוד', 'מחסן', 'ליקוט', 'חלקי חילוף', 'רכב'],
+      priority: 1,
+      description: `עבודת מחסן בסביבת עבודה ממוחשבת
+ליקוט חלפים
+סידור וספירות מלאי`,
+      requirements: 'הבנה בחלקי חילוף לרכב – יתרון משמעותי',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_STANDARD,
+      keywords: JSON.stringify([
+        'מחסנאי','מחסן','ליקוט','חלפים','חלקי חילוף','מלאי','ממוחשב','אשדוד'
+      ]),
     },
-    {
-      title: 'מסגר - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `עבודת מסגרות במרכז השירות.`,
-      requirements: `ניסיון כמסגר - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefits,
-      employmentType: 'משרה מלאה',
-      active: true,
-      openings: 1,
-      tags: ['מסגר', 'אשדוד', 'רכב'],
-    },
-    {
-      title: 'פחח - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `עבודת פחחות במרכז השירות.`,
-      requirements: `ניסיון כפחח - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefits,
-      employmentType: 'משרה מלאה',
-      active: true,
-      openings: 1,
-      tags: ['פחח', 'פחחות', 'אשדוד', 'רכב'],
-    },
-    {
-      title: 'מכונאי ניידת שירות - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `מכונאי ניידת שירות במרכז שירות אשדוד.`,
-      requirements: `ניסיון במכונאות - חובה
-רישיון נהיגה ג' - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
-      active: true,
-      openings: 1,
-      tags: ['מכונאי', 'ניידת שירות', 'אשדוד', 'רישיון ג'],
-    },
-    {
-      title: 'מכונאי ניידת צמ"ה - מרכז שירות אשדוד',
-      location: 'אשדוד',
-      description: `מכונאי ניידת ציוד מכני הנדסי (צמ"ה) במרכז שירות אשדוד.`,
-      requirements: `ניסיון במכונאות - חובה
-רישיון נהיגה ג' - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
-      active: true,
-      openings: 1,
-      tags: ['מכונאי', 'ניידת', 'צמ"ה', 'אשדוד', 'רישיון ג'],
-    },
+  });
+  console.log('✅ מחסנאים (2) – אשדוד');
 
-    // === מרכז שירות דרום ===
-    {
-      title: 'דיאגנוסטיקאי - מרכז שירות דרום',
-      location: 'דרום',
-      description: `עבודת דיאגנוסטיקה ואבחון תקלות ברכבים במרכז השירות.`,
-      requirements: `ניסיון בדיאגנוסטיקה ברמה טובה מאוד - חובה`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: commonBenefitsWithBonus,
-      employmentType: 'משרה מלאה',
+  // 10. מסגר – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מסגר',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
       active: true,
       openings: 1,
-      tags: ['דיאגנוסטיקה', 'אבחון תקלות', 'דרום', 'רכב'],
+      priority: 1,
+      description: 'עבודת מסגרות במרכז שירות',
+      requirements: 'ניסיון כמסגר',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_STANDARD,
+      keywords: JSON.stringify([
+        'מסגר','מסגרות','עבודת מתכת','אשדוד','מרכז שירות'
+      ]),
     },
-    {
-      title: 'יועץ שירות - מרכז שירות דרום',
-      location: 'דרום',
+  });
+  console.log('✅ מסגר – אשדוד');
+
+  // 11. פחח – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'פחח',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
+      active: true,
+      openings: 1,
+      priority: 1,
+      description: 'עבודת פחחות במרכז שירות',
+      requirements: 'ניסיון כפחח',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_STANDARD,
+      keywords: JSON.stringify([
+        'פחח','פחחות','תיקון פגמים','קרוסרי','אשדוד','מרכז שירות'
+      ]),
+    },
+  });
+  console.log('✅ פחח – אשדוד');
+
+  // 12. מכונאי ניידת שירות – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מכונאי ניידת שירות',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
+      active: true,
+      openings: 1,
+      priority: 1,
+      description: 'עבודת מכונאות בשטח – ניידת שירות',
+      requirements: `ניסיון במכונאות – חובה
+רישיון נהיגה ג' – חובה`,
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'מכונאי','ניידת שירות','רישיון ג','מכונאות','אשדוד','מרכז שירות'
+      ]),
+    },
+  });
+  console.log('✅ מכונאי ניידת שירות – אשדוד');
+
+  // 13. מכונאי ניידת צמ"ה – אשדוד
+  await prisma.position.create({
+    data: {
+      title: 'מכונאי ניידת צמ"ה',
+      employerId: meir.id,
+      location: 'מרכז שירות אשדוד',
+      employmentType: 'Full-time',
+      active: true,
+      openings: 1,
+      priority: 1,
+      description: 'עבודת מכונאות בשטח על ציוד מכני הנדסי – ניידת שירות',
+      requirements: `ניסיון במכונאות – חובה
+רישיון נהיגה ג' – חובה`,
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'מכונאי','צמ"ה','ניידת','ציוד מכני הנדסי','רישיון ג','אשדוד','מרכז שירות'
+      ]),
+    },
+  });
+  console.log('✅ מכונאי ניידת צמ"ה – אשדוד');
+
+  // 14. דיאגנוסטיקה – מרכז שירות דרום
+  await prisma.position.create({
+    data: {
+      title: 'דיאגנוסטיקה',
+      employerId: meir.id,
+      location: 'מרכז שירות דרום',
+      employmentType: 'Full-time',
+      active: true,
+      openings: 1,
+      priority: 1,
+      description: 'אבחון תקלות ברכבים באמצעות ציוד דיאגנוסטי',
+      requirements: 'ניסיון בדיאגנוסטיקה ברמה טובה מאוד',
+      workHours: HOURS_FULL,
+      benefits: BENEFITS_WITH_BONUS,
+      keywords: JSON.stringify([
+        'דיאגנוסטיקה','אבחון תקלות','טכנאי רכב','מרכז שירות דרום','דרום'
+      ]),
+    },
+  });
+  console.log('✅ דיאגנוסטיקה – מרכז שירות דרום');
+
+  // 15. יועץ שירות – מרכז שירות דרום
+  await prisma.position.create({
+    data: {
+      title: 'יועץ שירות',
+      employerId: meir.id,
+      location: 'מרכז שירות דרום',
+      employmentType: 'Full-time',
+      active: true,
+      openings: 1,
+      priority: 1,
       description: `ליווי הלקוח מהגעתו למרכז השירות ועד לשחרורו.
 מתן מענה מקצועי ללקוחות החברה.
-עבודה עם ממשקים.`,
-      requirements: `ניסיון בשירות לקוחות - חובה
+עבודה עם ממשקים`,
+      requirements: `ניסיון בשירות לקוחות – חובה
 תודעה גבוהה למתן שירות`,
-      workHours: 'משרה מלאה 5 ימים בשבוע, 7:30-16:30. ימי שישי לסירוגין 7:30-12:00',
-      benefits: `חדר אוכל - ארוחות צהריים מסובסדות
-ביגוד
+      workHours: HOURS_FULL,
+      benefits: `ביגוד
 חניה`,
-      employmentType: 'משרה מלאה',
-      active: true,
-      openings: 1,
-      tags: ['יועץ שירות', 'שירות לקוחות', 'דרום', 'רכב'],
+      keywords: JSON.stringify([
+        'יועץ שירות','שירות לקוחות','מרכז שירות דרום','ממשקים','תודעת שירות','דרום'
+      ]),
     },
-  ]
+  });
+  console.log('✅ יועץ שירות – מרכז שירות דרום');
 
-  console.log(`📦 Creating ${positions.length} positions for קבוצת מאיר...`)
-
-  let totalOpenings = 0
-  for (const posData of positions) {
-    const tags = posData.tags
-    delete posData.tags
-
-    totalOpenings += posData.openings
-
-    // Generate keywords from tags
-    const keywords = JSON.stringify(tags)
-
-    const position = await prisma.position.create({
-      data: {
-        title: posData.title,
-        description: posData.description,
-        requirements: posData.requirements,
-        location: posData.location,
-        workHours: posData.workHours,
-        benefits: posData.benefits,
-        employmentType: posData.employmentType,
-        active: posData.active,
-        openings: posData.openings,
-        keywords: keywords,
-        priority: 5,
-        employerId: meirGroup.id,
-      },
-    })
-
-    // Create and connect tags
-    if (tags && tags.length > 0) {
-      for (const tagName of tags) {
-        let tag = await prisma.tag.findFirst({
-          where: { name: tagName },
-        })
-
-        if (!tag) {
-          tag = await prisma.tag.create({
-            data: {
-              name: tagName,
-              category: 'skill',
-            },
-          })
-        }
-
-        await prisma.position.update({
-          where: { id: position.id },
-          data: {
-            tags: {
-              connect: { id: tag.id },
-            },
-          },
-        })
-      }
-    }
-
-    console.log(`✅ Created: ${posData.title} (${posData.openings} openings) - ${posData.location}`)
-  }
-
-  console.log(`\n🎉 Done! Created ${positions.length} positions (${totalOpenings} total openings) for קבוצת מאיר`)
+  console.log('\n🎉 סיום! קבוצת מאיר + 15 משרות נוספו בהצלחה.');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error:', e)
-    process.exit(1)
+    console.error('❌ שגיאה:', e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

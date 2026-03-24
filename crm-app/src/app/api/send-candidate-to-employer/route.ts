@@ -4,6 +4,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 import { Resend } from "resend"
+import { GoogleGenerativeAI } from "@google/generative-ai"
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
 // 🔍 GET - תצוגה מקדימה של המייל לפני שליחה
 export async function GET(request: NextRequest) {
@@ -60,8 +63,12 @@ export async function GET(request: NextRequest) {
       take: 10, // עד 10 מיילים אחרונים
     })
 
-    // יצירת משפטי התאמה אוטומטיים
-    const matchingPoints = analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
+    // יצירת משפטי התאמה - קודם Gemini AI, אחר כך fallback אלגוריתמי
+    let matchingPoints = await generateMatchingPointsWithGemini(candidate, position)
+    const generatedByAI = !!matchingPoints
+    if (!matchingPoints) {
+      matchingPoints = analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
+    }
     const emailSubject = `מועמד/ת מתאים/ה למשרה: ${position.title} - ${candidate.name}`
 
     // 📧 בחירת המייל הראשי - עדיפות ל-contactEmail של המשרה
@@ -89,6 +96,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      generatedByAI,
       preview: {
         subject: emailSubject,
         matchingPoints,
@@ -137,6 +145,53 @@ export async function GET(request: NextRequest) {
       { error: "Failed to generate preview", details: error.message },
       { status: 500 }
     )
+  }
+}
+
+// 🤖 Gemini AI - יצירת 5 נקודות התאמה חכמות
+async function generateMatchingPointsWithGemini(candidate: any, position: any): Promise<string[] | null> {
+  if (!process.env.GEMINI_API_KEY) return null
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const candidateTags = candidate.tags?.map((t: any) => t.name).join(', ') || 'לא צוין'
+    const positionTags = position.tags?.map((t: any) => t.name).join(', ') || 'לא צוין'
+
+    const prompt = `אתה מגייס מקצועי בחברת השמה. עזור לי לכתוב 5 נקודות השמה מדויקות ומשכנעות למייל למעסיק.
+
+פרטי המועמד:
+- שם: ${candidate.name}
+- תפקיד נוכחי: ${candidate.currentTitle || 'לא צוין'}
+- חברה: ${candidate.currentCompany || 'לא צוין'}
+- שנות ניסיון: ${candidate.yearsOfExperience || 'לא צוין'}
+- עיר: ${candidate.city || 'לא צוין'}
+- כישורים: ${candidate.skills || 'לא צוין'}
+- תגיות: ${candidateTags}
+- ציפיות שכר: ${candidate.expectedSalary || 'לא צוין'}
+- זמינות: ${candidate.noticePeriod || 'לא צוין'}
+- הערות: ${candidate.notes ? candidate.notes.substring(0, 300) : 'אין'}
+
+פרטי המשרה:
+- תפקיד: ${position.title}
+- מעסיק: ${position.employer?.name || 'לא צוין'}
+- מיקום: ${position.location || 'לא צוין'}
+- דרישות: ${position.requirements ? position.requirements.substring(0, 400) : 'לא צוין'}
+- תיאור: ${position.description ? position.description.substring(0, 400) : 'לא צוין'}
+- תגיות: ${positionTags}
+- טווח שכר: ${position.salaryRange || 'לא צוין'}
+
+כתוב בדיוק 5 נקודות בעברית, כל נקודה בשורה חדשה, ללא מספור ידני, ללא סיסמאות כלליות.
+התמקד בהתאמה הספציפית בין המועמד למשרה.
+כל נקודה צריכה להיות משפט שלם, ממוקד, ומשכנע. מקסימום 2 שורות כל נקודה.
+החזר רק את 5 המשפטים עצמם, ללא הקדמה וללא כותרת.`
+
+    const result = await model.generateContent(prompt)
+    const text = result.response.text().trim()
+    const lines = text.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 10)
+    if (lines.length >= 5) return lines.slice(0, 5)
+    return null
+  } catch (err) {
+    console.error('Gemini matching points error:', err)
+    return null
   }
 }
 

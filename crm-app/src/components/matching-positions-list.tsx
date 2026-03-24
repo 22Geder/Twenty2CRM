@@ -182,6 +182,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   const [customName, setCustomName] = useState("")
   const [saveEmailToPosition, setSaveEmailToPosition] = useState(true)
   const [showEmailSelector, setShowEmailSelector] = useState(false)
+  // 🤖 האם הנקודות נוצרו ע"י Gemini AI
+  const [generatedByAI, setGeneratedByAI] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // 📱 WhatsApp Helpers - 🆕 תומך בכל הפורמטים
   const normalizePhoneForWhatsApp = (phone: string): string => {
@@ -434,6 +437,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       setEmailPreview(data.preview)
       setEditedSubject(data.preview.subject)
       setEditedPoints([...data.preview.matchingPoints])
+      setGeneratedByAI(!!data.generatedByAI)
       
       // 📧 הגדרת המייל הנבחר - עדיפות ל-contactEmail אם קיים
       const primaryEmail = data.preview.targetEmail || data.preview.position.contactEmail || data.preview.employer.email
@@ -506,6 +510,47 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       alert(`❌ שגיאה בשליחה: ${err.message}`)
     } finally {
       setSendingEmail(false)
+    }
+  }
+
+  // 📋 העתקת כל ההודעה ללוח ( למייל / וואטסאפ / כל ערוץ)
+  const copyAllMessage = async () => {
+    if (!emailPreview) return
+    const contactName = selectedName || customName || emailPreview.employer.name || 'המעסיק הנכבד'
+    const lines: string[] = []
+    lines.push(`נושא: ${editedSubject}`)
+    lines.push('')
+    lines.push(`שלום ${contactName},`)
+    lines.push('')
+    lines.push(`ברצוני להציג בפניכם מועמד/ת מצוין/ת למשרת ${emailPreview.position.title}:`)
+    lines.push('')
+    lines.push(`👤 ${emailPreview.candidate.name}`)
+    if (emailPreview.candidate.currentTitle) lines.push(`📋 תפקיד: ${emailPreview.candidate.currentTitle}${emailPreview.candidate.currentCompany ? ` | ${emailPreview.candidate.currentCompany}` : ''}`)
+    if (emailPreview.candidate.yearsOfExperience) lines.push(`💼 ניסיון: ${emailPreview.candidate.yearsOfExperience} שנים`)
+    if (emailPreview.candidate.city) lines.push(`📍 מיקום: ${emailPreview.candidate.city}`)
+    if (emailPreview.candidate.phone) lines.push(`📞 טלפון: ${emailPreview.candidate.phone}`)
+    lines.push('')
+    lines.push('✨ 5 סיבות למה הוא/היא מתאים/ה:')
+    editedPoints.forEach((point, i) => {
+      lines.push(`${i + 1}. ${point}`)
+    })
+    lines.push('')
+    lines.push('נשמח לסדר ראיון בנוח לכם.')
+    lines.push('בברכה,')
+    lines.push('צוות TWENTY2GETHER')
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = lines.join('\n')
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
     }
   }
 
@@ -1254,9 +1299,16 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
 
               {/* 5 משפטי ההתאמה */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ✨ 5 משפטי ההתאמה (ערוך לפי הצורך):
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    ✨ 5 משפטי ההתאמה (ערוך לפי הצורך):
+                  </label>
+                  {generatedByAI && (
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      🤖 נוצר ע"י Gemini AI
+                    </span>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {editedPoints.map((point, index) => (
                     <div key={index} className="relative">
@@ -1283,31 +1335,50 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
             </div>
 
             {/* Footer */}
-            <div className="border-t p-4 bg-gray-50 flex gap-3">
+            <div className="border-t p-4 bg-gray-50 space-y-2">
+              {/* כפתור העתק הכל - בולט */}
               <Button
-                variant="outline"
-                onClick={() => setShowEmailModal(false)}
-                className="flex-1"
+                onClick={copyAllMessage}
+                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold text-base py-3"
               >
-                ביטול
-              </Button>
-              <Button
-                onClick={sendEmailWithPreview}
-                disabled={sendingEmail}
-                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-              >
-                {sendingEmail ? (
+                {copied ? (
                   <>
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                    שולח...
+                    <CheckCircle className="h-5 w-5 ml-2" />
+                    ✅ ההודעה הועתקה! עשה הדבק (Ctrl+V)
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4 ml-2" />
-                    שלח מייל למעסיק
+                    <Copy className="h-5 w-5 ml-2" />
+                    📋 העתק הכל - מוכן להדבקה (מייל / וואטסאפ / כל ערוץ)
                   </>
                 )}
               </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEmailModal(false)}
+                  className="flex-1"
+                >
+                  ביטול
+                </Button>
+                <Button
+                  onClick={sendEmailWithPreview}
+                  disabled={sendingEmail}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      שולח...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 ml-2" />
+                      שלח מייל למעסיק
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

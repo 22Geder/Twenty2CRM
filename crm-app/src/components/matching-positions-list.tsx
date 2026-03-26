@@ -163,7 +163,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   
   // 🆕 מיון והצגה
   const [sortBy, setSortBy] = useState<'score' | 'location' | 'date'>('score')
-  const [displayCount, setDisplayCount] = useState(20)
+  const [displayCount, setDisplayCount] = useState(500) // ✅ הצג הכל (לא מוגבל)
 
   // 📧 State לתצוגה מקדימה של מייל
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null)
@@ -680,7 +680,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
             </div>
           </div>
           <Badge className="bg-purple-100 text-purple-700">
-            מציג: {Math.min(displayCount, positions.length)} / {positions.length}
+            {positions.length} משרות מתאימות
           </Badge>
         </div>
         
@@ -1033,21 +1033,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               </div>
             ))}
             
-            {/* 🆕 כפתור הצג עוד */}
-            {displayCount < positions.length && (
-              <div className="p-4 text-center border-t bg-gray-50">
-                <Button
-                  variant="outline"
-                  onClick={() => setDisplayCount(prev => prev + 20)}
-                  className="w-full max-w-xs"
-                >
-                  הצג עוד {Math.min(20, positions.length - displayCount)} משרות
-                  <span className="text-xs text-gray-500 mr-2">
-                    ({positions.length - displayCount} נותרו)
-                  </span>
-                </Button>
-              </div>
-            )}
+            {/* הכל מוצג - אין הגבלה */}
           </div>
         )}
       </CardContent>

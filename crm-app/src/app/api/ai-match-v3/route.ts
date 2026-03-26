@@ -171,27 +171,19 @@ export async function POST(request: Request) {
     farWithCarMatches.sort((a, b) => b.score - a.score)
     farWithoutCarMatches.sort((a, b) => b.score - a.score)
 
-    // 🎯 בניית רשימת 20 המשרות הטובות ביותר
-    // עדיפות: 1) קרובות, 2) רחוקות עם רכב, 3) רחוקות בלי רכב (רק אם ציון גבוה)
-    const MAX_RESULTS = 20
-    let relevantMatches: typeof allMatches = []
-    
-    // קודם - כל המשרות הקרובות (עד MAX_RESULTS)
-    relevantMatches.push(...nearbyMatches.slice(0, MAX_RESULTS))
-    
-    // אם יש מקום - הוסף משרות עם רכב (רחוקות אבל עם הסעה/רכב צמוד)
-    if (relevantMatches.length < MAX_RESULTS) {
-      const remaining = MAX_RESULTS - relevantMatches.length
-      relevantMatches.push(...farWithCarMatches.slice(0, remaining))
-    }
-    
-    // אם עדיין יש מקום - הוסף משרות רחוקות בלי רכב
-    // 🔧 תיקון: הורדת הסף מ-50 ל-25 כי ללא התאמת מיקום (65%) מקסימום הציון הוא 35%
-    // זה מאפשר למועמדי מכירות להתאים למשרות מכירות גם בערים שונות
-    if (relevantMatches.length < MAX_RESULTS) {
-      const remaining = MAX_RESULTS - relevantMatches.length
-      const highScoreFar = farWithoutCarMatches.filter(m => m.score >= 25)
-      relevantMatches.push(...highScoreFar.slice(0, remaining))
+    // ✅ הצג את כל המשרות מעל 50% + מינימום 15 משרות
+    // אלגוריתם: 50% מיקום | 25% תגיות | 25% AI
+    const MIN_RESULTS = 15
+    const allSortedByScore = [...allMatches].sort((a, b) => b.score - a.score)
+    const above50 = allSortedByScore.filter(m => m.score >= 50)
+    const below50 = allSortedByScore.filter(m => m.score < 50)
+
+    let relevantMatches: typeof allMatches = [...above50]
+
+    // אם פחות מ-15 משרות מעל 50% - השלם עד 15 עם הציונים הגבוהים הבאים
+    if (relevantMatches.length < MIN_RESULTS) {
+      const needed = MIN_RESULTS - relevantMatches.length
+      relevantMatches.push(...below50.slice(0, needed))
     }
 
     // 🏦 הגבלת טלרים/בנקאים - לא יותר מ-5 ביחד ברשימת 20 המשרות

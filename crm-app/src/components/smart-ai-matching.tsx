@@ -490,8 +490,13 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
   const recommendedMatches = allResults.filter(r => r.shouldProceed)
   const locationMatches = allResults.filter(r => r.locationMatch)
   const otherMatches = allResults.filter(r => !r.shouldProceed)
-  // 🆕 מיון לפי ציון - הגבוה ביותר ראשון, עד 20 משרות
-  const sortedMatches = [...allResults].sort((a, b) => b.score - a.score).slice(0, 20)
+  // ✅ הצג את כל המשרות מעל 50% + מינימום 15 משרות
+  const allSorted = [...allResults].sort((a, b) => b.score - a.score)
+  const above50Results = allSorted.filter(r => r.score >= 50)
+  const below50Results = allSorted.filter(r => r.score < 50)
+  const sortedMatches = above50Results.length >= 15
+    ? above50Results
+    : [...above50Results, ...below50Results.slice(0, 15 - above50Results.length)]
 
   // Show loading state when component first loads
   if (loadingPositions) {

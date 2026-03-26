@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle, AlertTriangle, Clock } from "lucide-react"
+import { DashboardRefresher } from "@/components/dashboard-refresher"
 
 // Get comprehensive dashboard stats
 async function getDashboardStats() {
@@ -24,6 +25,7 @@ async function getDashboardStats() {
     hiredThisMonth,
     startedWorkThisMonth,
     candidatesThisMonth,
+    inProcessCount,
   ] = await Promise.all([
     prisma.candidate.count(),
     prisma.position.count(),
@@ -55,6 +57,15 @@ async function getDashboardStats() {
     }),
     prisma.candidate.count({
       where: { createdAt: { gte: monthAgo } }
+    }),
+    // 🔄 ספירת מועמדים בתהליך לפי employmentStatus (מסונכרן עם סטטוס חודשי)
+    prisma.candidate.count({
+      where: {
+        OR: [
+          { employmentStatus: 'IN_PROCESS' },
+          { inProcessPositionId: { not: null } },
+        ]
+      }
     }),
   ])
 
@@ -102,8 +113,8 @@ async function getDashboardStats() {
     statusMap[item.status] = item._count
   })
 
-  // Calculate candidates in process (not rejected, not hired yet)
-  const inProcess = statusMap.NEW + statusMap.SCREENING + statusMap.INTERVIEW + statusMap.OFFER
+  // Calculate candidates in process - מבוסס על employmentStatus של המועמד (מסונכרן עם סטטוס חודשי)
+  const inProcess = inProcessCount
   const waitingForScreening = statusMap.NEW
 
   return {
@@ -125,61 +136,64 @@ async function getDashboardStats() {
   }
 }
 
-// Get candidates in process (בתהליך)
+// Get candidates in process (בתהליך) - מבוסס על employmentStatus של המועמד
 async function getCandidatesInProcess() {
-  return await prisma.application.findMany({
+  return await prisma.candidate.findMany({
     where: {
-      status: {
-        in: ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER']
-      }
+      OR: [
+        { employmentStatus: 'IN_PROCESS' },
+        { inProcessPositionId: { not: null } },
+      ]
     },
     orderBy: { updatedAt: 'desc' },
     take: 10,
-    include: {
-      candidate: {
-        select: { id: true, name: true, phone: true }
-      },
-      position: {
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      updatedAt: true,
+      employmentStatus: true,
+      inProcessPosition: {
         select: { id: true, title: true }
       }
     }
   })
 }
 
-// Get rejected candidates (לא מתאים)
+// Get rejected candidates (לא מתאים) - מבוסס על employmentStatus של המועמד
 async function getRejectedCandidates() {
-  return await prisma.application.findMany({
-    where: {
-      status: 'REJECTED'
-    },
+  return await prisma.candidate.findMany({
+    where: { employmentStatus: 'REJECTED' },
     orderBy: { updatedAt: 'desc' },
     take: 10,
-    include: {
-      candidate: {
-        select: { id: true, name: true, phone: true }
-      },
-      position: {
-        select: { id: true, title: true }
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      updatedAt: true,
+      applications: {
+        where: { status: 'REJECTED' },
+        orderBy: { updatedAt: 'desc' },
+        take: 1,
+        select: { position: { select: { id: true, title: true } } }
       }
     }
   })
 }
 
-// Get hired candidates (התקבלו)
+// Get hired candidates (התקבלו) - מבוסס על employmentStatus של המועמד
 async function getHiredCandidates() {
-  return await prisma.application.findMany({
-    where: {
-      status: 'HIRED'
-    },
-    orderBy: { updatedAt: 'desc' },
+  return await prisma.candidate.findMany({
+    where: { employmentStatus: 'EMPLOYED' },
+    orderBy: { hiredAt: 'desc' },
     take: 10,
-    include: {
-      candidate: {
-        select: { id: true, name: true, phone: true }
-      },
-      position: {
-        select: { id: true, title: true }
-      }
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      updatedAt: true,
+      hiredAt: true,
+      hiredToEmployer: { select: { id: true, name: true } }
     }
   })
 }
@@ -343,8 +357,9 @@ export default async function CiviDashboardPage() {
 
       {/* Page Title */}
       <div className="bg-white border-b">
-        <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3 md:py-4">
+        <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <h1 className="text-lg md:text-xl font-semibold text-slate-700">דף הבית - {session.user?.name || 'משתמש'}</h1>
+          <DashboardRefresher />
         </div>
       </div>
 
@@ -408,17 +423,17 @@ export default async function CiviDashboardPage() {
             <div className="max-h-[200px] overflow-y-auto">
               {inProcessCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
-                  {inProcessCandidates.map((app: any) => (
-                    <Link key={app.id} href={`/dashboard/candidates/${app.candidate.id}`} 
+                  {inProcessCandidates.map((c: any) => (
+                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`} 
                           className="block px-4 py-2 hover:bg-slate-50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-medium text-slate-700">{app.candidate.name}</span>
-                          <span className="text-xs text-slate-400 mr-2">({app.status})</span>
+                          <span className="font-medium text-slate-700">{c.name}</span>
+                          <span className="text-xs text-slate-400 mr-2">(בתהליך)</span>
                         </div>
-                        <span className="text-xs text-slate-500">{new Date(app.updatedAt).toLocaleDateString('he-IL')}</span>
+                        <span className="text-xs text-slate-500">{new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
                       </div>
-                      <div className="text-xs text-blue-600 truncate">{app.position?.title || 'משרה לא צוינה'}</div>
+                      <div className="text-xs text-blue-600 truncate">{c.inProcessPosition?.title || 'משרה לא צוינה'}</div>
                     </Link>
                   ))}
                 </div>
@@ -437,14 +452,14 @@ export default async function CiviDashboardPage() {
             <div className="max-h-[200px] overflow-y-auto">
               {rejectedCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
-                  {rejectedCandidates.map((app: any) => (
-                    <Link key={app.id} href={`/dashboard/candidates/${app.candidate.id}`} 
+                  {rejectedCandidates.map((c: any) => (
+                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`} 
                           className="block px-4 py-2 hover:bg-slate-50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-700">{app.candidate.name}</span>
-                        <span className="text-xs text-slate-500">{new Date(app.updatedAt).toLocaleDateString('he-IL')}</span>
+                        <span className="font-medium text-slate-700">{c.name}</span>
+                        <span className="text-xs text-slate-500">{new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
                       </div>
-                      <div className="text-xs text-red-600 truncate">{app.position?.title || 'משרה לא צוינה'}</div>
+                      <div className="text-xs text-red-600 truncate">{c.applications?.[0]?.position?.title || 'משרה לא צוינה'}</div>
                     </Link>
                   ))}
                 </div>
@@ -463,14 +478,14 @@ export default async function CiviDashboardPage() {
             <div className="max-h-[200px] overflow-y-auto">
               {hiredCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
-                  {hiredCandidates.map((app: any) => (
-                    <Link key={app.id} href={`/dashboard/candidates/${app.candidate.id}`} 
+                  {hiredCandidates.map((c: any) => (
+                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`} 
                           className="block px-4 py-2 hover:bg-slate-50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-700">{app.candidate.name}</span>
-                        <span className="text-xs text-slate-500">{new Date(app.updatedAt).toLocaleDateString('he-IL')}</span>
+                        <span className="font-medium text-slate-700">{c.name}</span>
+                        <span className="text-xs text-slate-500">{c.hiredAt ? new Date(c.hiredAt).toLocaleDateString('he-IL') : new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
                       </div>
-                      <div className="text-xs text-green-600 truncate">{app.position?.title || 'משרה לא צוינה'}</div>
+                      <div className="text-xs text-green-600 truncate">{c.hiredToEmployer?.name || 'מעסיק לא צוין'}</div>
                     </Link>
                   ))}
                 </div>

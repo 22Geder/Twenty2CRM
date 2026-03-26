@@ -1020,6 +1020,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
           data: {
             inProcessPositionId: positionId,
             inProcessAt: new Date(),
+            employmentStatus: 'IN_PROCESS', // 🔄 סנכרון סטטוס עם סטטוס חודשי ודף הבית
           }
         })
 

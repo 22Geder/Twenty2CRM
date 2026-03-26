@@ -188,6 +188,36 @@ export async function PUT(
       },
     })
 
+    // 🔄 סנכרון בין employmentStatus לבין Application.status (לעקביות נתונים)
+    if ('employmentStatus' in body) {
+      const activeStatuses = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER']
+      if (employmentStatus === 'EMPLOYED') {
+        // כשמועמד התקבל - סגור את כל הפניות הפעילות שלו כ-HIRED
+        await prisma.application.updateMany({
+          where: { candidateId: id, status: { in: activeStatuses } },
+          data: { status: 'HIRED' },
+        })
+      } else if (employmentStatus === 'REJECTED') {
+        // כשמועמד נדחה - סגור את כל הפניות הפעילות שלו כ-REJECTED
+        await prisma.application.updateMany({
+          where: { candidateId: id, status: { in: activeStatuses } },
+          data: { status: 'REJECTED' },
+        })
+      } else if (employmentStatus === 'IN_PROCESS') {
+        // כשמועמד בתהליך - עדכן את הפנייה האחרונה ב-NEW ל-SCREENING
+        const latestNewApp = await prisma.application.findFirst({
+          where: { candidateId: id, status: 'NEW' },
+          orderBy: { appliedAt: 'desc' },
+        })
+        if (latestNewApp) {
+          await prisma.application.update({
+            where: { id: latestNewApp.id },
+            data: { status: 'SCREENING' },
+          })
+        }
+      }
+    }
+
     return NextResponse.json(candidate)
   } catch (error) {
     console.error("Error updating candidate:", error)

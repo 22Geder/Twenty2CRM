@@ -232,6 +232,10 @@ export async function DELETE(
         data: {
           inProcessPositionId: nextApplication?.positionId || null,
           inProcessAt: nextApplication ? candidate.inProcessAt : null,
+          // 🔄 אם אין יותר משרות בתהליך - נקה את סטטוס IN_PROCESS
+          ...((!nextApplication && candidate.employmentStatus === 'IN_PROCESS') && {
+            employmentStatus: null,
+          }),
         },
       })
     }

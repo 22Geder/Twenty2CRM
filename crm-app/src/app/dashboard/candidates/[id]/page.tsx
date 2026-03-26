@@ -247,6 +247,7 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
 
       await fetchCandidate()
       setEditing(false)
+      router.refresh() // 🔄 מרענן נתונים בדף הבית
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -402,6 +403,7 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
 
       setCandidateStatus(newStatus)
       await fetchCandidate()
+      router.refresh() // 🔄 מרענן את דף הבית עם הנתונים החדשים
     } catch (err: any) {
       setError(err.message)
     } finally {

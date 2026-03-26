@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,7 @@ interface Employer {
 }
 
 export default function MonthlyStatusPage() {
+  const router = useRouter();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export default function MonthlyStatusPage() {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
 
-      const response = await fetch(`/api/candidates?limit=500`);
+      const response = await fetch(`/api/candidates?limit=5000`);
       if (response.ok) {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
@@ -93,8 +95,9 @@ export default function MonthlyStatusPage() {
           const updatedInMonth = updatedDate >= startDate && updatedDate <= endDate;
           const hiredInMonth = hiredDate && hiredDate >= startDate && hiredDate <= endDate;
           
-          // Also include if has status (EMPLOYED, REJECTED, IN_PROCESS)
-          const hasStatus = c.employmentStatus && ['EMPLOYED', 'REJECTED', 'IN_PROCESS'].includes(c.employmentStatus);
+          // Also include if has active status (EMPLOYED, REJECTED, IN_PROCESS, or inProcessPositionId set)
+          const hasStatus = (c.employmentStatus && ['EMPLOYED', 'REJECTED', 'IN_PROCESS'].includes(c.employmentStatus))
+            || !!c.inProcessPositionId;
           
           return updatedInMonth || hiredInMonth || hasStatus;
         });
@@ -176,6 +179,7 @@ export default function MonthlyStatusPage() {
       if (response.ok) {
         setEditingId(null);
         fetchData();
+        router.refresh(); // 🔄 מרענן את דף הבית עם הנתונים החדשים
       }
     } catch (error) {
       console.error('Error saving:', error);
@@ -196,13 +200,16 @@ export default function MonthlyStatusPage() {
         updatePayload.hiredToEmployerId = null;
       }
 
-      await fetch(`/api/candidates/${candidateId}`, {
+      const res = await fetch(`/api/candidates/${candidateId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatePayload),
       });
 
-      fetchData();
+      if (res.ok) {
+        fetchData();
+        router.refresh(); // 🔄 מרענן את דף הבית עם הנתונים החדשים
+      }
     } catch (error) {
       console.error('Error updating status:', error);
     } finally {

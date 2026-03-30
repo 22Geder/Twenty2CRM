@@ -76,33 +76,13 @@ export default function MonthlyStatusPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch candidates with status
-      const [year, month] = selectedMonth.split('-');
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
-
       const response = await fetch(`/api/candidates?limit=5000`);
       if (response.ok) {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
         
-        // Filter by month - candidates updated in this month OR hired in this month
-        const filtered = allCandidates.filter((c: Candidate) => {
-          const updatedDate = new Date(c.updatedAt);
-          const hiredDate = c.hiredAt ? new Date(c.hiredAt) : null;
-          
-          // Include if updated in selected month OR hired in selected month
-          const updatedInMonth = updatedDate >= startDate && updatedDate <= endDate;
-          const hiredInMonth = hiredDate && hiredDate >= startDate && hiredDate <= endDate;
-          
-          // Also include if has active status (EMPLOYED, REJECTED, IN_PROCESS, or inProcessPositionId set)
-          const hasStatus = (c.employmentStatus && ['EMPLOYED', 'REJECTED', 'IN_PROCESS'].includes(c.employmentStatus))
-            || !!c.inProcessPositionId;
-          
-          return updatedInMonth || hiredInMonth || hasStatus;
-        });
-        
-        setCandidates(filtered);
+        // הצג את כל המועמדים - סטטוס חודשי מציג תמונה מלאה של כולם
+        setCandidates(allCandidates);
       }
 
       // Fetch employers

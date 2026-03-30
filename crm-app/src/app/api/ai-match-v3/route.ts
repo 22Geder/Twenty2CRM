@@ -82,11 +82,27 @@ export async function POST(request: Request) {
       return NextResponse.json(result)
     }
 
+    // ========================================
+    // 🏦 פילטר בנקאים: רק אם יש למועמד תואר אקדמי!
+    // טלרים - עוברים רגיל ללא מגבלת תואר
+    // ========================================
+    const hasDegree = candidateHasDegree(candidate)
+    const positionsForScan = positions.filter(pos => {
+      if (isBankerPosition(pos) && !hasDegree) {
+        return false // 🚫 בנקאי ללא תואר - לא מציגים
+      }
+      return true
+    })
+    const filteredBankerCount = positions.length - positionsForScan.length
+    if (filteredBankerCount > 0) {
+      console.log(`🏦 סונן: ${filteredBankerCount} משרות בנקאיות (למועמד אין תואר)`)
+    }
+
     // ⚡ שלב 1: סינון מהיר בלי AI - עובר על כל המשרות!
-    console.log(`⚡ התחלת סינון מהיר ל-${positions.length} משרות...`)
+    console.log(`⚡ התחלת סינון מהיר ל-${positionsForScan.length} משרות...`)
     const quickScanStart = Date.now()
     
-    const quickResults = positions.map(position => {
+    const quickResults = positionsForScan.map(position => {
       // חישוב מקומי מהיר - אין קריאות רשת!
       const positionLocality = extractLocalityFromAddress(position.location || '') || normalizeLocality(position.location || '')
       const locationMatch = !!(finalCandidateCity && positionLocality && areLocationsNearby(finalCandidateCity, positionLocality))
@@ -115,7 +131,7 @@ export async function POST(request: Request) {
     const aiResults: any[] = []
     for (let i = 0; i < topCandidates.length; i += BATCH_SIZE) {
       const batch = topCandidates.slice(i, i + BATCH_SIZE)
-      const batchPositions = batch.map(r => positions.find(p => p.id === r.positionId)!)
+      const batchPositions = batch.map(r => positionsForScan.find(p => p.id === r.positionId)!)
       
       const batchResults = await Promise.all(
         batchPositions.map(async (position) => {
@@ -186,9 +202,9 @@ export async function POST(request: Request) {
       relevantMatches.push(...below50.slice(0, needed))
     }
 
-    // 🏦 הגבלת טלרים/בנקאים - לא יותר מ-5 ביחד ברשימת 20 המשרות
+    // 🏦 הגבלת טלרים - לא יותר מ-5 ברשימה (בנקאים כבר פוסלו מוקדם אם אין תואר)
     const MAX_TELLERS = 5
-    const TELLER_REGEX = /טלר|בנקאי/i
+    const TELLER_REGEX = /טלר|טלרית/i
     let tellerCount = 0
     const cappedMatches: typeof relevantMatches = []
     const removedTellers: typeof relevantMatches = []
@@ -215,7 +231,7 @@ export async function POST(request: Request) {
         if (!a.locationMatch && b.locationMatch) return 1
         return b.score - a.score
       })
-      console.log(`🏦 הוגבלו ${removedTellers.length} טלרים/בנקאים (נשארו ${tellerCount}), מולאו ${Math.min(removedTellers.length, fillFrom.length)} משרות אחרות`)
+      console.log(`🏦 הוגבלו ${removedTellers.length} טלרים (נשארו ${tellerCount}), מולאו ${Math.min(removedTellers.length, fillFrom.length)} משרות אחרות`)
     }
 
     relevantMatches = cappedMatches
@@ -594,5 +610,61 @@ function createErrorMatch(position: any) {
 }
 
 // 🗺️ פונקציות מיקום הועברו ל-lib/israel-locations.ts עם מאגר יישובים מלא של ישראל!
+
+// ========================================
+// 🏦 זיהוי משרת בנקאי (לא טלר!) + בדיקת תואר
+// ========================================
+
+/**
+ * משרת בנקאי = כותרת/תיאור מכיל בנקאי/בנקאות אך לא נופל תחת טלר/קופאי
+ * דוגמאות: יועץ בנקאי, מנהל בנקאות, בנקאי בכיר
+ * לא: טלר בנקאי, קופאי בנק (אלה ≠ תפקידי בנקאות)
+ */
+function isBankerPosition(position: any): boolean {
+  const title = (position.title || '').toLowerCase()
+  const desc = ((position.description || '') + ' ' + (position.requirements || '')).toLowerCase()
+  const fullText = title + ' ' + desc
+
+  // זיהוי מפורש של טלר/קופאי
+  const isTeller = /טלר|טלרית|קופאי|קופאית|teller/i.test(title)
+  if (isTeller) return false
+
+  // זיהוי בנקאי
+  return /בנקאי|בנקאות|יועץ\s*בנקאי|מנהל\s*בנקאות|מנהל\s*סניף\s*בנק|יועץ\s*פיננסי\s*בנק|יועץ\s*השקעות\s*בנק/i.test(fullText)
+}
+
+/**
+ * בדיקת תואר אקדמי - שולפים מכל שדות הטקסט של המועמד
+ * מחפש: תואר, B.A, M.Sc, MBA, אוניברסיטה + בוגר, וכו'
+ */
+function candidateHasDegree(candidate: any): boolean {
+  // איסוף כל הטקסט הרלוונטי
+  const textSources = [
+    candidate.skills || '',
+    candidate.notes || '',
+    candidate.resume || '',
+    candidate.currentTitle || '',
+    candidate.aiProfile || '',
+    candidate.tags?.map((t: any) => t.name).join(' ') || '',
+  ].join(' ').toLowerCase()
+
+  // ביטויים המעידים על תואר אקדמי
+  const degreePatterns = [
+    /תואר/,               // תואר ראשון/שני/שלישי
+    /b\.?a\.?\b/,         // B.A / BA
+    /b\.?sc\.?\b/,        // B.Sc / BSc
+    /m\.?a\.?\b/,         // M.A / MA
+    /m\.?sc\.?\b/,        // M.Sc / MSc
+    /mba/,                // MBA
+    /llb|עו"ד|עורך\s*דין/, // משפטים
+    /בוגר\s*(אוניברסיטה|מכללה|הנדסה)/,
+    /אקדמי/,              // לימודים אקדמיים
+    /אוניברסיטה/,         // למד/בוגר אוניברסיטה
+    /מוסמך/,              // תואר מוסמך
+    /דוקטורט|phd/,        // דוקטורט
+  ]
+
+  return degreePatterns.some(pattern => pattern.test(textSources))
+}
 
 

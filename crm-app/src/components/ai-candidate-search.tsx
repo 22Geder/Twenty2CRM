@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   Brain, Search, Loader2, MapPin, Star, Phone,
   Mail, Briefcase, X, ChevronDown, ChevronUp,
-  Sparkles, Target, Users, Zap
+  Sparkles, Target, Users, Zap, MessageCircle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -36,7 +36,9 @@ interface SearchResult {
   matchReason: string
   highlights: string[]
   cityMatch: boolean
+  cityProximity?: 'exact' | 'nearby' | 'none'
   scoreBreakdown?: { location: number; tags: number; ai: number }
+}
 
 export function AICandidateSearch() {
   const [query, setQuery] = useState('')
@@ -50,6 +52,7 @@ export function AICandidateSearch() {
   const [meta, setMeta] = useState<{ total: number; found: number; searchTimeMs: number; parsedCity: string | null } | null>(null)
   const [showTagPicker, setShowTagPicker] = useState(false)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [whatsappModal, setWhatsappModal] = useState<{ phone: string; name: string; message: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/tags')
@@ -105,6 +108,12 @@ export function AICandidateSearch() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSearch()
+  }
+
+  const generateWhatsAppMessage = (candidate: SearchResult) => {
+    const positionHint = query.trim()
+    const message = `שלום ${candidate.name} 👋\n\nאני פונה אליך ממשרד גיוס Twenty2Jobs בנוגע להזדמנות תעסוקה שחשבתי שתתאים לך:\n\n📋 ${positionHint}\n\nהאם תהיה מעוניין/ת לשמוע פרטים נוספים?\n\nנשמח לשמוע ממך 😊`
+    setWhatsappModal({ phone: candidate.phone || '', name: candidate.name, message })
   }
 
   const getScoreColor = (score: number) => {
@@ -325,11 +334,31 @@ export function AICandidateSearch() {
         <div className="space-y-3">
           {results.map((r, idx) => {
             const isExpanded = expandedCards.has(r.id)
+            const prevProximity = idx > 0 ? results[idx - 1].cityProximity : null
+            const showExactHeader = !!meta?.parsedCity && r.cityProximity === 'exact' && prevProximity !== 'exact'
+            const showNearbyHeader = !!meta?.parsedCity && r.cityProximity === 'nearby' && prevProximity !== 'nearby'
+            const showOthersHeader = !!meta?.parsedCity && (!r.cityProximity || r.cityProximity === 'none') && !!prevProximity && prevProximity !== 'none'
             return (
-              <Card
-                key={r.id}
-                className="border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all bg-white overflow-hidden"
-              >
+              <React.Fragment key={r.id}>
+                {showExactHeader && (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-green-700 px-1 py-1">
+                    <MapPin className="h-4 w-4" />
+                    📍 בעיר {meta!.parsedCity} ({results.filter(x => x.cityProximity === 'exact').length} מועמדים)
+                  </div>
+                )}
+                {showNearbyHeader && (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 px-1 py-1 mt-2">
+                    🔄 עד 20 ק&quot;מ מ{meta!.parsedCity} ({results.filter(x => x.cityProximity === 'nearby').length} מועמדים)
+                  </div>
+                )}
+                {showOthersHeader && (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 px-1 py-1 mt-2">
+                    📊 תוצאות נוספות ({results.filter(x => !x.cityProximity || x.cityProximity === 'none').length} מועמדים)
+                  </div>
+                )}
+                <Card
+                  className="border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all bg-white overflow-hidden"
+                >
                 <CardContent className="p-0">
                   <div className="flex items-start gap-4 p-4">
                     {/* מספר + ציון */}
@@ -371,9 +400,14 @@ export function AICandidateSearch() {
                             >
                               {r.name}
                             </Link>
-                            {r.cityMatch && (
+                            {r.cityProximity === 'exact' && (
                               <Badge className="bg-green-100 text-green-700 text-xs px-2">
-                                📍 קרוב
+                                📍 בעיר
+                              </Badge>
+                            )}
+                            {r.cityProximity === 'nearby' && (
+                              <Badge className="bg-blue-100 text-blue-700 text-xs px-2">
+                                🔄 קרוב
                               </Badge>
                             )}
                             {r.hiredAt && (
@@ -402,6 +436,17 @@ export function AICandidateSearch() {
 
                         {/* פעולות */}
                         <div className="flex items-center gap-2">
+                          {r.phone && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => { e.preventDefault(); generateWhatsAppMessage(r) }}
+                              className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 text-xs px-3"
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              וואטסאפ
+                            </Button>
+                          )}
                           <Link href={`/dashboard/candidates/${r.id}`}>
                             <Button size="sm" className="h-8 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3">
                               צפה בפרופיל
@@ -486,8 +531,50 @@ export function AICandidateSearch() {
                   )}
                 </CardContent>
               </Card>
+              </React.Fragment>
             )
           })}
+        </div>
+      )}
+
+      {/* ===== מודל וואטסאפ ===== */}
+      {whatsappModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setWhatsappModal(null)}>
+          <Card className="w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-green-600" />
+                  שלח הודעה ל{whatsappModal.name}
+                </h3>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setWhatsappModal(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <textarea
+                value={whatsappModal.message}
+                onChange={e => setWhatsappModal(prev => prev ? { ...prev, message: e.target.value } : null)}
+                className="w-full h-44 border-2 border-gray-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-green-400"
+                dir="rtl"
+                title="הודעת וואטסאפ"
+                placeholder="כתוב את ההודעה..."
+              />
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
+                  onClick={() => {
+                    const phone = whatsappModal.phone.replace(/\D/g, '')
+                    const intlPhone = phone.startsWith('0') ? '972' + phone.slice(1) : phone
+                    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(whatsappModal.message)}`, '_blank')
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  📲 פתח וואטסאפ
+                </Button>
+                <Button variant="outline" onClick={() => setWhatsappModal(null)}>סגור</Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

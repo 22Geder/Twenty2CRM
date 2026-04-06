@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { normalizeLocality, extractLocalityFromAddress, areLocationsNearby } from "@/lib/israel-locations"
+import { normalizeLocality, extractLocalityFromAddress, areLocationsNearby, NEARBY_GROUPS } from "@/lib/israel-locations"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       locationScore: number
       tagsScore: number
       cityMatch: boolean
+      cityProximity: 'exact' | 'nearby' | 'none'
       quickTotal: number
     }
 
@@ -85,11 +86,21 @@ export async function POST(request: Request) {
       // 📍 מיקום — 50 נקודות מקסימום
       let locationScore = 0
       let cityMatch = false
+      let cityProximity: 'exact' | 'nearby' | 'none' = 'none'
+
       if (normalizedQueryCity && candidateCityNorm) {
-        if (areLocationsNearby(normalizedQueryCity, candidateCityNorm)) {
+        // דיוק: אותה עיר ממש
+        if (isSameCity(normalizedQueryCity, candidateCityNorm)) {
           locationScore = 50
           cityMatch = true
+          cityProximity = 'exact'
+        // קרוב: עד 20 ק"מ (אותה קבוצה)
+        } else if (areLocationsNearby(normalizedQueryCity, candidateCityNorm)) {
+          locationScore = 35
+          cityMatch = true
+          cityProximity = 'nearby'
         }
+        // רחוק → locationScore = 0, cityMatch = false
       } else if (!normalizedQueryCity) {
         locationScore = 25 // לא צוינה עיר → ניטרלי
       }
@@ -120,13 +131,15 @@ export async function POST(request: Request) {
       const tagsScore = Math.min(25, tagMatches * 5)
       const quickTotal = locationScore + tagsScore
 
-      return { candidate, locationScore, tagsScore, cityMatch, quickTotal }
+      return { candidate, locationScore, tagsScore, cityMatch, cityProximity, quickTotal }
     })
 
-    // מיון: קודם עיר, אחר כך ניקוד
+    // מיון: exact קודם, אחר כך nearby, אחר כך ניקוד
     quickResults.sort((a, b) => {
-      if (a.cityMatch && !b.cityMatch) return -1
-      if (!a.cityMatch && b.cityMatch) return 1
+      const proximityOrder = { exact: 0, nearby: 1, none: 2 }
+      const pa = proximityOrder[a.cityProximity]
+      const pb = proximityOrder[b.cityProximity]
+      if (pa !== pb) return pa - pb
       return b.quickTotal - a.quickTotal
     })
 
@@ -137,21 +150,25 @@ export async function POST(request: Request) {
     const topCandidates = quickResults.slice(0, TOP_FOR_AI)
 
     const aiResults = await Promise.all(
-      topCandidates.map(({ candidate, locationScore, tagsScore, cityMatch }) =>
-        scoreCandidateWithAlgo(candidate, query, cityMatch, locationScore, tagsScore)
+      topCandidates.map(({ candidate, locationScore, tagsScore, cityMatch, cityProximity }) =>
+        scoreCandidateWithAlgo(candidate, query, cityMatch, cityProximity, locationScore, tagsScore)
       )
     )
 
-    // מיון סופי: קודם עיר, אחר כך ציון
+    // מיון סופי: exact → nearby → none, בתוך כל קבוצה לפי ציון
     aiResults.sort((a, b) => {
-      if (a.cityMatch && !b.cityMatch) return -1
-      if (!a.cityMatch && b.cityMatch) return 1
+      const proximityOrder = { exact: 0, nearby: 1, none: 2 }
+      const pa = proximityOrder[(a.cityProximity as 'exact'|'nearby'|'none')] ?? 2
+      const pb = proximityOrder[(b.cityProximity as 'exact'|'nearby'|'none')] ?? 2
+      if (pa !== pb) return pa - pb
       return b.score - a.score
     })
 
-    // סף מינימלי — הורדנו ל-5 כדי לא לפספס
+    // סף: אם יש עיר — הצג רק עד 20 ק"מ + קצת ניקוד, אחרת הצג הכל
     const MIN_SCORE = 5
-    const relevant = aiResults.filter(r => r.score >= MIN_SCORE)
+    const relevant = normalizedQueryCity
+      ? aiResults.filter(r => r.cityProximity !== 'none' || r.score >= 15)
+      : aiResults.filter(r => r.score >= MIN_SCORE)
 
     const totalTime = Date.now() - startTime
     console.log(`🔍 AI Candidate Search: "${query}" → ${relevant.length} תוצאות מתוך ${candidates.length} (${totalTime}ms)`)
@@ -178,6 +195,7 @@ async function scoreCandidateWithAlgo(
   candidate: any,
   query: string,
   cityMatch: boolean,
+  cityProximity: 'exact' | 'nearby' | 'none',
   locationScore: number,
   tagsScore: number
 ): Promise<any> {
@@ -223,7 +241,7 @@ JSON בלבד:`
     const finalScore = Math.min(100, locationScore + tagsScore + aiScore)
 
     return buildResult(
-      candidate, finalScore, cityMatch,
+      candidate, finalScore, cityMatch, cityProximity,
       analysis.match_reason || '', analysis.highlights || [],
       locationScore, tagsScore, aiScore
     )
@@ -232,7 +250,7 @@ JSON בלבד:`
     const aiScore = 8
     const finalScore = Math.min(100, locationScore + tagsScore + aiScore)
     return buildResult(
-      candidate, finalScore, cityMatch,
+      candidate, finalScore, cityMatch, cityProximity,
       cityMatch ? 'התאמה גיאוגרפית' : 'ניתוח חלקי', [],
       locationScore, tagsScore, aiScore
     )
@@ -243,6 +261,7 @@ function buildResult(
   candidate: any,
   score: number,
   cityMatch: boolean,
+  cityProximity: 'exact' | 'nearby' | 'none',
   matchReason: string,
   highlights: string[],
   locationScore: number,
@@ -265,6 +284,7 @@ function buildResult(
     _count: candidate._count,
     score,
     cityMatch,
+    cityProximity,
     matchReason,
     highlights,
     scoreBreakdown: { location: locationScore, tags: tagsScore, ai: aiScore },
@@ -274,6 +294,13 @@ function buildResult(
 // ========================================
 // 🛠️ פונקציות עזר
 // ========================================
+
+function isSameCity(city1: string, city2: string): boolean {
+  if (!city1 || !city2) return false
+  const n1 = normalizeLocality(city1)
+  const n2 = normalizeLocality(city2)
+  return n1 === n2 || n1.includes(n2) || n2.includes(n1)
+}
 
 function extractCityFromQuery(query: string): string | null {
   // תבניות: "מלוד", "מאזור לוד", "בלוד", "באזור ת\"א"

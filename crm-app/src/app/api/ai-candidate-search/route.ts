@@ -7,18 +7,19 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
 /**
  * 🔍 AI Candidate Search
- * משתמש כותב מה הוא מחפש → AI סורק את כל המועמדים ומחזיר את המתאימים ביותר
- * 
+ * אלגוריתם: 50% מיקום | 25% תגיות | 25% AI Gemini
+ *
  * POST body: { query: string, city?: string, tags?: string[] }
- * 
- * שלב 1: סינון מהיר בלי AI לפי מילות מפתח ועיר
- * שלב 2: Gemini מדרג את ה-30 המובילים
+ *
+ * שלב 1: ניקוד מהיר לכולם: locationScore(50) + tagsScore(25)
+ * שלב 2: Gemini על ה-30 הטובים → ציון 0-100 → מוכפל ב-0.25 → aiScore(25)
+ * שלב 3: finalScore = locationScore + tagsScore + aiScore
  */
 export async function POST(request: Request) {
   try {
     const startTime = Date.now()
     const body = await request.json()
-    const { query, city, tags = [] } = body
+    const { query, city, tags: selectedTags = [] } = body
 
     if (!query || query.trim().length < 3) {
       return NextResponse.json({ error: "נא להזין שאילתת חיפוש" }, { status: 400 })
@@ -51,75 +52,82 @@ export async function POST(request: Request) {
     }
 
     // ========================================
-    // 🗺️ חיפוש עיר בתוך השאילתה
+    // 🗺️ עיר: קודם שדה עיר, אחר כך חילוץ מהשאילתה
     // ========================================
     const queryLower = query.toLowerCase()
-    const normalizedQueryCity = city ? normalizeLocality(city) : extractCityFromQuery(queryLower)
+    const normalizedQueryCity = city
+      ? (extractLocalityFromAddress(city) || normalizeLocality(city))
+      : extractCityFromQuery(queryLower)
 
-    // ========================================
-    // ⚡ שלב 1: סינון מהיר בלי AI
-    // ========================================
-    const queryWords: string[] = (queryLower
+    // מילות מפתח מהשאילתה (לחישוב תגיות)
+    const queryKeywords: string[] = (queryLower
       .replace(/[,\.;:!?]/g, ' ')
       .split(/\s+/) as string[])
       .filter((w: string) => w.length > 2)
       .filter((w: string) => !STOP_WORDS.has(w))
 
+    // ========================================
+    // ⚡ שלב 1: ניקוד מהיר — 50% מיקום + 25% תגיות
+    // ========================================
     interface QuickResult {
       candidate: typeof candidates[0]
-      quickScore: number
+      locationScore: number
+      tagsScore: number
       cityMatch: boolean
+      quickTotal: number
     }
 
     const quickResults: QuickResult[] = candidates.map(candidate => {
-      const candidateText = buildCandidateSearchText(candidate).toLowerCase()
-      const candidateCity = normalizeLocality(candidate.city || '')
-      const candidateCityExtracted = extractLocalityFromAddress(candidate.city || '') || candidateCity
+      const candidateCityNorm =
+        extractLocalityFromAddress(candidate.city || '') ||
+        normalizeLocality(candidate.city || '')
 
-      // בדיקת עיר
+      // 📍 מיקום — 50 נקודות מקסימום
+      let locationScore = 0
       let cityMatch = false
-      if (normalizedQueryCity) {
-        cityMatch = !!(
-          candidateCityExtracted &&
-          areLocationsNearby(normalizedQueryCity, candidateCityExtracted)
-        )
+      if (normalizedQueryCity && candidateCityNorm) {
+        if (areLocationsNearby(normalizedQueryCity, candidateCityNorm)) {
+          locationScore = 50
+          cityMatch = true
+        }
+      } else if (!normalizedQueryCity) {
+        locationScore = 25 // לא צוינה עיר → ניטרלי
       }
 
-      // בדיקת תגיות שנבחרו
+      // 🏷️ תגיות — 25 נקודות מקסימום
       const candidateTagNames = candidate.tags.map(t => t.name.toLowerCase())
-      let tagScore = 0
-      for (const tag of tags) {
-        if (candidateTagNames.some(ct => ct.includes(tag.toLowerCase()) || tag.toLowerCase().includes(ct))) {
-          tagScore += 10
+      let tagMatches = 0
+
+      // תגיות שנבחרו ידנית
+      for (const tag of selectedTags as string[]) {
+        if (candidateTagNames.some(ct =>
+          ct.includes(tag.toLowerCase()) || tag.toLowerCase().includes(ct)
+        )) {
+          tagMatches++
         }
       }
 
-      // ניקוד מילות מפתח
-      let keywordScore = 0
-      for (const word of queryWords) {
-        if (candidateText.includes(word)) {
-          keywordScore += 5
+      // מילות השאילתה שמופיעות בתגיות המועמד
+      for (const keyword of queryKeywords) {
+        if (candidateTagNames.some(ct =>
+          ct.includes(keyword) || keyword.includes(ct)
+        )) {
+          tagMatches++
         }
       }
 
-      // ניקוד מקצוע מהתואר הנוכחי
-      const titleWords = (candidate.currentTitle || '').toLowerCase().split(/\s+/)
-      for (const titleWord of titleWords) {
-        if (titleWord.length > 2 && queryLower.includes(titleWord)) {
-          keywordScore += 8
-        }
-      }
+      // 5 נקודות לכל תגית, מקס 25 (5 תגיות)
+      const tagsScore = Math.min(25, tagMatches * 5)
+      const quickTotal = locationScore + tagsScore
 
-      const quickScore = keywordScore + tagScore + (cityMatch ? 20 : 0)
-
-      return { candidate, quickScore, cityMatch }
+      return { candidate, locationScore, tagsScore, cityMatch, quickTotal }
     })
 
-    // מיון לפי ניקוד מהיר + עיר
+    // מיון: קודם עיר, אחר כך ניקוד
     quickResults.sort((a, b) => {
       if (a.cityMatch && !b.cityMatch) return -1
       if (!a.cityMatch && b.cityMatch) return 1
-      return b.quickScore - a.quickScore
+      return b.quickTotal - a.quickTotal
     })
 
     // ========================================
@@ -129,16 +137,20 @@ export async function POST(request: Request) {
     const topCandidates = quickResults.slice(0, TOP_FOR_AI)
 
     const aiResults = await Promise.all(
-      topCandidates.map(({ candidate, cityMatch }) =>
-        scoreCandidate(candidate, query, normalizedQueryCity, cityMatch)
+      topCandidates.map(({ candidate, locationScore, tagsScore, cityMatch }) =>
+        scoreCandidateWithAlgo(candidate, query, cityMatch, locationScore, tagsScore)
       )
     )
 
-    // מיון סופי לפי ציון AI
-    aiResults.sort((a, b) => b.score - a.score)
+    // מיון סופי: קודם עיר, אחר כך ציון
+    aiResults.sort((a, b) => {
+      if (a.cityMatch && !b.cityMatch) return -1
+      if (!a.cityMatch && b.cityMatch) return 1
+      return b.score - a.score
+    })
 
-    // החזר רק מועמדים שעברו את הסף המינימלי
-    const MIN_SCORE = 20
+    // סף מינימלי — הורדנו ל-5 כדי לא לפספס
+    const MIN_SCORE = 5
     const relevant = aiResults.filter(r => r.score >= MIN_SCORE)
 
     const totalTime = Date.now() - startTime
@@ -159,19 +171,22 @@ export async function POST(request: Request) {
 }
 
 // ========================================
-// 🤖 ניקוד מועמד אחד עם Gemini
+// 🤖 ניקוד מועמד עם האלגוריתם המלא
+// 50% מיקום | 25% תגיות | 25% AI Gemini
 // ========================================
-async function scoreCandidate(
+async function scoreCandidateWithAlgo(
   candidate: any,
   query: string,
-  queryCity: string | null,
-  cityMatch: boolean
+  cityMatch: boolean,
+  locationScore: number,
+  tagsScore: number
 ): Promise<any> {
   const tagList = candidate.tags?.map((t: any) => t.name).join(', ') || 'אין'
   const resumeSnippet = (candidate.resume || '').substring(0, 1500)
   const hasResume = resumeSnippet.trim().length > 50
 
-  const prompt = `אתה מגייס מקצועי. בדוק אם המועמד הזה מתאים לדרישת החיפוש.
+  // Gemini — מנתח רק ניסיון + כישורים + רלוונטיות (לא מיקום — הוא כבר בחישוב)
+  const prompt = `אתה מגייס מקצועי. הערך כמה המועמד מתאים לניסיון ולכישורים הנדרשים.
 
 🔍 מה מחפשים: "${query}"
 
@@ -179,27 +194,18 @@ async function scoreCandidate(
 • תפקיד: ${candidate.currentTitle || 'לא צוין'}
 • חברה: ${candidate.currentCompany || 'לא צוין'}
 • עיר: ${candidate.city || 'לא צוין'}
-• ניסיון: ${candidate.yearsOfExperience || 'לא צוין'} שנים
+• ניסיון: ${candidate.yearsOfExperience ?? 'לא צוין'} שנים
 • כישורים: ${candidate.skills || 'לא צוין'}
 • תגיות: ${tagList}
 ${hasResume ? `📄 קורות חיים:\n${resumeSnippet}` : '❌ אין קורות חיים'}
 
-התאמת מיקום: ${cityMatch ? '✅ קרוב' : '❌ מרוחק או לא צוין'}
-
-דרג 0-100 כמה המועמד מתאים לחיפוש. התחשב ב:
-1. תפקיד/ניסיון רלוונטי לחיפוש
-2. מיקום גיאוגרפי
-3. כישורים/תגיות ספציפיות שנדרשו
-4. שנות ניסיון
+⚠️ אל תתחשב במיקום — הוא מחושב בנפרד.
+דרג רק לפי: ניסיון, כישורים ורלוונטיות לתפקיד.
 
 החזר JSON בלבד:
-{
-  "score": ציון 0-100,
-  "match_reason": "סיבה קצרה למה מתאים/לא מתאים",
-  "highlights": ["נקודה חזקה 1", "נקודה חזקה 2"]
-}
+{"score": ציון 0-100, "match_reason": "משפט קצר", "highlights": ["חוזק 1", "חוזק 2"]}
 
-JSON בלבד, ללא הסברים:`
+JSON בלבד:`
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
@@ -210,49 +216,58 @@ JSON בלבד, ללא הסברים:`
     if (!jsonMatch) throw new Error("No JSON")
 
     const analysis = JSON.parse(jsonMatch[0])
-    const finalScore = Math.min(100, Math.max(0, Number(analysis.score) || 0))
+    const geminiScore = Math.min(100, Math.max(0, Number(analysis.score) || 0))
 
-    return {
-      id: candidate.id,
-      name: candidate.name,
-      email: candidate.email,
-      phone: candidate.phone,
-      currentTitle: candidate.currentTitle,
-      currentCompany: candidate.currentCompany,
-      city: candidate.city,
-      yearsOfExperience: candidate.yearsOfExperience,
-      skills: candidate.skills,
-      rating: candidate.rating,
-      tags: candidate.tags,
-      hiredAt: candidate.hiredAt,
-      _count: candidate._count,
-      score: finalScore,
-      matchReason: analysis.match_reason || '',
-      highlights: analysis.highlights || [],
-      cityMatch,
-    }
+    // 🔥 אלגוריתם: 50% מיקום | 25% תגיות | 25% AI
+    const aiScore = Math.round(geminiScore * 0.25) // 0-100 → 0-25
+    const finalScore = Math.min(100, locationScore + tagsScore + aiScore)
+
+    return buildResult(
+      candidate, finalScore, cityMatch,
+      analysis.match_reason || '', analysis.highlights || [],
+      locationScore, tagsScore, aiScore
+    )
   } catch {
-    // fallback quick score
-    const quickScore = cityMatch ? 30 : 10
-    return {
-      id: candidate.id,
-      name: candidate.name,
-      email: candidate.email,
-      phone: candidate.phone,
-      currentTitle: candidate.currentTitle,
-      currentCompany: candidate.currentCompany,
-      city: candidate.city,
-      yearsOfExperience: candidate.yearsOfExperience,
-      skills: candidate.skills,
-      rating: candidate.rating,
-      tags: candidate.tags,
-      hiredAt: candidate.hiredAt,
-      _count: candidate._count,
-      score: quickScore,
-      matchReason: cityMatch ? 'התאמה גיאוגרפית' : 'לא ניתן לנתח',
-      highlights: [],
-      cityMatch,
-    }
+    // Fallback: מיקום + תגיות + ניקוד בסיסי
+    const aiScore = 8
+    const finalScore = Math.min(100, locationScore + tagsScore + aiScore)
+    return buildResult(
+      candidate, finalScore, cityMatch,
+      cityMatch ? 'התאמה גיאוגרפית' : 'ניתוח חלקי', [],
+      locationScore, tagsScore, aiScore
+    )
+  }
+}
+
+function buildResult(
+  candidate: any,
+  score: number,
+  cityMatch: boolean,
+  matchReason: string,
+  highlights: string[],
+  locationScore: number,
+  tagsScore: number,
+  aiScore: number
+) {
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    email: candidate.email,
+    phone: candidate.phone,
+    currentTitle: candidate.currentTitle,
+    currentCompany: candidate.currentCompany,
+    city: candidate.city,
+    yearsOfExperience: candidate.yearsOfExperience,
+    skills: candidate.skills,
+    rating: candidate.rating,
+    tags: candidate.tags,
+    hiredAt: candidate.hiredAt,
+    _count: candidate._count,
+    score,
+    cityMatch,
+    matchReason,
+    highlights,
+    scoreBreakdown: { location: locationScore, tags: tagsScore, ai: aiScore },
   }
 }
 
@@ -260,31 +275,18 @@ JSON בלבד, ללא הסברים:`
 // 🛠️ פונקציות עזר
 // ========================================
 
-function buildCandidateSearchText(candidate: any): string {
-  const parts = [
-    candidate.name || '',
-    candidate.currentTitle || '',
-    candidate.currentCompany || '',
-    candidate.city || '',
-    candidate.skills || '',
-    candidate.resume?.substring(0, 500) || '',
-    ...(candidate.tags?.map((t: any) => t.name) || []),
-  ]
-  return parts.join(' ')
-}
-
 function extractCityFromQuery(query: string): string | null {
+  // תבניות: "מלוד", "מאזור לוד", "בלוד", "באזור ת\"א"
   const CITY_PATTERNS = [
-    // תבניות: "מ..." / "ב..." / "באזור..." / "מאזור..."
-    /\b(?:מ|מאזור|ב|באזור)\s+([\u0590-\u05FF\s]{2,15})(?:\s|$|,|\.)/,
-    // עיר לבד - נורמליזציה
+    /(?:מאזור|באזור)\s+([\u0590-\u05FF"']{2,15})/,
+    /\b(?:מ|ב)([\u0590-\u05FF"']{2,15})(?:\s|$|,|\.)/,
   ]
   for (const pattern of CITY_PATTERNS) {
     const m = query.match(pattern)
     if (m) {
       const city = m[1].trim()
-      const normalized = normalizeLocality(city)
-      if (normalized) return normalized
+      const extracted = extractLocalityFromAddress(city) || normalizeLocality(city)
+      if (extracted) return extracted
     }
   }
   return null

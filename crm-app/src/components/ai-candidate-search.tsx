@@ -36,7 +36,7 @@ interface SearchResult {
   matchReason: string
   highlights: string[]
   cityMatch: boolean
-}
+  scoreBreakdown?: { location: number; tags: number; ai: number }
 
 export function AICandidateSearch() {
   const [query, setQuery] = useState('')
@@ -333,7 +333,7 @@ export function AICandidateSearch() {
                 <CardContent className="p-0">
                   <div className="flex items-start gap-4 p-4">
                     {/* מספר + ציון */}
-                    <div className="flex flex-col items-center gap-1 min-w-[52px]">
+                    <div className="flex flex-col items-center gap-1 min-w-[68px]">
                       <span className="text-xs text-gray-400 font-medium">#{idx + 1}</span>
                       <div className={`text-center px-2 py-1 rounded-lg border font-bold text-lg leading-none ${getScoreColor(r.score)}`}>
                         {r.score}
@@ -341,6 +341,23 @@ export function AICandidateSearch() {
                       <span className={`text-xs font-medium ${getScoreColor(r.score).split(' ')[0]}`}>
                         {getScoreLabel(r.score)}
                       </span>
+                      {/* פירוט ציון */}
+                      {r.scoreBreakdown && (
+                        <div className="mt-1 space-y-0.5 w-full text-xs text-gray-500">
+                          <div className="flex justify-between">
+                            <span>📍</span>
+                            <span className={r.scoreBreakdown.location >= 50 ? 'text-green-600 font-semibold' : 'text-gray-400'}>{r.scoreBreakdown.location}/50</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>🏷️</span>
+                            <span className={r.scoreBreakdown.tags > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400'}>{r.scoreBreakdown.tags}/25</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>🤖</span>
+                            <span className={r.scoreBreakdown.ai > 15 ? 'text-purple-600 font-semibold' : 'text-gray-400'}>{r.scoreBreakdown.ai}/25</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* פרטי מועמד */}

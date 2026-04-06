@@ -38,6 +38,7 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
+import { AICandidateSearch } from '@/components/ai-candidate-search'
 
 interface Application {
   id: string
@@ -97,6 +98,7 @@ export default function CandidatesPageModern() {
   const [bestMatchesData, setBestMatchesData] = useState<any>(null)
   const [loadingBestMatches, setLoadingBestMatches] = useState(false)
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(new Set())
+  const [activeView, setActiveView] = useState<'list' | 'ai-search'>('list')
 
   // 🆕 בחירת/ביטול בחירת מועמד
   const toggleSelect = (id: string) => {
@@ -461,6 +463,35 @@ export default function CandidatesPageModern() {
           </div>
         </div>
       </div>
+
+      {/* Tab switcher: רשימה / חיפוש AI */}
+      <div className="flex gap-2 bg-white rounded-xl p-2 shadow-lg border border-slate-200">
+        <Button
+          variant={activeView === 'list' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveView('list')}
+          className={activeView === 'list' ? 'bg-slate-800 text-white' : 'hover:bg-slate-100 text-slate-600'}
+        >
+          <Users className="h-4 w-4 ml-1" />
+          רשימת מועמדים
+        </Button>
+        <Button
+          variant={activeView === 'ai-search' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveView('ai-search')}
+          className={activeView === 'ai-search' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white' : 'hover:bg-purple-50 text-purple-700'}
+        >
+          <Bot className="h-4 w-4 ml-1" />
+          חיפוש AI חכם
+          <Sparkles className="h-3 w-3 mr-1 text-yellow-400" />
+        </Button>
+      </div>
+
+      {/* AI Search View */}
+      {activeView === 'ai-search' && <AICandidateSearch />}
+
+      {/* List View */}
+      {activeView === 'list' && <>
 
       {/* Premium Search */}
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
@@ -1036,6 +1067,8 @@ export default function CandidatesPageModern() {
           </div>
         </div>
       )}
+      </>
+      }
     </div>
   )
 }

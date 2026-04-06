@@ -83,7 +83,7 @@ html {
 }
 
 body {
-  font-family: 'Segoe UI', 'Rubik', 'Heebo', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-heebo), 'Heebo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg, var(--t22-gray-50) 0%, var(--t22-gray-100) 100%);
   color: var(--t22-gray-900);
   line-height: 1.6;

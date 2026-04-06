@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle, AlertTriangle, Clock } from "lucide-react"
+import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle, AlertTriangle, Clock, UserCheck, CheckCircle, Users, Briefcase } from "lucide-react"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 
 // Get comprehensive dashboard stats
@@ -415,12 +415,12 @@ export default async function CiviDashboardPage() {
         {/* Candidate Status Overview - 3 Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {/* In Process - בתהליך */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
               <span className="font-semibold">בתהליך</span>
-              <span className="bg-white/20 px-2 py-1 rounded text-sm">{inProcessCandidates.length}</span>
+              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-sm font-bold">{inProcessCandidates.length}</span>
             </div>
-            <div className="max-h-[200px] overflow-y-auto">
+            <div className="max-h-[240px] overflow-y-auto">
               {inProcessCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
                   {inProcessCandidates.map((c: any) => (
@@ -444,12 +444,12 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Rejected - לא מתאים */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
             <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 flex items-center justify-between">
               <span className="font-semibold">לא מתאים</span>
-              <span className="bg-white/20 px-2 py-1 rounded text-sm">{rejectedCandidates.length}</span>
+              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-sm font-bold">{rejectedCandidates.length}</span>
             </div>
-            <div className="max-h-[200px] overflow-y-auto">
+            <div className="max-h-[240px] overflow-y-auto">
               {rejectedCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
                   {rejectedCandidates.map((c: any) => (
@@ -470,12 +470,12 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Hired - התקבלו */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 flex items-center justify-between">
               <span className="font-semibold">התקבלו</span>
-              <span className="bg-white/20 px-2 py-1 rounded text-sm">{hiredCandidates.length}</span>
+              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-sm font-bold">{hiredCandidates.length}</span>
             </div>
-            <div className="max-h-[200px] overflow-y-auto">
+            <div className="max-h-[240px] overflow-y-auto">
               {hiredCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
                   {hiredCandidates.map((c: any) => (
@@ -499,57 +499,62 @@ export default async function CiviDashboardPage() {
         {/* Top Stats Row - 5 Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {/* Card 1 - Started Work This Month */}
-          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#00A8A8] transition-all cursor-pointer">
-            <div className="absolute top-3 left-3 text-slate-400">
-              <Info className="h-4 w-4" />
-            </div>
-            <div className="text-center pt-2">
+          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#00A8A8] transition-all cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2 py-1">
+              <div className="w-11 h-11 bg-teal-100 rounded-xl flex items-center justify-center shadow-sm">
+                <UserCheck className="h-6 w-6 text-[#00A8A8]" />
+              </div>
               <div className="text-4xl font-bold text-[#00A8A8]">{stats.startedWorkThisMonth}</div>
-              <div className="text-sm text-slate-500 mt-2">התחילו לעבוד החודש</div>
+              <div className="text-sm text-slate-500 text-center leading-tight">התחילו לעבוד החודש</div>
             </div>
           </Link>
 
           {/* Card 2 - Upcoming Interviews */}
-          <Link href="/dashboard/interviews" className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#FF8C00] transition-all cursor-pointer">
-            <div className="absolute top-3 left-3 text-slate-400">
-              <Info className="h-4 w-4" />
-            </div>
-            <div className="text-center pt-2">
+          <Link href="/dashboard/interviews" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#FF8C00] transition-all cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2 py-1">
+              <div className="w-11 h-11 bg-orange-100 rounded-xl flex items-center justify-center shadow-sm">
+                <Bell className="h-6 w-6 text-[#FF8C00]" />
+              </div>
               <div className="text-4xl font-bold text-[#FF8C00]">{stats.upcomingInterviews}</div>
-              <div className="text-sm text-slate-500 mt-2">ראיונות קרובים</div>
+              <div className="text-sm text-slate-500 text-center leading-tight">ראיונות קרובים</div>
             </div>
           </Link>
 
           {/* Card 3 - Hired This Month */}
-          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#7CB342] transition-all cursor-pointer">
-            <div className="absolute top-3 left-3 text-slate-400">
-              <Info className="h-4 w-4" />
-            </div>
-            <div className="text-center pt-2">
+          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#7CB342] transition-all cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2 py-1">
+              <div className="w-11 h-11 bg-green-100 rounded-xl flex items-center justify-center shadow-sm">
+                <CheckCircle className="h-6 w-6 text-[#7CB342]" />
+              </div>
               <div className="text-4xl font-bold text-[#7CB342]">{stats.hiredThisMonth}</div>
-              <div className="text-sm text-slate-500 mt-2">התקבלו לעבודה החודש</div>
+              <div className="text-sm text-slate-500 text-center leading-tight">התקבלו לעבודה החודש</div>
             </div>
           </Link>
 
           {/* Card 4 - Referrals This Month */}
-          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#9C27B0] transition-all cursor-pointer">
-            <div className="absolute top-3 left-3 text-slate-400">
-              <Info className="h-4 w-4" />
-            </div>
-            <div className="text-center pt-2">
+          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#9C27B0] transition-all cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2 py-1">
+              <div className="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center shadow-sm">
+                <Send className="h-6 w-6 text-[#9C27B0]" />
+              </div>
               <div className="text-4xl font-bold text-[#9C27B0]">{stats.applicationsThisMonth}</div>
-              <div className="text-sm text-slate-500 mt-2">הפניות החודש</div>
+              <div className="text-sm text-slate-500 text-center leading-tight">הפניות החודש</div>
             </div>
           </Link>
 
           {/* Card 5 - Candidates in Process */}
-          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#2196F3] transition-all cursor-pointer">
-            <div className="absolute top-3 left-3 text-slate-400">
-              <Info className="h-4 w-4" />
-            </div>
-            <div className="text-center pt-2">
+          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#2196F3] transition-all cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2 py-1">
+              <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center shadow-sm">
+                <Users className="h-6 w-6 text-[#2196F3]" />
+              </div>
               <div className="text-4xl font-bold text-[#2196F3]">{stats.inProcess}</div>
-              <div className="text-sm text-slate-500 mt-2">מועמדים בתהליך</div>
+              <div className="text-sm text-slate-500 text-center leading-tight">מועמדים בתהליך</div>
             </div>
           </Link>
         </div>
@@ -558,7 +563,7 @@ export default async function CiviDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
           {/* Left - Candidates by Stage */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-400" />
@@ -568,55 +573,75 @@ export default async function CiviDashboardPage() {
             </div>
             
             {/* Status Bars */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Bar 1 - בוצעה הפניה */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-4 rounded" style={{ width: `${Math.max(statusPercentages.referralSent * 2.5, 10)}px`, backgroundColor: '#00A8A8' }}></div>
-                  <span className="text-xs text-slate-500">({statusPercentages.referralSent}%) {stats.statusMap.OFFER}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="flex items-center gap-2 text-sm text-slate-700">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#00A8A8] flex-shrink-0"></span>
+                    בוצעה הפניה
+                  </span>
+                  <span className="text-xs font-medium text-slate-600">{stats.statusMap.OFFER} <span className="text-slate-400">({statusPercentages.referralSent}%)</span></span>
                 </div>
-                <span className="text-sm text-slate-600 w-32 text-left">בוצעה הפניה</span>
-                <span className="w-3 h-3 rounded-full bg-[#00A8A8]"></span>
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div className="h-2 rounded-full bg-[#00A8A8] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.referralSent, 2)}%` }}></div>
+                </div>
               </div>
               
               {/* Bar 2 - תואם ראיון פרונטלי */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-4 rounded" style={{ width: `${Math.max(statusPercentages.frontInterview * 2.5, 10)}px`, backgroundColor: '#7CB342' }}></div>
-                  <span className="text-xs text-slate-500">({statusPercentages.frontInterview}%) {stats.statusMap.INTERVIEW}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="flex items-center gap-2 text-sm text-slate-700">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#7CB342] flex-shrink-0"></span>
+                    תואם ראיון פרונטלי
+                  </span>
+                  <span className="text-xs font-medium text-slate-600">{stats.statusMap.INTERVIEW} <span className="text-slate-400">({statusPercentages.frontInterview}%)</span></span>
                 </div>
-                <span className="text-sm text-slate-600 w-32 text-left">תואם ראיון פרונטלי</span>
-                <span className="w-3 h-3 rounded-full bg-[#7CB342]"></span>
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div className="h-2 rounded-full bg-[#7CB342] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.frontInterview, 2)}%` }}></div>
+                </div>
               </div>
               
               {/* Bar 3 - הגשת טפסים */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-4 rounded" style={{ width: `${Math.max(statusPercentages.formsFiled * 2.5, 10)}px`, backgroundColor: '#FF8C00' }}></div>
-                  <span className="text-xs text-slate-500">({statusPercentages.formsFiled}%) {stats.statusMap.SCREENING}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="flex items-center gap-2 text-sm text-slate-700">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF8C00] flex-shrink-0"></span>
+                    הגשת טפסים
+                  </span>
+                  <span className="text-xs font-medium text-slate-600">{stats.statusMap.SCREENING} <span className="text-slate-400">({statusPercentages.formsFiled}%)</span></span>
                 </div>
-                <span className="text-sm text-slate-600 w-32 text-left">הגשת טפסים</span>
-                <span className="w-3 h-3 rounded-full bg-[#FF8C00]"></span>
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div className="h-2 rounded-full bg-[#FF8C00] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.formsFiled, 2)}%` }}></div>
+                </div>
               </div>
               
               {/* Bar 4 - נשלח מייל ללקוח */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-4 rounded" style={{ width: `${Math.max(statusPercentages.emailSent * 2.5, 10)}px`, backgroundColor: '#9C27B0' }}></div>
-                  <span className="text-xs text-slate-500">({statusPercentages.emailSent}%) {Math.round(stats.statusMap.NEW * 0.3)}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="flex items-center gap-2 text-sm text-slate-700">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#9C27B0] flex-shrink-0"></span>
+                    נשלח מייל ללקוח
+                  </span>
+                  <span className="text-xs font-medium text-slate-600">{Math.round(stats.statusMap.NEW * 0.3)} <span className="text-slate-400">({statusPercentages.emailSent}%)</span></span>
                 </div>
-                <span className="text-sm text-slate-600 w-32 text-left">נשלח מייל ללקוח</span>
-                <span className="w-3 h-3 rounded-full bg-[#9C27B0]"></span>
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div className="h-2 rounded-full bg-[#9C27B0] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.emailSent, 2)}%` }}></div>
+                </div>
               </div>
               
               {/* Bar 5 - נשלח הודעת וואטסאפ */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-4 rounded" style={{ width: `${Math.max(statusPercentages.whatsappSent * 2.5, 10)}px`, backgroundColor: '#2196F3' }}></div>
-                  <span className="text-xs text-slate-500">({statusPercentages.whatsappSent}%) {Math.round(stats.statusMap.NEW * 0.2)}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="flex items-center gap-2 text-sm text-slate-700">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#2196F3] flex-shrink-0"></span>
+                    נשלח הודעת וואטסאפ
+                  </span>
+                  <span className="text-xs font-medium text-slate-600">{Math.round(stats.statusMap.NEW * 0.2)} <span className="text-slate-400">({statusPercentages.whatsappSent}%)</span></span>
                 </div>
-                <span className="text-sm text-slate-600 w-32 text-left">נשלח הודעת וואטסאפ</span>
-                <span className="w-3 h-3 rounded-full bg-[#2196F3]"></span>
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div className="h-2 rounded-full bg-[#2196F3] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.whatsappSent, 2)}%` }}></div>
+                </div>
               </div>
             </div>
             
@@ -627,7 +652,7 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Middle - Candidates This Month Chart */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-400" />
@@ -667,7 +692,7 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Right - Recent Open Positions */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-400" />
@@ -715,7 +740,7 @@ export default async function CiviDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
           {/* Left - Open Standards/Employers */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-400" />
@@ -744,7 +769,7 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Middle - Tasks by Due Date */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-400" />
@@ -791,7 +816,7 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Right - Leading Recruitment Sources */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-400" />
@@ -801,28 +826,28 @@ export default async function CiviDashboardPage() {
             </div>
             
             {/* Source Bars */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {sourcePercentages.length === 0 ? (
                 <div className="py-4 text-center text-slate-400">אין נתונים על מקורות</div>
               ) : (
                 sourcePercentages.map((source, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <span className="text-sm text-slate-600 w-24 text-left truncate">{source.source}</span>
-                    <div className="flex-1 flex items-center gap-2">
-                      <div 
-                        className="h-4 rounded transition-all duration-300" 
-                        style={{ 
-                          width: `${source.percentage}%`, 
-                          backgroundColor: sourceColors[i % sourceColors.length],
-                          minWidth: '10px'
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: sourceColors[i % sourceColors.length] }}></span>
+                        <span className="truncate">{source.source}</span>
+                      </span>
+                      <span className="text-xs font-medium text-slate-600 mr-2 flex-shrink-0">{source.count} <span className="text-slate-400">({source.percentage}%)</span></span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.max(source.percentage, 2)}%`,
+                          backgroundColor: sourceColors[i % sourceColors.length]
                         }}
                       ></div>
-                      <span className="text-xs text-slate-500">({source.percentage}%) {source.count}</span>
                     </div>
-                    <span 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: sourceColors[i % sourceColors.length] }}
-                    ></span>
                   </div>
                 ))
               )}
@@ -831,7 +856,7 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* 🔍 In-Process Tracking Panel - מעקב מועמדים בתהליך */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5" />

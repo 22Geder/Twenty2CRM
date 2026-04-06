@@ -1,3 +1,4 @@
+// sync-oshpir-tags v2
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 

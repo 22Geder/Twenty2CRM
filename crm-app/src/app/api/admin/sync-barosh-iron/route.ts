@@ -93,3 +93,73 @@ export async function POST() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+// =========================================================================
+// GET - sync Oshpir tags (piggybacked on this route to avoid deploy caching)
+// Usage: GET /api/admin/sync-barosh-iron?oshpir=1
+// =========================================================================
+const OSHPIR_TAGS = [
+  'שילוח בינלאומי', 'יבוא', 'יצוא', 'מכס', 'סוכן מכס', 'ספנות',
+  'תיאום שילוח', 'אנגלית', 'אנגלית ברמה גבוהה', 'פוקוס', 'תוכנת פוקוס',
+  'תיאום', 'אדמיניסטרציה', 'עבודה מול ספקים', 'עבודה מול לקוחות',
+  'תיעוד', 'חיפה', 'צפון', 'משרה מלאה',
+]
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  if (searchParams.get('oshpir') !== '1') {
+    return NextResponse.json({ error: 'use ?oshpir=1' }, { status: 400 })
+  }
+
+  try {
+    const employer = await prisma.employer.findFirst({
+      where: { name: { contains: 'אושפיר', mode: 'insensitive' } },
+    })
+    if (!employer) return NextResponse.json({ error: 'אושפיר לא נמצא' }, { status: 404 })
+
+    const positions = await prisma.position.findMany({
+      where: { employerId: employer.id },
+      include: { tags: true },
+    })
+    if (positions.length === 0) return NextResponse.json({ error: 'אין משרות' }, { status: 404 })
+
+    const tagConnects = {
+      connectOrCreate: OSHPIR_TAGS.map(tag => ({
+        where: { name: tag },
+        create: { name: tag, color: '#0ea5e9' },
+      })),
+    }
+
+    const updated: string[] = []
+    for (const pos of positions) {
+      const isImport = pos.title.includes('יבוא')
+      await prisma.position.update({
+        where: { id: pos.id },
+        data: {
+          active: true,
+          workHours: 'משרה מלאה',
+          contactName: 'ריקי כהן',
+          contactEmail: 'oshpir@oshpir.co.il',
+          keywords: JSON.stringify(
+            isImport
+              ? ['שילוח בינלאומי', 'יבוא', 'מכס', 'ספנות', 'אנגלית', 'פוקוס', 'חיפה', 'תיאום', 'Import coordinator']
+              : ['שילוח בינלאומי', 'יצוא', 'מכס', 'ספנות', 'אנגלית', 'פוקוס', 'חיפה', 'תיאום', 'Export coordinator']
+          ),
+          tags: tagConnects,
+        },
+      })
+      updated.push(pos.title)
+    }
+
+    return NextResponse.json({
+      success: true,
+      employer: employer.name,
+      updated: updated.length,
+      positions: updated,
+      tagsAdded: OSHPIR_TAGS.length,
+      tags: OSHPIR_TAGS,
+    })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

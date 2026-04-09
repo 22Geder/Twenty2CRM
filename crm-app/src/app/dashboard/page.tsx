@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle, AlertTriangle, Clock, UserCheck, CheckCircle, Users, Briefcase } from "lucide-react"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
+import { UrgentCandidatesAlert } from "@/components/urgent-candidates-alert"
 
 // Get comprehensive dashboard stats
 async function getDashboardStats() {
@@ -373,50 +374,7 @@ export default async function CiviDashboardPage() {
       </div>
 
       {/* 🔔 ALERT BANNER - עדיין לא טופלו מעל 24 שעות */}
-      {untreatedInProcess.length > 0 && (
-        <div className="bg-amber-50 border-b-2 border-amber-400">
-          <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 bg-amber-400 text-white rounded-lg p-2 mt-0.5">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold text-amber-800 text-base">
-                    ⚠️ {untreatedInProcess.length} מועמד{untreatedInProcess.length !== 1 ? 'ים' : ''} בתהליך לא טופל{untreatedInProcess.length !== 1 ? 'ו' : ''} מעל 24 שעות!
-                  </span>
-                  <span className="text-xs bg-amber-400 text-white px-2 py-0.5 rounded-full font-bold">
-                    דורש טיפול מיידי
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {untreatedInProcess.map((c: any) => {
-                    const hoursAgo = Math.floor((Date.now() - new Date(c.inProcessAt).getTime()) / (60 * 60 * 1000))
-                    const daysAgo = Math.floor(hoursAgo / 24)
-                    const timeLabel = daysAgo >= 1 ? `${daysAgo} ימים` : `${hoursAgo} שעות`
-                    return (
-                      <Link
-                        key={c.id}
-                        href={`/dashboard/candidates/${c.id}`}
-                        className="flex items-center gap-1.5 bg-white border border-amber-300 rounded-lg px-3 py-1.5 hover:bg-amber-50 hover:border-amber-500 transition-all shadow-sm"
-                      >
-                        <span className="font-semibold text-slate-800 text-sm">{c.name}</span>
-                        <span className="text-slate-400 text-xs">|</span>
-                        <span className="text-blue-600 text-xs">{c.inProcessPosition?.title || 'משרה'}</span>
-                        <span className="text-slate-400 text-xs">|</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 text-xs font-medium">
-                          <Clock className="h-3 w-3" />
-                          {timeLabel}
-                        </span>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <UrgentCandidatesAlert candidates={untreatedInProcess as any} />
 
       {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">

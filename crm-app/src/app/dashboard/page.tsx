@@ -63,7 +63,10 @@ async function getDashboardStats() {
       where: {
         OR: [
           { employmentStatus: 'IN_PROCESS' },
-          { inProcessPositionId: { not: null } },
+          { 
+            inProcessPositionId: { not: null },
+            employmentStatus: { notIn: ['EMPLOYED', 'REJECTED'] },
+          },
         ]
       }
     }),
@@ -140,9 +143,13 @@ async function getDashboardStats() {
 async function getCandidatesInProcess() {
   return await prisma.candidate.findMany({
     where: {
+      // 🔄 רק מועמדים שבאמת בתהליך - לא כאלה שכבר התקבלו/נדחו
       OR: [
         { employmentStatus: 'IN_PROCESS' },
-        { inProcessPositionId: { not: null } },
+        { 
+          inProcessPositionId: { not: null },
+          employmentStatus: { notIn: ['EMPLOYED', 'REJECTED'] },
+        },
       ]
     },
     orderBy: { updatedAt: 'desc' },
@@ -242,6 +249,8 @@ async function getUntreatedInProcessCandidates() {
     where: {
       inProcessPositionId: { not: null },
       inProcessAt: { lt: cutoff },
+      // 🔄 לא מציג מועמדים שכבר התקבלו או נדחו
+      employmentStatus: { notIn: ['EMPLOYED', 'REJECTED'] },
     },
     orderBy: { inProcessAt: 'asc' }, // oldest first
     include: {

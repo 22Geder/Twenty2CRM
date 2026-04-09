@@ -169,6 +169,11 @@ export async function PUT(
         ...('hiredAt' in body && { hiredAt: hiredAt ? new Date(hiredAt) : null }),
         ...('employmentType' in body && { employmentType: employmentType || null }),
         ...('employmentStatus' in body && { employmentStatus: employmentStatus || null }),
+        // 🔄 סנכרון אוטומטי: כשמועמד התקבל/נדחה - מנקה את שדות "בתהליך"
+        ...('employmentStatus' in body && (employmentStatus === 'EMPLOYED' || employmentStatus === 'REJECTED') && {
+          inProcessPositionId: null,
+          inProcessAt: null,
+        }),
         ...('employmentEndAt' in body && { employmentEndAt: employmentEndAt ? new Date(employmentEndAt) : null }),
         ...(typeof isSelfEmployed === "boolean" && { isSelfEmployed }),
         ...(resume !== undefined && { resume: resume || null }),

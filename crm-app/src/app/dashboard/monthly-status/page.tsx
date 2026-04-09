@@ -138,7 +138,16 @@ export default function MonthlyStatusPage() {
         if (data.hiredToEmployerId) {
           updatePayload.hiredToEmployerId = data.hiredToEmployerId;
         }
-      } else if (data.employmentStatus === 'REJECTED' || data.employmentStatus === 'IN_PROCESS' || !data.employmentStatus) {
+        // 🔄 מנקה שדות "בתהליך" כי המועמד התקבל
+        updatePayload.inProcessPositionId = null;
+        updatePayload.inProcessAt = null;
+      } else if (data.employmentStatus === 'REJECTED') {
+        updatePayload.hiredAt = null;
+        updatePayload.hiredToEmployerId = null;
+        // 🔄 מנקה שדות "בתהליך" כי המועמד נדחה
+        updatePayload.inProcessPositionId = null;
+        updatePayload.inProcessAt = null;
+      } else if (data.employmentStatus === 'IN_PROCESS' || !data.employmentStatus) {
         updatePayload.hiredAt = null;
         updatePayload.hiredToEmployerId = null;
       }
@@ -175,6 +184,15 @@ export default function MonthlyStatusPage() {
       
       if (newStatus === 'EMPLOYED') {
         updatePayload.hiredAt = new Date().toISOString();
+        // 🔄 מנקה שדות "בתהליך" כי המועמד התקבל
+        updatePayload.inProcessPositionId = null;
+        updatePayload.inProcessAt = null;
+      } else if (newStatus === 'REJECTED') {
+        updatePayload.hiredAt = null;
+        updatePayload.hiredToEmployerId = null;
+        // 🔄 מנקה שדות "בתהליך" כי המועמד נדחה
+        updatePayload.inProcessPositionId = null;
+        updatePayload.inProcessAt = null;
       } else {
         updatePayload.hiredAt = null;
         updatePayload.hiredToEmployerId = null;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { calculateLocationScore } from "@/lib/israel-distance"
 
 interface RouteParams {
   params: Promise<{
@@ -141,42 +142,8 @@ export async function GET(
       },
     })
 
-    // 🆕 אזורים גיאוגרפיים מורחבים לחישוב מיקום
-    const locationRegions = {
-      tlvArea: ['תל אביב', 'רמת גן', 'גבעתיים', 'חולון', 'בת ים', 'בני ברק', 'אור יהודה', 'רמת השרון', 'הרצליה'],
-      gushDan: ['פתח תקווה', 'ראשון לציון', 'רחובות', 'נס ציונה', 'לוד', 'רמלה', 'יהוד', 'מודיעין', 'ראש העין', 'כפר סבא', 'רעננה', 'הוד השרון', 'נתניה'],
-      haifaArea: ['חיפה', 'קריית אתא', 'קריית ביאליק', 'קריית ים', 'קריית מוצקין', 'נשר', 'טירת כרמל', 'קריות', 'עכו', 'נהריה'],
-      northArea: ['עפולה', 'נצרת', 'טבריה', 'כרמיאל', 'צפת', 'מגדל העמק', 'בית שאן', 'קצרין'],
-      jlmArea: ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת ציון'],
-      southArea: ['באר שבע', 'אשדוד', 'אשקלון', 'דימונה', 'ערד', 'אופקים', 'קריית גת', 'שדרות', 'אילת'],
-    }
-
-    // פונקציית עזר - מצא באיזה אזור עיר נמצאת
-    const getRegion = (city: string): string | null => {
-      const cityLower = city.toLowerCase()
-      for (const [region, cities] of Object.entries(locationRegions)) {
-        if (cities.some(c => cityLower.includes(c) || c.includes(cityLower))) {
-          return region
-        }
-      }
-      return null
-    }
-
-    // פונקציית עזר - אזורים סמוכים (מרכז = tlv + gushDan, צפון = haifa + north)
-    const areNearbyRegions = (r1: string | null, r2: string | null): boolean => {
-      if (!r1 || !r2) return false
-      const nearby: Record<string, string[]> = {
-        tlvArea: ['gushDan'],
-        gushDan: ['tlvArea', 'jlmArea'],
-        haifaArea: ['northArea'],
-        northArea: ['haifaArea'],
-        jlmArea: ['gushDan'],
-        southArea: [],
-      }
-      return (nearby[r1] || []).includes(r2) || (nearby[r2] || []).includes(r1)
-    }
-
-    // 🎯 חישוב ציון התאמה - אלגוריתם 50/25/25 (מיקום/תגיות/AI)
+    //  חישוב ציון התאמה - אלגוריתם 50/25/25 (מיקום/תגיות/AI)
+    // מיקום: 50 נק' - כל 10 ק"מ מוריד 15% | תגיות: 25 נק' | AI/פרופיל: 25 נק'
     const positionsWithScore = positions.map(position => {
       const scoreBreakdown = {
         location: 0,
@@ -197,31 +164,15 @@ export async function GET(
 
       // ═══════════════════════════════════════
       // 📍 מיקום - 50 נקודות (50%)
+      // כל 10 ק"מ מוריד 15% מה-50 נקודות
       // ═══════════════════════════════════════
       let locationMatch = false
-      if (candidate.city && position.location) {
-        const candidateCity = candidate.city.toLowerCase()
-        const positionLocation = position.location.toLowerCase()
-        
-        // התאמה מדויקת - 50 נקודות
-        if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
-          scoreBreakdown.location = 50
-          locationMatch = true
-        } else {
-          const candidateRegion = getRegion(candidateCity)
-          const positionRegion = getRegion(positionLocation)
-          
-          if (candidateRegion && positionRegion && candidateRegion === positionRegion) {
-            // אותו אזור - 35 נקודות
-            scoreBreakdown.location = 35
-            locationMatch = true
-          } else if (areNearbyRegions(candidateRegion, positionRegion)) {
-            // אזורים סמוכים - 20 נקודות
-            scoreBreakdown.location = 20
-            locationMatch = true
-          }
-        }
-      }
+      let distanceKm: number | null = null
+      
+      const locResult = calculateLocationScore(candidate.city || '', position.location || '')
+      scoreBreakdown.location = locResult.score
+      distanceKm = locResult.distanceKm
+      locationMatch = locResult.score > 0
 
       // ═══════════════════════════════════════
       // 🏷️ תגיות - 25 נקודות (25%)
@@ -310,6 +261,7 @@ export async function GET(
         matchingTags,
         hasApplied: position.applications.length > 0,
         locationMatch,
+        distanceKm,
         scoreBreakdown: {
           ...scoreBreakdown,
           locationMaxPossible: 50,

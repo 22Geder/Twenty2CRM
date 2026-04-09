@@ -65,6 +65,7 @@ interface MatchingCandidate {
   matchScore: number
   hasApplied: boolean
   locationMatch?: boolean
+  distanceKm?: number | null
   candidateCategories?: string[]
   categoryOverlap?: string[]
   recruitmentTagMatch?: number
@@ -749,6 +750,9 @@ export function MatchingCandidatesSidebar({
                           <span className="flex items-center gap-1">
                             <span className="text-lg">📍</span>
                             <span className="font-medium">מיקום (50%)</span>
+                            {candidate.distanceKm != null && candidate.distanceKm > 0 && (
+                              <span className="text-gray-500 font-normal">({candidate.distanceKm} ק"מ)</span>
+                            )}
                           </span>
                           <span className="font-bold text-lg text-green-600">
                             {candidate.scoreBreakdown.location || 0}/50

@@ -125,6 +125,7 @@ interface MatchingPosition {
   aiWeaknesses?: string[]
   aiRecommendation?: string
   locationMatch?: boolean
+  distanceKm?: number | null
   shouldProceed?: boolean
   scoreBreakdown?: {
     tags: number
@@ -801,7 +802,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-medium flex items-center gap-1">
-                            📍 מיקום
+                            📍 מיקום {position.distanceKm != null && position.distanceKm > 0 && (
+                              <span className="text-gray-500 font-normal">({position.distanceKm} ק"מ)</span>
+                            )}
                           </span>
                           <span className={`font-bold ${(position.scoreBreakdown?.location || 0) >= 35 ? 'text-green-600' : (position.scoreBreakdown?.location || 0) >= 20 ? 'text-yellow-600' : 'text-gray-500'}`}>
                             {position.scoreBreakdown?.location || 0} / 50

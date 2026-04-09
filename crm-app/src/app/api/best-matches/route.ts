@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { calculateLocationScore } from "@/lib/israel-distance"
 
 /**
  * 🎯 GET /api/best-matches
@@ -72,52 +73,18 @@ export async function GET(request: NextRequest) {
 
     console.log(`👥 Found ${candidatesNotInProcess.length} candidates not in process`)
 
-    // 🆕 אזורים גיאוגרפיים מורחבים
-    const locationRegions = {
-      tlvArea: ['תל אביב', 'רמת גן', 'גבעתיים', 'חולון', 'בת ים', 'בני ברק', 'אור יהודה', 'רמת השרון', 'הרצליה'],
-      gushDan: ['פתח תקווה', 'ראשון לציון', 'רחובות', 'נס ציונה', 'לוד', 'רמלה', 'יהוד', 'מודיעין', 'ראש העין', 'כפר סבא', 'רעננה', 'הוד השרון', 'נתניה'],
-      haifaArea: ['חיפה', 'קריית אתא', 'קריית ביאליק', 'קריית ים', 'קריית מוצקין', 'נשר', 'טירת כרמל', 'קריות', 'עכו', 'נהריה'],
-      northArea: ['עפולה', 'נצרת', 'טבריה', 'כרמיאל', 'צפת', 'מגדל העמק', 'בית שאן', 'קצרין'],
-      jlmArea: ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת ציון'],
-      southArea: ['באר שבע', 'אשדוד', 'אשקלון', 'דימונה', 'ערד', 'אופקים', 'קריית גת', 'שדרות', 'אילת'],
-    }
-
-    const getRegion = (city: string): string | null => {
-      const cityLower = city.toLowerCase()
-      for (const [region, cities] of Object.entries(locationRegions)) {
-        if (cities.some(c => cityLower.includes(c) || c.includes(cityLower))) {
-          return region
-        }
-      }
-      return null
-    }
-
-    const areNearbyRegions = (r1: string | null, r2: string | null): boolean => {
-      if (!r1 || !r2) return false
-      const nearby: Record<string, string[]> = {
-        tlvArea: ['gushDan'],
-        gushDan: ['tlvArea', 'jlmArea'],
-        haifaArea: ['northArea'],
-        northArea: ['haifaArea'],
-        jlmArea: ['gushDan'],
-        southArea: [],
-      }
-      return (nearby[r1] || []).includes(r2) || (nearby[r2] || []).includes(r1)
-    }
-
     // 3️⃣ לכל משרה - מצא את 20 המועמדים הכי מתאימים
-    // 🆕 אלגוריתם 50/25/25: מיקום 50 + תגיות 25 + AI/פרופיל 25 = 100
+    // 🆕 אלגוריתם 50/25/25: מיקום 50 (כל 10 ק"מ -15%) + תגיות 25 + AI/פרופיל 25 = 100
     const positionsWithMatches = []
 
     for (const position of positions) {
       const positionTagIds = position.tags.map(t => t.id)
       const positionTagNames = position.tags.map(t => t.name.toLowerCase())
-      const positionLocation = (position.location || '').toLowerCase()
+      const positionLocation = position.location || ''
       const positionTitle = (position.title || '').toLowerCase()
       const positionTitleWords = positionTitle.split(' ').filter(w => w.length > 2)
-      const positionRegion = positionLocation ? getRegion(positionLocation) : null
 
-      // חישוב ציון לכל מועמד - אלגוריתם 50/25/25
+      // חישוב ציון לכל מועמד - אלגוריתם 50/25/25 עם מרחק בק"מ
       const candidatesWithScores = candidatesNotInProcess.map(candidate => {
         const scoreBreakdown = {
           location: 0,
@@ -134,28 +101,20 @@ export async function GET(request: NextRequest) {
 
         const candidateTagIds = candidate.tags.map(t => t.id)
         const candidateTagNames = candidate.tags.map(t => t.name.toLowerCase())
-        const candidateCity = (candidate.city || '').toLowerCase()
+        const candidateCity = candidate.city || ''
         const candidateTitle = ((candidate as any).currentTitle || '').toLowerCase()
 
         // ═══════════════════════════════════════
         // 📍 מיקום - 50 נקודות (50%)
+        // כל 10 ק"מ מוריד 15% מה-50 נקודות
         // ═══════════════════════════════════════
         let locationMatch = false
-        if (candidateCity && positionLocation) {
-          if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
-            scoreBreakdown.location = 50
-            locationMatch = true
-          } else {
-            const candidateRegion = getRegion(candidateCity)
-            if (candidateRegion && positionRegion && candidateRegion === positionRegion) {
-              scoreBreakdown.location = 35
-              locationMatch = true
-            } else if (areNearbyRegions(candidateRegion, positionRegion)) {
-              scoreBreakdown.location = 20
-              locationMatch = true
-            }
-          }
-        }
+        let distanceKm: number | null = null
+        
+        const locResult = calculateLocationScore(candidateCity, positionLocation)
+        scoreBreakdown.location = locResult.score
+        distanceKm = locResult.distanceKm
+        locationMatch = locResult.score > 0
 
         // ═══════════════════════════════════════
         // 🏷️ תגיות - 25 נקודות (25%)
@@ -236,6 +195,7 @@ export async function GET(request: NextRequest) {
           matchingTags: matchingTags.map(t => ({ id: t.id, name: t.name, color: t.color })),
           score,
           locationMatch,
+          distanceKm,
           scoreBreakdown: {
             ...scoreBreakdown,
             locationMaxPossible: 50,

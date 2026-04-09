@@ -104,8 +104,8 @@ export async function POST(request: Request) {
     
     const quickResults = positionsForScan.map(position => {
       // חישוב מקומי מהיר - אין קריאות רשת!
-      const positionLocality = extractLocalityFromAddress(position.location || '') || normalizeLocality(position.location || '')
-      const locationMatch = !!(finalCandidateCity && positionLocality && areLocationsNearby(finalCandidateCity, positionLocality))
+      // תמיכה בכמה ערים בשדה location (למשל: 'לוד, אשקלון')
+      const locationMatch = checkLocationMatch(finalCandidateCity, position.location || '')
       const quickMatch = smartFallbackMatch(candidate, position, finalCandidateCity, locationMatch)
       return { ...quickMatch, _quickScore: quickMatch.score }
     })
@@ -261,13 +261,25 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * בדיקת התאמת מיקום תומכת בכמה ערים מופרדות בפסיק (למשל: 'לוד, אשקלון')
+ */
+function checkLocationMatch(candidateCity: string, positionLocation: string): boolean {
+  if (!candidateCity || !positionLocation) return false
+  const parts = positionLocation.split(/[,،\/]+/).map(p => p.trim()).filter(Boolean)
+  return parts.some(part => {
+    const posLoc = extractLocalityFromAddress(part) || normalizeLocality(part)
+    return !!(posLoc && areLocationsNearby(candidateCity, posLoc))
+  })
+}
+
 async function analyzeMatchV3(candidate: any, position: any, candidateCity: string) {
   // 🗺️ נרמול מיקום המשרה עם מאגר יישובים מלא!
   const rawPositionLocation = position.location || ''
   const positionLocality = extractLocalityFromAddress(rawPositionLocation) || normalizeLocality(rawPositionLocation)
   
-  // בדיקת התאמת מיקום - עם מאגר כל היישובים בישראל!
-  const locationMatch = !!(candidateCity && positionLocality && areLocationsNearby(candidateCity, positionLocality))
+  // בדיקת התאמת מיקום - תמיכה בכמה ערים (למשל: 'לוד, אשקלון')
+  const locationMatch = checkLocationMatch(candidateCity, rawPositionLocation)
 
   // 🔥 הכנת מידע מלא על המועמד כולל קורות חיים!
   const resumeText = candidate.resume || ''

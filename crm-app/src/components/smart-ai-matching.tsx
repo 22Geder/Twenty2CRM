@@ -153,9 +153,6 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
     if (match.openings && match.openings > 1) {
       lines.push(`👥 משרות פתוחות: ${match.openings}`)
     }
-    if (match.contactName) {
-      lines.push(`👤 איש קשר: ${match.contactName}`)
-    }
     lines.push('')
     
     // תיאור המשרה - מלא!

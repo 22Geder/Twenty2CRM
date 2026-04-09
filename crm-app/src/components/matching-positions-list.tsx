@@ -244,9 +244,6 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     if (position.openings && position.openings > 1) {
       lines.push(`👥 משרות פתוחות: ${position.openings}`)
     }
-    if (position.contactName) {
-      lines.push(`👤 איש קשר: ${position.contactName}`)
-    }
     lines.push('')
     
     // תיאור המשרה - מלא!

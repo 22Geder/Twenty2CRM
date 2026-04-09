@@ -7,8 +7,8 @@ import { prisma } from "@/lib/prisma"
  * 🎯 GET /api/best-matches
  * מחזיר את 20 ההתאמות הטובות ביותר לכל משרה פעילה
  * 
- * ⚠️ משתמש באותו אלגוריתם בדיוק כמו matching-positions!
- * תגיות 40 + חלקי 10 + ניסיון 15 + דירוג 10 + מיקום 5 + תפקיד 10 + עדכניות 5 + קשר 2 + קו"ח 2 + לינקדאין 1 = 100
+ * 🆕 אלגוריתם מאוחד 50/25/25:
+ * מיקום 50 + תגיות 25 + AI/פרופיל 25 = 100
  * 
  * רק מועמדים שלא בתהליך כלל!
  */
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log("🎯 Best Matches API - Starting... (אלגוריתם אחיד עם matching-positions)")
+    console.log("🎯 Best Matches API - Starting... (אלגוריתם 50/25/25 - מיקום/תגיות/AI)")
     const startTime = Date.now()
 
     // 1️⃣ שליפת כל המשרות הפעילות עם תגיות
@@ -72,9 +72,41 @@ export async function GET(request: NextRequest) {
 
     console.log(`👥 Found ${candidatesNotInProcess.length} candidates not in process`)
 
+    // 🆕 אזורים גיאוגרפיים מורחבים
+    const locationRegions = {
+      tlvArea: ['תל אביב', 'רמת גן', 'גבעתיים', 'חולון', 'בת ים', 'בני ברק', 'אור יהודה', 'רמת השרון', 'הרצליה'],
+      gushDan: ['פתח תקווה', 'ראשון לציון', 'רחובות', 'נס ציונה', 'לוד', 'רמלה', 'יהוד', 'מודיעין', 'ראש העין', 'כפר סבא', 'רעננה', 'הוד השרון', 'נתניה'],
+      haifaArea: ['חיפה', 'קריית אתא', 'קריית ביאליק', 'קריית ים', 'קריית מוצקין', 'נשר', 'טירת כרמל', 'קריות', 'עכו', 'נהריה'],
+      northArea: ['עפולה', 'נצרת', 'טבריה', 'כרמיאל', 'צפת', 'מגדל העמק', 'בית שאן', 'קצרין'],
+      jlmArea: ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת ציון'],
+      southArea: ['באר שבע', 'אשדוד', 'אשקלון', 'דימונה', 'ערד', 'אופקים', 'קריית גת', 'שדרות', 'אילת'],
+    }
+
+    const getRegion = (city: string): string | null => {
+      const cityLower = city.toLowerCase()
+      for (const [region, cities] of Object.entries(locationRegions)) {
+        if (cities.some(c => cityLower.includes(c) || c.includes(cityLower))) {
+          return region
+        }
+      }
+      return null
+    }
+
+    const areNearbyRegions = (r1: string | null, r2: string | null): boolean => {
+      if (!r1 || !r2) return false
+      const nearby: Record<string, string[]> = {
+        tlvArea: ['gushDan'],
+        gushDan: ['tlvArea', 'jlmArea'],
+        haifaArea: ['northArea'],
+        northArea: ['haifaArea'],
+        jlmArea: ['gushDan'],
+        southArea: [],
+      }
+      return (nearby[r1] || []).includes(r2) || (nearby[r2] || []).includes(r1)
+    }
+
     // 3️⃣ לכל משרה - מצא את 20 המועמדים הכי מתאימים
-    // 🔥 אותו אלגוריתם בדיוק כמו matching-positions!
-    // תגיות 40 + חלקי 10 + ניסיון 15 + דירוג 10 + מיקום 5 + תפקיד 10 + עדכניות 5 + קשר 2 + קו"ח 2 + לינקדאין 1 = 100
+    // 🆕 אלגוריתם 50/25/25: מיקום 50 + תגיות 25 + AI/פרופיל 25 = 100
     const positionsWithMatches = []
 
     for (const position of positions) {
@@ -82,19 +114,17 @@ export async function GET(request: NextRequest) {
       const positionTagNames = position.tags.map(t => t.name.toLowerCase())
       const positionLocation = (position.location || '').toLowerCase()
       const positionTitle = (position.title || '').toLowerCase()
-      const daysSinceCreated = Math.floor(
-        (Date.now() - new Date(position.createdAt).getTime()) / (1000 * 60 * 60 * 24)
-      )
+      const positionTitleWords = positionTitle.split(' ').filter(w => w.length > 2)
+      const positionRegion = positionLocation ? getRegion(positionLocation) : null
 
-      // חישוב ציון לכל מועמד - אותו אלגוריתם כמו matching-positions!
+      // חישוב ציון לכל מועמד - אלגוריתם 50/25/25
       const candidatesWithScores = candidatesNotInProcess.map(candidate => {
-        let matchScore = 0
         const scoreBreakdown = {
+          location: 0,
           tags: 0,
           partial: 0,
           experience: 0,
           rating: 0,
-          location: 0,
           title: 0,
           freshness: 0,
           contact: 0,
@@ -107,17 +137,37 @@ export async function GET(request: NextRequest) {
         const candidateCity = (candidate.city || '').toLowerCase()
         const candidateTitle = ((candidate as any).currentTitle || '').toLowerCase()
 
-        // 1. התאמת תגיות בסיסית (40 נקודות)
+        // ═══════════════════════════════════════
+        // 📍 מיקום - 50 נקודות (50%)
+        // ═══════════════════════════════════════
+        let locationMatch = false
+        if (candidateCity && positionLocation) {
+          if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
+            scoreBreakdown.location = 50
+            locationMatch = true
+          } else {
+            const candidateRegion = getRegion(candidateCity)
+            if (candidateRegion && positionRegion && candidateRegion === positionRegion) {
+              scoreBreakdown.location = 35
+              locationMatch = true
+            } else if (areNearbyRegions(candidateRegion, positionRegion)) {
+              scoreBreakdown.location = 20
+              locationMatch = true
+            }
+          }
+        }
+
+        // ═══════════════════════════════════════
+        // 🏷️ תגיות - 25 נקודות (25%)
+        // ═══════════════════════════════════════
         const matchingTagIds = candidateTagIds.filter(id => positionTagIds.includes(id))
         const matchingTags = candidate.tags.filter(t => positionTagIds.includes(t.id))
         
         if (positionTagIds.length > 0) {
-          const tagMatchPercentage = (matchingTagIds.length / positionTagIds.length) * 100
-          scoreBreakdown.tags = Math.round((tagMatchPercentage / 100) * 40)
-          matchScore += scoreBreakdown.tags
+          const tagMatchPercentage = matchingTagIds.length / positionTagIds.length
+          scoreBreakdown.tags = Math.round(tagMatchPercentage * 20)
         }
 
-        // 2. התאמה חלקית של תגיות (10 נקודות)
         let partialMatches = 0
         candidateTagNames.forEach(canTag => {
           positionTagNames.forEach(posTag => {
@@ -129,104 +179,49 @@ export async function GET(request: NextRequest) {
           })
         })
         if (partialMatches > 0) {
-          scoreBreakdown.partial = Math.min(10, partialMatches * 3)
-          matchScore += scoreBreakdown.partial
+          scoreBreakdown.partial = Math.min(5, partialMatches * 2)
         }
 
-        // 3. ניסיון (15 נקודות)
-        const yearsExp = (candidate as any).yearsOfExperience
-        if (yearsExp) {
-          if (yearsExp >= 5) {
-            scoreBreakdown.experience = 15
-          } else if (yearsExp >= 3) {
-            scoreBreakdown.experience = 10
-          } else if (yearsExp >= 1) {
-            scoreBreakdown.experience = 5
-          } else {
-            scoreBreakdown.experience = 2
-          }
-          matchScore += scoreBreakdown.experience
-        }
-
-        // 4. דירוג (10 נקודות)
-        if (candidate.rating) {
-          scoreBreakdown.rating = Math.round((candidate.rating / 5) * 10)
-          matchScore += scoreBreakdown.rating
-        }
-
-        // 5. מיקום (5 נקודות)
-        let locationMatch = false
-        if (candidateCity && positionLocation) {
-          if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
-            scoreBreakdown.location = 5
-            matchScore += 5
-            locationMatch = true
-          } else {
-            // בדיקה אזורית
-            const tlvArea = ['תל אביב', 'רמת גן', 'גבעתיים', 'חולון', 'בת ים']
-            const haifaArea = ['חיפה', 'קריות', 'נהריה', 'עכו']
-            const jlmArea = ['ירושלים', 'בית שמש', 'מעלה אדומים']
-            
-            const inSameRegion = 
-              (tlvArea.some(c => positionLocation.includes(c)) && tlvArea.some(c => candidateCity.includes(c))) ||
-              (haifaArea.some(c => positionLocation.includes(c)) && haifaArea.some(c => candidateCity.includes(c))) ||
-              (jlmArea.some(c => positionLocation.includes(c)) && jlmArea.some(c => candidateCity.includes(c)))
-            
-            if (inSameRegion) {
-              scoreBreakdown.location = 3
-              matchScore += 3
-              locationMatch = true
-            }
-          }
-        }
-
-        // 6. תואר התפקיד (10 נקודות)
+        // ═══════════════════════════════════════
+        // 🤖 AI/פרופיל - 25 נקודות (25%)
+        // ═══════════════════════════════════════
+        // תואר תפקיד - עד 10 נקודות
         if (candidateTitle && positionTitle) {
-          const candidateTitleWords = candidateTitle.split(' ')
-          const positionTitleWords = positionTitle.split(' ')
-          
+          const candidateTitleWords = candidateTitle.split(' ').filter((w: string) => w.length > 2)
           const matchingWords = candidateTitleWords.filter((word: string) => 
-            word.length > 2 && positionTitleWords.some((pWord: string) => pWord.includes(word) || word.includes(pWord))
+            positionTitleWords.some((pWord: string) => pWord.includes(word) || word.includes(pWord))
           ).length
           
           if (matchingWords > 0) {
-            scoreBreakdown.title = Math.min(10, matchingWords * 3)
-            matchScore += scoreBreakdown.title
+            scoreBreakdown.title = Math.min(10, matchingWords * 4)
           }
         }
 
-        // 7. עדכניות משרה (5 נקודות)
-        if (daysSinceCreated <= 7) {
-          scoreBreakdown.freshness = 5
-          matchScore += 5
-        } else if (daysSinceCreated <= 14) {
-          scoreBreakdown.freshness = 3
-          matchScore += 3
-        } else if (daysSinceCreated <= 21) {
-          scoreBreakdown.freshness = 1
-          matchScore += 1
+        // ניסיון - עד 8 נקודות
+        const yearsExp = (candidate as any).yearsOfExperience
+        if (yearsExp) {
+          if (yearsExp >= 5) scoreBreakdown.experience = 8
+          else if (yearsExp >= 3) scoreBreakdown.experience = 6
+          else if (yearsExp >= 1) scoreBreakdown.experience = 3
+          else scoreBreakdown.experience = 1
         }
 
-        // 8. פרטי התקשרות (2 נקודות)
-        if (candidate.email && candidate.phone) {
-          scoreBreakdown.contact = 2
-          matchScore += 2
-        } else if (candidate.email || candidate.phone) {
-          scoreBreakdown.contact = 1
-          matchScore += 1
+        // דירוג - עד 5 נקודות
+        if (candidate.rating) {
+          scoreBreakdown.rating = Math.round((candidate.rating / 5) * 5)
         }
 
-        // 9. קורות חיים (2 נקודות)
-        if ((candidate as any).resumeUrl) {
-          scoreBreakdown.resume = 2
-          matchScore += 2
-        }
+        // קו"ח + לינקדאין - עד 2 נקודות
+        if ((candidate as any).resumeUrl) scoreBreakdown.resume = 1
+        if ((candidate as any).linkedinUrl) scoreBreakdown.linkedin = 1
 
-        // 10. פרופיל LinkedIn (1 נקודה)
-        if ((candidate as any).linkedinUrl) {
-          scoreBreakdown.linkedin = 1
-          matchScore += 1
-        }
+        // ═══════════════════════════════════════
+        // 📊 סיכום סופי
+        // ═══════════════════════════════════════
+        const locationScore = scoreBreakdown.location
+        const tagsScore = scoreBreakdown.tags + scoreBreakdown.partial
+        const aiScore = scoreBreakdown.title + scoreBreakdown.experience + scoreBreakdown.rating + scoreBreakdown.resume + scoreBreakdown.linkedin
+        const score = Math.min(100, locationScore + tagsScore + aiScore)
 
         return {
           id: candidate.id,
@@ -239,20 +234,24 @@ export async function GET(request: NextRequest) {
           rating: candidate.rating,
           tags: candidate.tags.map(t => ({ id: t.id, name: t.name, color: t.color })),
           matchingTags: matchingTags.map(t => ({ id: t.id, name: t.name, color: t.color })),
-          score: Math.min(100, matchScore),
+          score,
           locationMatch,
-          scoreBreakdown,
+          scoreBreakdown: {
+            ...scoreBreakdown,
+            locationMaxPossible: 50,
+            tagsMaxPossible: 25,
+            geminiAI: aiScore,
+            geminiMaxPossible: 25,
+          },
         }
       })
 
-      // 🎯 מיון לפי ציון - הגבוה ביותר ראשון! (מיקום רק כשוברי שוויון)
+      // 🎯 מיון: מיקום קודם, אחר כך ציון כולל
       candidatesWithScores.sort((a, b) => {
-        // קודם כל לפי ציון - הגבוה ביותר ראשון!
+        if (b.scoreBreakdown.location !== a.scoreBreakdown.location) {
+          return b.scoreBreakdown.location - a.scoreBreakdown.location
+        }
         if (b.score !== a.score) return b.score - a.score
-        // שוברי שוויון: מיקום
-        if (a.locationMatch && !b.locationMatch) return -1
-        if (!a.locationMatch && b.locationMatch) return 1
-        // שוברי שוויון: דירוג
         return (b.rating || 0) - (a.rating || 0)
       })
 
@@ -289,7 +288,7 @@ export async function GET(request: NextRequest) {
     })
 
     const endTime = Date.now()
-    console.log(`✅ Best Matches completed in ${endTime - startTime}ms (אותו אלגוריתם כמו matching-positions)`)
+    console.log(`✅ Best Matches completed in ${endTime - startTime}ms (אלגוריתם 50/25/25)`)
 
     return NextResponse.json({
       success: true,

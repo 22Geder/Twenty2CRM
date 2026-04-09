@@ -141,15 +141,49 @@ export async function GET(
       },
     })
 
-    // חישוב ציון התאמה לכל משרה
+    // 🆕 אזורים גיאוגרפיים מורחבים לחישוב מיקום
+    const locationRegions = {
+      tlvArea: ['תל אביב', 'רמת גן', 'גבעתיים', 'חולון', 'בת ים', 'בני ברק', 'אור יהודה', 'רמת השרון', 'הרצליה'],
+      gushDan: ['פתח תקווה', 'ראשון לציון', 'רחובות', 'נס ציונה', 'לוד', 'רמלה', 'יהוד', 'מודיעין', 'ראש העין', 'כפר סבא', 'רעננה', 'הוד השרון', 'נתניה'],
+      haifaArea: ['חיפה', 'קריית אתא', 'קריית ביאליק', 'קריית ים', 'קריית מוצקין', 'נשר', 'טירת כרמל', 'קריות', 'עכו', 'נהריה'],
+      northArea: ['עפולה', 'נצרת', 'טבריה', 'כרמיאל', 'צפת', 'מגדל העמק', 'בית שאן', 'קצרין'],
+      jlmArea: ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת ציון'],
+      southArea: ['באר שבע', 'אשדוד', 'אשקלון', 'דימונה', 'ערד', 'אופקים', 'קריית גת', 'שדרות', 'אילת'],
+    }
+
+    // פונקציית עזר - מצא באיזה אזור עיר נמצאת
+    const getRegion = (city: string): string | null => {
+      const cityLower = city.toLowerCase()
+      for (const [region, cities] of Object.entries(locationRegions)) {
+        if (cities.some(c => cityLower.includes(c) || c.includes(cityLower))) {
+          return region
+        }
+      }
+      return null
+    }
+
+    // פונקציית עזר - אזורים סמוכים (מרכז = tlv + gushDan, צפון = haifa + north)
+    const areNearbyRegions = (r1: string | null, r2: string | null): boolean => {
+      if (!r1 || !r2) return false
+      const nearby: Record<string, string[]> = {
+        tlvArea: ['gushDan'],
+        gushDan: ['tlvArea', 'jlmArea'],
+        haifaArea: ['northArea'],
+        northArea: ['haifaArea'],
+        jlmArea: ['gushDan'],
+        southArea: [],
+      }
+      return (nearby[r1] || []).includes(r2) || (nearby[r2] || []).includes(r1)
+    }
+
+    // 🎯 חישוב ציון התאמה - אלגוריתם 50/25/25 (מיקום/תגיות/AI)
     const positionsWithScore = positions.map(position => {
-      let matchScore = 0
       const scoreBreakdown = {
+        location: 0,
         tags: 0,
         partial: 0,
         experience: 0,
         rating: 0,
-        location: 0,
         title: 0,
         freshness: 0,
         contact: 0,
@@ -157,18 +191,48 @@ export async function GET(
         linkedin: 0,
       }
 
-      // 1. התאמת תגיות בסיסית (40 נקודות)
       const positionTagIds = position.tags.map(t => t.id)
       const matchingTagIds = candidateTagIds.filter(id => positionTagIds.includes(id))
       const matchingTags = candidate.tags.filter(t => matchingTagIds.includes(t.id))
-      
-      if (positionTagIds.length > 0) {
-        const tagMatchPercentage = (matchingTagIds.length / positionTagIds.length) * 100
-        scoreBreakdown.tags = Math.round((tagMatchPercentage / 100) * 40)
-        matchScore += scoreBreakdown.tags
+
+      // ═══════════════════════════════════════
+      // 📍 מיקום - 50 נקודות (50%)
+      // ═══════════════════════════════════════
+      let locationMatch = false
+      if (candidate.city && position.location) {
+        const candidateCity = candidate.city.toLowerCase()
+        const positionLocation = position.location.toLowerCase()
+        
+        // התאמה מדויקת - 50 נקודות
+        if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
+          scoreBreakdown.location = 50
+          locationMatch = true
+        } else {
+          const candidateRegion = getRegion(candidateCity)
+          const positionRegion = getRegion(positionLocation)
+          
+          if (candidateRegion && positionRegion && candidateRegion === positionRegion) {
+            // אותו אזור - 35 נקודות
+            scoreBreakdown.location = 35
+            locationMatch = true
+          } else if (areNearbyRegions(candidateRegion, positionRegion)) {
+            // אזורים סמוכים - 20 נקודות
+            scoreBreakdown.location = 20
+            locationMatch = true
+          }
+        }
       }
 
-      // 2. התאמה חלקית של תגיות (10 נקודות)
+      // ═══════════════════════════════════════
+      // 🏷️ תגיות - 25 נקודות (25%)
+      // ═══════════════════════════════════════
+      // התאמה מדויקת - עד 20 נקודות
+      if (positionTagIds.length > 0) {
+        const tagMatchPercentage = matchingTagIds.length / positionTagIds.length
+        scoreBreakdown.tags = Math.round(tagMatchPercentage * 20)
+      }
+
+      // התאמה חלקית - עד 5 נקודות
       const candidateTagNames = candidate.tags.map(t => t.name.toLowerCase())
       const positionTagNames = position.tags.map(t => t.name.toLowerCase())
       let partialMatches = 0
@@ -182,112 +246,53 @@ export async function GET(
           }
         })
       })
-      
       if (partialMatches > 0) {
-        scoreBreakdown.partial = Math.min(10, partialMatches * 3)
-        matchScore += scoreBreakdown.partial
+        scoreBreakdown.partial = Math.min(5, partialMatches * 2)
       }
 
-      // 3. ניסיון (15 נקודות)
-      if (candidate.yearsOfExperience) {
-        if (candidate.yearsOfExperience >= 5) {
-          scoreBreakdown.experience = 15
-        } else if (candidate.yearsOfExperience >= 3) {
-          scoreBreakdown.experience = 10
-        } else if (candidate.yearsOfExperience >= 1) {
-          scoreBreakdown.experience = 5
-        } else {
-          scoreBreakdown.experience = 2
-        }
-        matchScore += scoreBreakdown.experience
-      }
-
-      // 4. דירוג (10 נקודות)
-      if (candidate.rating) {
-        scoreBreakdown.rating = Math.round((candidate.rating / 5) * 10)
-        matchScore += scoreBreakdown.rating
-      }
-
-      // 5. מיקום (5 נקודות)
-      if (candidate.city && position.location) {
-        const candidateCity = candidate.city.toLowerCase()
-        const positionLocation = position.location.toLowerCase()
-        
-        if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
-          scoreBreakdown.location = 5
-          matchScore += 5
-        } else {
-          // בדיקה אזורית
-          const tlvArea = ['תל אביב', 'רמת גן', 'גבעתיים', 'חולון', 'בת ים']
-          const haifaArea = ['חיפה', 'קריות', 'נהריה', 'עכו']
-          const jlmArea = ['ירושלים', 'בית שמש', 'מעלה אדומים']
-          
-          const inSameRegion = 
-            (tlvArea.some(c => positionLocation.includes(c)) && tlvArea.some(c => candidateCity.includes(c))) ||
-            (haifaArea.some(c => positionLocation.includes(c)) && haifaArea.some(c => candidateCity.includes(c))) ||
-            (jlmArea.some(c => positionLocation.includes(c)) && jlmArea.some(c => candidateCity.includes(c)))
-          
-          if (inSameRegion) {
-            scoreBreakdown.location = 3
-            matchScore += 3
-          }
-        }
-      }
-
-      // 6. תואר התפקיד (10 נקודות)
+      // ═══════════════════════════════════════
+      // 🤖 AI/פרופיל - 25 נקודות (25%)
+      // ═══════════════════════════════════════
+      // תואר תפקיד - עד 10 נקודות
       if (candidate.currentTitle && position.title) {
         const candidateTitle = candidate.currentTitle.toLowerCase()
-        const positionTitle = position.title.toLowerCase()
+        const posTitle = position.title.toLowerCase()
+        const candidateTitleWords = candidateTitle.split(' ').filter((w: string) => w.length > 2)
+        const positionTitleWords = posTitle.split(' ').filter((w: string) => w.length > 2)
         
-        const candidateTitleWords = candidateTitle.split(' ')
-        const positionTitleWords = positionTitle.split(' ')
-        
-        const matchingWords = candidateTitleWords.filter(word => 
-          positionTitleWords.some(pWord => pWord.includes(word) || word.includes(pWord))
+        const matchingWords = candidateTitleWords.filter((word: string) => 
+          positionTitleWords.some((pWord: string) => pWord.includes(word) || word.includes(pWord))
         ).length
         
         if (matchingWords > 0) {
-          scoreBreakdown.title = Math.min(10, matchingWords * 3)
-          matchScore += scoreBreakdown.title
+          scoreBreakdown.title = Math.min(10, matchingWords * 4)
         }
       }
 
-      // 7. עדכניות משרה (5 נקודות)
-      const daysSinceCreated = Math.floor(
-        (Date.now() - new Date(position.createdAt).getTime()) / (1000 * 60 * 60 * 24)
-      )
-      
-      if (daysSinceCreated <= 7) {
-        scoreBreakdown.freshness = 5
-        matchScore += 5
-      } else if (daysSinceCreated <= 14) {
-        scoreBreakdown.freshness = 3
-        matchScore += 3
-      } else if (daysSinceCreated <= 21) {
-        scoreBreakdown.freshness = 1
-        matchScore += 1
+      // ניסיון - עד 8 נקודות
+      if (candidate.yearsOfExperience) {
+        if (candidate.yearsOfExperience >= 5) scoreBreakdown.experience = 8
+        else if (candidate.yearsOfExperience >= 3) scoreBreakdown.experience = 6
+        else if (candidate.yearsOfExperience >= 1) scoreBreakdown.experience = 3
+        else scoreBreakdown.experience = 1
       }
 
-      // 8. פרטי התקשרות (2 נקודות)
-      if (candidate.email && candidate.phone) {
-        scoreBreakdown.contact = 2
-        matchScore += 2
-      } else if (candidate.email || candidate.phone) {
-        scoreBreakdown.contact = 1
-        matchScore += 1
+      // דירוג - עד 5 נקודות
+      if (candidate.rating) {
+        scoreBreakdown.rating = Math.round((candidate.rating / 5) * 5)
       }
 
-      // 9. קורות חיים (2 נקודות)
-      if (candidate.resumeUrl) {
-        scoreBreakdown.resume = 2
-        matchScore += 2
-      }
+      // קו"ח + לינקדאין - עד 2 נקודות
+      if (candidate.resumeUrl) scoreBreakdown.resume = 1
+      if (candidate.linkedinUrl) scoreBreakdown.linkedin = 1
 
-      // 10. פרופיל LinkedIn (1 נקודה)
-      if (candidate.linkedinUrl) {
-        scoreBreakdown.linkedin = 1
-        matchScore += 1
-      }
+      // ═══════════════════════════════════════
+      // 📊 סיכום סופי
+      // ═══════════════════════════════════════
+      const locationScore = scoreBreakdown.location                                    // עד 50
+      const tagsScore = scoreBreakdown.tags + scoreBreakdown.partial                   // עד 25
+      const aiScore = scoreBreakdown.title + scoreBreakdown.experience + scoreBreakdown.rating + scoreBreakdown.resume + scoreBreakdown.linkedin // עד 25
+      const matchScore = Math.min(100, locationScore + tagsScore + aiScore)
 
       // סינון חברות שהמועמד כבר עבד בהן
       const employerName = position.employer?.name?.toLowerCase() || ''
@@ -301,18 +306,32 @@ export async function GET(
 
       return {
         ...position,
-        matchScore: Math.min(100, matchScore),
+        matchScore,
         matchingTags,
         hasApplied: position.applications.length > 0,
-        scoreBreakdown,
+        locationMatch,
+        scoreBreakdown: {
+          ...scoreBreakdown,
+          locationMaxPossible: 50,
+          tagsMaxPossible: 25,
+          geminiAI: aiScore,
+          geminiMaxPossible: 25,
+        },
         blockedByPreviousEmployer,
         blockedByApplication,
         isBlocked: blockedByPreviousEmployer || blockedByApplication,
       }
     })
 
-    // מיון לפי ציון התאמה - הגבוה ביותר ראשון
-    positionsWithScore.sort((a, b) => b.matchScore - a.matchScore)
+    // מיון: מיקום קודם כל, אחר כך ציון כולל
+    positionsWithScore.sort((a, b) => {
+      // קודם לפי מיקום (התאמה מדויקת > אזורית > ללא)
+      if (b.scoreBreakdown.location !== a.scoreBreakdown.location) {
+        return b.scoreBreakdown.location - a.scoreBreakdown.location
+      }
+      // אחר כך ציון כולל
+      return b.matchScore - a.matchScore
+    })
 
     // החזרת 20 המשרות הטובות ביותר מתוך כל המשרות שנסרקו
     const top20 = positionsWithScore.slice(0, 20)

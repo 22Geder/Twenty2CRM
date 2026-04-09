@@ -803,14 +803,14 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                           <span className="font-medium flex items-center gap-1">
                             📍 מיקום
                           </span>
-                          <span className={`font-bold ${position.locationMatch ? 'text-green-600' : 'text-gray-500'}`}>
-                            {position.locationMatch ? '50' : '0'} / 50
+                          <span className={`font-bold ${(position.scoreBreakdown?.location || 0) >= 35 ? 'text-green-600' : (position.scoreBreakdown?.location || 0) >= 20 ? 'text-yellow-600' : 'text-gray-500'}`}>
+                            {position.scoreBreakdown?.location || 0} / 50
                           </span>
                         </div>
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full transition-all ${position.locationMatch ? 'bg-green-500' : 'bg-gray-400'}`}
-                            style={{ width: position.locationMatch ? '100%' : '0%' }}
+                            className={`h-full transition-all ${(position.scoreBreakdown?.location || 0) >= 35 ? 'bg-green-500' : (position.scoreBreakdown?.location || 0) >= 20 ? 'bg-yellow-500' : 'bg-gray-400'}`}
+                            style={{ width: `${((position.scoreBreakdown?.location || 0) / 50) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -822,22 +822,22 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                             🏷️ תגיות תואמות
                           </span>
                           <span className="font-bold text-blue-600">
-                            {position.matchingTags?.length || 0} תגיות ({Math.min((position.matchingTags?.length || 0) * 5, 25)} / 25)
+                            {(position.scoreBreakdown?.tags || 0) + (position.scoreBreakdown?.partial || 0)} / 25
                           </span>
                         </div>
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-blue-500 transition-all"
-                            style={{ width: `${Math.min(((position.matchingTags?.length || 0) * 5) / 25 * 100, 100)}%` }}
+                            style={{ width: `${(((position.scoreBreakdown?.tags || 0) + (position.scoreBreakdown?.partial || 0)) / 25) * 100}%` }}
                           />
                         </div>
                       </div>
                       
-                      {/* AI Gemini - 25 נקודות */}
+                      {/* AI/פרופיל - 25 נקודות */}
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-medium flex items-center gap-1">
-                            🤖 AI Gemini
+                            🤖 AI / פרופיל
                           </span>
                           <span className="font-bold text-purple-600">
                             {position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)} / 25

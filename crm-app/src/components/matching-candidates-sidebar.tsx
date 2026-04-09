@@ -770,13 +770,13 @@ export function MatchingCandidatesSidebar({
                             <span className="font-medium">תגיות (25%)</span>
                           </span>
                           <span className="font-bold text-lg text-blue-600">
-                            {candidate.scoreBreakdown.tags || 0}/25
+                            {(candidate.scoreBreakdown.tags || 0) + (candidate.scoreBreakdown.partial || 0)}/25
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div 
                             className="bg-blue-500 h-2 rounded-full" 
-                            style={{ width: `${((candidate.scoreBreakdown.tags || 0) / 25) * 100}%` }}
+                            style={{ width: `${(((candidate.scoreBreakdown.tags || 0) + (candidate.scoreBreakdown.partial || 0)) / 25) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -789,13 +789,13 @@ export function MatchingCandidatesSidebar({
                             <span className="font-medium">AI Gemini (25%)</span>
                           </span>
                           <span className="font-bold text-lg text-purple-600">
-                            {candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || 0}/25
+                            {candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || (candidate.scoreBreakdown as any).geminiAI || 0}/25
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div 
                             className="bg-purple-500 h-2 rounded-full" 
-                            style={{ width: `${((candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || 0) / 25) * 100}%` }}
+                            style={{ width: `${((candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || (candidate.scoreBreakdown as any).geminiAI || 0) / 25) * 100}%` }}
                           />
                         </div>
                       </div>

@@ -29,9 +29,9 @@ export default async function PositionsPage() {
   const draftPositions = positions.filter(p => !p.active)
 
   return (
-    <div className="p-8 space-y-6 bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#f1f8e9]/30 to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-700">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -102,8 +102,8 @@ export default async function PositionsPage() {
       </div>
 
       {/* Premium Search */}
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7CB342] to-[#8BC34A]"></div>
+      <Card className="border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#7CB342] to-[#8BC34A]"></div>
         <CardContent className="pt-6">
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -135,9 +135,9 @@ export default async function PositionsPage() {
         ) : (
           <div className="grid gap-4">
             {activePositions.map((position) => (
-              <Card key={position.id} className="group hover:shadow-2xl hover:shadow-[#7CB342]/20 transition-all duration-500 hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#7CB342]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7CB342] to-[#8BC34A] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <Card key={position.id} className="group hover:shadow-2xl hover:shadow-[#7CB342]/15 transition-all duration-500 hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#7CB342]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#7CB342] to-[#8BC34A] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <CardContent className="pt-6 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

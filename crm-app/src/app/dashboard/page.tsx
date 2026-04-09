@@ -303,9 +303,9 @@ export default async function CiviDashboardPage() {
   const sourceColors = ['#00A8A8', '#7CB342', '#FF8C00', '#9C27B0', '#2196F3']
 
   return (
-    <div className="min-h-screen bg-slate-100" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f0f7f7] to-slate-100" dir="rtl">
       {/* Top Header Bar - Hidden on mobile (already have TopNavbar) */}
-      <div className="hidden lg:block bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white shadow-lg">
+      <div className="hidden lg:block bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] text-white shadow-xl">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -356,9 +356,9 @@ export default async function CiviDashboardPage() {
       </div>
 
       {/* Page Title */}
-      <div className="bg-white border-b">
+      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3 md:py-4 flex items-center justify-between">
-          <h1 className="text-lg md:text-xl font-semibold text-slate-700">דף הבית - {session.user?.name || 'משתמש'}</h1>
+          <h1 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">דף הבית - {session.user?.name || 'משתמש'}</h1>
           <DashboardRefresher />
         </div>
       </div>
@@ -415,10 +415,10 @@ export default async function CiviDashboardPage() {
         {/* Candidate Status Overview - 3 Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {/* In Process - בתהליך */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
-              <span className="font-semibold">בתהליך</span>
-              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-sm font-bold">{inProcessCandidates.length}</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white px-5 py-3.5 flex items-center justify-between">
+              <span className="font-bold text-[15px]">בתהליך</span>
+              <span className="bg-white/25 px-3 py-0.5 rounded-full text-sm font-bold backdrop-blur-sm">{inProcessCandidates.length}</span>
             </div>
             <div className="max-h-[240px] overflow-y-auto">
               {inProcessCandidates.length > 0 ? (
@@ -444,10 +444,10 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Rejected - לא מתאים */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 flex items-center justify-between">
-              <span className="font-semibold">לא מתאים</span>
-              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-sm font-bold">{rejectedCandidates.length}</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-r from-rose-500 via-red-500 to-red-600 text-white px-5 py-3.5 flex items-center justify-between">
+              <span className="font-bold text-[15px]">לא מתאים</span>
+              <span className="bg-white/25 px-3 py-0.5 rounded-full text-sm font-bold backdrop-blur-sm">{rejectedCandidates.length}</span>
             </div>
             <div className="max-h-[240px] overflow-y-auto">
               {rejectedCandidates.length > 0 ? (
@@ -470,10 +470,10 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Hired - התקבלו */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 flex items-center justify-between">
-              <span className="font-semibold">התקבלו</span>
-              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-sm font-bold">{hiredCandidates.length}</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white px-5 py-3.5 flex items-center justify-between">
+              <span className="font-bold text-[15px]">התקבלו</span>
+              <span className="bg-white/25 px-3 py-0.5 rounded-full text-sm font-bold backdrop-blur-sm">{hiredCandidates.length}</span>
             </div>
             <div className="max-h-[240px] overflow-y-auto">
               {hiredCandidates.length > 0 ? (
@@ -499,10 +499,10 @@ export default async function CiviDashboardPage() {
         {/* Top Stats Row - 5 Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {/* Card 1 - Started Work This Month */}
-          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#00A8A8] transition-all cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2 py-1">
-              <div className="w-11 h-11 bg-teal-100 rounded-xl flex items-center justify-center shadow-sm">
+          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-teal-200 transition-all duration-300 cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2.5 py-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-teal-200/50">
                 <UserCheck className="h-6 w-6 text-[#00A8A8]" />
               </div>
               <div className="text-4xl font-bold text-[#00A8A8]">{stats.startedWorkThisMonth}</div>
@@ -511,10 +511,10 @@ export default async function CiviDashboardPage() {
           </Link>
 
           {/* Card 2 - Upcoming Interviews */}
-          <Link href="/dashboard/interviews" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#FF8C00] transition-all cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2 py-1">
-              <div className="w-11 h-11 bg-orange-100 rounded-xl flex items-center justify-center shadow-sm">
+          <Link href="/dashboard/interviews" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-orange-200 transition-all duration-300 cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2.5 py-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-orange-200/50">
                 <Bell className="h-6 w-6 text-[#FF8C00]" />
               </div>
               <div className="text-4xl font-bold text-[#FF8C00]">{stats.upcomingInterviews}</div>
@@ -523,10 +523,10 @@ export default async function CiviDashboardPage() {
           </Link>
 
           {/* Card 3 - Hired This Month */}
-          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#7CB342] transition-all cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2 py-1">
-              <div className="w-11 h-11 bg-green-100 rounded-xl flex items-center justify-center shadow-sm">
+          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-green-200 transition-all duration-300 cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2.5 py-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-green-200/50">
                 <CheckCircle className="h-6 w-6 text-[#7CB342]" />
               </div>
               <div className="text-4xl font-bold text-[#7CB342]">{stats.hiredThisMonth}</div>
@@ -535,10 +535,10 @@ export default async function CiviDashboardPage() {
           </Link>
 
           {/* Card 4 - Referrals This Month */}
-          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#9C27B0] transition-all cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2 py-1">
-              <div className="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center shadow-sm">
+          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-purple-200 transition-all duration-300 cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2.5 py-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-purple-200/50">
                 <Send className="h-6 w-6 text-[#9C27B0]" />
               </div>
               <div className="text-4xl font-bold text-[#9C27B0]">{stats.applicationsThisMonth}</div>
@@ -547,10 +547,10 @@ export default async function CiviDashboardPage() {
           </Link>
 
           {/* Card 5 - Candidates in Process */}
-          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative hover:shadow-lg hover:border-[#2196F3] transition-all cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2 py-1">
-              <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center shadow-sm">
+          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-blue-200 transition-all duration-300 cursor-pointer group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            <div className="relative flex flex-col items-center gap-2.5 py-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-blue-200/50">
                 <Users className="h-6 w-6 text-[#2196F3]" />
               </div>
               <div className="text-4xl font-bold text-[#2196F3]">{stats.inProcess}</div>
@@ -563,11 +563,13 @@ export default async function CiviDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
           {/* Left - Candidates by Stage */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-400" />
-                <span className="font-semibold text-slate-700">מועמדים בתהליך לפי שלב</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center">
+                  <Info className="h-4 w-4 text-[#00A8A8]" />
+                </div>
+                <span className="font-bold text-slate-800">מועמדים בתהליך לפי שלב</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{stats.inProcess}</span>
             </div>
@@ -652,11 +654,13 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Middle - Candidates This Month Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-400" />
-                <span className="font-semibold text-slate-700">מועמדים שנכנסו בחודש האחרון</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
+                  <Info className="h-4 w-4 text-[#FF8C00]" />
+                </div>
+                <span className="font-bold text-slate-800">מועמדים שנכנסו בחודש האחרון</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{stats.candidatesThisMonth}</span>
             </div>
@@ -692,11 +696,13 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Right - Recent Open Positions */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-400" />
-                <span className="font-semibold text-slate-700">משרות פתוחות אחרונות</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center">
+                  <Info className="h-4 w-4 text-[#7CB342]" />
+                </div>
+                <span className="font-bold text-slate-800">משרות פתוחות אחרונות</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{stats.activePositions}</span>
             </div>
@@ -740,11 +746,13 @@ export default async function CiviDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
           {/* Left - Open Standards/Employers */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-400" />
-                <span className="font-semibold text-slate-700">לקוחות פעילים</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
+                  <Info className="h-4 w-4 text-indigo-500" />
+                </div>
+                <span className="font-bold text-slate-800">לקוחות פעילים</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{stats.totalEmployers}</span>
             </div>
@@ -769,11 +777,13 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Middle - Tasks by Due Date */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-400" />
-                <span className="font-semibold text-slate-700">פגישות וראיונות קרובים</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center">
+                  <Info className="h-4 w-4 text-amber-500" />
+                </div>
+                <span className="font-bold text-slate-800">פגישות וראיונות קרובים</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{upcomingTasks.length}</span>
             </div>
@@ -816,11 +826,13 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Right - Leading Recruitment Sources */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-400" />
-                <span className="font-semibold text-slate-700">מקורות גיוס מובילים בחודש האחרון</span>
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-100 to-violet-50 flex items-center justify-center">
+                  <Info className="h-4 w-4 text-violet-500" />
+                </div>
+                <span className="font-bold text-slate-800">מקורות גיוס מובילים בחודש האחרון</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{sourcePercentages.length}</span>
             </div>
@@ -856,8 +868,8 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* 🔍 In-Process Tracking Panel - מעקב מועמדים בתהליך */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3 flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
               <span className="font-bold text-lg">מעקב מועמדים בתהליך</span>
@@ -951,8 +963,8 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* Quick Stats Footer */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-4 md:p-6 text-white">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 text-center">
+        <div className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-5 md:p-8 text-white shadow-xl border border-white/5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 text-center">
             <div>
               <div className="text-3xl font-bold text-[#00D4D4]">{stats.totalCandidates}</div>
               <div className="text-sm text-slate-300">סה"כ מועמדים</div>

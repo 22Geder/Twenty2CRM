@@ -81,8 +81,8 @@ export default function SettingsPage() {
     onChange: (val: boolean) => void
     label: string 
   }) => (
-    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-      <span className="font-medium">{label}</span>
+    <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50/80 transition-all duration-200">
+      <span className="font-medium text-slate-700">{label}</span>
       <label className="relative inline-flex items-center cursor-pointer">
         <input
           type="checkbox"
@@ -90,7 +90,7 @@ export default function SettingsPage() {
           onChange={(e) => onChange(e.target.checked)}
           className="sr-only peer"
         />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/30 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-teal-500 peer-checked:to-[#00A8A8]"></div>
       </label>
     </div>
   )
@@ -155,37 +155,44 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            הגדרות מערכת
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            ניהול הגדרות המערכת - כל האפשרויות מופעלות ✅
-          </p>
+    <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+      {/* Premium Header */}
+      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5 mb-8">
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="settingsGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(96,165,250,0.3)" strokeWidth="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#settingsGrid)"/></svg>
         </div>
-        <Button 
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600"
-        >
-          {saving ? (
-            <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-          ) : saved ? (
-            <Check className="ml-2 h-4 w-4" />
-          ) : (
-            <Save className="ml-2 h-4 w-4" />
-          )}
-          {saving ? 'שומר...' : saved ? 'נשמר!' : 'שמור הגדרות'}
-        </Button>
+        <div className="absolute top-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-36 h-36 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">
+              הגדרות מערכת
+            </h1>
+            <p className="text-slate-400 mt-1">
+              ניהול הגדרות המערכת - כל האפשרויות מופעלות ✅
+            </p>
+          </div>
+          <Button 
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 rounded-xl"
+          >
+            {saving ? (
+              <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+            ) : saved ? (
+              <Check className="ml-2 h-4 w-4" />
+            ) : (
+              <Save className="ml-2 h-4 w-4" />
+            )}
+            {saving ? 'שומר...' : saved ? 'נשמר!' : 'שמור הגדרות'}
+          </Button>
+        </div>
       </div>
 
       {/* סטטוס כל התכונות */}
-      <Card className="p-6 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+      <Card className="p-6 mb-6 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-md border-green-200/60 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/20">
             <Check className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -202,7 +209,7 @@ export default function SettingsPage() {
             return (
               <div
                 key={section.title}
-                className="flex items-center gap-2 p-3 bg-white rounded-lg border border-green-200"
+                className="flex items-center gap-2 p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-green-200/60 hover:shadow-sm transition-all duration-200"
               >
                 <Icon className="h-5 w-5 text-green-600" />
                 <div className="flex-1">
@@ -233,12 +240,13 @@ export default function SettingsPage() {
           return (
             <Card
               key={section.title}
-              className="p-6 hover:shadow-lg transition-all cursor-pointer group"
+              className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md relative overflow-hidden"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="absolute top-0 right-0 left-0 h-[3px] bg-gradient-to-r from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ring-1 ring-blue-200/50">
                 <Icon className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold mb-2">{section.title}</h3>
+              <h3 className="font-semibold mb-2 text-slate-800">{section.title}</h3>
               <p className="text-sm text-muted-foreground">
                 {section.description}
               </p>
@@ -248,9 +256,9 @@ export default function SettingsPage() {
       </div>
 
       {/* הגדרות סינכרון מיילים */}
-      <Card className="p-6 mb-6">
+      <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20">
             <Mail className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -278,9 +286,9 @@ export default function SettingsPage() {
             label="התאם אוטומטית למשרות מתאימות"
           />
           
-          <div className="p-4 border rounded-lg">
+          <div className="p-4 border border-slate-100 rounded-xl">
             <div className="flex items-center justify-between">
-              <span className="font-medium">תדירות סנכרון</span>
+              <span className="font-medium text-slate-700">תדירות סנכרון</span>
               <div className="flex items-center gap-2">
                 <Input 
                   type="number"
@@ -298,9 +306,9 @@ export default function SettingsPage() {
       </Card>
 
       {/* הגדרות התראות */}
-      <Card className="p-6 mb-6">
+      <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20">
             <Bell className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -346,9 +354,9 @@ export default function SettingsPage() {
       </Card>
 
       {/* הגדרות AI */}
-      <Card className="p-6 mb-6">
+      <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
             <Brain className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -384,9 +392,9 @@ export default function SettingsPage() {
       </Card>
 
       {/* תבניות אימייל */}
-      <Card className="p-6">
+      <Card className="p-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/20">
             <Mail className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -408,7 +416,7 @@ export default function SettingsPage() {
           ].map((template, i) => (
             <div
               key={i}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50/80 transition-all duration-200"
             >
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-muted-foreground" />
@@ -419,7 +427,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="rounded-xl border-slate-200 hover:border-blue-300 hover:bg-blue-50/50">
                 ערוך
               </Button>
             </div>

@@ -416,8 +416,9 @@ export const NEARBY_GROUPS: string[][] = [
 ]
 
 // ========== כל היישובים ברשימה אחת (לחיפוש מהיר) ==========
-export const ALL_LOCALITIES: string[] = [
-  // צפון
+// 📍 מאגר מאוחד - משלב את המאגר הישן עם המאגר המלא (ערים + קיבוצים + מושבים + ערבים + דרוזים + בדואים + שכונות)
+export const ALL_LOCALITIES: string[] = Array.from(new Set([
+  // מאגר ישן (תאימות לאחור)
   ...NORTH_ISRAEL.galilUpper,
   ...NORTH_ISRAEL.galilLower,
   ...NORTH_ISRAEL.galilWest,
@@ -425,26 +426,24 @@ export const ALL_LOCALITIES: string[] = [
   ...NORTH_ISRAEL.jezreel,
   ...NORTH_ISRAEL.beitShean,
   ...NORTH_ISRAEL.haifa,
-  // מרכז
   ...CENTER_ISRAEL.gushDan,
   ...CENTER_ISRAEL.sharon,
   ...CENTER_ISRAEL.petahTikva,
   ...CENTER_ISRAEL.modiin,
   ...CENTER_ISRAEL.lodRamla,
   ...CENTER_ISRAEL.shfela,
-  // דרום
   ...SOUTH_ISRAEL.ashdodAshkelon,
   ...SOUTH_ISRAEL.beerSheva,
   ...SOUTH_ISRAEL.negevEast,
   ...SOUTH_ISRAEL.gazaEnvelope,
   ...SOUTH_ISRAEL.eilat,
-  // ירושלים
   ...JERUSALEM_AREA.jerusalem,
   ...JERUSALEM_AREA.periphery,
-  // יו"ש
   ...JUDEA_SAMARIA.judea,
-  ...JUDEA_SAMARIA.samaria
-].filter((v, i, a) => a.indexOf(v) === i) // הסרת כפילויות
+  ...JUDEA_SAMARIA.samaria,
+  // 🌟 מאגר מלא: ערים, קיבוצים, מושבים, יישובים ערביים, דרוזים, בדואים, שכונות
+  ...ALL_ISRAEL_LOCALITIES
+]))
 
 // ========== פונקציות עזר ==========
 
@@ -454,11 +453,16 @@ export const ALL_LOCALITIES: string[] = [
 export function normalizeLocality(name: string): string {
   if (!name) return ''
   
-  const normalized = name.trim().toLowerCase()
+  let normalized = name.trim().toLowerCase()
   
-  // בדיקת קיצורים
-  for (const [alias, fullName] of Object.entries(CITY_ALIASES)) {
-    if (normalized === alias.toLowerCase() || normalized.includes(alias.toLowerCase())) {
+  // הסרת גרשיים וגרש
+  normalized = normalized.replace(/[""״׳']/g, '')
+  
+  // בדיקת קיצורים - מאגר מורחב + מאגר ישן
+  const allAliases = { ...CITY_ALIASES, ...EXTENDED_ALIASES }
+  for (const [alias, fullName] of Object.entries(allAliases)) {
+    const aliasNorm = alias.toLowerCase().replace(/[""״׳'-]/g, '').replace(/\s+/g, ' ')
+    if (normalized === aliasNorm || normalized.includes(aliasNorm)) {
       return fullName.toLowerCase()
     }
   }
@@ -510,8 +514,9 @@ export function areLocationsNearby(loc1: string, loc2: string): boolean {
   if (norm1 === norm2) return true
   if (norm1.includes(norm2) || norm2.includes(norm1)) return true
   
-  // בדיקה בקבוצות הקרובות
-  for (const group of NEARBY_GROUPS) {
+  // בדיקה בקבוצות הקרובות - מאגר ישן + מאגר מלא
+  const allGroups = [...NEARBY_GROUPS, ...PROXIMITY_GROUPS]
+  for (const group of allGroups) {
     const groupLower = group.map(c => c.toLowerCase())
     const match1 = groupLower.some(c => norm1.includes(c) || c.includes(norm1))
     const match2 = groupLower.some(c => norm2.includes(c) || c.includes(norm2))
@@ -530,7 +535,8 @@ export function getNearbyLocalities(locality: string): string[] {
   const normalized = normalizeLocality(locality)
   const nearby: string[] = [locality]
   
-  for (const group of NEARBY_GROUPS) {
+  const allGroups = [...NEARBY_GROUPS, ...PROXIMITY_GROUPS]
+  for (const group of allGroups) {
     const groupLower = group.map(c => c.toLowerCase())
     if (groupLower.some(c => normalized.includes(c) || c.includes(normalized))) {
       nearby.push(...group)

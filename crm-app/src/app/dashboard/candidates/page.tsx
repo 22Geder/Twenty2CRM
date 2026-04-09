@@ -397,9 +397,9 @@ export default function CandidatesPageModern() {
   }
 
   return (
-    <div className="p-8 space-y-6 bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 space-y-5 bg-gradient-to-br from-slate-50 via-[#f0f7f7] to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-700">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -465,7 +465,7 @@ export default function CandidatesPageModern() {
       </div>
 
       {/* Tab switcher: רשימה / חיפוש AI */}
-      <div className="flex gap-2 bg-white rounded-xl p-2 shadow-lg border border-slate-200">
+      <div className="flex gap-2 bg-white rounded-2xl p-2 shadow-md border border-slate-100">
         <Button
           variant={activeView === 'list' ? 'default' : 'ghost'}
           size="sm"
@@ -494,7 +494,7 @@ export default function CandidatesPageModern() {
       {activeView === 'list' && <>
 
       {/* Premium Search */}
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
+      <Card className="border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00A8A8] to-[#00D4D4]"></div>
         <CardContent className="pt-6">
           <div className="relative">
@@ -511,7 +511,7 @@ export default function CandidatesPageModern() {
       </Card>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white rounded-xl p-2 shadow-lg border border-slate-200">
+      <div className="flex items-center gap-2 bg-white rounded-2xl p-2.5 shadow-md border border-slate-100 flex-wrap">
         <Filter className="h-5 w-5 text-slate-400 mr-2" />
         <span className="text-sm text-slate-500 ml-2">סינון לפי סטטוס:</span>
         <Button

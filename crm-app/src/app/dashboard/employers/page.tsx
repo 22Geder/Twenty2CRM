@@ -94,9 +94,9 @@ export default function EmployersModernPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto bg-gradient-to-br from-slate-50 via-[#fff3e0]/20 to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-700 mb-8">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5 mb-8">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ========================================================================
-   Twenty2Jobs - Premium Design System
+   Twenty2Jobs - Premium Design System v2.0
    המרכז לעובדים ולמעסיקים בישראל
    ======================================================================== */
 
@@ -12,6 +12,7 @@
   --t22-teal-dark: #008080;
   --t22-teal-50: #E0F7F7;
   --t22-teal-100: #B3EBEB;
+  --t22-teal-200: #80DFDF;
   
   --t22-orange: #FF8C00;
   --t22-orange-light: #FFB347;
@@ -20,19 +21,24 @@
   
   --t22-green: #7CB342;
   --t22-green-light: #9CCC65;
+  --t22-green-50: #F1F8E9;
+  
+  --t22-purple: #8B5CF6;
+  --t22-purple-light: #A78BFA;
+  --t22-purple-50: #EDE9FE;
   
   /* ===== Neutral Colors ===== */
   --t22-dark: #1A1A2E;
-  --t22-gray-900: #1F2937;
-  --t22-gray-800: #374151;
-  --t22-gray-700: #4B5563;
-  --t22-gray-600: #6B7280;
-  --t22-gray-500: #9CA3AF;
-  --t22-gray-400: #D1D5DB;
-  --t22-gray-300: #E5E7EB;
-  --t22-gray-200: #F3F4F6;
-  --t22-gray-100: #F9FAFB;
-  --t22-gray-50: #FAFBFC;
+  --t22-gray-900: #111827;
+  --t22-gray-800: #1F2937;
+  --t22-gray-700: #374151;
+  --t22-gray-600: #4B5563;
+  --t22-gray-500: #6B7280;
+  --t22-gray-400: #9CA3AF;
+  --t22-gray-300: #D1D5DB;
+  --t22-gray-200: #E5E7EB;
+  --t22-gray-100: #F3F4F6;
+  --t22-gray-50: #F9FAFB;
   
   /* ===== Semantic Colors ===== */
   --t22-success: #10B981;
@@ -43,6 +49,16 @@
   --t22-error-light: #FEE2E2;
   --t22-info: #3B82F6;
   --t22-info-light: #DBEAFE;
+
+  /* ===== Premium Shadow System ===== */
+  --t22-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --t22-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --t22-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --t22-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --t22-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --t22-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --t22-shadow-teal: 0 4px 14px 0 rgba(0, 168, 168, 0.25);
+  --t22-shadow-orange: 0 4px 14px 0 rgba(255, 140, 0, 0.25);
 
   /* Legacy variables for compatibility */
   --background: 0 0% 100%;
@@ -84,9 +100,10 @@ html {
 
 body {
   font-family: var(--font-heebo), 'Heebo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(135deg, var(--t22-gray-50) 0%, var(--t22-gray-100) 100%);
+  background: linear-gradient(160deg, #f8fafc 0%, #f0f4f8 50%, #e8eef5 100%);
   color: var(--t22-gray-900);
   line-height: 1.6;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
@@ -103,23 +120,24 @@ body {
    ======================================================================== */
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--t22-gray-100);
-  border-radius: 10px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, var(--t22-teal) 0%, var(--t22-teal-dark) 100%);
-  border-radius: 10px;
-  border: 2px solid var(--t22-gray-100);
+  border-radius: 100px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, var(--t22-teal-light) 0%, var(--t22-teal) 100%);
+  background-clip: padding-box;
 }
 
 /* Selection */
@@ -237,31 +255,31 @@ body {
 
 /* Glass Morphism */
 .t22-glass {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.85);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .t22-glass-dark {
-  background: rgba(26, 26, 46, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(15, 23, 42, 0.95);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Premium Cards */
 .t22-card {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--t22-gray-200);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .t22-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 8px 16px -8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px);
 }
 
 .t22-card-interactive {
@@ -312,6 +330,308 @@ body {
 
 .t22-btn:hover::before {
   opacity: 1;
+}
+
+/* ========================================================================
+   Modern Card System
+   ======================================================================== */
+
+.t22-card-elevated {
+  background: white;
+  border-radius: 20px;
+  box-shadow: var(--t22-shadow-md);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.t22-card-elevated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--t22-teal), var(--t22-teal-light), var(--t22-orange));
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.t22-card-elevated:hover {
+  box-shadow: var(--t22-shadow-xl);
+  transform: translateY(-2px);
+  border-color: rgba(0, 168, 168, 0.2);
+}
+
+.t22-card-elevated:hover::before {
+  opacity: 1;
+}
+
+/* Modern stat card with number counter feel */
+.t22-stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: var(--t22-shadow-sm);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.t22-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--t22-teal-50) 0%, transparent 70%);
+  transform: translate(30%, -30%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.t22-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--t22-shadow-lg);
+}
+
+.t22-stat-card:hover::after {
+  opacity: 1;
+}
+
+/* ========================================================================
+   Premium Table Styles
+   ======================================================================== */
+
+.t22-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.t22-table thead tr {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.t22-table thead th {
+  padding: 0.875rem 1rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--t22-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--t22-gray-200);
+}
+
+.t22-table tbody tr {
+  transition: all 0.15s ease;
+}
+
+.t22-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(0, 168, 168, 0.03) 0%, rgba(0, 212, 212, 0.02) 100%);
+}
+
+.t22-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+/* ========================================================================
+   Modern Input Styles
+   ======================================================================== */
+
+.t22-input {
+  height: 2.75rem;
+  padding: 0 1rem;
+  border: 1.5px solid var(--t22-gray-200);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.9375rem;
+  color: var(--t22-gray-900);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.t22-input:focus {
+  border-color: var(--t22-teal);
+  box-shadow: 0 0 0 3px rgba(0, 168, 168, 0.1);
+  background: white;
+  outline: none;
+}
+
+.t22-input::placeholder {
+  color: var(--t22-gray-400);
+}
+
+/* ========================================================================
+   Premium Badge System
+   ======================================================================== */
+
+.t22-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+.t22-badge-teal {
+  background: linear-gradient(135deg, rgba(0, 168, 168, 0.12) 0%, rgba(0, 212, 212, 0.08) 100%);
+  color: var(--t22-teal-dark);
+  border: 1px solid rgba(0, 168, 168, 0.2);
+}
+
+.t22-badge-orange {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.12) 0%, rgba(230, 81, 0, 0.08) 100%);
+  color: var(--t22-orange-dark);
+  border: 1px solid rgba(255, 140, 0, 0.2);
+}
+
+.t22-badge-green {
+  background: linear-gradient(135deg, rgba(124, 179, 66, 0.12) 0%, rgba(156, 204, 101, 0.08) 100%);
+  color: #558B2F;
+  border: 1px solid rgba(124, 179, 66, 0.2);
+}
+
+.t22-badge-purple {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(167, 139, 250, 0.08) 100%);
+  color: #6D28D9;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* ========================================================================
+   Premium Progress Bars
+   ======================================================================== */
+
+.t22-progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--t22-gray-100) 0%, var(--t22-gray-200) 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+.t22-progress-bar {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.t22-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: t22-shimmer 2s ease-in-out infinite;
+}
+
+/* ========================================================================
+   Section Headers
+   ======================================================================== */
+
+.t22-section-header {
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.t22-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--t22-teal), var(--t22-teal-light));
+  border-radius: 100px;
+}
+
+/* ========================================================================
+   Hover Link Effect
+   ======================================================================== */
+
+.t22-link {
+  color: var(--t22-teal);
+  text-decoration: none;
+  position: relative;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.t22-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: 0;
+  width: 0;
+  height: 2px;
+  background: var(--t22-teal);
+  border-radius: 100px;
+  transition: width 0.3s ease;
+}
+
+.t22-link:hover::after {
+  width: 100%;
+}
+
+.t22-link:hover {
+  color: var(--t22-teal-dark);
+}
+
+/* ========================================================================
+   Modern Page Background Patterns
+   ======================================================================== */
+
+.t22-page-bg {
+  background: linear-gradient(160deg, #f8fafc 0%, #f0f4f8 40%, #e8eef5 100%);
+  position: relative;
+}
+
+.t22-page-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 80%, rgba(0, 168, 168, 0.03) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255, 140, 0, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========================================================================
+   Skeleton Loading
+   ======================================================================== */
+
+.t22-skeleton {
+  background: linear-gradient(90deg, var(--t22-gray-100) 25%, var(--t22-gray-200) 50%, var(--t22-gray-100) 75%);
+  background-size: 200% 100%;
+  animation: t22-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ========================================================================
+   Responsive Helper
+   ======================================================================== */
+
+@media (max-width: 768px) {
+  .t22-card-elevated,
+  .t22-stat-card {
+    border-radius: 16px;
+  }
 }
 
 .t22-btn-primary {

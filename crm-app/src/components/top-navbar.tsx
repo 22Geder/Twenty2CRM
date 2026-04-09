@@ -68,8 +68,8 @@ export function TopNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="border-b border-slate-200/50 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 sticky top-0 z-50 shadow-xl">
-      <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4">
+    <div className="border-b border-white/5 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] sticky top-0 z-50 shadow-2xl shadow-black/20">
+      <div className="flex items-center justify-between px-3 md:px-6 py-2.5 md:py-3">
         {/* Mobile Menu Button */}
         <Button
           variant="ghost"
@@ -83,7 +83,7 @@ export function TopNavbar() {
         {/* Premium Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 md:gap-4 group">
           <div className="relative">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#00D4D4] via-[#00A8A8] to-[#008080] rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30 group-hover:shadow-teal-500/50 transition-all duration-300 group-hover:scale-105">
+            <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-[#00D4D4] via-[#00A8A8] to-[#007070] rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/40 group-hover:shadow-teal-400/60 transition-all duration-500 group-hover:scale-110 ring-2 ring-teal-400/20">
               <span className="text-white font-black text-base md:text-lg">22</span>
             </div>
             <div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-full border-2 border-slate-900 animate-pulse"></div>
@@ -108,10 +108,10 @@ export function TopNavbar() {
               <Link key={item.href} href={item.href}>
                 <Button
                   variant="ghost"
-                  className={`relative transition-all duration-300 ${
+                  className={`relative transition-all duration-300 text-[13px] ${
                     isActive 
-                      ? "bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] text-white shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50" 
-                      : "text-slate-300 hover:text-white hover:bg-slate-800"
+                      ? "bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] text-white shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 ring-1 ring-teal-400/30" 
+                      : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                   size="sm"
                 >

@@ -397,15 +397,15 @@ export default function CandidatesPageModern() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-5 bg-gradient-to-br from-slate-50 via-[#f0f7f7] to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 space-y-5 bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="candGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#00A8A8" strokeWidth="0.5"/>
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#06B6D4" strokeWidth="0.5"/>
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#candGrid)" />
@@ -413,22 +413,22 @@ export default function CandidatesPageModern() {
         </div>
         
         {/* Floating Orbs */}
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#00A8A8]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#FF8C00]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#F97316]/30 to-transparent rounded-full blur-2xl"></div>
         
         <div className="relative flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#00A8A8] via-[#00D4D4] to-[#7CB342] bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#06B6D4] via-[#22D3EE] to-[#10B981] bg-clip-text text-transparent">
               📋 מועמדים
             </h1>
             <p className="text-slate-300 mt-2 text-lg">
-              <span className="font-semibold text-[#00D4D4]">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-[#FF8C00]">{candidates.length}</span> מועמדים
+              <span className="font-semibold text-[#22D3EE]">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-[#F97316]">{candidates.length}</span> מועמדים
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm flex-wrap">
-              <div className="bg-[#00A8A8]/20 text-[#00D4D4] px-4 py-2 rounded-full flex items-center gap-1 border border-[#00A8A8]/30">
+              <div className="bg-[#06B6D4]/20 text-[#22D3EE] px-4 py-2 rounded-full flex items-center gap-1 border border-[#06B6D4]/30">
                 ⚡ החדשים ראשונים
               </div>
-              <div className="bg-[#7CB342]/20 text-[#7CB342] px-4 py-2 rounded-full border border-[#7CB342]/30">
+              <div className="bg-[#10B981]/20 text-[#10B981] px-4 py-2 rounded-full border border-[#10B981]/30">
                 🔄 מתעדכן אוטומטית
               </div>
               <Link 
@@ -445,7 +445,7 @@ export default function CandidatesPageModern() {
             <Button 
               onClick={loadBestMatches}
               disabled={loadingBestMatches}
-              className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] hover:from-[#E65100] hover:to-[#D84315] shadow-lg shadow-[#FF8C00]/30 text-white border-0"
+              className="bg-gradient-to-r from-[#F97316] to-[#C2410C] hover:from-[#C2410C] hover:to-[#D84315] shadow-lg shadow-[#F97316]/30 text-white border-0"
             >
               {loadingBestMatches ? (
                 <Loader2 className="h-4 w-4 ml-2 animate-spin" />
@@ -455,7 +455,7 @@ export default function CandidatesPageModern() {
               התאמות טובות ביותר
             </Button>
             <Link href="/dashboard/candidates/new">
-              <Button className="bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] hover:from-[#008A8A] hover:to-[#00B4B4] shadow-lg shadow-[#00A8A8]/30 text-white border-0">
+              <Button className="bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] hover:from-[#0891B2] hover:to-[#0EA5E9] shadow-lg shadow-[#06B6D4]/30 text-white border-0">
                 <Plus className="h-4 w-4 ml-2" />
                 הוסף מועמד חדש
               </Button>
@@ -495,16 +495,16 @@ export default function CandidatesPageModern() {
 
       {/* Premium Search */}
       <Card className="border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00A8A8] to-[#00D4D4]"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#06B6D4] to-[#22D3EE]"></div>
         <CardContent className="pt-6">
           <div className="relative">
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#00A8A8] h-5 w-5" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#06B6D4] h-5 w-5" />
             <Input
               type="text"
               placeholder="חפש מועמד לפי שם, אימייל, כישורים, עיר, תגית..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#00A8A8] rounded-xl bg-slate-50/50"
+              className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#06B6D4] rounded-xl bg-slate-50/50"
             />
           </div>
         </CardContent>
@@ -536,7 +536,7 @@ export default function CandidatesPageModern() {
           variant={statusFilter === 'hired' ? 'default' : 'outline'}
           size="sm"
           onClick={() => handleStatusFilterChange('hired')}
-          className={statusFilter === 'hired' ? 'bg-[#7CB342] text-white hover:bg-[#689F38]' : 'hover:bg-[#7CB342]/10 text-[#7CB342] border-[#7CB342]/30'}
+          className={statusFilter === 'hired' ? 'bg-[#10B981] text-white hover:bg-[#689F38]' : 'hover:bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'}
         >
           <CheckCircle className="h-4 w-4 ml-1" />
           התקבל ({candidates.filter(c => getCandidateStatus(c) === 'hired').length})
@@ -554,7 +554,7 @@ export default function CandidatesPageModern() {
           variant={statusFilter === 'new' ? 'default' : 'outline'}
           size="sm"
           onClick={() => handleStatusFilterChange('new')}
-          className={statusFilter === 'new' ? 'bg-[#FF8C00] text-white hover:bg-[#E65100]' : 'hover:bg-[#FF8C00]/10 text-[#FF8C00] border-[#FF8C00]/30'}
+          className={statusFilter === 'new' ? 'bg-[#F97316] text-white hover:bg-[#C2410C]' : 'hover:bg-[#F97316]/10 text-[#F97316] border-[#F97316]/30'}
         >
           <Star className="h-4 w-4 ml-1" />
           חדש ({candidates.filter(c => getCandidateStatus(c) === 'new').length})
@@ -566,7 +566,7 @@ export default function CandidatesPageModern() {
 
       {/* Premium Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-0 bg-gradient-to-br from-[#00A8A8] to-[#00D4D4] text-white shadow-xl shadow-[#00A8A8]/30 overflow-hidden relative">
+        <Card className="border-0 bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] text-white shadow-xl shadow-[#06B6D4]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <CardHeader className="pb-2 relative">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -579,7 +579,7 @@ export default function CandidatesPageModern() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-gradient-to-br from-[#7CB342] to-[#8BC34A] text-white shadow-xl shadow-[#7CB342]/30 overflow-hidden relative">
+        <Card className="border-0 bg-gradient-to-br from-[#10B981] to-[#34D399] text-white shadow-xl shadow-[#10B981]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <CardHeader className="pb-2 relative">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -609,7 +609,7 @@ export default function CandidatesPageModern() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-gradient-to-br from-[#FF8C00] to-[#E65100] text-white shadow-xl shadow-[#FF8C00]/30 overflow-hidden relative">
+        <Card className="border-0 bg-gradient-to-br from-[#F97316] to-[#C2410C] text-white shadow-xl shadow-[#F97316]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <CardHeader className="pb-2 relative">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -642,7 +642,7 @@ export default function CandidatesPageModern() {
                   </label>
                 </div>
                 {selectedCandidates.size > 0 && (
-                  <span className="text-sm text-[#00A8A8] font-medium bg-[#00A8A8]/10 px-3 py-1 rounded-full">
+                  <span className="text-sm text-[#06B6D4] font-medium bg-[#06B6D4]/10 px-3 py-1 rounded-full">
                     נבחרו {selectedCandidates.size} מועמדים
                   </span>
                 )}
@@ -738,16 +738,16 @@ export default function CandidatesPageModern() {
                 />
               </div>
               <Link href={`/dashboard/candidates/${candidate.id}`}>
-              <Card className={`group hover:shadow-2xl hover:shadow-[#00A8A8]/20 transition-all duration-500 hover:-translate-y-2 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative ${selectedCandidates.has(candidate.id) ? 'ring-2 ring-[#00A8A8] bg-[#00A8A8]/5' : ''}`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#00A8A8]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <Card className={`group hover:shadow-2xl hover:shadow-[#06B6D4]/20 transition-all duration-500 hover:-translate-y-2 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative ${selectedCandidates.has(candidate.id) ? 'ring-2 ring-[#06B6D4] bg-[#06B6D4]/5' : ''}`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#06B6D4]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <CardHeader className="relative">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg mb-2 flex items-center gap-2 group-hover:text-[#00A8A8] transition-colors">
+                      <CardTitle className="text-lg mb-2 flex items-center gap-2 group-hover:text-[#06B6D4] transition-colors">
                         {candidate.name}
                         {candidate.rating && candidate.rating >= 4 && (
-                          <Award className="h-4 w-4 text-[#FF8C00]" />
+                          <Award className="h-4 w-4 text-[#F97316]" />
                         )}
                       </CardTitle>
                       {candidate.currentTitle && (
@@ -762,21 +762,21 @@ export default function CandidatesPageModern() {
                 <CardContent className="space-y-3 relative">
                   {candidate.email && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Mail className="h-4 w-4 text-[#00A8A8]" />
+                      <Mail className="h-4 w-4 text-[#06B6D4]" />
                       <span className="truncate">{candidate.email}</span>
                     </div>
                   )}
 
                   {candidate.phone && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Phone className="h-4 w-4 text-[#7CB342]" />
+                      <Phone className="h-4 w-4 text-[#10B981]" />
                       {candidate.phone}
                     </div>
                   )}
 
                   {candidate.city && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <MapPin className="h-4 w-4 text-[#FF8C00]" />
+                      <MapPin className="h-4 w-4 text-[#F97316]" />
                       {candidate.city}
                     </div>
                   )}
@@ -813,8 +813,8 @@ export default function CandidatesPageModern() {
                   <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                     <div className="flex flex-col gap-1">
                       <div className="flex gap-3 text-xs text-slate-500">
-                        <span className="bg-[#00A8A8]/10 text-[#00A8A8] px-2 py-1 rounded-full">{candidate._count?.applications || 0} מועמדויות</span>
-                        <span className="bg-[#FF8C00]/10 text-[#FF8C00] px-2 py-1 rounded-full">{candidate._count?.interviews || 0} ראיונות</span>
+                        <span className="bg-[#06B6D4]/10 text-[#06B6D4] px-2 py-1 rounded-full">{candidate._count?.applications || 0} מועמדויות</span>
+                        <span className="bg-[#F97316]/10 text-[#F97316] px-2 py-1 rounded-full">{candidate._count?.interviews || 0} ראיונות</span>
                       </div>
                       {/* 🆕 הצגת מי העלה */}
                       {candidate.uploadedBy && (
@@ -828,23 +828,23 @@ export default function CandidatesPageModern() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 relative group/btn hover:bg-[#00A8A8]/10"
+                        className="h-8 relative group/btn hover:bg-[#06B6D4]/10"
                         onClick={(e) => handleAutoMatch(candidate.id, candidate.name, e)}
                         disabled={matchingCandidate === candidate.id}
                       >
                         {matchingCandidate === candidate.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-[#00A8A8]" />
+                          <Loader2 className="h-4 w-4 animate-spin text-[#06B6D4]" />
                         ) : (
                           <>
-                            <Bot className="h-4 w-4 text-[#00A8A8] group-hover/btn:scale-125 transition-transform" />
+                            <Bot className="h-4 w-4 text-[#06B6D4] group-hover/btn:scale-125 transition-transform" />
                             <span className="absolute -top-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap">
                               התאמה חכמה AI
                             </span>
                           </>
                         )}
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 hover:bg-[#7CB342]/10">
-                        <Eye className="h-4 w-4 text-[#7CB342]" />
+                      <Button variant="ghost" size="sm" className="h-8 hover:bg-[#10B981]/10">
+                        <Eye className="h-4 w-4 text-[#10B981]" />
                       </Button>
                     </div>
                   </div>
@@ -861,7 +861,7 @@ export default function CandidatesPageModern() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] p-6 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-[#F97316] to-[#C2410C] p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                   <Target className="h-6 w-6" />
@@ -904,7 +904,7 @@ export default function CandidatesPageModern() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-xl flex items-center justify-center">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#F97316] to-[#C2410C] rounded-xl flex items-center justify-center">
                             <Briefcase className="h-6 w-6 text-white" />
                           </div>
                           <div>
@@ -925,7 +925,7 @@ export default function CandidatesPageModern() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-[#FF8C00]">{item.candidates.length}</div>
+                            <div className="text-2xl font-bold text-[#F97316]">{item.candidates.length}</div>
                             <div className="text-xs text-slate-400">מועמדים מתאימים</div>
                           </div>
                           {expandedPositions.has(item.position.id) ? (
@@ -970,7 +970,7 @@ export default function CandidatesPageModern() {
                                 <div>
                                   <Link 
                                     href={`/dashboard/candidates/${candidate.id}`}
-                                    className="font-semibold text-slate-800 hover:text-[#00A8A8] transition-colors"
+                                    className="font-semibold text-slate-800 hover:text-[#06B6D4] transition-colors"
                                   >
                                     {candidate.name}
                                   </Link>
@@ -1034,10 +1034,10 @@ export default function CandidatesPageModern() {
                                   )}
                                   <Link
                                     href={`/dashboard/send-candidate?candidateId=${candidate.id}&positionId=${item.position.id}`}
-                                    className="p-2 hover:bg-[#00A8A8]/10 rounded-lg transition-colors"
+                                    className="p-2 hover:bg-[#06B6D4]/10 rounded-lg transition-colors"
                                     title="שלח למעסיק"
                                   >
-                                    <Send className="h-4 w-4 text-[#00A8A8]" />
+                                    <Send className="h-4 w-4 text-[#06B6D4]" />
                                   </Link>
                                 </div>
                               </div>
@@ -1054,7 +1054,7 @@ export default function CandidatesPageModern() {
             {/* Footer */}
             <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
               <div className="text-sm text-slate-500">
-                <Sparkles className="h-4 w-4 inline ml-1 text-[#FF8C00]" />
+                <Sparkles className="h-4 w-4 inline ml-1 text-[#F97316]" />
                 אותו אלגוריתם כמו כשפותחים מועמד - עד 100 נקודות
               </div>
               <Button

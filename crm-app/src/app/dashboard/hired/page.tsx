@@ -85,7 +85,7 @@ export default function HiredCandidatesPage() {
 
   if (loading) {
     return (
-      <div className="p-8 bg-gradient-to-br from-slate-50 via-[#f0f7f7] to-slate-100 min-h-screen">
+      <div className="p-8 bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8] min-h-screen">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -97,9 +97,9 @@ export default function HiredCandidatesPage() {
   const hiredCount = candidates.filter(c => c.hiredAt).length
 
   return (
-    <div className="p-6 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#f0f7f7] to-slate-100 min-h-screen">
+    <div className="p-6 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8] min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5">
+      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5">
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="hiredGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(74,222,128,0.3)" strokeWidth="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#hiredGrid)"/></svg>
         </div>

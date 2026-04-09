@@ -6,29 +6,29 @@
    ======================================================================== */
 
 :root {
-  /* ===== Brand Colors from Logo ===== */
-  --t22-teal: #00A8A8;
-  --t22-teal-light: #00D4D4;
-  --t22-teal-dark: #008080;
-  --t22-teal-50: #E0F7F7;
-  --t22-teal-100: #B3EBEB;
-  --t22-teal-200: #80DFDF;
+  /* ===== Brand Colors — Electric Cyan + Warm Orange ===== */
+  --t22-teal: #06B6D4;
+  --t22-teal-light: #22D3EE;
+  --t22-teal-dark: #0891B2;
+  --t22-teal-50: #ECFEFF;
+  --t22-teal-100: #CFFAFE;
+  --t22-teal-200: #A5F3FC;
   
-  --t22-orange: #FF8C00;
-  --t22-orange-light: #FFB347;
-  --t22-orange-dark: #E67300;
-  --t22-orange-50: #FFF3E0;
+  --t22-orange: #F97316;
+  --t22-orange-light: #FB923C;
+  --t22-orange-dark: #EA580C;
+  --t22-orange-50: #FFF7ED;
   
-  --t22-green: #7CB342;
-  --t22-green-light: #9CCC65;
-  --t22-green-50: #F1F8E9;
+  --t22-green: #10B981;
+  --t22-green-light: #34D399;
+  --t22-green-50: #ECFDF5;
   
-  --t22-purple: #8B5CF6;
-  --t22-purple-light: #A78BFA;
-  --t22-purple-50: #EDE9FE;
+  --t22-purple: #A855F7;
+  --t22-purple-light: #C084FC;
+  --t22-purple-50: #FAF5FF;
   
   /* ===== Neutral Colors ===== */
-  --t22-dark: #1A1A2E;
+  --t22-dark: #0f0b2e;
   --t22-gray-900: #111827;
   --t22-gray-800: #1F2937;
   --t22-gray-700: #374151;
@@ -57,8 +57,8 @@
   --t22-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
   --t22-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   --t22-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-  --t22-shadow-teal: 0 4px 14px 0 rgba(0, 168, 168, 0.25);
-  --t22-shadow-orange: 0 4px 14px 0 rgba(255, 140, 0, 0.25);
+  --t22-shadow-teal: 0 4px 14px 0 rgba(6, 182, 212, 0.25);
+  --t22-shadow-orange: 0 4px 14px 0 rgba(249, 115, 22, 0.25);
 
   /* Legacy variables for compatibility */
   --background: 0 0% 100%;
@@ -67,19 +67,19 @@
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 175 100% 33%;
+  --primary: 187 92% 43%;
   --primary-foreground: 0 0% 100%;
   --secondary: 33 100% 50%;
   --secondary-foreground: 0 0% 100%;
   --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 175 100% 33%;
+  --accent: 187 92% 43%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 175 100% 33%;
+  --ring: 187 92% 43%;
   --radius: 0.75rem;
 }
 
@@ -100,7 +100,7 @@ html {
 
 body {
   font-family: var(--font-heebo), 'Heebo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(160deg, #f8fafc 0%, #f0f4f8 50%, #e8eef5 100%);
+  background: linear-gradient(160deg, #fafbff 0%, #f0f0fa 40%, #e8f4f8 100%);
   color: var(--t22-gray-900);
   line-height: 1.6;
   letter-spacing: -0.01em;
@@ -262,7 +262,7 @@ body {
 }
 
 .t22-glass-dark {
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15, 11, 46, 0.95);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -595,7 +595,7 @@ body {
    ======================================================================== */
 
 .t22-page-bg {
-  background: linear-gradient(160deg, #f8fafc 0%, #f0f4f8 40%, #e8eef5 100%);
+  background: linear-gradient(160deg, #fafbff 0%, #f0f0fa 40%, #e8f4f8 100%);
   position: relative;
 }
 

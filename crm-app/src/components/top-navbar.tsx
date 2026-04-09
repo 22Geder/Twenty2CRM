@@ -68,7 +68,7 @@ export function TopNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="border-b border-white/5 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] sticky top-0 z-50 shadow-2xl shadow-black/20">
+    <div className="border-b border-white/5 bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] sticky top-0 z-50 shadow-2xl shadow-black/20">
       <div className="flex items-center justify-between px-3 md:px-6 py-2.5 md:py-3">
         {/* Mobile Menu Button */}
         <Button
@@ -83,16 +83,16 @@ export function TopNavbar() {
         {/* Premium Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 md:gap-4 group">
           <div className="relative">
-            <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-[#00D4D4] via-[#00A8A8] to-[#007070] rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/40 group-hover:shadow-teal-400/60 transition-all duration-500 group-hover:scale-110 ring-2 ring-teal-400/20">
+            <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-[#22D3EE] via-[#06B6D4] to-[#0E7490] rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/40 group-hover:shadow-cyan-400/60 transition-all duration-500 group-hover:scale-110 ring-2 ring-cyan-400/20">
               <span className="text-white font-black text-base md:text-lg">22</span>
             </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-full border-2 border-slate-900 animate-pulse"></div>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-gradient-to-br from-[#F97316] to-[#C2410C] rounded-full border-2 border-[#0f0b2e] animate-pulse"></div>
           </div>
           <div className="hidden sm:block text-xl md:text-2xl font-bold leading-none">
-            <span className="text-[#00D4D4]">Twenty</span>
-            <span className="bg-gradient-to-r from-[#00D4D4] to-[#00A8A8] bg-clip-text text-transparent">2</span>
-            <span className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] bg-clip-text text-transparent">2</span>
-            <span className="text-[#FF8C00]">Jobs</span>
+            <span className="text-[#22D3EE]">Twenty</span>
+            <span className="bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] bg-clip-text text-transparent">2</span>
+            <span className="bg-gradient-to-r from-[#F97316] to-[#C2410C] bg-clip-text text-transparent">2</span>
+            <span className="text-[#F97316]">Jobs</span>
             <span className="text-slate-400 text-sm font-normal mr-3 hidden lg:inline">CRM</span>
             <span className="text-yellow-400 text-xs font-medium mr-2 hidden xl:inline">👑 אבירן המלך אבל דור יותר חזק בפיפא</span>
           </div>
@@ -110,7 +110,7 @@ export function TopNavbar() {
                   variant="ghost"
                   className={`relative transition-all duration-300 text-[13px] ${
                     isActive 
-                      ? "bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] text-white shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 ring-1 ring-teal-400/30" 
+                      ? "bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 ring-1 ring-cyan-400/30" 
                       : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                   size="sm"
@@ -121,8 +121,8 @@ export function TopNavbar() {
                     <span 
                       className={`absolute -top-1 -left-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center ${
                         item.badgeColor === 't22-accent' 
-                          ? 'bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white' 
-                          : 'bg-gradient-to-r from-[#7CB342] to-[#8BC34A] text-white'
+                          ? 'bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white' 
+                          : 'bg-gradient-to-r from-[#10B981] to-[#34D399] text-white'
                       }`}
                     >
                       {item.badge}
@@ -137,7 +137,7 @@ export function TopNavbar() {
         {/* Right Side */}
         <div className="flex items-center gap-2 md:gap-3">
           {/* Search - Hidden on mobile */}
-          <Button variant="outline" size="sm" className="hidden md:flex gap-2 bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-[#00A8A8] transition-all">
+          <Button variant="outline" size="sm" className="hidden md:flex gap-2 bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#06B6D4] transition-all">
             <Search className="h-4 w-4" />
             <span className="hidden lg:inline">חיפוש</span>
             <kbd className="hidden lg:inline-flex px-2 py-0.5 text-xs font-semibold text-slate-400 bg-slate-700 border border-slate-600 rounded">
@@ -146,16 +146,16 @@ export function TopNavbar() {
           </Button>
 
           {/* Notifications */}
-          <Button variant="outline" size="sm" className="relative bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-[#FF8C00] transition-all">
+          <Button variant="outline" size="sm" className="relative bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#F97316] transition-all">
             <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -left-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white min-w-[18px] h-4 flex items-center justify-center">
+            <span className="absolute -top-1 -left-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white min-w-[18px] h-4 flex items-center justify-center">
               8
             </span>
           </Button>
 
           {/* User Profile */}
-          <Button variant="outline" size="sm" className="gap-2 bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-[#7CB342] transition-all">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#7CB342] to-[#8BC34A] flex items-center justify-center">
+          <Button variant="outline" size="sm" className="gap-2 bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#10B981] transition-all">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center">
               <User className="h-3 w-3 text-white" />
             </div>
             <span className="hidden md:inline">Admin</span>
@@ -165,7 +165,7 @@ export function TopNavbar() {
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-700 bg-slate-900/95 backdrop-blur-sm">
+        <div className="lg:hidden border-t border-indigo-900/50 bg-[#0f0b2e]/95 backdrop-blur-sm">
           <nav className="flex flex-col py-2">
             {navigationItems.map((item) => {
               const Icon = item.icon
@@ -180,8 +180,8 @@ export function TopNavbar() {
                   <div
                     className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
                       isActive 
-                        ? "bg-gradient-to-r from-[#00A8A8]/20 to-[#00D4D4]/10 text-[#00D4D4] border-r-4 border-[#00D4D4]" 
-                        : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+                        ? "bg-gradient-to-r from-[#06B6D4]/20 to-[#22D3EE]/10 text-[#22D3EE] border-r-4 border-[#22D3EE]" 
+                        : "text-slate-300 hover:text-white hover:bg-indigo-900/40"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -190,8 +190,8 @@ export function TopNavbar() {
                       <span 
                         className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
                           item.badgeColor === 't22-accent' 
-                            ? 'bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white' 
-                            : 'bg-gradient-to-r from-[#7CB342] to-[#8BC34A] text-white'
+                            ? 'bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white' 
+                            : 'bg-gradient-to-r from-[#10B981] to-[#34D399] text-white'
                         }`}
                       >
                         {item.badge}

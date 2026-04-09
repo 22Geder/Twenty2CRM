@@ -300,16 +300,16 @@ export default async function CiviDashboardPage() {
     percentage: Math.round((s._count / totalSources) * 100)
   }))
 
-  const sourceColors = ['#00A8A8', '#7CB342', '#FF8C00', '#9C27B0', '#2196F3']
+  const sourceColors = ['#06B6D4', '#10B981', '#F97316', '#A855F7', '#3B82F6']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f0f7f7] to-slate-100" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8]" dir="rtl">
       {/* Top Header Bar - Hidden on mobile (already have TopNavbar) */}
-      <div className="hidden lg:block bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] text-white shadow-xl">
+      <div className="hidden lg:block bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] text-white shadow-xl">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00A8A8] to-[#00D4D4] flex items-center justify-center font-bold text-white shadow-lg">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] flex items-center justify-center font-bold text-white shadow-lg">
               22
             </div>
             <span className="text-xl font-bold">Twenty2Jobs</span>
@@ -503,9 +503,9 @@ export default async function CiviDashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             <div className="relative flex flex-col items-center gap-2.5 py-1">
               <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-teal-200/50">
-                <UserCheck className="h-6 w-6 text-[#00A8A8]" />
+                <UserCheck className="h-6 w-6 text-[#06B6D4]" />
               </div>
-              <div className="text-4xl font-bold text-[#00A8A8]">{stats.startedWorkThisMonth}</div>
+              <div className="text-4xl font-bold text-[#06B6D4]">{stats.startedWorkThisMonth}</div>
               <div className="text-sm text-slate-500 text-center leading-tight">התחילו לעבוד החודש</div>
             </div>
           </Link>
@@ -515,9 +515,9 @@ export default async function CiviDashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-orange-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             <div className="relative flex flex-col items-center gap-2.5 py-1">
               <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-orange-200/50">
-                <Bell className="h-6 w-6 text-[#FF8C00]" />
+                <Bell className="h-6 w-6 text-[#F97316]" />
               </div>
-              <div className="text-4xl font-bold text-[#FF8C00]">{stats.upcomingInterviews}</div>
+              <div className="text-4xl font-bold text-[#F97316]">{stats.upcomingInterviews}</div>
               <div className="text-sm text-slate-500 text-center leading-tight">ראיונות קרובים</div>
             </div>
           </Link>
@@ -527,9 +527,9 @@ export default async function CiviDashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-green-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             <div className="relative flex flex-col items-center gap-2.5 py-1">
               <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-green-200/50">
-                <CheckCircle className="h-6 w-6 text-[#7CB342]" />
+                <CheckCircle className="h-6 w-6 text-[#10B981]" />
               </div>
-              <div className="text-4xl font-bold text-[#7CB342]">{stats.hiredThisMonth}</div>
+              <div className="text-4xl font-bold text-[#10B981]">{stats.hiredThisMonth}</div>
               <div className="text-sm text-slate-500 text-center leading-tight">התקבלו לעבודה החודש</div>
             </div>
           </Link>
@@ -539,9 +539,9 @@ export default async function CiviDashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-purple-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             <div className="relative flex flex-col items-center gap-2.5 py-1">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-purple-200/50">
-                <Send className="h-6 w-6 text-[#9C27B0]" />
+                <Send className="h-6 w-6 text-[#A855F7]" />
               </div>
-              <div className="text-4xl font-bold text-[#9C27B0]">{stats.applicationsThisMonth}</div>
+              <div className="text-4xl font-bold text-[#A855F7]">{stats.applicationsThisMonth}</div>
               <div className="text-sm text-slate-500 text-center leading-tight">הפניות החודש</div>
             </div>
           </Link>
@@ -551,9 +551,9 @@ export default async function CiviDashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             <div className="relative flex flex-col items-center gap-2.5 py-1">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-blue-200/50">
-                <Users className="h-6 w-6 text-[#2196F3]" />
+                <Users className="h-6 w-6 text-[#3B82F6]" />
               </div>
-              <div className="text-4xl font-bold text-[#2196F3]">{stats.inProcess}</div>
+              <div className="text-4xl font-bold text-[#3B82F6]">{stats.inProcess}</div>
               <div className="text-sm text-slate-500 text-center leading-tight">מועמדים בתהליך</div>
             </div>
           </Link>
@@ -567,7 +567,7 @@ export default async function CiviDashboardPage() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center">
-                  <Info className="h-4 w-4 text-[#00A8A8]" />
+                  <Info className="h-4 w-4 text-[#06B6D4]" />
                 </div>
                 <span className="font-bold text-slate-800">מועמדים בתהליך לפי שלב</span>
               </div>
@@ -580,13 +580,13 @@ export default async function CiviDashboardPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#00A8A8] flex-shrink-0"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#06B6D4] flex-shrink-0"></span>
                     בוצעה הפניה
                   </span>
                   <span className="text-xs font-medium text-slate-600">{stats.statusMap.OFFER} <span className="text-slate-400">({statusPercentages.referralSent}%)</span></span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div className="h-2 rounded-full bg-[#00A8A8] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.referralSent, 2)}%` }}></div>
+                  <div className="h-2 rounded-full bg-[#06B6D4] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.referralSent, 2)}%` }}></div>
                 </div>
               </div>
               
@@ -594,13 +594,13 @@ export default async function CiviDashboardPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#7CB342] flex-shrink-0"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] flex-shrink-0"></span>
                     תואם ראיון פרונטלי
                   </span>
                   <span className="text-xs font-medium text-slate-600">{stats.statusMap.INTERVIEW} <span className="text-slate-400">({statusPercentages.frontInterview}%)</span></span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div className="h-2 rounded-full bg-[#7CB342] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.frontInterview, 2)}%` }}></div>
+                  <div className="h-2 rounded-full bg-[#10B981] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.frontInterview, 2)}%` }}></div>
                 </div>
               </div>
               
@@ -608,13 +608,13 @@ export default async function CiviDashboardPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF8C00] flex-shrink-0"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#F97316] flex-shrink-0"></span>
                     הגשת טפסים
                   </span>
                   <span className="text-xs font-medium text-slate-600">{stats.statusMap.SCREENING} <span className="text-slate-400">({statusPercentages.formsFiled}%)</span></span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div className="h-2 rounded-full bg-[#FF8C00] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.formsFiled, 2)}%` }}></div>
+                  <div className="h-2 rounded-full bg-[#F97316] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.formsFiled, 2)}%` }}></div>
                 </div>
               </div>
               
@@ -622,13 +622,13 @@ export default async function CiviDashboardPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#9C27B0] flex-shrink-0"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#A855F7] flex-shrink-0"></span>
                     נשלח מייל ללקוח
                   </span>
                   <span className="text-xs font-medium text-slate-600">{Math.round(stats.statusMap.NEW * 0.3)} <span className="text-slate-400">({statusPercentages.emailSent}%)</span></span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div className="h-2 rounded-full bg-[#9C27B0] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.emailSent, 2)}%` }}></div>
+                  <div className="h-2 rounded-full bg-[#A855F7] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.emailSent, 2)}%` }}></div>
                 </div>
               </div>
               
@@ -636,18 +636,18 @@ export default async function CiviDashboardPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2196F3] flex-shrink-0"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6] flex-shrink-0"></span>
                     נשלח הודעת וואטסאפ
                   </span>
                   <span className="text-xs font-medium text-slate-600">{Math.round(stats.statusMap.NEW * 0.2)} <span className="text-slate-400">({statusPercentages.whatsappSent}%)</span></span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div className="h-2 rounded-full bg-[#2196F3] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.whatsappSent, 2)}%` }}></div>
+                  <div className="h-2 rounded-full bg-[#3B82F6] transition-all duration-500" style={{ width: `${Math.max(statusPercentages.whatsappSent, 2)}%` }}></div>
                 </div>
               </div>
             </div>
             
-            <Link href="/dashboard/candidates" className="flex items-center gap-1 text-[#00A8A8] text-sm mt-4 hover:underline">
+            <Link href="/dashboard/candidates" className="flex items-center gap-1 text-[#06B6D4] text-sm mt-4 hover:underline">
               <ChevronLeft className="h-4 w-4" />
               כל המועמדים בתהליך
             </Link>
@@ -658,7 +658,7 @@ export default async function CiviDashboardPage() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
-                  <Info className="h-4 w-4 text-[#FF8C00]" />
+                  <Info className="h-4 w-4 text-[#F97316]" />
                 </div>
                 <span className="font-bold text-slate-800">מועמדים שנכנסו בחודש האחרון</span>
               </div>
@@ -673,7 +673,7 @@ export default async function CiviDashboardPage() {
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center justify-end">
                     <div 
-                      className="w-full bg-[#FF8C00] rounded-t hover:bg-[#E65100] transition-colors cursor-pointer"
+                      className="w-full bg-[#F97316] rounded-t hover:bg-[#EA580C] transition-colors cursor-pointer"
                       style={{ height: `${Math.max(height, 2)}%`, minHeight: day.count > 0 ? '8px' : '2px' }}
                       title={`${day.date}: ${day.count} מועמדים`}
                     ></div>
@@ -689,7 +689,7 @@ export default async function CiviDashboardPage() {
               ))}
             </div>
             
-            <Link href="/dashboard/candidates" className="flex items-center gap-1 text-[#00A8A8] text-sm mt-4 hover:underline">
+            <Link href="/dashboard/candidates" className="flex items-center gap-1 text-[#06B6D4] text-sm mt-4 hover:underline">
               <ChevronLeft className="h-4 w-4" />
               כל המועמדים
             </Link>
@@ -700,7 +700,7 @@ export default async function CiviDashboardPage() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center">
-                  <Info className="h-4 w-4 text-[#7CB342]" />
+                  <Info className="h-4 w-4 text-[#10B981]" />
                 </div>
                 <span className="font-bold text-slate-800">משרות פתוחות אחרונות</span>
               </div>
@@ -735,7 +735,7 @@ export default async function CiviDashboardPage() {
               </tbody>
             </table>
             
-            <Link href="/dashboard/positions" className="flex items-center gap-1 text-[#00A8A8] text-sm mt-4 hover:underline">
+            <Link href="/dashboard/positions" className="flex items-center gap-1 text-[#06B6D4] text-sm mt-4 hover:underline">
               <ChevronLeft className="h-4 w-4" />
               כל המשרות
             </Link>
@@ -767,7 +767,7 @@ export default async function CiviDashboardPage() {
               <tbody>
                 <tr>
                   <td colSpan={2} className="py-8 text-center text-slate-400">
-                    <Link href="/dashboard/employers" className="text-[#00A8A8] hover:underline">
+                    <Link href="/dashboard/employers" className="text-[#06B6D4] hover:underline">
                       צפה בכל הלקוחות &larr;
                     </Link>
                   </td>
@@ -806,7 +806,7 @@ export default async function CiviDashboardPage() {
                     <tr key={task.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-2 text-slate-700">{task.candidate?.name || 'לא מוגדר'}</td>
                       <td className="py-2">
-                        <span className="px-2 py-1 bg-[#00A8A8]/10 text-[#00A8A8] rounded text-xs">
+                        <span className="px-2 py-1 bg-[#06B6D4]/10 text-[#06B6D4] rounded text-xs">
                           {task.status === 'SCHEDULED' ? 'מתוזמן' : task.status}
                         </span>
                       </td>
@@ -819,7 +819,7 @@ export default async function CiviDashboardPage() {
               </tbody>
             </table>
             
-            <Link href="/dashboard/interviews" className="flex items-center gap-1 text-[#00A8A8] text-sm mt-4 hover:underline">
+            <Link href="/dashboard/interviews" className="flex items-center gap-1 text-[#06B6D4] text-sm mt-4 hover:underline">
               <ChevronLeft className="h-4 w-4" />
               כל הראיונות
             </Link>
@@ -940,7 +940,7 @@ export default async function CiviDashboardPage() {
                         </td>
                         <td className="py-3 px-4">
                           <Link href={`/dashboard/candidates/${c.id}`}
-                            className="font-semibold text-slate-800 hover:text-[#00A8A8] hover:underline">
+                            className="font-semibold text-slate-800 hover:text-[#06B6D4] hover:underline">
                             {c.name}
                           </Link>
                         </td>
@@ -954,7 +954,7 @@ export default async function CiviDashboardPage() {
           )}
           <div className="px-4 py-3 border-t bg-slate-50 flex justify-between items-center">
             <Link href="/dashboard/candidates?status=in-process"
-              className="flex items-center gap-1 text-[#00A8A8] text-sm hover:underline font-medium">
+              className="flex items-center gap-1 text-[#06B6D4] text-sm hover:underline font-medium">
               <ChevronLeft className="h-4 w-4" />
               כל המועמדים בתהליך
             </Link>
@@ -963,26 +963,26 @@ export default async function CiviDashboardPage() {
         </div>
 
         {/* Quick Stats Footer */}
-        <div className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-5 md:p-8 text-white shadow-xl border border-white/5">
+        <div className="bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-5 md:p-8 text-white shadow-xl border border-white/5">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 text-center">
             <div>
               <div className="text-3xl font-bold text-[#00D4D4]">{stats.totalCandidates}</div>
               <div className="text-sm text-slate-300">סה"כ מועמדים</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[#7CB342]">{stats.totalPositions}</div>
+              <div className="text-3xl font-bold text-[#10B981]">{stats.totalPositions}</div>
               <div className="text-sm text-slate-300">סה"כ משרות</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[#FF8C00]">{stats.totalApplications}</div>
+              <div className="text-3xl font-bold text-[#F97316]">{stats.totalApplications}</div>
               <div className="text-sm text-slate-300">סה"כ מועמדויות</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[#9C27B0]">{stats.totalInterviews}</div>
+              <div className="text-3xl font-bold text-[#A855F7]">{stats.totalInterviews}</div>
               <div className="text-sm text-slate-300">סה"כ ראיונות</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[#2196F3]">{stats.totalEmployers}</div>
+              <div className="text-3xl font-bold text-[#3B82F6]">{stats.totalEmployers}</div>
               <div className="text-sm text-slate-300">סה"כ לקוחות</div>
             </div>
           </div>

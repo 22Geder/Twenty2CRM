@@ -86,7 +86,7 @@ export default function EmployersModernPage() {
     return (
       <div className="p-8 flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A8A8] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#06B6D4] mx-auto mb-4"></div>
           <p className="text-muted-foreground">טוען לקוחות...</p>
         </div>
       </div>
@@ -96,13 +96,13 @@ export default function EmployersModernPage() {
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto bg-gradient-to-br from-slate-50 via-[#fff3e0]/20 to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5 mb-8">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5 mb-8">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="empGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FF8C00" strokeWidth="0.5"/>
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#F97316" strokeWidth="0.5"/>
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#empGrid)" />
@@ -110,21 +110,21 @@ export default function EmployersModernPage() {
         </div>
         
         {/* Floating Orbs */}
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#FF8C00]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#00A8A8]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#F97316]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
         
         <div className="relative flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#FF8C00] via-[#E65100] to-[#00A8A8] bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#F97316] via-[#C2410C] to-[#06B6D4] bg-clip-text text-transparent">
               🏢 לקוחות ומעסיקים
             </h1>
             <p className="text-slate-300 mt-2 text-lg">
-              ניהול <span className="font-semibold text-[#FF8C00]">{employers.length}</span> לקוחות • כל לקוח עם המשרות שלו
+              ניהול <span className="font-semibold text-[#F97316]">{employers.length}</span> לקוחות • כל לקוח עם המשרות שלו
             </p>
           </div>
           <Button 
             onClick={() => setShowModal(true)}
-            className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] hover:from-[#E67A00] hover:to-[#D44E00] shadow-lg shadow-[#FF8C00]/30 text-white border-0"
+            className="bg-gradient-to-r from-[#F97316] to-[#C2410C] hover:from-[#E67A00] hover:to-[#D44E00] shadow-lg shadow-[#F97316]/30 text-white border-0"
             size="lg"
           >
             <Plus className="ml-2 h-5 w-5" />
@@ -135,7 +135,7 @@ export default function EmployersModernPage() {
 
       {/* Premium Stats */}
       <div className="grid grid-cols-4 gap-6 mb-8">
-        <Card className="p-6 border-0 bg-gradient-to-br from-[#00A8A8] to-[#00D4D4] text-white shadow-xl shadow-[#00A8A8]/30 overflow-hidden relative">
+        <Card className="p-6 border-0 bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] text-white shadow-xl shadow-[#06B6D4]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <div className="relative flex items-center justify-between">
             <div>
@@ -146,7 +146,7 @@ export default function EmployersModernPage() {
           </div>
         </Card>
 
-        <Card className="p-6 border-0 bg-gradient-to-br from-[#7CB342] to-[#8BC34A] text-white shadow-xl shadow-[#7CB342]/30 overflow-hidden relative">
+        <Card className="p-6 border-0 bg-gradient-to-br from-[#10B981] to-[#34D399] text-white shadow-xl shadow-[#10B981]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <div className="relative flex items-center justify-between">
             <div>
@@ -174,7 +174,7 @@ export default function EmployersModernPage() {
           </div>
         </Card>
 
-        <Card className="p-6 border-0 bg-gradient-to-br from-[#FF8C00] to-[#E65100] text-white shadow-xl shadow-[#FF8C00]/30 overflow-hidden relative">
+        <Card className="p-6 border-0 bg-gradient-to-br from-[#F97316] to-[#C2410C] text-white shadow-xl shadow-[#F97316]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <div className="relative flex items-center justify-between">
             <div>
@@ -195,14 +195,14 @@ export default function EmployersModernPage() {
 
       {/* Premium Search */}
       <Card className="mb-8 p-4 shadow-xl border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF8C00] to-[#E65100]"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#F97316] to-[#C2410C]"></div>
         <div className="relative">
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF8C00] h-5 w-5" />
+          <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#F97316] h-5 w-5" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="🔍 חפש לפי שם לקוח או אימייל..."
-            className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#FF8C00] rounded-xl bg-slate-50/50"
+            className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#F97316] rounded-xl bg-slate-50/50"
           />
         </div>
       </Card>
@@ -211,17 +211,17 @@ export default function EmployersModernPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEmployers.map((employer) => (
           <Link key={employer.id} href={`/dashboard/employers/${employer.id}`}>
-            <Card className="group p-6 hover:shadow-2xl hover:shadow-[#FF8C00]/20 transition-all duration-500 hover:-translate-y-2 border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#FF8C00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF8C00] to-[#E65100] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <Card className="group p-6 hover:shadow-2xl hover:shadow-[#F97316]/20 transition-all duration-500 hover:-translate-y-2 border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative cursor-pointer">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#F97316]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#F97316] to-[#C2410C] opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
               <div className="relative flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF8C00]/30">
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#F97316] to-[#C2410C] rounded-xl flex items-center justify-center shadow-lg shadow-[#F97316]/30">
                     <Building2 className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-xl text-slate-800 group-hover:text-[#FF8C00] transition-colors">{employer.name}</h3>
+                    <h3 className="font-bold text-xl text-slate-800 group-hover:text-[#F97316] transition-colors">{employer.name}</h3>
                     <p className="text-sm text-muted-foreground">
                       נוצר {new Date(employer.createdAt).toLocaleDateString('he-IL')}
                     </p>
@@ -237,12 +237,12 @@ export default function EmployersModernPage() {
 
             <div className="space-y-2 mb-4 relative">
               <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-[#00A8A8]" />
+                <Mail className="h-4 w-4 text-[#06B6D4]" />
                 <span className="text-slate-700">{employer.email}</span>
               </div>
               {employer.phone && (
                 <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-[#7CB342]" />
+                  <Phone className="h-4 w-4 text-[#10B981]" />
                   <span className="text-slate-700">{employer.phone}</span>
                 </div>
               )}
@@ -253,7 +253,7 @@ export default function EmployersModernPage() {
                     href={employer.website} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[#00A8A8] hover:underline"
+                    className="text-[#06B6D4] hover:underline"
                   >
                     {employer.website}
                   </a>
@@ -263,12 +263,12 @@ export default function EmployersModernPage() {
 
             <div className="flex items-center justify-between pt-4 border-t-2 border-slate-100 relative">
               <div className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-[#FF8C00]" />
-                <Badge className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white text-base px-3 py-1 border-0">
+                <Briefcase className="h-5 w-5 text-[#F97316]" />
+                <Badge className="bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white text-base px-3 py-1 border-0">
                   {employer._count?.positions || 0} משרות
                 </Badge>
               </div>
-              <span className="text-[#00A8A8] text-sm font-medium flex items-center gap-1">
+              <span className="text-[#06B6D4] text-sm font-medium flex items-center gap-1">
                 לחץ לצפייה בפרטים
                 <ChevronRight className="h-4 w-4" />
               </span>

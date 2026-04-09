@@ -74,7 +74,7 @@ export default async function InterviewsPage() {
   return (
     <div className="p-4 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#dbeafe]/20 to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -89,11 +89,11 @@ export default async function InterviewsPage() {
         
         {/* Floating Orbs */}
         <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-blue-500/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#00A8A8]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
         
         <div className="relative flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-blue-500 to-[#00A8A8] bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-blue-500 to-[#06B6D4] bg-clip-text text-transparent">
               📅 ראיונות
             </h1>
             <p className="text-slate-300 mt-2 text-lg">
@@ -167,7 +167,7 @@ export default async function InterviewsPage() {
               
               return (
                 <Card key={interview.id} className={`group hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl ${isToday ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/10' : 'shadow-md'}`}>
-                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 to-[#00A8A8] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 to-[#06B6D4] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div className="flex gap-4 flex-1">

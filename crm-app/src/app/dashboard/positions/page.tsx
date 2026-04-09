@@ -29,15 +29,15 @@ export default async function PositionsPage() {
   const draftPositions = positions.filter(p => !p.active)
 
   return (
-    <div className="p-4 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#f1f8e9]/30 to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#ECFDF5]/30 to-slate-100 min-h-screen">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="posGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#7CB342" strokeWidth="0.5"/>
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#10B981" strokeWidth="0.5"/>
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#posGrid)" />
@@ -45,12 +45,12 @@ export default async function PositionsPage() {
         </div>
         
         {/* Floating Orbs */}
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#7CB342]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#00A8A8]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#10B981]/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
         
         <div className="relative flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#7CB342] via-[#8BC34A] to-[#00A8A8] bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#06B6D4] bg-clip-text text-transparent">
               💼 משרות
             </h1>
             <p className="text-slate-300 mt-2 text-lg">
@@ -58,7 +58,7 @@ export default async function PositionsPage() {
             </p>
           </div>
           <Link href="/dashboard/positions/new">
-            <Button className="bg-gradient-to-r from-[#7CB342] to-[#8BC34A] hover:from-[#6BA32A] hover:to-[#7CB342] shadow-lg shadow-[#7CB342]/30 text-white border-0">
+            <Button className="bg-gradient-to-r from-[#10B981] to-[#34D399] hover:from-[#6BA32A] hover:to-[#10B981] shadow-lg shadow-[#10B981]/30 text-white border-0">
               <Plus className="ml-2 h-4 w-4" />
               הוסף משרה
             </Button>
@@ -68,7 +68,7 @@ export default async function PositionsPage() {
 
       {/* Premium Stats */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-0 bg-gradient-to-br from-[#7CB342] to-[#8BC34A] text-white shadow-xl shadow-[#7CB342]/30 overflow-hidden relative">
+        <Card className="border-0 bg-gradient-to-br from-[#10B981] to-[#34D399] text-white shadow-xl shadow-[#10B981]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <CardHeader className="pb-3 relative">
             <CardTitle className="text-sm font-medium">משרות פעילות</CardTitle>
@@ -78,7 +78,7 @@ export default async function PositionsPage() {
           </CardContent>
         </Card>
         
-        <Card className="border-0 bg-gradient-to-br from-[#FF8C00] to-[#E65100] text-white shadow-xl shadow-[#FF8C00]/30 overflow-hidden relative">
+        <Card className="border-0 bg-gradient-to-br from-[#F97316] to-[#C2410C] text-white shadow-xl shadow-[#F97316]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <CardHeader className="pb-3 relative">
             <CardTitle className="text-sm font-medium">טיוטות</CardTitle>
@@ -88,7 +88,7 @@ export default async function PositionsPage() {
           </CardContent>
         </Card>
         
-        <Card className="border-0 bg-gradient-to-br from-[#00A8A8] to-[#00D4D4] text-white shadow-xl shadow-[#00A8A8]/30 overflow-hidden relative">
+        <Card className="border-0 bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] text-white shadow-xl shadow-[#06B6D4]/30 overflow-hidden relative">
           <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
           <CardHeader className="pb-3 relative">
             <CardTitle className="text-sm font-medium">סה"כ מועמדויות</CardTitle>
@@ -103,17 +103,17 @@ export default async function PositionsPage() {
 
       {/* Premium Search */}
       <Card className="border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#7CB342] to-[#8BC34A]"></div>
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#10B981] to-[#34D399]"></div>
         <CardContent className="pt-6">
           <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#7CB342]" />
+              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#10B981]" />
               <Input
                 placeholder="חפש לפי תפקיד, מיקום או מעסיק..."
-                className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#7CB342] rounded-xl bg-slate-50/50"
+                className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#10B981] rounded-xl bg-slate-50/50"
               />
             </div>
-            <Button variant="outline" className="h-14 border-[#7CB342]/50 text-[#7CB342] hover:bg-[#7CB342]/10 hover:border-[#7CB342]">
+            <Button variant="outline" className="h-14 border-[#10B981]/50 text-[#10B981] hover:bg-[#10B981]/10 hover:border-[#10B981]">
               סנן
             </Button>
           </div>
@@ -135,33 +135,33 @@ export default async function PositionsPage() {
         ) : (
           <div className="grid gap-4">
             {activePositions.map((position) => (
-              <Card key={position.id} className="group hover:shadow-2xl hover:shadow-[#7CB342]/15 transition-all duration-500 hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#7CB342]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#7CB342] to-[#8BC34A] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <Card key={position.id} className="group hover:shadow-2xl hover:shadow-[#10B981]/15 transition-all duration-500 hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#10B981]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#10B981] to-[#34D399] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <CardContent className="pt-6 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold group-hover:text-[#7CB342] transition-colors">{position.title}</h3>
-                        <Badge className="bg-gradient-to-r from-[#7CB342] to-[#8BC34A] text-white border-0">פעיל</Badge>
+                        <h3 className="text-lg font-semibold group-hover:text-[#10B981] transition-colors">{position.title}</h3>
+                        <Badge className="bg-gradient-to-r from-[#10B981] to-[#34D399] text-white border-0">פעיל</Badge>
                         {position.priority > 0 && (
-                          <Badge className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white border-0">דחוף</Badge>
+                          <Badge className="bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white border-0">דחוף</Badge>
                         )}
                       </div>
                       
                       <div className="grid gap-2 text-sm text-slate-600 mb-3">
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-[#00A8A8]" />
+                          <Building2 className="h-4 w-4 text-[#06B6D4]" />
                           <span>{position.employer.name}</span>
                         </div>
                         {position.location && (
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-[#FF8C00]" />
+                            <MapPin className="h-4 w-4 text-[#F97316]" />
                             <span>{position.location}</span>
                           </div>
                         )}
                         {position.employmentType && (
-                          <p className="font-medium text-[#7CB342]">{position.employmentType}</p>
+                          <p className="font-medium text-[#10B981]">{position.employmentType}</p>
                         )}
                       </div>
 
@@ -173,13 +173,13 @@ export default async function PositionsPage() {
                     </div>
 
                     <div className="flex flex-col gap-3 mr-4 items-end">
-                      <div className="flex items-center gap-2 text-sm bg-[#00A8A8]/10 text-[#00A8A8] px-3 py-1 rounded-full">
+                      <div className="flex items-center gap-2 text-sm bg-[#06B6D4]/10 text-[#06B6D4] px-3 py-1 rounded-full">
                         <span className="font-semibold">{position._count.applications}</span>
                         <Users className="h-4 w-4" />
                       </div>
                       <div className="flex gap-2">
                         <Link href={`/dashboard/positions/${position.id}`}>
-                          <Button variant="outline" size="sm" className="border-[#7CB342]/50 text-[#7CB342] hover:bg-[#7CB342]/10 hover:border-[#7CB342]">
+                          <Button variant="outline" size="sm" className="border-[#10B981]/50 text-[#10B981] hover:bg-[#10B981]/10 hover:border-[#10B981]">
                             צפה בפרטים
                           </Button>
                         </Link>
@@ -201,7 +201,7 @@ export default async function PositionsPage() {
           <div className="grid gap-4">
             {draftPositions.map((position) => (
               <Card key={position.id} className="group opacity-75 hover:opacity-100 hover:shadow-xl transition-all duration-300 border-0 bg-white/60 backdrop-blur-sm overflow-hidden relative">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF8C00] to-[#E65100] opacity-50"></div>
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#F97316] to-[#C2410C] opacity-50"></div>
                 <CardContent className="pt-6 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -221,7 +221,7 @@ export default async function PositionsPage() {
                     <div className="flex items-center gap-2">
                       <ToggleActiveButton position={position} />
                       <Link href={`/dashboard/positions/${position.id}`}>
-                        <Button variant="outline" size="sm" className="border-[#FF8C00]/50 text-[#FF8C00] hover:bg-[#FF8C00]/10 hover:border-[#FF8C00]">
+                        <Button variant="outline" size="sm" className="border-[#F97316]/50 text-[#F97316] hover:bg-[#F97316]/10 hover:border-[#F97316]">
                           ערוך
                         </Button>
                       </Link>

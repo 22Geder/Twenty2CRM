@@ -90,7 +90,7 @@ export default function SettingsPage() {
           onChange={(e) => onChange(e.target.checked)}
           className="sr-only peer"
         />
-        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/30 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-teal-500 peer-checked:to-[#00A8A8]"></div>
+        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/30 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-teal-500 peer-checked:to-[#06B6D4]"></div>
       </label>
     </div>
   )
@@ -157,7 +157,7 @@ export default function SettingsPage() {
   return (
     <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
       {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5 mb-8">
+      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5 mb-8">
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="settingsGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(96,165,250,0.3)" strokeWidth="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#settingsGrid)"/></svg>
         </div>

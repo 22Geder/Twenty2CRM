@@ -217,36 +217,77 @@ export function calculateLocationScore(candidateCity: string, positionLocation: 
   score: number
   distanceKm: number | null
   matchType: 'exact' | 'distance' | 'proximity' | 'none'
+  isExactCity: boolean
 } {
   if (!candidateCity || !positionLocation) {
-    return { score: 0, distanceKm: null, matchType: 'none' }
+    return { score: 0, distanceKm: null, matchType: 'none', isExactCity: false }
   }
 
+  // תמיכה בכמה ערים בשדה מיקום (למשל: "לוד, אשקלון, באר שבע")
+  const locationParts = positionLocation.split(/[,،\/]+/).map(p => p.trim()).filter(Boolean)
+  
+  let bestResult = { score: 0, distanceKm: null as number | null, matchType: 'none' as 'exact' | 'distance' | 'proximity' | 'none', isExactCity: false }
+  
+  for (const singleLocation of locationParts) {
+    const result = calculateSingleLocationScore(candidateCity, singleLocation)
+    if (result.score > bestResult.score) {
+      bestResult = result
+    }
+  }
+  
+  return bestResult
+}
+
+/**
+ * חישוב ציון מיקום עבור עיר בודדת
+ */
+function calculateSingleLocationScore(candidateCity: string, positionLocation: string): {
+  score: number
+  distanceKm: number | null
+  matchType: 'exact' | 'distance' | 'proximity' | 'none'
+  isExactCity: boolean
+} {
   const candNorm = normalizeLocalityComplete(candidateCity)
   const posNorm = normalizeLocalityComplete(positionLocation)
 
-  // בדיקת עיר זהה
+  // בדיקת עיר זהה - 50 נקודות מלאות!
   if (candNorm === posNorm || candNorm.includes(posNorm) || posNorm.includes(candNorm)) {
-    return { score: 50, distanceKm: 0, matchType: 'exact' }
+    return { score: 50, distanceKm: 0, matchType: 'exact', isExactCity: true }
   }
 
   // חישוב מרחק בק"מ
   const distanceKm = getDistanceKm(candidateCity, positionLocation)
   
   if (distanceKm !== null) {
-    // נוסחה: 50 * (1 - 0.15 * (km / 10)) = 50 - 0.75 * km
-    const score = Math.max(0, Math.round(50 * (1 - 0.15 * (distanceKm / 10))))
+    // נוסחה משופרת: ירידה תלולה יותר כדי להעדיף אותה עיר
+    // 0 ק"מ = 50, 5 ק"מ = 45, 10 ק"מ = 38, 15 ק"מ = 30, 20 ק"מ = 22, 25 ק"מ = 15, 30 ק"מ = 8, 35+ ק"מ = 0
+    let score: number
+    if (distanceKm <= 5) {
+      // עד 5 ק"מ - ירידה עדינה (ערים צמודות)
+      score = Math.round(50 - distanceKm * 1)  // 50 -> 45
+    } else if (distanceKm <= 15) {
+      // 5-15 ק"מ - ירידה בינונית
+      score = Math.round(45 - (distanceKm - 5) * 1.5)  // 45 -> 30
+    } else if (distanceKm <= 30) {
+      // 15-30 ק"מ - ירידה חדה
+      score = Math.round(30 - (distanceKm - 15) * 1.5)  // 30 -> 8
+    } else {
+      // מעל 30 ק"מ - ציון מינימלי
+      score = Math.max(0, Math.round(8 - (distanceKm - 30) * 0.5))  // 8 -> 0
+    }
+    
     return { 
-      score, 
+      score: Math.max(0, score), 
       distanceKm, 
-      matchType: 'distance' 
+      matchType: 'distance',
+      isExactCity: false
     }
   }
 
-  // Fallback: קבוצות קרבה (~15 ק"מ ≈ 39 נקודות)
+  // Fallback: קבוצות קרבה (~15 ק"מ ≈ 30 נקודות)
   if (areLocationsProximate(candidateCity, positionLocation)) {
-    return { score: 39, distanceKm: 15, matchType: 'proximity' }
+    return { score: 30, distanceKm: 15, matchType: 'proximity', isExactCity: false }
   }
 
-  return { score: 0, distanceKm: null, matchType: 'none' }
+  return { score: 0, distanceKm: null, matchType: 'none', isExactCity: false }
 }

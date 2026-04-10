@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { calculateLocationScore } from "@/lib/israel-distance"
 import { 
   findMatchingTags, 
   getUniqueCategories, 
@@ -247,42 +248,26 @@ export async function GET(
 
       // ============================================
       // 📍 בלוק מיקום - 50 נקודות מקסימום (50%!!)
+      // שימוש ב-GPS Haversine לדיוק מקסימלי!
       // ============================================
       let locationScore = 0
       let locationMatch = false
       let locationMatchType = 'none'
+      let distanceKm: number | null = null
       
       if (positionLocation && candidateCity) {
-        // התאמה מושלמת - אותה עיר = 50 נקודות!
-        if (positionLocation.includes(candidateCity) || candidateCity.includes(positionLocation)) {
-          locationScore = 50
-          locationMatch = true
-          locationMatchType = 'exact'
-        } 
-        // ערים קרובות מאוד (עד 15 דקות נסיעה) = 40 נקודות
-        else if (areNearbyLocations(candidateCity, positionLocation)) {
-          locationScore = 40
-          locationMatch = true
-          locationMatchType = 'nearby'
-        } 
-        // אותו אזור כללי (עד 30 דקות) = 30 נקודות
-        else if (areSameRegion(candidateCity, positionLocation)) {
-          locationScore = 30
-          locationMatch = true
-          locationMatchType = 'region'
-        }
-        // אזור סמוך (עד 45 דקות) = 20 נקודות
-        else if (areAdjacentRegions(candidateCity, positionLocation)) {
-          locationScore = 20
-          locationMatchType = 'adjacent'
-        }
+        const locResult = calculateLocationScore(candidateCity, positionLocation)
+        locationScore = locResult.score
+        distanceKm = locResult.distanceKm
+        locationMatch = locResult.score > 0
+        locationMatchType = locResult.matchType
       } else if (!candidateCity && positionLocation) {
-        // אם אין מיקום למועמד - ניתן ציון בסיסי קטן
-        locationScore = 15
+        // אם אין מיקום למועמד - ציון מינימלי
+        locationScore = 5
         locationMatchType = 'unknown'
       } else if (!positionLocation) {
-        // אם אין מיקום למשרה - ניתן ציון בסיסי
-        locationScore = 25
+        // אם אין מיקום למשרה - ציון בסיסי
+        locationScore = 15
         locationMatchType = 'no_position_location'
       }
 
@@ -296,6 +281,7 @@ export async function GET(
         locationScore,
         locationMatch,
         locationMatchType,
+        distanceKm,
         matchingTags,
         categoryOverlap,
         candidateRecruitmentTags,
@@ -317,7 +303,7 @@ export async function GET(
 
     // שלב 3: חיבור הציונים - מיקום + תגיות + Gemini
     const candidatesWithScore = candidatesWithBasicScore.map((item, index) => {
-      const { candidate, tagScore, locationScore, locationMatch, locationMatchType, 
+      const { candidate, tagScore, locationScore, locationMatch, locationMatchType, distanceKm,
               matchingTags, categoryOverlap, candidateRecruitmentTags, candidateCategories,
               recruitmentTagMatch, educationStatus, candidateCity } = item
 
@@ -373,6 +359,7 @@ export async function GET(
         hasApplied: candidate.applications.length > 0,
         locationMatch,
         locationMatchType,
+        distanceKm,
         extractedCity: candidateCity,
         candidateCategories,
         categoryOverlap,
@@ -397,16 +384,24 @@ export async function GET(
       }
     })
 
-    // מיון - קודם לפי ציון התאמה, אחר כך לפי מיקום
+    // מיון - קודם כל לפי מיקום (אותה עיר ראשון!), אחר כך ציון כולל
     candidatesWithScore.sort((a, b) => {
-      // קודם כל לפי ציון - המועמדים עם האחוז הגבוה ביותר קודמים
+      // 🏆 קודם כל: אותה עיר בראש!
+      const aExact = a.locationMatchType === 'exact'
+      const bExact = b.locationMatchType === 'exact'
+      if (aExact && !bExact) return -1
+      if (!aExact && bExact) return 1
+      
+      // אחר כך לפי ציון מיקום (GPS מדויק)
+      if (b.scoreBreakdown.location !== a.scoreBreakdown.location) {
+        return b.scoreBreakdown.location - a.scoreBreakdown.location
+      }
+      
+      // אם המיקום זהה - לפי ציון כולל
       if (b.matchScore !== a.matchScore) {
         return b.matchScore - a.matchScore
       }
-      // אם הציון זהה - מועמדים עם התאמת מיקום קודמים
-      if (a.locationMatch && !b.locationMatch) return -1
-      if (!a.locationMatch && b.locationMatch) return 1
-      // אם גם הציון וגם המיקום זהים - לפי תאריך
+      // אם גם הציון זהה - לפי תאריך
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
 

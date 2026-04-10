@@ -173,6 +173,7 @@ export async function GET(
       scoreBreakdown.location = locResult.score
       distanceKm = locResult.distanceKm
       locationMatch = locResult.score > 0
+      const isExactCity = locResult.isExactCity
 
       // ═══════════════════════════════════════
       // 🏷️ תגיות - 25 נקודות (25%)
@@ -261,6 +262,7 @@ export async function GET(
         matchingTags,
         hasApplied: position.applications.length > 0,
         locationMatch,
+        isExactCity,
         distanceKm,
         scoreBreakdown: {
           ...scoreBreakdown,
@@ -275,9 +277,12 @@ export async function GET(
       }
     })
 
-    // מיון: מיקום קודם כל, אחר כך ציון כולל
+    // מיון: אותה עיר קודם, אחר כך מיקום GPS, אחר כך ציון כולל
     positionsWithScore.sort((a, b) => {
-      // קודם לפי מיקום (התאמה מדויקת > אזורית > ללא)
+      // 🏆 קודם כל: אותה עיר בראש!
+      if (a.isExactCity && !b.isExactCity) return -1
+      if (!a.isExactCity && b.isExactCity) return 1
+      // אחר כך לפי ציון מיקום GPS
       if (b.scoreBreakdown.location !== a.scoreBreakdown.location) {
         return b.scoreBreakdown.location - a.scoreBreakdown.location
       }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { calculateLocationScore } from "@/lib/israel-distance"
 import { 
   normalizeLocality, 
   extractLocalityFromAddress, 
@@ -104,18 +105,22 @@ export async function POST(request: Request) {
     
     const quickResults = positionsForScan.map(position => {
       // חישוב מקומי מהיר - אין קריאות רשת!
-      // תמיכה בכמה ערים בשדה location (למשל: 'לוד, אשקלון')
-      const locationMatch = checkLocationMatch(finalCandidateCity, position.location || '')
+      // GPS מדויק + תמיכה בכמה ערים בשדה location
+      const locResult = calculateLocationScore(candidate.city || '', position.location || '')
+      const locationMatch = locResult.score >= 30
       const quickMatch = smartFallbackMatch(candidate, position, finalCandidateCity, locationMatch)
-      return { ...quickMatch, _quickScore: quickMatch.score }
+      return { ...quickMatch, _quickScore: quickMatch.score, _locationScore: locResult.score, _isExactCity: locResult.isExactCity }
     })
     
     console.log(`⚡ סינון מהיר הושלם ב-${Date.now() - quickScanStart}ms`)
 
-    // מיון לפי ציון מהיר + מיקום
+    // מיון לפי מיקום GPS מדויק + ציון
     quickResults.sort((a, b) => {
-      if (a.locationMatch && !b.locationMatch) return -1
-      if (!a.locationMatch && b.locationMatch) return 1
+      // אותה עיר קודם!
+      if (a._isExactCity && !b._isExactCity) return -1
+      if (!a._isExactCity && b._isExactCity) return 1
+      // אחר כך לפי ציון מיקום GPS
+      if (a._locationScore !== b._locationScore) return b._locationScore - a._locationScore
       return b._quickScore - a._quickScore
     })
 
@@ -152,10 +157,17 @@ export async function POST(request: Request) {
     // איחוד התוצאות: AI results + quick results לשאר
     const allMatches = [...aiResults, ...restResults]
 
-    // מיון סופי
+    // מיון סופי - אותה עיר ראשון, אחר כך ציון מיקום GPS, אחר כך ציון כולל
     allMatches.sort((a, b) => {
+      // אותה עיר קודם כל!
+      const aExact = (a as any)._isExactCity === true
+      const bExact = (b as any)._isExactCity === true
+      if (aExact && !bExact) return -1
+      if (!aExact && bExact) return 1
+      // אחר כך מיקום קרוב
       if (a.locationMatch && !b.locationMatch) return -1
       if (!a.locationMatch && b.locationMatch) return 1
+      // ואז לפי ציון כולל
       return b.score - a.score
     })
 
@@ -278,8 +290,9 @@ async function analyzeMatchV3(candidate: any, position: any, candidateCity: stri
   const rawPositionLocation = position.location || ''
   const positionLocality = extractLocalityFromAddress(rawPositionLocation) || normalizeLocality(rawPositionLocation)
   
-  // בדיקת התאמת מיקום - תמיכה בכמה ערים (למשל: 'לוד, אשקלון')
-  const locationMatch = checkLocationMatch(candidateCity, rawPositionLocation)
+  // בדיקת התאמת מיקום - GPS מדויק + תמיכה בכמה ערים
+  const locResult = calculateLocationScore(candidate.city || '', rawPositionLocation)
+  const locationMatch = locResult.score >= 30  // עיר קרובה = match
 
   // 🔥 הכנת מידע מלא על המועמד כולל קורות חיים!
   const resumeText = candidate.resume || ''
@@ -343,22 +356,19 @@ JSON בלבד:`
     
     // ========================================
     // 📍 מיקום - 50 נקודות מקסימום (50%)
+    // שימוש ב-GPS Haversine לדיוק מקסימלי!
     // ========================================
     let locationScore = 0
     if (isFieldSales) {
       locationScore = 50 // סוכני שטח לא תלויים במיקום
-    } else if (locationMatch) {
-      locationScore = 50 // התאמה מושלמת
-    } else if (candidateCity && positionLocality) {
-      // בדיקת קרבה - ערים קרובות = 40, אזור = 30
-      const nearbyCheck = areLocationsNearby(candidateCity, positionLocality)
-      if (nearbyCheck) {
-        locationScore = 40 // קרוב
-      } else {
-        locationScore = 0 // רחוק
-      }
+    } else if (candidateCity && rawPositionLocation) {
+      // חישוב GPS מדויק עם תמיכה במיקום מרובה ערים
+      const locResult = calculateLocationScore(candidate.city || '', rawPositionLocation)
+      locationScore = locResult.score
+    } else if (!candidate.city) {
+      locationScore = 5 // אין מידע על מיקום המועמד
     } else {
-      locationScore = 15 // אין מידע
+      locationScore = 0
     }
     
     // ========================================
@@ -438,21 +448,22 @@ function smartFallbackMatch(candidate: any, position: any, candidateCity: string
 
   // ========================================
   // 🗺️ מיקום - 50 נקודות מקסימום (50%)
+  // GPS Haversine לדיוק מקסימלי!
   // ⚠️ סוכני מכירות שטח מקבלים מלא!
   // ========================================
   if (isFieldSales) {
     locationScore = 50
     strengths.push(`🚗 משרת שטח - מיקום גמיש`)
-  } else if (locationMatch) {
-    locationScore = 50
-    strengths.push(`📍 מיקום מתאים: ${candidate.city || 'לא צוין'}`)
   } else if (candidate.city && position.location) {
-    const positionLocality = extractLocalityFromAddress(position.location) || normalizeLocality(position.location)
-    if (areLocationsNearby(candidateCity, positionLocality)) {
-      locationScore = 40
-      strengths.push(`מיקום קרוב: ${position.location}`)
+    const locResult = calculateLocationScore(candidate.city || '', position.location || '')
+    locationScore = locResult.score
+    if (locResult.isExactCity) {
+      strengths.push(`📍 אותה עיר: ${candidate.city}`)
+    } else if (locResult.score >= 30) {
+      strengths.push(`📍 מיקום קרוב: ${position.location}`)
+    } else if (locResult.score > 0) {
+      weaknesses.push(`מרחק: ${locResult.distanceKm ? Math.round(locResult.distanceKm) + ' ק"מ' : 'מרוחק'}`)
     } else {
-      locationScore = 0
       weaknesses.push(`מרחק: המועמד ב${candidate.city}, המשרה ב${position.location}`)
     }
   }

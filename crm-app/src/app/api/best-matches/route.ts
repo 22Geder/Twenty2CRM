@@ -106,15 +106,17 @@ export async function GET(request: NextRequest) {
 
         // ═══════════════════════════════════════
         // 📍 מיקום - 50 נקודות (50%)
-        // כל 10 ק"מ מוריד 15% מה-50 נקודות
+        // GPS מדויק + תמיכה בכמה ערים
         // ═══════════════════════════════════════
         let locationMatch = false
         let distanceKm: number | null = null
+        let isExactCity = false
         
         const locResult = calculateLocationScore(candidateCity, positionLocation)
         scoreBreakdown.location = locResult.score
         distanceKm = locResult.distanceKm
         locationMatch = locResult.score > 0
+        isExactCity = locResult.isExactCity
 
         // ═══════════════════════════════════════
         // 🏷️ תגיות - 25 נקודות (25%)
@@ -195,6 +197,7 @@ export async function GET(request: NextRequest) {
           matchingTags: matchingTags.map(t => ({ id: t.id, name: t.name, color: t.color })),
           score,
           locationMatch,
+          isExactCity,
           distanceKm,
           scoreBreakdown: {
             ...scoreBreakdown,
@@ -206,8 +209,12 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // 🎯 מיון: מיקום קודם, אחר כך ציון כולל
+      // 🎯 מיון: אותה עיר קודם, אחר כך מיקום GPS, ציון כולל
       candidatesWithScores.sort((a, b) => {
+        // 🏆 אותה עיר בראש!
+        if (a.isExactCity && !b.isExactCity) return -1
+        if (!a.isExactCity && b.isExactCity) return 1
+        // ציון מיקום GPS
         if (b.scoreBreakdown.location !== a.scoreBreakdown.location) {
           return b.scoreBreakdown.location - a.scoreBreakdown.location
         }

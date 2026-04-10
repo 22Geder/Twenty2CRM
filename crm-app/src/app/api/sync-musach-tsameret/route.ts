@@ -19,10 +19,8 @@ export async function GET() {
       employer = await prisma.employer.create({
         data: {
           name: 'מוסך צמרת',
-          email: '',
+          email: 'musach-tsameret@twenty2.co.il',
           phone: '',
-          company: 'מוסך צמרת',
-          status: 'active'
         }
       })
       console.log('✅ נוצר מעסיק חדש: מוסך צמרת')

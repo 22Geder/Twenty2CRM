@@ -322,7 +322,7 @@ export default async function CiviDashboardPage() {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] flex items-center justify-center font-bold text-white shadow-lg">
               22
             </div>
-            <span className="text-xl font-bold">Twenty2Jobs</span>
+            <span className="text-xl font-bold">Twenty22JobsCRM👑 אבירן המלך אבל דור יותר חזק בפיפא</span>
           </div>
           
           {/* Navigation */}

@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 
 // 🔧 API לעדכון פרטי קשר של משרות YES
-// GET /api/update-yes-contacts
-export async function GET() {
+// POST /api/update-yes-contacts
+export async function POST() {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     console.log('🔧 מעדכן פרטי קשר למשרות YES...')
 
     // מצא את המעסיק YES

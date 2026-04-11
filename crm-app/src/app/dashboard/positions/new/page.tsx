@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Save, X, Loader2 } from "lucide-react"
+import { Save, X, Loader2, Plus, Tag as TagIcon } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
 function NewPositionForm() {
@@ -19,6 +20,10 @@ function NewPositionForm() {
   const [error, setError] = useState("")
   const [employers, setEmployers] = useState<any[]>([])
   const [departments, setDepartments] = useState<any[]>([])
+  const [allTags, setAllTags] = useState<any[]>([])
+  const [selectedTags, setSelectedTags] = useState<any[]>([])
+  const [newTagName, setNewTagName] = useState("")
+  const [showTagInput, setShowTagInput] = useState(false)
   
   const [formData, setFormData] = useState({
     title: "",
@@ -36,11 +41,18 @@ function NewPositionForm() {
     ruDescription: "",
     openings: "1",
     priority: "0",
+    keywords: "",
+    contactName: "",
+    contactEmail: "",
+    workHours: "",
+    benefits: "",
+    transportation: "",
   })
 
   useEffect(() => {
     fetchEmployers()
     fetchDepartments()
+    fetchTags()
   }, [])
   
   // עדכון employerId כאשר preSelectedEmployerId משתנה
@@ -79,6 +91,57 @@ function NewPositionForm() {
     }
   }
 
+  const fetchTags = async () => {
+    try {
+      const response = await fetch("/api/tags")
+      if (response.ok) {
+        const data = await response.json()
+        const tagsList = Array.isArray(data) ? data : (data.tags || [])
+        setAllTags(tagsList)
+      }
+    } catch (err) {
+      console.error("Failed to fetch tags:", err)
+    }
+  }
+
+  const handleAddTag = (tag: any) => {
+    if (!selectedTags.find(t => t.id === tag.id)) {
+      setSelectedTags([...selectedTags, tag])
+    }
+  }
+
+  const handleRemoveTag = (tagId: string) => {
+    setSelectedTags(selectedTags.filter(t => t.id !== tagId))
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    try {
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTagName.trim(), color: "#3B82F6" }),
+      })
+      if (response.ok) {
+        const newTag = await response.json()
+        setAllTags([...allTags, newTag])
+        setSelectedTags([...selectedTags, newTag])
+        setNewTagName("")
+        setShowTagInput(false)
+      } else {
+        const error = await response.json()
+        if (error.error === "Tag already exists") {
+          const existingTag = allTags.find(t => t.name.toLowerCase() === newTagName.trim().toLowerCase())
+          if (existingTag) handleAddTag(existingTag)
+        }
+        setNewTagName("")
+        setShowTagInput(false)
+      }
+    } catch (err) {
+      console.error("Failed to create tag:", err)
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value
     setFormData({
@@ -98,7 +161,10 @@ function NewPositionForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          tagIds: selectedTags.map(t => t.id),
+        }),
       })
 
       if (!response.ok) {
@@ -220,6 +286,10 @@ function NewPositionForm() {
                   <option value="Contract">קבלן</option>
                   <option value="Freelance">עצמאי</option>
                   <option value="Internship">התמחות</option>
+                  <option value="תקן קבוע">תקן קבוע</option>
+                  <option value="החלפת חל״ד">החלפת חל&quot;ד</option>
+                  <option value="תקן זמני">תקן זמני</option>
+                  <option value="עצמאית">עצמאית</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -317,6 +387,175 @@ function NewPositionForm() {
                 onChange={handleChange}
                 placeholder="רשום את הדרישות למשרה..."
                 rows={6}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tags Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TagIcon className="h-5 w-5" />
+              תגיות
+            </CardTitle>
+            <CardDescription>הוסף תגיות לזיהוי מהיר של המשרה</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="mb-2 block">תגיות נבחרות:</Label>
+              <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border rounded-md bg-muted/50">
+                {selectedTags.length === 0 ? (
+                  <span className="text-muted-foreground text-sm">אין תגיות נבחרות</span>
+                ) : (
+                  selectedTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant="default"
+                      className="cursor-pointer hover:bg-destructive"
+                      style={{ backgroundColor: tag.color || "#3B82F6" }}
+                      onClick={() => handleRemoveTag(tag.id)}
+                    >
+                      {tag.name}
+                      <X className="h-3 w-3 mr-1" />
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="mb-2 block">תגיות זמינות (לחץ להוספה):</Label>
+              <div className="flex flex-wrap gap-2 p-3 border rounded-md max-h-[200px] overflow-y-auto">
+                {allTags.filter(tag => !selectedTags.find(t => t.id === tag.id)).length === 0 ? (
+                  <span className="text-muted-foreground text-sm">כל התגיות נבחרו</span>
+                ) : (
+                  allTags.filter(tag => !selectedTags.find(t => t.id === tag.id)).map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => handleAddTag(tag)}
+                    >
+                      <Plus className="h-3 w-3 ml-1" />
+                      {tag.name}
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
+            <div>
+              {showTagInput ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    placeholder="שם תגית חדשה"
+                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleCreateTag())}
+                  />
+                  <Button type="button" onClick={handleCreateTag} size="sm">
+                    הוסף
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowTagInput(false)}>
+                    ביטול
+                  </Button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowTagInput(true)}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  צור תגית חדשה
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Info */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>פרטי איש קשר</CardTitle>
+            <CardDescription>מידע על איש הקשר לשליחת מועמדים</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contactName">שם איש קשר</Label>
+                <Input
+                  id="contactName"
+                  name="contactName"
+                  value={formData.contactName}
+                  onChange={handleChange}
+                  placeholder="שם המגייס/ת"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactEmail">מייל לשליחת מועמדים</Label>
+                <Input
+                  id="contactEmail"
+                  name="contactEmail"
+                  type="email"
+                  value={formData.contactEmail}
+                  onChange={handleChange}
+                  placeholder="recruiter@company.com"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Keywords */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>מילות מפתח</CardTitle>
+            <CardDescription>מילות מפתח לחיפוש והתאמת מועמדים (מופרדות בפסיקים)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              id="keywords"
+              name="keywords"
+              value={formData.keywords}
+              onChange={handleChange}
+              placeholder="טלר, בנקאות, שירות לקוחות, מכירות..."
+              rows={3}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Work Conditions */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>תנאי עבודה</CardTitle>
+            <CardDescription>שעות עבודה, הטבות והגעה</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="workHours">שעות עבודה</Label>
+              <Input
+                id="workHours"
+                name="workHours"
+                value={formData.workHours}
+                onChange={handleChange}
+                placeholder="8:00-17:00, א'-ה'"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="benefits">הטבות</Label>
+              <Textarea
+                id="benefits"
+                name="benefits"
+                value={formData.benefits}
+                onChange={handleChange}
+                placeholder="ארוחות, חדר כושר, קרן השתלמות..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transportation">הגעה/הסעות</Label>
+              <Input
+                id="transportation"
+                name="transportation"
+                value={formData.transportation}
+                onChange={handleChange}
+                placeholder="הסעות מת״א / הגעה עצמאית"
               />
             </div>
           </CardContent>

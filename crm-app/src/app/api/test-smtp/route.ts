@@ -12,14 +12,19 @@ export async function GET() {
     const smtpPort = parseInt(process.env.SMTP_PORT || '587')
 
     // בדיקה 1: האם משתני סביבה קיימים
+    const resendKey = process.env.RESEND_API_KEY
+    const resendFrom = process.env.RESEND_FROM_EMAIL
     const envCheck = {
-      RESEND_API_KEY: !!process.env.RESEND_API_KEY,
-      RESEND_FROM_EMAIL: !!process.env.RESEND_FROM_EMAIL,
+      RESEND_API_KEY: !!resendKey,
+      RESEND_API_KEY_PREFIX: resendKey ? resendKey.substring(0, 6) + '...' : 'NOT SET',
+      RESEND_FROM_EMAIL: !!resendFrom,
+      RESEND_FROM_EMAIL_VALUE: resendFrom || 'NOT SET',
       SMTP_USER: !!smtpUser,
       SMTP_PASSWORD: !!process.env.SMTP_PASSWORD,
       SMTP_PASS: !!process.env.SMTP_PASS,
       SMTP_HOST: !!process.env.SMTP_HOST,
       SMTP_PORT: !!process.env.SMTP_PORT,
+      ALL_ENV_KEYS_WITH_RESEND: Object.keys(process.env).filter(k => k.includes('RESEND')),
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)

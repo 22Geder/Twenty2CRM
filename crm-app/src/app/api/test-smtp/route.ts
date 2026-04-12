@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
 import { getResendApiKey, getResendFromEmail } from '@/lib/env';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 
 // GET /api/test-smtp - בדיקת חיבור מייל (Resend או SMTP)
 export async function GET() {
@@ -11,6 +13,15 @@ export async function GET() {
     const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
     const smtpPort = parseInt(process.env.SMTP_PORT || '587')
+
+    // Debug: check runtime-env.json
+    const cwd = process.cwd()
+    const jsonPath = join(cwd, 'runtime-env.json')
+    const jsonExists = existsSync(jsonPath)
+    let jsonContent = 'N/A'
+    if (jsonExists) {
+      try { jsonContent = readFileSync(jsonPath, 'utf-8') } catch(e: any) { jsonContent = 'READ ERROR: ' + e.message }
+    }
 
     // בדיקה 1: האם משתני סביבה קיימים
     const resendKey = getResendApiKey()
@@ -25,11 +36,10 @@ export async function GET() {
       SMTP_PASS: !!process.env.SMTP_PASS,
       SMTP_HOST: !!process.env.SMTP_HOST,
       SMTP_PORT: !!process.env.SMTP_PORT,
-      ALL_ENV_KEYS_WITH_RESEND: Object.keys(process.env).filter(k => k.includes('RESEND')),
-      ALL_ENV_KEYS_COUNT: Object.keys(process.env).length,
-      SAMPLE_ENV_KEYS: Object.keys(process.env).filter(k => k.includes('SMTP') || k.includes('NEXT') || k.includes('RESEND') || k.includes('DATABASE')),
-      DIRECT_CHECK: typeof process.env['RESEND_API_KEY'],
-      DIRECT_VALUE_EXISTS: process.env['RESEND_API_KEY'] !== undefined,
+      DEBUG_CWD: cwd,
+      DEBUG_JSON_PATH: jsonPath,
+      DEBUG_JSON_EXISTS: jsonExists,
+      DEBUG_JSON_CONTENT: jsonContent,
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)

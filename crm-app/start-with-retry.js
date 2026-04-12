@@ -20,6 +20,13 @@ async function waitForDB() {
 }
 
 async function main() {
+  // Debug: check env vars at startup
+  const resendVars = Object.keys(process.env).filter(k => k.includes('RESEND'));
+  console.log('🔍 ENV DEBUG - RESEND vars:', resendVars);
+  console.log('🔍 ENV DEBUG - RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+  console.log('🔍 ENV DEBUG - RESEND_API_KEY prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 6) : 'NOT SET');
+  console.log('🔍 ENV DEBUG - Total env vars:', Object.keys(process.env).length);
+  
   // Step 1: Wait for database
   await waitForDB();
 

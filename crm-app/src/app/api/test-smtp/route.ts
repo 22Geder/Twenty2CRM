@@ -2,9 +2,6 @@ import { NextResponse, NextRequest } from 'next/server';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
-import { getResendApiKey, getResendFromEmail } from '@/lib/env';
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 
 // GET /api/test-smtp - בדיקת חיבור מייל (Resend או SMTP)
 export async function GET() {
@@ -14,42 +11,15 @@ export async function GET() {
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
     const smtpPort = parseInt(process.env.SMTP_PORT || '587')
 
-    // Load runtime env (start-with-retry.js writes this before Next.js starts)
-    let runtimeEnv: Record<string, string> = {}
-    const possiblePaths = [
-      join(process.cwd(), 'runtime-env.json'),
-      '/app/runtime-env.json',
-      join(__dirname, '..', '..', '..', '..', '..', 'runtime-env.json'),
-    ]
-    const foundPaths: string[] = []
-    for (const p of possiblePaths) {
-      try {
-        if (existsSync(p)) {
-          foundPaths.push(p)
-          const content = readFileSync(p, 'utf-8')
-          const parsed = JSON.parse(content)
-          if (parsed.RESEND_API_KEY) {
-            runtimeEnv = parsed
-            break
-          }
-        }
-      } catch {}
-    }
-
-    // Try to get RESEND key from: 1) process.env 2) runtime-env.json
-    const resendKey = getResendApiKey() || runtimeEnv.RESEND_API_KEY
-    const resendFrom = getResendFromEmail() || runtimeEnv.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+    // Static references for env vars
+    const resendKey = process.env.RESEND_API_KEY
+    const resendFrom = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
     
     const envCheck = {
       RESEND_API_KEY: !!resendKey,
       RESEND_API_KEY_PREFIX: resendKey ? resendKey.substring(0, 6) + '...' : 'NOT SET',
-      RESEND_FROM_EMAIL: !!resendFrom,
-      RESEND_FROM_EMAIL_VALUE: resendFrom || 'NOT SET',
+      RESEND_FROM_EMAIL_VALUE: resendFrom,
       SMTP_USER: !!smtpUser,
-      DEBUG_CWD: process.cwd(),
-      DEBUG_DIRNAME: __dirname,
-      DEBUG_FOUND_PATHS: foundPaths,
-      DEBUG_RUNTIME_ENV_KEYS: Object.keys(runtimeEnv),
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)
@@ -213,13 +183,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No email address for this position/employer!', steps })
     }
 
-    const useResend = !!getResendApiKey()
+    const useResend = !!process.env.RESEND_API_KEY
     steps.push(`5. Using Resend: ${useResend}`)
-    steps.push(`5b. RESEND_FROM_EMAIL: ${getResendFromEmail()}`)
+    steps.push(`5b. RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}`)
 
     if (useResend) {
-      const resend = new Resend(getResendApiKey()!)
-      const fromEmail = getResendFromEmail()
+      const resend = new Resend(process.env.RESEND_API_KEY!)
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
       steps.push(`6. From email: ${fromEmail}`)
       steps.push(`6b. Sending to: ${targetEmail}`)
 

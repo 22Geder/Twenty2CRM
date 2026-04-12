@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 
 const MAX_RETRIES = 30;
@@ -67,9 +67,26 @@ async function main() {
     console.warn('⚠️ update-sela-positions failed (non-critical):', err.message);
   }
 
-  // Step 3: Start the app
+  // Step 3: Start the app using spawn with explicit env passing
   console.log('🚀 Starting Next.js app...');
-  execSync('npm start', { stdio: 'inherit' });
+  const port = process.env.PORT || '3000';
+  console.log(`🔍 Passing ${Object.keys(process.env).length} env vars to Next.js, port: ${port}`);
+  console.log(`🔍 RESEND_API_KEY in env: ${!!process.env.RESEND_API_KEY}`);
+  
+  const child = spawn('npx', ['next', 'start', '-H', '0.0.0.0', '-p', port], {
+    stdio: 'inherit',
+    env: { ...process.env },
+  });
+  
+  child.on('exit', (code) => {
+    console.log(`Next.js exited with code ${code}`);
+    process.exit(code || 0);
+  });
+  
+  child.on('error', (err) => {
+    console.error('Failed to start Next.js:', err);
+    process.exit(1);
+  });
 }
 
 main().catch(err => {

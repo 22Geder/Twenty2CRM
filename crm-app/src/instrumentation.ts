@@ -2,6 +2,8 @@
 // This runs automatically when the server starts
 
 import cron from 'node-cron';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
 let cronJobsInitialized = false;
 
@@ -9,6 +11,22 @@ export async function register() {
   // Only run on server side and in production
   if (process.env.NEXT_RUNTIME === 'nodejs' && !cronJobsInitialized) {
     cronJobsInitialized = true;
+    
+    // Load runtime env vars from JSON file (written by start-with-retry.js)
+    try {
+      const envPath = join(process.cwd(), 'runtime-env.json');
+      if (existsSync(envPath)) {
+        const config = JSON.parse(readFileSync(envPath, 'utf-8'));
+        for (const [key, value] of Object.entries(config)) {
+          if (!process.env[key] && typeof value === 'string') {
+            process.env[key] = value;
+            console.log(`📝 Injected env var: ${key} = ${value.substring(0, 6)}...`);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('⚠️ Failed to load runtime-env.json:', err);
+    }
     
     console.log('🕐 Starting cron scheduler for reminders...');
     

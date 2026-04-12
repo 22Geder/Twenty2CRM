@@ -140,6 +140,7 @@ model Candidate {
   uploadedBy    User?           @relation("CandidateUploader", fields: [uploadedById], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  lastWhatsAppSentAt DateTime?  // 🆕 מתי נשלח וואטסאפ אחרון
   
   applications  Application[]
   tags          Tag[]
@@ -147,6 +148,7 @@ model Candidate {
   communications Communication[]
   interviews    Interview[]
   candidateNotes Note[]
+  whatsAppLogs  WhatsAppLog[]
 }
 
 model Application {
@@ -339,7 +341,24 @@ model Note {
   updatedAt     DateTime    @updatedAt
 }
 
-// 📧 היסטוריית מיילים שנשלחו למעסיקים
+// � היסטוריית וואטסאפ שנשלחו למועמדים
+model WhatsAppLog {
+  id              String      @id @default(uuid())
+  candidateId     String
+  candidateName   String      // שמור בנפרד
+  candidatePhone  String
+  positionId      String?
+  positionTitle   String?
+  employerName    String?
+  sentAt          DateTime    @default(now())
+  
+  candidate       Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  
+  @@index([candidateId])
+  @@index([positionId])
+}
+
+// �📧 היסטוריית מיילים שנשלחו למעסיקים
 model EmployerEmailHistory {
   id              String      @id @default(uuid())
   candidateId     String?     // אופציונלי - במקרה שהמועמד נמחק

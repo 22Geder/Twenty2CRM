@@ -134,6 +134,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
   const [loadingMatches, setLoadingMatches] = useState(false)
   const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null)
   const [rightPanelView, setRightPanelView] = useState<'applications' | 'matches'>('applications')
+  const [whatsAppLastSent, setWhatsAppLastSent] = useState<Record<string, string | null>>({})
 
   useEffect(() => {
     fetchEmployer()
@@ -228,7 +229,19 @@ export default function EmployerDetailPage({ params }: PageProps) {
       const response = await fetch(`/api/positions/${positionId}/matching-candidates`)
       if (response.ok) {
         const data = await response.json()
-        setMatchingCandidates(data.candidates || [])
+        const candidates = data.candidates || []
+        setMatchingCandidates(candidates)
+        // Fetch last WhatsApp sent dates
+        if (candidates.length > 0) {
+          const ids = candidates.map((c: MatchingCandidate) => c.id).join(',')
+          try {
+            const waRes = await fetch(`/api/whatsapp-log?candidateIds=${ids}`)
+            if (waRes.ok) {
+              const waData = await waRes.json()
+              setWhatsAppLastSent(prev => ({ ...prev, ...waData.lastSentMap }))
+            }
+          } catch (e) { /* ignore */ }
+        }
       } else {
         setMatchingCandidates([])
       }
@@ -248,6 +261,40 @@ export default function EmployerDetailPage({ params }: PageProps) {
     if (positionLocation) message += `\n📍 *מיקום:* ${positionLocation}`
     message += `\n\nאשמח לדבר איתך ולספר עוד!\nמה אומרת/אומר? 😊`
     return `https://wa.me/${normalizedPhone}?text=${safeEncodeURIComponent(message)}`
+  }
+
+  const logWhatsAppSend = async (candidateId: string, candidateName: string, candidatePhone: string, positionId?: string, positionTitle?: string) => {
+    try {
+      await fetch('/api/whatsapp-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId,
+          candidateName,
+          candidatePhone,
+          positionId,
+          positionTitle,
+          employerName: employer?.name,
+        }),
+      })
+      setWhatsAppLastSent(prev => ({ ...prev, [candidateId]: new Date().toISOString() }))
+    } catch (e) { /* ignore */ }
+  }
+
+  const formatLastSent = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return 'עכשיו'
+    if (diffMins < 60) return `לפני ${diffMins} דק׳`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `לפני ${diffHours} שע׳`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays === 1) return 'אתמול'
+    if (diffDays < 7) return `לפני ${diffDays} ימים`
+    return date.toLocaleDateString('he-IL')
   }
 
   const getMatchScoreColor = (score: number) => {
@@ -731,16 +778,26 @@ export default function EmployerDetailPage({ params }: PageProps) {
 
                             {/* WhatsApp Button */}
                             {candidate.phone && selectedPosition && (
-                              <a
-                                href={getWhatsAppLink(candidate.phone, candidate.name, selectedPosition.title, selectedPosition.location)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold whitespace-nowrap"
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                                <span>וואטסאפ</span>
-                              </a>
+                              <div className="flex flex-col items-center gap-0.5">
+                                <a
+                                  href={getWhatsAppLink(candidate.phone, candidate.name, selectedPosition.title, selectedPosition.location)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    logWhatsAppSend(candidate.id, candidate.name, candidate.phone!, selectedPositionId || undefined, selectedPosition.title)
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold whitespace-nowrap"
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                  <span>וואטסאפ</span>
+                                </a>
+                                {whatsAppLastSent[candidate.id] && (
+                                  <span className="text-[10px] text-orange-600 font-medium whitespace-nowrap">
+                                    📤 {formatLastSent(whatsAppLastSent[candidate.id])}
+                                  </span>
+                                )}
+                              </div>
                             )}
 
                             {/* Expand arrow */}
@@ -897,13 +954,21 @@ export default function EmployerDetailPage({ params }: PageProps) {
                                   href={getWhatsAppLink(candidate.phone, candidate.name, selectedPosition.title, selectedPosition.location)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    logWhatsAppSend(candidate.id, candidate.name, candidate.phone!, selectedPositionId || undefined, selectedPosition.title)
+                                  }}
                                 >
                                   <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                                     <MessageCircle className="h-3.5 w-3.5 ml-1" />
                                     וואטסאפ למשרה
                                   </Button>
                                 </a>
+                              )}
+                              {whatsAppLastSent[candidate.id] && (
+                                <span className="text-xs text-orange-600 font-medium flex items-center gap-1">
+                                  📤 נשלח {formatLastSent(whatsAppLastSent[candidate.id])}
+                                </span>
                               )}
                             </div>
                           </div>

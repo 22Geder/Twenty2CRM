@@ -72,6 +72,10 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   const [inProcessPositions, setInProcessPositions] = useState<any[]>([])  // כל המשרות שהמועמד בתהליך עבורן
   const [isAddingMode, setIsAddingMode] = useState(false)  // האם אנחנו במצב "הוספת משרות נוספות"
   
+  // 📱 WhatsApp tracking
+  const [whatsAppLastSent, setWhatsAppLastSent] = useState<string | null>(null)
+  const [whatsAppLogs, setWhatsAppLogs] = useState<any[]>([])
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -117,6 +121,16 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   useEffect(() => {
     if (candidateId) {
       fetchCandidate()
+      // Fetch WhatsApp history
+      fetch(`/api/whatsapp-log?candidateId=${candidateId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setWhatsAppLastSent(data.lastSentAt || null)
+            setWhatsAppLogs(data.logs || [])
+          }
+        })
+        .catch(() => {})
     }
   }, [candidateId])
 
@@ -278,25 +292,44 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
   // 🆕 ניקוי מספר טלפון לוואטסאפ - תומך בכל הפורמטים
   const normalizePhoneForWhatsApp = (phone: string): string => {
     if (!phone) return '';
-    
-    // הסרת תווים מיוחדים (unicode LTR/RTL markers) וכל מה שאינו ספרה
     let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '');
-    
-    // הסרת כל התווים שאינם ספרות
     cleaned = cleaned.replace(/\D/g, '');
-    
-    // אם מתחיל ב-972, זה כבר בפורמט הנכון
-    if (cleaned.startsWith('972')) {
-      return cleaned;
-    }
-    
-    // אם מתחיל ב-0, החלף ל-972
-    if (cleaned.startsWith('0')) {
-      return '972' + cleaned.slice(1);
-    }
-    
-    // אחרת - הוסף 972 בהתחלה
+    if (cleaned.startsWith('972')) return cleaned;
+    if (cleaned.startsWith('0')) return '972' + cleaned.slice(1);
     return '972' + cleaned;
+  }
+
+  const logWhatsAppSend = async (positionTitle?: string) => {
+    if (!candidate?.phone || !candidateId) return
+    try {
+      await fetch('/api/whatsapp-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId,
+          candidateName: candidate.name,
+          candidatePhone: candidate.phone,
+          positionTitle,
+        }),
+      })
+      setWhatsAppLastSent(new Date().toISOString())
+    } catch (e) { /* ignore */ }
+  }
+
+  const formatLastSent = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return '\u05e2\u05db\u05e9\u05d9\u05d5'
+    if (diffMins < 60) return `\u05dc\u05e4\u05e0\u05d9 ${diffMins} \u05d3\u05e7\u05f3`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `\u05dc\u05e4\u05e0\u05d9 ${diffHours} \u05e9\u05e2\u05f3`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays === 1) return '\u05d0\u05ea\u05de\u05d5\u05dc'
+    if (diffDays < 7) return `\u05dc\u05e4\u05e0\u05d9 ${diffDays} \u05d9\u05de\u05d9\u05dd`
+    return date.toLocaleDateString('he-IL')
   }
 
   const getDocByType = (type: string) => {
@@ -609,6 +642,13 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
               ? `${candidate.currentTitle} ב-${candidate.currentCompany}`
               : "פרטי מועמד"}
           </p>
+          {whatsAppLastSent && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2.5 py-0.5">
+                📤 וואטסאפ אחרון: {formatLastSent(whatsAppLastSent)}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           {!editing ? (
@@ -965,6 +1005,11 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{candidate.phone}</span>
+                      {whatsAppLastSent && (
+                        <span className="text-[10px] text-orange-600 bg-orange-50 border border-orange-200 rounded px-1.5 py-0.5">
+                          📤 {formatLastSent(whatsAppLastSent)}
+                        </span>
+                      )}
                     </div>
                   )}
                   {(candidate.city || candidate.country) && (
@@ -1538,9 +1583,13 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                           const message = `שלום ${candidate.name}, בבקשה מלא/י את טופס 101 בקישור הבא:\nhttps://tpz.link/tgjkn\n\nתודה!`
                           const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
                           window.open(url, "_blank")
+                          logWhatsAppSend('טופס 101')
                         }}
                       >
                         📲 שלח ב-WhatsApp
+                        {whatsAppLastSent && (
+                          <span className="mr-1 text-[10px] text-orange-600">({formatLastSent(whatsAppLastSent)})</span>
+                        )}
                       </Button>
                     )}
                   </div>
@@ -1611,9 +1660,13 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                     const message = `שלום ${candidate.name}, מצורף ההסכם שלך: ${doc.url}`
                     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
                     window.open(url, "_blank")
+                    logWhatsAppSend('הסכם עבודה')
                   }}
                 >
                   שלח הסכם בוואטסאפ
+                  {whatsAppLastSent && (
+                    <span className="mr-1 text-[10px] text-orange-600">({formatLastSent(whatsAppLastSent)})</span>
+                  )}
                 </Button>
               )}
             </CardContent>

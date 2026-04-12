@@ -140,6 +140,7 @@ export function MatchingCandidatesSidebar({
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
   const [displayCount, setDisplayCount] = useState(DEFAULT_DISPLAY_COUNT)
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'location'>('score')
+  const [whatsAppLastSent, setWhatsAppLastSent] = useState<Record<string, string | null>>({})
 
   useEffect(() => {
     if (positionId) {
@@ -158,6 +159,18 @@ export function MatchingCandidatesSidebar({
       setCandidates(data.candidates || [])
       setPositionTags(data.positionTags || [])
       setTotalCount(data.totalCount || 0)
+      // Fetch WhatsApp last sent dates
+      const cands = data.candidates || []
+      if (cands.length > 0) {
+        const ids = cands.map((c: MatchingCandidate) => c.id).join(',')
+        try {
+          const waRes = await fetch(`/api/whatsapp-log?candidateIds=${ids}`)
+          if (waRes.ok) {
+            const waData = await waRes.json()
+            setWhatsAppLastSent(prev => ({ ...prev, ...waData.lastSentMap }))
+          }
+        } catch (e) { /* ignore */ }
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -325,6 +338,40 @@ export function MatchingCandidatesSidebar({
     
     const encodedMessage = safeEncodeURIComponent(message)
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
+  }
+
+  const logWhatsAppSend = async (candidateId: string, candidateName: string, candidatePhone: string) => {
+    try {
+      await fetch('/api/whatsapp-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId,
+          candidateName,
+          candidatePhone,
+          positionId,
+          positionTitle,
+          employerName,
+        }),
+      })
+      setWhatsAppLastSent(prev => ({ ...prev, [candidateId]: new Date().toISOString() }))
+    } catch (e) { /* ignore */ }
+  }
+
+  const formatLastSent = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return 'עכשיו'
+    if (diffMins < 60) return `לפני ${diffMins} דק׳`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `לפני ${diffHours} שע׳`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays === 1) return 'אתמול'
+    if (diffDays < 7) return `לפני ${diffDays} ימים`
+    return date.toLocaleDateString('he-IL')
   }
   
   // 🔄 מיון מועמדים
@@ -1006,15 +1053,23 @@ export function MatchingCandidatesSidebar({
                     <div className="grid grid-cols-2 gap-2">
                       {/* 📱 כפתור וואטסאפ למועמד */}
                       {candidate.phone && (
-                        <a
-                          href={getWhatsAppLink(candidate.phone, candidate.name)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                          <span>וואטסאפ</span>
-                        </a>
+                        <div className="flex flex-col items-center">
+                          <a
+                            href={getWhatsAppLink(candidate.phone, candidate.name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => logWhatsAppSend(candidate.id, candidate.name, candidate.phone!)}
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            <span>וואטסאפ</span>
+                          </a>
+                          {whatsAppLastSent[candidate.id] && (
+                            <span className="text-[10px] text-orange-600 font-medium mt-0.5">
+                              📤 {formatLastSent(whatsAppLastSent[candidate.id])}
+                            </span>
+                          )}
+                        </div>
                       )}
                       
                       {/* 🏢 כפתור שליחה למעסיק */}

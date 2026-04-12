@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dialog"
 import {
   Building2, Mail, Phone, Globe, Briefcase, Users, ArrowRight,
-  MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle, Pencil, Save, Loader2, Plus
+  MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle, Pencil, Save, Loader2, Plus,
+  MessageCircle, ExternalLink, Download, Star, TrendingUp, ChevronDown, ChevronUp, X, FileText
 } from "lucide-react"
 
 interface Employer {
@@ -58,6 +59,54 @@ interface Application {
   }
 }
 
+interface MatchingCandidate {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
+  alternatePhone: string | null
+  currentTitle: string | null
+  yearsOfExperience: number | null
+  city?: string | null
+  resume?: string | null
+  resumeUrl: string | null
+  createdAt: string
+  matchScore: number
+  hasApplied: boolean
+  locationMatch?: boolean
+  distanceKm?: number | null
+  educationStatus?: { level: string; isStudying: boolean; details: string }
+  whySuitable?: string[]
+  comparisonTags?: Array<{ name: string; type: string; color: string }>
+  scoreBreakdown?: {
+    location: number
+    tags: number
+    geminiAI: number
+  }
+}
+
+// 🔧 Safe encoder
+const safeEncodeURIComponent = (str: string): string => {
+  try {
+    const sanitized = String(str || '')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+      .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    return encodeURIComponent(sanitized)
+  } catch (e) {
+    return encodeURIComponent(String(str || '').replace(/[^\x00-\uFFFF]/g, ''))
+  }
+}
+
+// 📱 WhatsApp phone normalizer
+const normalizePhoneForWhatsApp = (phone: string): string => {
+  if (!phone) return ''
+  let cleaned = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s\-\(\)\.\+]/g, '')
+  cleaned = cleaned.replace(/\D/g, '')
+  if (cleaned.startsWith('972')) return cleaned
+  if (cleaned.startsWith('0')) return '972' + cleaned.slice(1)
+  return '972' + cleaned
+}
+
 type PageProps = {
   params: Promise<{ id: string }>
 }
@@ -78,6 +127,13 @@ export default function EmployerDetailPage({ params }: PageProps) {
     website: "",
     description: ""
   })
+  
+  // Matching candidates state
+  const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null)
+  const [matchingCandidates, setMatchingCandidates] = useState<MatchingCandidate[]>([])
+  const [loadingMatches, setLoadingMatches] = useState(false)
+  const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null)
+  const [rightPanelView, setRightPanelView] = useState<'applications' | 'matches'>('applications')
 
   useEffect(() => {
     fetchEmployer()
@@ -162,6 +218,53 @@ export default function EmployerDetailPage({ params }: PageProps) {
       alert("שגיאה בעדכון המשרה")
     }
   }
+
+  const fetchMatchingCandidates = async (positionId: string) => {
+    setSelectedPositionId(positionId)
+    setRightPanelView('matches')
+    setLoadingMatches(true)
+    setExpandedCandidate(null)
+    try {
+      const response = await fetch(`/api/positions/${positionId}/matching-candidates`)
+      if (response.ok) {
+        const data = await response.json()
+        setMatchingCandidates(data.candidates || [])
+      } else {
+        setMatchingCandidates([])
+      }
+    } catch (err) {
+      console.error("Error fetching matching candidates:", err)
+      setMatchingCandidates([])
+    } finally {
+      setLoadingMatches(false)
+    }
+  }
+
+  const getWhatsAppLink = (phone: string, candidateName: string, positionTitle: string, positionLocation?: string): string => {
+    const normalizedPhone = normalizePhoneForWhatsApp(phone)
+    let message = `היי ${candidateName}! 👋\n\nאני מטוונטי טו ג'ובס, ויש לי משרה שיכולה להתאים לך:`
+    message += `\n\n🎯 *${positionTitle}*`
+    if (employer) message += `\n🏢 *חברה:* ${employer.name}`
+    if (positionLocation) message += `\n📍 *מיקום:* ${positionLocation}`
+    message += `\n\nאשמח לדבר איתך ולספר עוד!\nמה אומרת/אומר? 😊`
+    return `https://wa.me/${normalizedPhone}?text=${safeEncodeURIComponent(message)}`
+  }
+
+  const getMatchScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-700 bg-green-50 border-green-200'
+    if (score >= 60) return 'text-blue-700 bg-blue-50 border-blue-200'
+    if (score >= 40) return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+    return 'text-gray-600 bg-gray-50 border-gray-200'
+  }
+
+  const getCvSummary = (candidate: MatchingCandidate): string => {
+    if (candidate.resume) {
+      return candidate.resume.length > 500 ? candidate.resume.substring(0, 500) + '...' : candidate.resume
+    }
+    return ''
+  }
+
+  const selectedPosition = employer?.positions.find(p => p.id === selectedPositionId)
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -472,18 +575,21 @@ export default function EmployerDetailPage({ params }: PageProps) {
                   {employer.positions.map((position) => (
                     <div 
                       key={position.id} 
-                      className="p-4 hover:bg-slate-50 transition-colors"
+                      className={`p-4 transition-colors cursor-pointer ${
+                        selectedPositionId === position.id ? 'bg-orange-50 border-r-4 border-[#FF8C00]' : 'hover:bg-slate-50'
+                      }`}
+                      onClick={() => fetchMatchingCandidates(position.id)}
                     >
                       <div className="flex items-start justify-between">
-                        <Link href={`/dashboard/positions/${position.id}`} className="flex-1">
-                          <h3 className="font-semibold text-slate-800 hover:text-[#FF8C00]">{position.title}</h3>
+                        <div className="flex-1">
+                          <h3 className={`font-semibold ${selectedPositionId === position.id ? 'text-[#FF8C00]' : 'text-slate-800'}`}>{position.title}</h3>
                           {position.location && (
                             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                               <MapPin className="h-3 w-3" />
                               {position.location}
                             </p>
                           )}
-                        </Link>
+                        </div>
                         <button
                           onClick={(e) => handleTogglePosition(e, position.id, position.active)}
                           className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
@@ -496,6 +602,14 @@ export default function EmployerDetailPage({ params }: PageProps) {
                         </button>
                       </div>
                       <div className="flex items-center gap-3 mt-2">
+                        <Link 
+                          href={`/dashboard/positions/${position.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs text-[#00A8A8] hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          פתח משרה
+                        </Link>
                         <Badge variant="outline" className="text-xs">
                           {position.applications.length} מועמדים
                         </Badge>
@@ -511,8 +625,299 @@ export default function EmployerDetailPage({ params }: PageProps) {
           </Card>
         </div>
 
-        {/* Applications Summary Table */}
+        {/* Right Panel - Applications or Matching Candidates */}
         <div className="col-span-2">
+          {/* Panel Toggle */}
+          <div className="flex items-center gap-2 mb-4">
+            <Button
+              variant={rightPanelView === 'applications' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRightPanelView('applications')}
+              className={rightPanelView === 'applications' ? 'bg-[#00A8A8] hover:bg-[#008888]' : ''}
+            >
+              <Users className="h-4 w-4 ml-2" />
+              מועמדים שהגישו ({totalCandidates})
+            </Button>
+            <Button
+              variant={rightPanelView === 'matches' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                if (selectedPositionId) {
+                  setRightPanelView('matches')
+                } else if (employer.positions.length > 0) {
+                  fetchMatchingCandidates(employer.positions[0].id)
+                }
+              }}
+              className={rightPanelView === 'matches' ? 'bg-[#FF8C00] hover:bg-[#E65100]' : ''}
+            >
+              <TrendingUp className="h-4 w-4 ml-2" />
+              מועמדים מתאימים {matchingCandidates.length > 0 && `(${matchingCandidates.length})`}
+            </Button>
+          </div>
+
+          {/* Matching Candidates View */}
+          {rightPanelView === 'matches' && (
+            <Card className="border-0 shadow-xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    {selectedPosition ? (
+                      <span>מועמדים מתאימים ל: {selectedPosition.title}</span>
+                    ) : (
+                      <span>בחר משרה מהרשימה</span>
+                    )}
+                  </div>
+                  {matchingCandidates.length > 0 && (
+                    <Badge className="bg-white/20 text-white border-0 text-base px-3">
+                      {matchingCandidates.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {!selectedPositionId ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Briefcase className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                    <p>לחץ על משרה ברשימה כדי לראות מועמדים מתאימים</p>
+                  </div>
+                ) : loadingMatches ? (
+                  <div className="p-8 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#FF8C00] mx-auto mb-3" />
+                    <p className="text-muted-foreground">מחפש מועמדים מתאימים עם AI...</p>
+                    <p className="text-xs text-gray-400 mt-1">50% מיקום | 25% תגיות | 25% AI Gemini</p>
+                  </div>
+                ) : matchingCandidates.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                    <p>לא נמצאו מועמדים מתאימים</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
+                    {matchingCandidates.slice(0, 30).map((candidate) => (
+                      <div key={candidate.id} className="transition-colors">
+                        {/* Candidate Row */}
+                        <div 
+                          className={`p-4 cursor-pointer hover:bg-slate-50 ${expandedCandidate === candidate.id ? 'bg-orange-50' : ''}`}
+                          onClick={() => setExpandedCandidate(expandedCandidate === candidate.id ? null : candidate.id)}
+                        >
+                          <div className="flex items-center gap-4">
+                            {/* Avatar + Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-slate-800 truncate">{candidate.name}</h4>
+                                {candidate.hasApplied && (
+                                  <Badge className="bg-green-100 text-green-700 text-xs">הגיש</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1">
+                                {candidate.currentTitle && (
+                                  <span className="text-sm text-gray-600">{candidate.currentTitle}</span>
+                                )}
+                                {candidate.city && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {candidate.city}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Match Score */}
+                            <div className={`${getMatchScoreColor(candidate.matchScore)} rounded-lg px-3 py-2 text-center border min-w-[65px]`}>
+                              <div className="text-xl font-bold leading-none">{candidate.matchScore}%</div>
+                              <div className="text-[10px] font-medium mt-0.5">התאמה</div>
+                            </div>
+
+                            {/* WhatsApp Button */}
+                            {candidate.phone && selectedPosition && (
+                              <a
+                                href={getWhatsAppLink(candidate.phone, candidate.name, selectedPosition.title, selectedPosition.location)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold whitespace-nowrap"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                <span>וואטסאפ</span>
+                              </a>
+                            )}
+
+                            {/* Expand arrow */}
+                            {expandedCandidate === candidate.id ? (
+                              <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Expanded CV Summary */}
+                        {expandedCandidate === candidate.id && (
+                          <div className="px-4 pb-4 bg-gradient-to-b from-orange-50 to-white border-t border-orange-200">
+                            <div className="grid grid-cols-2 gap-4 pt-4">
+                              {/* Left: Contact + AI Info */}
+                              <div className="space-y-3">
+                                {/* Contact */}
+                                <div className="bg-white rounded-lg p-3 border shadow-sm">
+                                  <h5 className="font-semibold text-sm text-slate-700 mb-2 flex items-center gap-1">
+                                    <Phone className="h-3.5 w-3.5" />
+                                    פרטי קשר
+                                  </h5>
+                                  <div className="space-y-1 text-sm">
+                                    {candidate.phone && (
+                                      <a href={`tel:${candidate.phone}`} className="flex items-center gap-2 text-gray-600 hover:text-blue-600" dir="ltr">
+                                        <Phone className="h-3 w-3" /> {candidate.phone}
+                                      </a>
+                                    )}
+                                    {candidate.alternatePhone && (
+                                      <a href={`tel:${candidate.alternatePhone}`} className="flex items-center gap-2 text-gray-600 hover:text-blue-600" dir="ltr">
+                                        <Phone className="h-3 w-3" /> {candidate.alternatePhone}
+                                      </a>
+                                    )}
+                                    {candidate.email && (
+                                      <a href={`mailto:${candidate.email}`} className="flex items-center gap-2 text-gray-600 hover:text-blue-600" dir="ltr">
+                                        <Mail className="h-3 w-3" /> {candidate.email}
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Score breakdown */}
+                                {candidate.scoreBreakdown && (
+                                  <div className="bg-white rounded-lg p-3 border shadow-sm">
+                                    <h5 className="font-semibold text-sm text-slate-700 mb-2 flex items-center gap-1">
+                                      <TrendingUp className="h-3.5 w-3.5" />
+                                      פירוט ציון
+                                    </h5>
+                                    <div className="space-y-2 text-xs">
+                                      <div className="flex justify-between items-center">
+                                        <span>📍 מיקום (50%)</span>
+                                        <span className="font-bold">{candidate.scoreBreakdown.location}/50</span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${(candidate.scoreBreakdown.location / 50) * 100}%` }} />
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>🏷️ תגיות (25%)</span>
+                                        <span className="font-bold">{candidate.scoreBreakdown.tags}/25</span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${(candidate.scoreBreakdown.tags / 25) * 100}%` }} />
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>🤖 AI (25%)</span>
+                                        <span className="font-bold">{candidate.scoreBreakdown.geminiAI}/25</span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${(candidate.scoreBreakdown.geminiAI / 25) * 100}%` }} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Education */}
+                                {candidate.educationStatus?.details && (
+                                  <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                                    <span>🎓</span>
+                                    <span>{candidate.educationStatus.details}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Right: CV Summary + Why Suitable */}
+                              <div className="space-y-3">
+                                {/* Why Suitable */}
+                                {candidate.whySuitable && candidate.whySuitable.length > 0 && (
+                                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
+                                    <h5 className="font-semibold text-sm text-green-800 mb-2">💡 למה מתאים למשרה:</h5>
+                                    <ul className="space-y-1">
+                                      {(Array.isArray(candidate.whySuitable) ? candidate.whySuitable : [candidate.whySuitable]).map((reason: string, idx: number) => (
+                                        <li key={idx} className="text-xs text-green-700 flex items-start gap-1">
+                                          <span className="mt-0.5">•</span>
+                                          <span>{reason}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* CV Summary */}
+                                {getCvSummary(candidate) && (
+                                  <div className="bg-white rounded-lg p-3 border shadow-sm">
+                                    <h5 className="font-semibold text-sm text-slate-700 mb-2 flex items-center gap-1">
+                                      <FileText className="h-3.5 w-3.5" />
+                                      תקציר קורות חיים
+                                    </h5>
+                                    <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed" dir="auto">
+                                      {getCvSummary(candidate)}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Comparison Tags */}
+                                {candidate.comparisonTags && candidate.comparisonTags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {candidate.comparisonTags.slice(0, 15).map((tag, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                                        style={{
+                                          backgroundColor: `${tag.color}20`,
+                                          color: tag.color,
+                                          border: `1px solid ${tag.color}40`
+                                        }}
+                                      >
+                                        {tag.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-orange-200">
+                              <Link href={`/dashboard/candidates/${candidate.id}`} onClick={(e) => e.stopPropagation()}>
+                                <Button size="sm" variant="outline" className="border-[#FF8C00] text-[#FF8C00] hover:bg-[#FF8C00]/10">
+                                  <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                                  צפה במועמד
+                                </Button>
+                              </Link>
+                              {candidate.resumeUrl && (
+                                <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                  <Button size="sm" variant="outline">
+                                    <Download className="h-3.5 w-3.5 ml-1" />
+                                    קורות חיים
+                                  </Button>
+                                </a>
+                              )}
+                              {candidate.phone && selectedPosition && (
+                                <a
+                                  href={getWhatsAppLink(candidate.phone, candidate.name, selectedPosition.title, selectedPosition.location)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                                    <MessageCircle className="h-3.5 w-3.5 ml-1" />
+                                    וואטסאפ למשרה
+                                  </Button>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Applications View */}
+          {rightPanelView === 'applications' && (
           <Card className="border-0 shadow-xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] text-white">
               <CardTitle className="flex items-center gap-2">
@@ -605,6 +1010,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
               )}
             </CardContent>
           </Card>
+          )}
         </div>
       </div>
     </div>

@@ -4,23 +4,22 @@ const fs = require('fs');
 const MAX_RETRIES = 30;
 const WAIT_SECONDS = 5;
 
-// Write runtime env vars to .env.local so Next.js can access them
-function writeEnvLocal() {
+// Write runtime env vars to JSON file so Next.js API routes can read them
+function writeRuntimeEnv() {
   const keysToPass = [
     'RESEND_API_KEY',
     'RESEND_FROM_EMAIL',
     'GEMINI_API_KEY',
   ];
-  const lines = [];
+  const config = {};
   for (const key of keysToPass) {
     if (process.env[key]) {
-      lines.push(`${key}=${process.env[key]}`);
+      config[key] = process.env[key];
     }
   }
-  if (lines.length > 0) {
-    fs.writeFileSync('.env.local', lines.join('\n') + '\n');
-    console.log(`📝 Created .env.local with ${lines.length} vars: ${keysToPass.filter(k => process.env[k]).join(', ')}`);
-  }
+  const filePath = require('path').join(__dirname, 'runtime-env.json');
+  fs.writeFileSync(filePath, JSON.stringify(config));
+  console.log(`📝 Created runtime-env.json with ${Object.keys(config).length} vars: ${Object.keys(config).join(', ')}`);
 }
 
 async function waitForDB() {
@@ -47,8 +46,8 @@ async function main() {
   console.log('🔍 ENV DEBUG - RESEND_API_KEY prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 6) : 'NOT SET');
   console.log('🔍 ENV DEBUG - Total env vars:', Object.keys(process.env).length);
   
-  // Write env vars to .env.local for Next.js
-  writeEnvLocal();
+  // Write env vars to runtime-env.json for Next.js
+  writeRuntimeEnv();
 
   // Step 1: Wait for database
   await waitForDB();

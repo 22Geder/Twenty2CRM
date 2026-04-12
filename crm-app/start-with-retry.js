@@ -1,7 +1,27 @@
 const { execSync } = require('child_process');
+const fs = require('fs');
 
 const MAX_RETRIES = 30;
 const WAIT_SECONDS = 5;
+
+// Write runtime env vars to .env.local so Next.js can access them
+function writeEnvLocal() {
+  const keysToPass = [
+    'RESEND_API_KEY',
+    'RESEND_FROM_EMAIL',
+    'GEMINI_API_KEY',
+  ];
+  const lines = [];
+  for (const key of keysToPass) {
+    if (process.env[key]) {
+      lines.push(`${key}=${process.env[key]}`);
+    }
+  }
+  if (lines.length > 0) {
+    fs.writeFileSync('.env.local', lines.join('\n') + '\n');
+    console.log(`📝 Created .env.local with ${lines.length} vars: ${keysToPass.filter(k => process.env[k]).join(', ')}`);
+  }
+}
 
 async function waitForDB() {
   for (let i = 1; i <= MAX_RETRIES; i++) {
@@ -27,6 +47,9 @@ async function main() {
   console.log('🔍 ENV DEBUG - RESEND_API_KEY prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 6) : 'NOT SET');
   console.log('🔍 ENV DEBUG - Total env vars:', Object.keys(process.env).length);
   
+  // Write env vars to .env.local for Next.js
+  writeEnvLocal();
+
   // Step 1: Wait for database
   await waitForDB();
 

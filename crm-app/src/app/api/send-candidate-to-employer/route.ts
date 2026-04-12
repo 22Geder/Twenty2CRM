@@ -488,11 +488,12 @@ export async function POST(request: NextRequest) {
     }
 
     // בדיקת הגדרות מייל - Resend (HTTP) או SMTP
-    const useResend = !!process.env.RESEND_API_KEY
+    const { getResendApiKey, getResendFromEmail } = require('@/lib/env')
+    const useResend = !!getResendApiKey()
     const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
     
     if (!useResend && (!process.env.SMTP_USER || !smtpPassword)) {
-      console.error('❌ Email not configured. RESEND_API_KEY:', !!process.env.RESEND_API_KEY, 'SMTP_USER:', !!process.env.SMTP_USER, 'SMTP_PASSWORD:', !!process.env.SMTP_PASSWORD, 'SMTP_PASS:', !!process.env.SMTP_PASS)
+      console.error('❌ Email not configured. RESEND_API_KEY:', !!getResendApiKey(), 'SMTP_USER:', !!process.env.SMTP_USER, 'SMTP_PASSWORD:', !!process.env.SMTP_PASSWORD, 'SMTP_PASS:', !!process.env.SMTP_PASS)
       return NextResponse.json(
         { error: "Email not configured - set RESEND_API_KEY or SMTP_USER + SMTP_PASSWORD" },
         { status: 500 }
@@ -509,7 +510,7 @@ export async function POST(request: NextRequest) {
     let resendClient: Resend | null = null
     
     if (useResend) {
-      resendClient = new Resend(process.env.RESEND_API_KEY)
+      resendClient = new Resend(getResendApiKey()!)
       console.log('📧 Using Resend HTTP API for email delivery')
     } else {
       const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
@@ -899,7 +900,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
     const sendResults: Array<{email: string, success: boolean, error?: string}> = []
     
     console.log(`📤 Sending email to ${emailsToSend.length} recipients: ${emailsToSend.map(e => e.email).join(', ')}`)
-    console.log(`📧 Method: ${useResend ? 'Resend' : 'SMTP'}, From: ${process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER}`)
+    console.log(`📧 Method: ${useResend ? 'Resend' : 'SMTP'}, From: ${getResendFromEmail() || process.env.SMTP_USER}`)
     
     // שליחה מקבילית לכל המיילים
     const sendPromises = emailsToSend.map(async (recipient) => {
@@ -913,7 +914,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
           
           if (resendClient) {
             // 📧 שליחה דרך Resend HTTP API (עובד ב-Railway)
-            const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER || 'onboarding@resend.dev'
+            const fromEmail = getResendFromEmail()
             const fromName = process.env.SMTP_FROM_NAME || 'צוות הגיוס'
             
             const resendOptions: any = {

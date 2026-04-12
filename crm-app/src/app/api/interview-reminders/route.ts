@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 import { Resend } from "resend"
+import { getResendApiKey, getResendFromEmail } from '@/lib/env'
 
 // פונקציית שליחת מייל - Resend (HTTP) או SMTP
 async function sendEmail(options: { from: string, to: string, subject: string, html: string }) {
-  if (process.env.RESEND_API_KEY) {
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER || 'onboarding@resend.dev'
+  if (getResendApiKey()) {
+    const resend = new Resend(getResendApiKey()!)
+    const fromEmail = getResendFromEmail()
     const fromName = options.from.match(/"([^"]+)"/)?.[1] || 'Twenty2CRM'
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     // בדיקת הגדרות מייל
     const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
-    if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !smtpPassword)) {
+    if (!getResendApiKey() && (!process.env.SMTP_USER || !smtpPassword)) {
       return NextResponse.json({ error: "Email not configured - set RESEND_API_KEY or SMTP credentials" }, { status: 500 })
     }
 

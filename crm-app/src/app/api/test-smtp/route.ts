@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
+import { getResendApiKey, getResendFromEmail } from '@/lib/env';
 
 // GET /api/test-smtp - בדיקת חיבור מייל (Resend או SMTP)
 export async function GET() {
@@ -12,8 +13,8 @@ export async function GET() {
     const smtpPort = parseInt(process.env.SMTP_PORT || '587')
 
     // בדיקה 1: האם משתני סביבה קיימים
-    const resendKey = process.env.RESEND_API_KEY
-    const resendFrom = process.env.RESEND_FROM_EMAIL
+    const resendKey = getResendApiKey()
+    const resendFrom = getResendFromEmail()
     const envCheck = {
       RESEND_API_KEY: !!resendKey,
       RESEND_API_KEY_PREFIX: resendKey ? resendKey.substring(0, 6) + '...' : 'NOT SET',
@@ -28,10 +29,10 @@ export async function GET() {
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)
-    if (process.env.RESEND_API_KEY) {
+    if (resendKey) {
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+        const resend = new Resend(resendKey)
+        const fromEmail = resendFrom
         
         const { data, error } = await resend.emails.send({
           from: `TWENTY2CRM Test <${fromEmail}>`,
@@ -188,13 +189,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No email address for this position/employer!', steps })
     }
 
-    const useResend = !!process.env.RESEND_API_KEY
+    const useResend = !!getResendApiKey()
     steps.push(`5. Using Resend: ${useResend}`)
-    steps.push(`5b. RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || 'NOT SET'}`)
+    steps.push(`5b. RESEND_FROM_EMAIL: ${getResendFromEmail()}`)
 
     if (useResend) {
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_USER || 'onboarding@resend.dev'
+      const resend = new Resend(getResendApiKey()!)
+      const fromEmail = getResendFromEmail()
       steps.push(`6. From email: ${fromEmail}`)
       steps.push(`6b. Sending to: ${targetEmail}`)
 

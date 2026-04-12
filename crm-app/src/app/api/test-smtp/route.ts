@@ -26,6 +26,10 @@ export async function GET() {
       SMTP_HOST: !!process.env.SMTP_HOST,
       SMTP_PORT: !!process.env.SMTP_PORT,
       ALL_ENV_KEYS_WITH_RESEND: Object.keys(process.env).filter(k => k.includes('RESEND')),
+      ALL_ENV_KEYS_COUNT: Object.keys(process.env).length,
+      SAMPLE_ENV_KEYS: Object.keys(process.env).filter(k => k.includes('SMTP') || k.includes('NEXT') || k.includes('RESEND') || k.includes('DATABASE')),
+      DIRECT_CHECK: typeof process.env['RESEND_API_KEY'],
+      DIRECT_VALUE_EXISTS: process.env['RESEND_API_KEY'] !== undefined,
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)

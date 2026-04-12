@@ -14,32 +14,42 @@ export async function GET() {
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
     const smtpPort = parseInt(process.env.SMTP_PORT || '587')
 
-    // Debug: check runtime-env.json
-    const cwd = process.cwd()
-    const jsonPath = join(cwd, 'runtime-env.json')
-    const jsonExists = existsSync(jsonPath)
-    let jsonContent = 'N/A'
-    if (jsonExists) {
-      try { jsonContent = readFileSync(jsonPath, 'utf-8') } catch(e: any) { jsonContent = 'READ ERROR: ' + e.message }
+    // Load runtime env (start-with-retry.js writes this before Next.js starts)
+    let runtimeEnv: Record<string, string> = {}
+    const possiblePaths = [
+      join(process.cwd(), 'runtime-env.json'),
+      '/app/runtime-env.json',
+      join(__dirname, '..', '..', '..', '..', '..', 'runtime-env.json'),
+    ]
+    const foundPaths: string[] = []
+    for (const p of possiblePaths) {
+      try {
+        if (existsSync(p)) {
+          foundPaths.push(p)
+          const content = readFileSync(p, 'utf-8')
+          const parsed = JSON.parse(content)
+          if (parsed.RESEND_API_KEY) {
+            runtimeEnv = parsed
+            break
+          }
+        }
+      } catch {}
     }
 
-    // בדיקה 1: האם משתני סביבה קיימים
-    const resendKey = getResendApiKey()
-    const resendFrom = getResendFromEmail()
+    // Try to get RESEND key from: 1) process.env 2) runtime-env.json
+    const resendKey = getResendApiKey() || runtimeEnv.RESEND_API_KEY
+    const resendFrom = getResendFromEmail() || runtimeEnv.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+    
     const envCheck = {
       RESEND_API_KEY: !!resendKey,
       RESEND_API_KEY_PREFIX: resendKey ? resendKey.substring(0, 6) + '...' : 'NOT SET',
       RESEND_FROM_EMAIL: !!resendFrom,
       RESEND_FROM_EMAIL_VALUE: resendFrom || 'NOT SET',
       SMTP_USER: !!smtpUser,
-      SMTP_PASSWORD: !!process.env.SMTP_PASSWORD,
-      SMTP_PASS: !!process.env.SMTP_PASS,
-      SMTP_HOST: !!process.env.SMTP_HOST,
-      SMTP_PORT: !!process.env.SMTP_PORT,
-      DEBUG_CWD: cwd,
-      DEBUG_JSON_PATH: jsonPath,
-      DEBUG_JSON_EXISTS: jsonExists,
-      DEBUG_JSON_CONTENT: jsonContent,
+      DEBUG_CWD: process.cwd(),
+      DEBUG_DIRNAME: __dirname,
+      DEBUG_FOUND_PATHS: foundPaths,
+      DEBUG_RUNTIME_ENV_KEYS: Object.keys(runtimeEnv),
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)

@@ -13,13 +13,19 @@ function writeRuntimeEnv() {
   ];
   const config = {};
   for (const key of keysToPass) {
-    if (process.env[key]) {
-      config[key] = process.env[key];
+    const val = process.env[key];
+    console.log(`📝 ENV CHECK: ${key} = ${val ? val.substring(0, 8) + '...' : 'NOT SET'} (type: ${typeof val})`);
+    if (val) {
+      config[key] = val;
     }
   }
+  // Also log ALL env keys that contain RESEND
+  const allResendKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('RESEND'));
+  console.log(`📝 All RESEND-related env keys: ${JSON.stringify(allResendKeys)}`);
+  
   const filePath = require('path').join(__dirname, 'runtime-env.json');
   fs.writeFileSync(filePath, JSON.stringify(config));
-  console.log(`📝 Created runtime-env.json with ${Object.keys(config).length} vars: ${Object.keys(config).join(', ')}`);
+  console.log(`📝 Created runtime-env.json at ${filePath} with ${Object.keys(config).length} vars: ${Object.keys(config).join(', ')}`);
 }
 
 async function waitForDB() {

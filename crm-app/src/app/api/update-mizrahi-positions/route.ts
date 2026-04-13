@@ -123,13 +123,7 @@ const ALL_POSITIONS: PositionData[] = [
   { title: 'טלר בסניף חריש - בנק מזרחי', location: 'חריש', region: 'מרחב שרון', regionCode: 'JB-108', branchType: 'מפוצל', employmentType: 'קבוע', additionalInfo: 'טלר יחיד בסניף, צריך מועמד שזמין לעבודה ללא אילוצים, יכולות גבוהות', salary: TELLER_SALARY_SPLIT, bonus: TELLER_BONUS_REGULAR, keywords: TELLER_KEYWORDS, salaryRange: '9,300-10,700 ₪', employmentTypeField: 'משרה מלאה' },
 ];
 
-export async function POST() {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+async function runSync() {
     console.log('🏦 מעדכן משרות בנק מזרחי טפחות - אפריל 2026')
 
     let employer = await prisma.employer.findFirst({
@@ -217,6 +211,14 @@ export async function POST() {
   }
 }
 
+export async function POST() {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return runSync()
+}
+
 // GET handler for one-time sync trigger
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -224,5 +226,5 @@ export async function GET(request: Request) {
   if (key !== 'mizrahi2026apr') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  return POST()
+  return runSync()
 }

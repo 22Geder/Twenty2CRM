@@ -67,15 +67,30 @@ async function main() {
     console.warn('⚠️ update-sela-positions failed (non-critical):', err.message);
   }
 
-  // Step 3: Start the app using spawn with explicit env passing
+  // Step 3: Write .env.local so Next.js loads RESEND vars at startup
+  try {
+    const envLines = [];
+    if (process.env.RESEND_API_KEY) {
+      envLines.push(`RESEND_API_KEY=${process.env.RESEND_API_KEY}`);
+    }
+    if (process.env.RESEND_FROM_EMAIL) {
+      envLines.push(`RESEND_FROM_EMAIL=${process.env.RESEND_FROM_EMAIL}`);
+    }
+    if (envLines.length > 0) {
+      fs.writeFileSync('.env.local', envLines.join('\n') + '\n');
+      console.log(`📝 Wrote .env.local with ${envLines.length} vars`);
+    }
+  } catch (err) {
+    console.warn('⚠️ Failed to write .env.local:', err.message);
+  }
+
+  // Step 4: Start the app
   console.log('🚀 Starting Next.js app...');
   const port = process.env.PORT || '3000';
-  console.log(`🔍 Passing ${Object.keys(process.env).length} env vars to Next.js, port: ${port}`);
-  console.log(`🔍 RESEND_API_KEY in env: ${!!process.env.RESEND_API_KEY}`);
+  console.log(`🔍 RESEND_API_KEY in env: ${!!process.env.RESEND_API_KEY}, port: ${port}`);
   
   const child = spawn('npx', ['next', 'start', '-H', '0.0.0.0', '-p', port], {
     stdio: 'inherit',
-    env: { ...process.env },
   });
   
   child.on('exit', (code) => {

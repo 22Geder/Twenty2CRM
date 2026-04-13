@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
                 <tr><td style="padding: 8px; font-weight: bold; color: #555;">טלפון:</td><td style="padding: 8px; direction: ltr;">${candidate.phone || 'לא צוין'}</td></tr>
                 <tr><td style="padding: 8px; font-weight: bold; color: #555;">אימייל:</td><td style="padding: 8px;">${candidate.email || 'לא צוין'}</td></tr>
                 <tr><td style="padding: 8px; font-weight: bold; color: #555;">עיר:</td><td style="padding: 8px;">${candidate.city || 'לא צוין'}</td></tr>
-                ${candidate.experience ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">ניסיון:</td><td style="padding: 8px;">${candidate.experience}</td></tr>` : ''}
+                ${candidate.yearsOfExperience ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">ניסיון:</td><td style="padding: 8px;">${candidate.yearsOfExperience} שנים</td></tr>` : ''}
               </table>
               
               <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-right: 4px solid #667eea;">

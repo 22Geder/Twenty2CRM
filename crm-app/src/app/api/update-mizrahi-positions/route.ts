@@ -124,6 +124,7 @@ const ALL_POSITIONS: PositionData[] = [
 ];
 
 async function runSync() {
+  try {
     console.log('🏦 מעדכן משרות בנק מזרחי טפחות - אפריל 2026')
 
     let employer = await prisma.employer.findFirst({

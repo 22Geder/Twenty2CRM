@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 import { Resend } from "resend"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { getResendApiKey, getResendFromEmail } from "@/lib/env"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -488,7 +489,6 @@ export async function POST(request: NextRequest) {
     }
 
     // בדיקת הגדרות מייל - Resend (HTTP) או SMTP
-    const { getResendApiKey, getResendFromEmail } = require('@/lib/env')
     const useResend = !!getResendApiKey()
     const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
     

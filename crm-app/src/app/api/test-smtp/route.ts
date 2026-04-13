@@ -2,36 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-
-// Read env var using multiple methods to diagnose Next.js bundling behavior
-function getEnvVar(name: string): string | undefined {
-  // Method 1: Dynamic key on process.env
-  const val = process.env[name];
-  if (val) return val;
-  
-  // Method 2: Read from .env.local file (written by start-with-retry.js)
-  try {
-    const envLocalPath = join(process.cwd(), '.env.local');
-    if (existsSync(envLocalPath)) {
-      const content = readFileSync(envLocalPath, 'utf-8');
-      const match = content.split('\n').find(line => line.startsWith(name + '='));
-      if (match) return match.split('=').slice(1).join('=').trim();
-    }
-  } catch {}
-  
-  // Method 3: Read from runtime-env.json
-  try {
-    const jsonPath = join(process.cwd(), 'runtime-env.json');
-    if (existsSync(jsonPath)) {
-      const config = JSON.parse(readFileSync(jsonPath, 'utf-8'));
-      if (config[name]) return config[name];
-    }
-  } catch {}
-  
-  return undefined;
-}
+import { getResendApiKey, getResendFromEmail } from '@/lib/env';
 
 // GET /api/test-smtp - בדיקת חיבור מייל (Resend או SMTP)
 export async function GET() {
@@ -41,30 +12,14 @@ export async function GET() {
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
     const smtpPort = parseInt(process.env.SMTP_PORT || '587')
 
-    // Try multiple methods to get RESEND vars
-    const resendKey = getEnvVar('RESEND_API_KEY');
-    const resendFrom = getEnvVar('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
-    
-    // Diagnostic: which method found the key?
-    const directAccess = process.env.RESEND_API_KEY;
-    const dynamicKey = 'RESEND_API_KEY';
-    const dynamicAccess = process.env[dynamicKey];
-    const envKeys = Object.keys(process.env).filter(k => k.includes('RESEND'));
+    const resendKey = getResendApiKey();
+    const resendFrom = getResendFromEmail();
     
     const envCheck = {
       RESEND_API_KEY: !!resendKey,
       RESEND_API_KEY_PREFIX: resendKey ? resendKey.substring(0, 6) + '...' : 'NOT SET',
       RESEND_FROM_EMAIL_VALUE: resendFrom,
       SMTP_USER: !!smtpUser,
-      _diag: {
-        direct: !!directAccess,
-        dynamic: !!dynamicAccess,
-        envKeysWithResend: envKeys,
-        envLocalExists: existsSync(join(process.cwd(), '.env.local')),
-        runtimeJsonExists: existsSync(join(process.cwd(), 'runtime-env.json')),
-        cwd: process.cwd(),
-        method: resendKey ? (directAccess ? 'process.env' : dynamicAccess ? 'dynamic' : 'file') : 'none',
-      }
     }
 
     // 🥇 ניסיון 1: Resend HTTP API (מומלץ ל-Railway)

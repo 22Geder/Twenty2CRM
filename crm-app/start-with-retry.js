@@ -4,28 +4,27 @@ const fs = require('fs');
 const MAX_RETRIES = 30;
 const WAIT_SECONDS = 5;
 
-// Write runtime env vars to JSON file so Next.js API routes can read them
-function writeRuntimeEnv() {
-  const keysToPass = [
-    'RESEND_API_KEY',
-    'RESEND_FROM_EMAIL',
-    'GEMINI_API_KEY',
-  ];
-  const config = {};
+// Write .env.local so Next.js loads RESEND vars at startup
+function writeEnvLocal() {
+  const keysToPass = ['RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'GEMINI_API_KEY'];
+  const lines = [];
   for (const key of keysToPass) {
-    const val = process.env[key];
-    console.log(`📝 ENV CHECK: ${key} = ${val ? val.substring(0, 8) + '...' : 'NOT SET'} (type: ${typeof val})`);
-    if (val) {
-      config[key] = val;
+    if (process.env[key]) {
+      lines.push(`${key}=${process.env[key]}`);
     }
   }
-  // Also log ALL env keys that contain RESEND
-  const allResendKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('RESEND'));
-  console.log(`📝 All RESEND-related env keys: ${JSON.stringify(allResendKeys)}`);
+  if (lines.length > 0) {
+    fs.writeFileSync('.env.local', lines.join('\n') + '\n');
+    console.log(`📝 Wrote .env.local with ${lines.length} vars`);
+  }
   
+  // Also write runtime-env.json as backup
+  const config = {};
+  for (const key of keysToPass) {
+    if (process.env[key]) config[key] = process.env[key];
+  }
   const filePath = require('path').join(__dirname, 'runtime-env.json');
   fs.writeFileSync(filePath, JSON.stringify(config));
-  console.log(`📝 Created runtime-env.json at ${filePath} with ${Object.keys(config).length} vars: ${Object.keys(config).join(', ')}`);
 }
 
 async function waitForDB() {
@@ -45,15 +44,8 @@ async function waitForDB() {
 }
 
 async function main() {
-  // Debug: check env vars at startup
-  const resendVars = Object.keys(process.env).filter(k => k.includes('RESEND'));
-  console.log('🔍 ENV DEBUG - RESEND vars:', resendVars);
-  console.log('🔍 ENV DEBUG - RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
-  console.log('🔍 ENV DEBUG - RESEND_API_KEY prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 6) : 'NOT SET');
-  console.log('🔍 ENV DEBUG - Total env vars:', Object.keys(process.env).length);
-  
-  // Write env vars to runtime-env.json for Next.js
-  writeRuntimeEnv();
+  // Write env vars for Next.js
+  writeEnvLocal();
 
   // Step 1: Wait for database
   await waitForDB();
@@ -67,27 +59,9 @@ async function main() {
     console.warn('⚠️ update-sela-positions failed (non-critical):', err.message);
   }
 
-  // Step 3: Write .env.local so Next.js loads RESEND vars at startup
-  try {
-    const envLines = [];
-    if (process.env.RESEND_API_KEY) {
-      envLines.push(`RESEND_API_KEY=${process.env.RESEND_API_KEY}`);
-    }
-    if (process.env.RESEND_FROM_EMAIL) {
-      envLines.push(`RESEND_FROM_EMAIL=${process.env.RESEND_FROM_EMAIL}`);
-    }
-    if (envLines.length > 0) {
-      fs.writeFileSync('.env.local', envLines.join('\n') + '\n');
-      console.log(`📝 Wrote .env.local with ${envLines.length} vars`);
-    }
-  } catch (err) {
-    console.warn('⚠️ Failed to write .env.local:', err.message);
-  }
-
   // Step 4: Start the app
   console.log('🚀 Starting Next.js app...');
   const port = process.env.PORT || '3000';
-  console.log(`🔍 RESEND_API_KEY in env: ${!!process.env.RESEND_API_KEY}, port: ${port}`);
   
   const child = spawn('npx', ['next', 'start', '-H', '0.0.0.0', '-p', port], {
     stdio: 'inherit',

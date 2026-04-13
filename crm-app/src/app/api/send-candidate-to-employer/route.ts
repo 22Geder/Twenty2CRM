@@ -882,14 +882,19 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
     // צירוף קורות חיים אם קיימים - בניית URL מלא
     if (candidate.resumeUrl) {
       // בניית URL מלא לקובץ קורות החיים
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'https://twenty2crm-production-7997.up.railway.app'
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'https://twenty2crm-production.up.railway.app'
       const fullResumeUrl = candidate.resumeUrl.startsWith('http') 
         ? candidate.resumeUrl 
         : `${baseUrl}${candidate.resumeUrl}`
       
+      // זיהוי סוג הקובץ מהשם
+      const originalName = candidate.resumeUrl.split('/').pop() || `${candidate.name}_CV`
+      const ext = originalName.includes('.') ? originalName.split('.').pop()?.toLowerCase() : 'pdf'
+      const filename = `${candidate.name}_CV.${ext}`
+      
       mailOptions.attachments = [
         {
-          filename: `${candidate.name}_CV.pdf`,
+          filename,
           path: fullResumeUrl,
         }
       ]
@@ -931,17 +936,18 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
               try {
                 const attachUrl = mailOptions.attachments[0].path
                 const controller = new AbortController()
-                const timeout = setTimeout(() => controller.abort(), 10000)
+                const timeout = setTimeout(() => controller.abort(), 30000)
                 const response = await fetch(attachUrl, { signal: controller.signal })
                 clearTimeout(timeout)
                 if (response.ok) {
                   const buffer = Buffer.from(await response.arrayBuffer())
+                  console.log(`📎 Resume fetched: ${buffer.length} bytes`)
                   resendOptions.attachments = [{
                     filename: mailOptions.attachments[0].filename,
-                    content: buffer.toString('base64'),
+                    content: buffer,
                   }]
                 } else {
-                  console.warn('⚠️ Resume fetch returned', response.status)
+                  console.warn(`⚠️ Resume fetch returned ${response.status} for ${attachUrl}`)
                 }
               } catch (attachErr: any) {
                 console.warn('⚠️ Could not attach resume via Resend (sending without):', attachErr.message)

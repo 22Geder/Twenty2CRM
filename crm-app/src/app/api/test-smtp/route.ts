@@ -259,6 +259,28 @@ export async function POST(request: NextRequest) {
         console.warn('⚠️ Could not attach resume to test email:', attachErr.message)
       }
 
+      // אם לא נמצא קו"ח אמיתי - צור PDF בדיקה כדי לוודא שהצירוף עובד
+      if (!attachedResume) {
+        const testPdfContent = `%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>>>>endobj
+4 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+5 0 obj<</Length 44>>stream
+BT /F1 24 Tf 100 700 Td (Test CV - TWENTY2CRM) Tj ET
+endstream
+endobj
+xref
+0 6
+trailer<</Size 6/Root 1 0 R>>
+startxref
+0
+%%EOF`
+        attachments = [{ filename: 'Test_CV_Demo.pdf', content: Buffer.from(testPdfContent) }]
+        attachedResume = true
+        resumeDebug.usedTestPdf = true
+      }
+
       const sendOptions: any = {
         from: `צוות הגיוס - HR22 <${fromEmail}>`,
         replyTo: '22geder@gmail.com',

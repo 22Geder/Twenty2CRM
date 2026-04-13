@@ -281,35 +281,55 @@ startxref
         resumeDebug.usedTestPdf = true
       }
 
+      // שליפת מועמד אמיתי + משרה אמיתית מהדאטהבייס
+      const realCandidate = await prisma.candidate.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { name: true, phone: true, email: true, city: true, yearsOfExperience: true, tags: { select: { name: true } } },
+      })
+      const realPosition = await prisma.position.findFirst({
+        orderBy: { createdAt: 'desc' },
+        include: { employer: { select: { name: true } } },
+      })
+
+      const cName = realCandidate?.name || 'ישראל ישראלי'
+      const cPhone = realCandidate?.phone || '050-1234567'
+      const cEmail = realCandidate?.email || 'israel@example.com'
+      const cCity = realCandidate?.city || 'תל אביב'
+      const cExp = realCandidate?.yearsOfExperience ? `${realCandidate.yearsOfExperience} שנות ניסיון` : '3 שנות ניסיון'
+      const cTags = realCandidate?.tags?.map((t: any) => t.name).join(', ') || 'שירות לקוחות'
+      const pTitle = realPosition?.title || 'נציג/ת שירות'
+      const pEmployer = realPosition?.employer?.name || 'חברה לדוגמה'
+      const pLocation = realPosition?.location || 'תל אביב'
+
       const sendOptions: any = {
         from: `צוות הגיוס - HR22 <${fromEmail}>`,
         replyTo: '22geder@gmail.com',
         to: [to],
-        subject: 'מועמד/ת מתאים/ה למשרת נציג/ת שירות - ישראל ישראלי',
+        subject: `מועמד/ת מתאים/ה למשרת ${pTitle} - ${cName}`,
         html: `
           <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0; color: white;">
               <h2 style="margin: 0;">🎯 מועמד/ת מתאים/ה למשרה שלכם</h2>
-              <p style="margin: 5px 0 0 0; opacity: 0.9;">נציג/ת שירות | דוגמה לחברה</p>
+              <p style="margin: 5px 0 0 0; opacity: 0.9;">${pTitle} | ${pEmployer}</p>
             </div>
             <div style="background: #f8f9fa; padding: 20px; border: 1px solid #e9ecef;">
               <h3 style="color: #333; margin-top: 0;">פרטי המועמד/ת:</h3>
               <table style="width: 100%; border-collapse: collapse;">
-                <tr><td style="padding: 8px; font-weight: bold; color: #555;">שם:</td><td style="padding: 8px;">ישראל ישראלי</td></tr>
-                <tr><td style="padding: 8px; font-weight: bold; color: #555;">טלפון:</td><td style="padding: 8px; direction: ltr;">050-1234567</td></tr>
-                <tr><td style="padding: 8px; font-weight: bold; color: #555;">אימייל:</td><td style="padding: 8px;">israel@example.com</td></tr>
-                <tr><td style="padding: 8px; font-weight: bold; color: #555;">עיר:</td><td style="padding: 8px;">תל אביב</td></tr>
-                <tr><td style="padding: 8px; font-weight: bold; color: #555;">ניסיון:</td><td style="padding: 8px;">3 שנות ניסיון בשירות לקוחות</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">שם:</td><td style="padding: 8px;">${cName}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">טלפון:</td><td style="padding: 8px; direction: ltr;">${cPhone}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">אימייל:</td><td style="padding: 8px;">${cEmail}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">עיר:</td><td style="padding: 8px;">${cCity}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">ניסיון:</td><td style="padding: 8px;">${cExp}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">תחומים:</td><td style="padding: 8px;">${cTags}</td></tr>
               </table>
               
               <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-right: 4px solid #667eea;">
                 <h4 style="margin: 0 0 10px 0; color: #667eea;">✨ נקודות התאמה:</h4>
                 <ul style="margin: 0; padding-right: 20px; color: #555;">
-                  <li>ניסיון של 3 שנים בשירות לקוחות טלפוני ופרונטלי</li>
-                  <li>מתגורר/ת בתל אביב - קרוב למיקום המשרד</li>
-                  <li>יכולת עבודה במשמרות כולל ערבים</li>
-                  <li>שליטה מלאה בעברית ואנגלית</li>
-                  <li>זמינות מיידית</li>
+                  <li>מתגורר/ת ב${cCity} - קרוב למיקום המשרה ב${pLocation}</li>
+                  <li>בעל/ת ${cExp} רלוונטי</li>
+                  <li>תחומי התמחות: ${cTags}</li>
+                  <li>זמין/ה להתחלת עבודה</li>
                 </ul>
               </div>
             </div>
@@ -330,7 +350,7 @@ startxref
         return NextResponse.json({ success: false, error: error.message || JSON.stringify(error) }, { status: 500 })
       }
 
-      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail, attachedResume, resumeDebug })
+      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail, attachedResume, candidate: cName, position: pTitle, employer: pEmployer, resumeDebug })
     }
 
     return NextResponse.json({ error: 'Need "to" email or "candidateId"+"positionId"' }, { status: 400 })

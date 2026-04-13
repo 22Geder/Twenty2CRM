@@ -216,3 +216,13 @@ export async function POST() {
     return NextResponse.json({ error: 'שגיאה בעדכון משרות מזרחי', details: String(error) }, { status: 500 })
   }
 }
+
+// GET handler for one-time sync trigger
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const key = searchParams.get('key')
+  if (key !== 'mizrahi2026apr') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return POST()
+}

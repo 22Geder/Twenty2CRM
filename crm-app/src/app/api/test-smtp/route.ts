@@ -223,7 +223,35 @@ export async function POST(request: NextRequest) {
 
     // אם יש רק כתובת to - שלח מייל דוגמה
     if (to) {
-      const { data, error } = await resend.emails.send({
+      // ניסיון למצוא מועמד אמיתי עם קורות חיים
+      let attachments: any[] = []
+      let attachedResume = false
+      try {
+        const candidateWithResume = await prisma.candidate.findFirst({
+          where: { resumeUrl: { not: null } },
+          select: { name: true, resumeUrl: true },
+        })
+        if (candidateWithResume?.resumeUrl) {
+          const baseUrl = process.env.NEXTAUTH_URL || 'https://twenty2crm-production.up.railway.app'
+          const fullUrl = candidateWithResume.resumeUrl.startsWith('http')
+            ? candidateWithResume.resumeUrl
+            : `${baseUrl}${candidateWithResume.resumeUrl}`
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 30000)
+          const resp = await fetch(fullUrl, { signal: controller.signal })
+          clearTimeout(timeout)
+          if (resp.ok) {
+            const buffer = Buffer.from(await resp.arrayBuffer())
+            const ext = candidateWithResume.resumeUrl.split('.').pop()?.toLowerCase() || 'pdf'
+            attachments = [{ filename: `${candidateWithResume.name}_CV.${ext}`, content: buffer }]
+            attachedResume = true
+          }
+        }
+      } catch (attachErr: any) {
+        console.warn('⚠️ Could not attach resume to test email:', attachErr.message)
+      }
+
+      const sendOptions: any = {
         from: `צוות הגיוס - HR22 <${fromEmail}>`,
         replyTo: '22geder@gmail.com',
         to: [to],
@@ -261,13 +289,18 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
         `,
-      })
+      }
+      if (attachments.length > 0) {
+        sendOptions.attachments = attachments
+      }
+
+      const { data, error } = await resend.emails.send(sendOptions)
 
       if (error) {
         return NextResponse.json({ success: false, error: error.message || JSON.stringify(error) }, { status: 500 })
       }
 
-      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail })
+      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail, attachedResume })
     }
 
     return NextResponse.json({ error: 'Need "to" email or "candidateId"+"positionId"' }, { status: 400 })

@@ -143,72 +143,135 @@ export async function GET() {
   }
 }
 
-// POST /api/test-smtp - diagnostic: test the real send flow step by step
+// POST /api/test-smtp - שליחת מייל בדיקה לכתובת ספציפית (דוגמת מייל למעסיק)
 export async function POST(request: NextRequest) {
-  const steps: string[] = []
   try {
-    const { candidateId, positionId } = await request.json()
-    steps.push('1. Parsed request body')
+    const { to, candidateId, positionId } = await request.json()
+    const resendKey = getResendApiKey()
+    const fromEmail = getResendFromEmail()
 
-    if (!candidateId || !positionId) {
-      return NextResponse.json({ error: 'Need candidateId and positionId', steps })
+    if (!resendKey) {
+      return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 })
     }
 
-    const candidate = await prisma.candidate.findUnique({
-      where: { id: candidateId },
-      include: { tags: true },
-    })
-    steps.push(`2. Candidate: ${candidate ? candidate.name : 'NOT FOUND'}`)
+    const resend = new Resend(resendKey)
 
-    if (!candidate) {
-      return NextResponse.json({ error: 'Candidate not found', steps })
-    }
-
-    const position = await prisma.position.findUnique({
-      where: { id: positionId },
-      include: { employer: true, tags: true },
-    })
-    steps.push(`3. Position: ${position ? position.title : 'NOT FOUND'}`)
-    steps.push(`3b. Employer: ${position?.employer ? position.employer.name : 'NO EMPLOYER'}`)
-    steps.push(`3c. Employer email: ${position?.employer?.email || 'NONE'}`)
-    steps.push(`3d. Contact email: ${(position as any)?.contactEmail || 'NONE'}`)
-
-    if (!position) {
-      return NextResponse.json({ error: 'Position not found', steps })
-    }
-
-    const targetEmail = (position as any)?.contactEmail || position.employer?.email
-    steps.push(`4. Target email resolved: ${targetEmail || 'NONE!'}`)
-
-    if (!targetEmail) {
-      return NextResponse.json({ error: 'No email address for this position/employer!', steps })
-    }
-
-    const useResend = !!process.env.RESEND_API_KEY
-    steps.push(`5. Using Resend: ${useResend}`)
-    steps.push(`5b. RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}`)
-
-    if (useResend) {
-      const resend = new Resend(process.env.RESEND_API_KEY!)
-      const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-      steps.push(`6. From email: ${fromEmail}`)
-      steps.push(`6b. Sending to: ${targetEmail}`)
-
-      const result = await resend.emails.send({
-        from: `צוות הגיוס <${fromEmail}>`,
-        to: [targetEmail],
-        subject: `[בדיקה] מועמד/ת: ${candidate.name} - ${position.title}`,
-        html: `<div dir="rtl"><h2>בדיקת שליחה</h2><p>מועמד: ${candidate.name}</p><p>משרה: ${position.title}</p><p>מעסיק: ${position.employer?.name}</p></div>`,
+    // אם יש candidateId ו-positionId - שלח מייל אמיתי עם נתונים מה-DB
+    if (candidateId && positionId) {
+      const candidate = await prisma.candidate.findUnique({
+        where: { id: candidateId },
+        include: { tags: true },
       })
-      steps.push(`7. Resend result: ${JSON.stringify(result)}`)
+      const position = await prisma.position.findUnique({
+        where: { id: positionId },
+        include: { employer: true, tags: true },
+      })
 
-      return NextResponse.json({ success: true, steps, resendId: result.data?.id })
+      if (!candidate || !position) {
+        return NextResponse.json({ error: 'Candidate or Position not found' }, { status: 404 })
+      }
+
+      const targetEmail = to || (position as any)?.contactEmail || position.employer?.email
+      if (!targetEmail) {
+        return NextResponse.json({ error: 'No target email' }, { status: 400 })
+      }
+
+      const { data, error } = await resend.emails.send({
+        from: `צוות הגיוס - HR22 <${fromEmail}>`,
+        replyTo: '22geder@gmail.com',
+        to: [targetEmail],
+        subject: `מועמד/ת מתאים/ה למשרת ${position.title} - ${candidate.name}`,
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0; color: white;">
+              <h2 style="margin: 0;">🎯 מועמד/ת מתאים/ה למשרה שלכם</h2>
+              <p style="margin: 5px 0 0 0; opacity: 0.9;">${position.title} | ${position.employer?.name || ''}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border: 1px solid #e9ecef;">
+              <h3 style="color: #333; margin-top: 0;">פרטי המועמד/ת:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">שם:</td><td style="padding: 8px;">${candidate.name}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">טלפון:</td><td style="padding: 8px; direction: ltr;">${candidate.phone || 'לא צוין'}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">אימייל:</td><td style="padding: 8px;">${candidate.email || 'לא צוין'}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">עיר:</td><td style="padding: 8px;">${candidate.city || 'לא צוין'}</td></tr>
+                ${candidate.experience ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">ניסיון:</td><td style="padding: 8px;">${candidate.experience}</td></tr>` : ''}
+              </table>
+              
+              <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-right: 4px solid #667eea;">
+                <h4 style="margin: 0 0 10px 0; color: #667eea;">✨ נקודות התאמה:</h4>
+                <ul style="margin: 0; padding-right: 20px; color: #555;">
+                  <li>ניסיון רלוונטי בתחום</li>
+                  <li>מיקום גאוגרפי מתאים</li>
+                  <li>זמינות מיידית</li>
+                </ul>
+              </div>
+            </div>
+            <div style="background: #333; color: white; padding: 15px; border-radius: 0 0 10px 10px; text-align: center; font-size: 12px;">
+              <p style="margin: 0;">נשלח מ-TWENTY2CRM | צוות הגיוס HR22</p>
+              <p style="margin: 5px 0 0 0; opacity: 0.7;">להשבה על מייל זה - לחצו Reply</p>
+            </div>
+          </div>
+        `,
+      })
+
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message || JSON.stringify(error) }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, resendId: data?.id, sentTo: targetEmail, from: fromEmail, candidate: candidate.name, position: position.title })
     }
 
-    return NextResponse.json({ error: 'No Resend configured', steps })
+    // אם יש רק כתובת to - שלח מייל דוגמה
+    if (to) {
+      const { data, error } = await resend.emails.send({
+        from: `צוות הגיוס - HR22 <${fromEmail}>`,
+        replyTo: '22geder@gmail.com',
+        to: [to],
+        subject: 'מועמד/ת מתאים/ה למשרת נציג/ת שירות - ישראל ישראלי',
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0; color: white;">
+              <h2 style="margin: 0;">🎯 מועמד/ת מתאים/ה למשרה שלכם</h2>
+              <p style="margin: 5px 0 0 0; opacity: 0.9;">נציג/ת שירות | דוגמה לחברה</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border: 1px solid #e9ecef;">
+              <h3 style="color: #333; margin-top: 0;">פרטי המועמד/ת:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">שם:</td><td style="padding: 8px;">ישראל ישראלי</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">טלפון:</td><td style="padding: 8px; direction: ltr;">050-1234567</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">אימייל:</td><td style="padding: 8px;">israel@example.com</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">עיר:</td><td style="padding: 8px;">תל אביב</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold; color: #555;">ניסיון:</td><td style="padding: 8px;">3 שנות ניסיון בשירות לקוחות</td></tr>
+              </table>
+              
+              <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-right: 4px solid #667eea;">
+                <h4 style="margin: 0 0 10px 0; color: #667eea;">✨ נקודות התאמה:</h4>
+                <ul style="margin: 0; padding-right: 20px; color: #555;">
+                  <li>ניסיון של 3 שנים בשירות לקוחות טלפוני ופרונטלי</li>
+                  <li>מתגורר/ת בתל אביב - קרוב למיקום המשרד</li>
+                  <li>יכולת עבודה במשמרות כולל ערבים</li>
+                  <li>שליטה מלאה בעברית ואנגלית</li>
+                  <li>זמינות מיידית</li>
+                </ul>
+              </div>
+            </div>
+            <div style="background: #333; color: white; padding: 15px; border-radius: 0 0 10px 10px; text-align: center; font-size: 12px;">
+              <p style="margin: 0;">נשלח מ-TWENTY2CRM | צוות הגיוס HR22</p>
+              <p style="margin: 5px 0 0 0; opacity: 0.7;">להשבה על מייל זה - לחצו Reply</p>
+            </div>
+          </div>
+        `,
+      })
+
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message || JSON.stringify(error) }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail })
+    }
+
+    return NextResponse.json({ error: 'Need "to" email or "candidateId"+"positionId"' }, { status: 400 })
   } catch (error: any) {
-    steps.push(`ERROR: ${error.message}`)
-    steps.push(`STACK: ${error.stack?.substring(0, 500)}`)
-    return NextResponse.json({ error: error.message, steps }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

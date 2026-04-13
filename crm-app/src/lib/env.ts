@@ -35,5 +35,5 @@ export function getResendApiKey(): string | undefined {
 }
 
 export function getResendFromEmail(): string {
-  return envKey('RESEND_FROM_EMAIL') || 'onboarding@resend.dev'
+  return envKey('RESEND_FROM_EMAIL') || 'office@hr22group.com'
 }

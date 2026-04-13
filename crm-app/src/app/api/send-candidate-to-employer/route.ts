@@ -919,6 +919,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
             
             const resendOptions: any = {
               from: `${fromName} <${fromEmail}>`,
+              replyTo: '22geder@gmail.com',
               to: [recipient.email],
               subject: emailSubject,
               html: emailHTML,

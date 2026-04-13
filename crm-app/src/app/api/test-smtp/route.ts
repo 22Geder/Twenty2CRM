@@ -30,6 +30,7 @@ export async function GET() {
         
         const { data, error } = await resend.emails.send({
           from: `TWENTY2CRM Test <${fromEmail}>`,
+          replyTo: '22geder@gmail.com',
           to: [smtpUser || '22geder@gmail.com'],
           subject: '✅ בדיקת Resend - TWENTY2CRM',
           html: `

@@ -12,6 +12,7 @@ async function sendEmail(options: { from: string, to: string, subject: string, h
     const fromName = options.from.match(/"([^"]+)"/)?.[1] || 'Twenty2CRM'
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
+      replyTo: '22geder@gmail.com',
       to: [options.to],
       subject: options.subject,
       html: options.html,

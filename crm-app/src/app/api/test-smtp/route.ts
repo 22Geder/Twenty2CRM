@@ -226,28 +226,36 @@ export async function POST(request: NextRequest) {
       // ניסיון למצוא מועמד אמיתי עם קורות חיים
       let attachments: any[] = []
       let attachedResume = false
+      let resumeDebug: any = {}
       try {
         const candidateWithResume = await prisma.candidate.findFirst({
-          where: { resumeUrl: { not: null } },
-          select: { name: true, resumeUrl: true },
+          where: { AND: [{ resumeUrl: { not: null } }, { resumeUrl: { not: '' } }] },
+          select: { id: true, name: true, resumeUrl: true },
         })
+        resumeDebug.candidateFound = !!candidateWithResume
+        resumeDebug.candidateName = candidateWithResume?.name
+        resumeDebug.resumeUrl = candidateWithResume?.resumeUrl
         if (candidateWithResume?.resumeUrl) {
           const baseUrl = process.env.NEXTAUTH_URL || 'https://twenty2crm-production.up.railway.app'
           const fullUrl = candidateWithResume.resumeUrl.startsWith('http')
             ? candidateWithResume.resumeUrl
             : `${baseUrl}${candidateWithResume.resumeUrl}`
+          resumeDebug.fullUrl = fullUrl
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 30000)
           const resp = await fetch(fullUrl, { signal: controller.signal })
           clearTimeout(timeout)
+          resumeDebug.fetchStatus = resp.status
           if (resp.ok) {
             const buffer = Buffer.from(await resp.arrayBuffer())
+            resumeDebug.fileSize = buffer.length
             const ext = candidateWithResume.resumeUrl.split('.').pop()?.toLowerCase() || 'pdf'
             attachments = [{ filename: `${candidateWithResume.name}_CV.${ext}`, content: buffer }]
             attachedResume = true
           }
         }
       } catch (attachErr: any) {
+        resumeDebug.error = attachErr.message
         console.warn('⚠️ Could not attach resume to test email:', attachErr.message)
       }
 
@@ -300,7 +308,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: error.message || JSON.stringify(error) }, { status: 500 })
       }
 
-      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail, attachedResume })
+      return NextResponse.json({ success: true, resendId: data?.id, sentTo: to, from: fromEmail, attachedResume, resumeDebug })
     }
 
     return NextResponse.json({ error: 'Need "to" email or "candidateId"+"positionId"' }, { status: 400 })

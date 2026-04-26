@@ -94,6 +94,7 @@ export interface DeepPositionAnalysis {
     employer: string
     location: string
     department: string | null
+    transportation?: string  // ערי הסעה (אם קיים)
   }
   
   // דרישות
@@ -380,7 +381,8 @@ export async function analyzePositionDeep(
   description: string,
   requirements: string,
   employer: string,
-  location: string
+  location: string,
+  transportation?: string
 ): Promise<DeepPositionAnalysis> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
@@ -460,7 +462,8 @@ ${allSystemKeywords.slice(0, 200).join(', ')}
         title: parsed.basicInfo?.title || title,
         employer: parsed.basicInfo?.employer || employer,
         location: parsed.basicInfo?.location || location,
-        department: parsed.basicInfo?.department || null
+        department: parsed.basicInfo?.department || null,
+        transportation: transportation || undefined
       },
       requirements: {
         mustHave: Array.isArray(parsed.requirements?.mustHave) ? parsed.requirements.mustHave : [],
@@ -1163,6 +1166,15 @@ function calculateLocationMatch(resume: DeepResumeAnalysis, position: DeepPositi
     return { score: 10 }
   }
   
+  // בדיקת הסעות - אם יש הסעה מעיר המועמד
+  if (position.basicInfo.transportation) {
+    const transportText = position.basicInfo.transportation.toLowerCase()
+    // בדיקה אם עיר המועמד מופיעה ברשימת ערי ההסעה
+    if (transportText.includes(candidateCity) || candidateCity.split(' ').some(word => word.length > 2 && transportText.includes(word))) {
+      return { score: 9 } // הסעה זמינה - ציון גבוה כמעט כמו מיקום מדויק
+    }
+  }
+
   // ערים קרובות (אזור גוש דן)
   const gushDan = ['תל אביב', 'רמת גן', 'גבעתיים', 'בני ברק', 'חולון', 'בת ים', 'פתח תקווה', 'ראשון לציון', 'הרצליה', 'רעננה']
   const isGushDan = (city: string) => gushDan.some(g => city.includes(g))

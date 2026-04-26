@@ -101,13 +101,18 @@ export async function GET(request: NextRequest) {
       
       if (existingPosProfile?.deepAnalysis && !forceRefresh) {
         positionAnalysis = existingPosProfile.deepAnalysis as DeepPositionAnalysis
+        // הזרקת transportation גם לאנליזה שמורה בקאש
+        if (position.transportation) {
+          positionAnalysis.basicInfo.transportation = position.transportation
+        }
       } else {
         positionAnalysis = await analyzePositionDeep(
           position.title,
           position.description || "",
           position.requirements || "",
           position.employer?.name || "",
-          position.location || ""
+          position.location || "",
+          position.transportation || undefined
         )
         
         const newPosProfile = {
@@ -194,13 +199,18 @@ export async function GET(request: NextRequest) {
         
         if (existingPosProfile?.deepAnalysis) {
           positionAnalysis = existingPosProfile.deepAnalysis as DeepPositionAnalysis
+          // הזרקת transportation גם לאנליזה שמורה בקאש
+          if (position.transportation) {
+            positionAnalysis.basicInfo.transportation = position.transportation
+          }
         } else {
           positionAnalysis = await analyzePositionDeep(
             position.title,
             position.description || "",
             position.requirements || "",
             position.employer?.name || "",
-            position.location || ""
+            position.location || "",
+            position.transportation || undefined
           )
           
           // שמור ברקע
@@ -303,7 +313,8 @@ export async function POST(request: NextRequest) {
           position.description || "",
           position.requirements || "",
           position.employer?.name || "",
-          position.location || ""
+          position.location || "",
+          position.transportation || undefined
         )
 
         const matchResult = await calculateAdvancedMatch(resumeAnalysis, positionAnalysis, resumeText)

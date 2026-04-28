@@ -45,3 +45,9 @@ next-env.d.ts
 
 # Vercel
 .vercel
+
+# Secrets & credentials
+RAILWAY_VARIABLES.txt
+service-account-key.json
+*.pem
+*.key

@@ -2,8 +2,6 @@
 // This runs automatically when the server starts
 
 import cron from 'node-cron';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 
 let cronJobsInitialized = false;
 
@@ -13,7 +11,10 @@ export async function register() {
     cronJobsInitialized = true;
     
     // Load runtime env vars from JSON file (written by start-with-retry.js)
+    // Dynamic imports avoid Turbopack ECMAScript module errors for Node.js built-ins
     try {
+      const { readFileSync, existsSync } = await import('fs');
+      const { join } = await import('path');
       const envPath = join(process.cwd(), 'runtime-env.json');
       if (existsSync(envPath)) {
         const config = JSON.parse(readFileSync(envPath, 'utf-8'));

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// 🔒 הגנת אבטחה - Middleware ראשי
+// 🔒 הגנת אבטחה - Proxy ראשי (Next.js 16)
 // חוסם גישה ל-/admin, מוסיף headers אבטחה, הגנה מפני brute force
 
 // נתיב סודי לכניסת אדמין - שמור את הקישור הזה!
@@ -48,7 +48,7 @@ function enforceMapSizeLimit<V>(map: Map<string, V>, maxSize: number) {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
              request.headers.get('x-real-ip') || 
@@ -190,7 +190,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // הפעל middleware על כל הנתיבים חוץ מקבצים סטטיים
+    // הפעל proxy על כל הנתיבים חוץ מקבצים סטטיים
     '/((?!_next/static|_next/image|favicon.ico|icons|logo|manifest|sw).*)',
   ],
 }

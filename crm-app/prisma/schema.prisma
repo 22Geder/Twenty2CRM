@@ -22,6 +22,12 @@ model User {
   lastLoginAt       DateTime?
   active            Boolean         @default(true)
   
+  // 🔒 Security - Login lockout
+  failedLoginAttempts Int           @default(0)
+  lockedAt          DateTime?
+  lockToken         String?         @unique
+  lockTokenExpiresAt DateTime?
+  
   // Relations
   assignedPositions Position[]      @relation("PositionRecruiter")
   interviewsScheduled Interview[]   @relation("InterviewScheduler")
@@ -29,6 +35,25 @@ model User {
   notifications     Notification[]
   activityLogs      ActivityLog[]
   uploadedCandidates Candidate[]    @relation("CandidateUploader") // מועמדים שהמשתמש העלה
+  viewedCandidates  Candidate[]    @relation("CandidateLastViewer") // 🆕 מועמדים שהמשתמש צפה בהם לאחרונה
+  loginAttempts     LoginAttempt[]
+}
+
+// 🔒 מעקב ניסיונות התחברות
+model LoginAttempt {
+  id          String   @id @default(uuid())
+  email       String
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([email])
+  @@index([ipAddress])
+  @@index([createdAt])
 }
 
 model Department {
@@ -138,6 +163,13 @@ model Candidate {
   interviewReminderSent Boolean @default(false) // 🆕 האם נשלחה תזכורת לראיון
   uploadedById  String?         // 🆕 מי העלה את המועמד
   uploadedBy    User?           @relation("CandidateUploader", fields: [uploadedById], references: [id])
+  // 🆕 תקציר ידני שהמשתמש כתב (דעה אישית, נפרד מ-notes/aiProfile)
+  manualSummary String?
+  manualSummaryUpdatedAt DateTime?  // 🆕 מתי התקציר הידני עודכן לאחרונה
+  // 🆕 מעקב צפייה אחרונה - מי נכנס לכרטיס המועמד ומתי
+  lastViewedAt  DateTime?
+  lastViewedById String?
+  lastViewedBy  User?           @relation("CandidateLastViewer", fields: [lastViewedById], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   lastWhatsAppSentAt DateTime?  // 🆕 מתי נשלח וואטסאפ אחרון

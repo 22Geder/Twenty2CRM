@@ -94,7 +94,6 @@ export function TopNavbar() {
             <span className="bg-gradient-to-r from-[#F97316] to-[#C2410C] bg-clip-text text-transparent">2</span>
             <span className="text-[#F97316]">Jobs</span>
             <span className="text-slate-400 text-sm font-normal mr-3 hidden lg:inline">CRM</span>
-            <span className="text-yellow-400 text-xs font-medium mr-2 hidden xl:inline">👑 אבירן המלך אבל דור יותר חזק בפיפא</span>
           </div>
         </Link>
 

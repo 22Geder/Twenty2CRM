@@ -39,6 +39,7 @@ import {
 } from 'lucide-react'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 import { AICandidateSearch } from '@/components/ai-candidate-search'
+import CandidateManualSummary from '@/components/candidate-manual-summary'
 
 interface Application {
   id: string
@@ -70,6 +71,13 @@ interface Candidate {
     name: string
     email: string
   } | null
+  manualSummary?: string | null  // 🆕 תקציר ידני של המשתמש
+  manualSummaryUpdatedAt?: string | null  // 🆕 מתי התקציר עודכן לאחרונה
+  lastViewedAt?: string | null
+  lastViewedBy?: {
+    id: string
+    name: string
+  } | null
   _count: {
     applications: number
     interviews: number
@@ -92,6 +100,10 @@ export default function CandidatesPageModern() {
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  // 🆕 Popover על hover - תקציר ידני
+  const [hoverCandidateId, setHoverCandidateId] = useState<string | null>(null)
+  const [pinnedSummaryId, setPinnedSummaryId] = useState<string | null>(null)
   
   // 🆕 מודל התאמות טובות ביותר
   const [showBestMatches, setShowBestMatches] = useState(false)
@@ -725,7 +737,15 @@ export default function CandidatesPageModern() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCandidates.map((candidate) => (
-            <div key={candidate.id} className="relative">
+            <div
+              key={candidate.id}
+              className="relative"
+              onMouseEnter={() => setHoverCandidateId(candidate.id)}
+              onMouseLeave={() => {
+                // לא סוגר אם הקלט נעוץ (עריכה פתוחה)
+                if (pinnedSummaryId !== candidate.id) setHoverCandidateId(null)
+              }}
+            >
               {/* 🆕 Checkbox for bulk select */}
               <div 
                 className="absolute top-4 left-4 z-10"
@@ -809,6 +829,30 @@ export default function CandidatesPageModern() {
                     </div>
                   )}
 
+                  {/* 🆕 קיצור תקציר ידני (2 שורות) - ב-hover נפתח המלא */}
+                  <div
+                    className={`mt-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                      candidate.manualSummary
+                        ? 'bg-amber-50/70 border-amber-200 text-slate-700'
+                        : 'bg-slate-50 border-dashed border-slate-200 text-slate-400 italic'
+                    }`}
+                    title={candidate.manualSummary || 'אין תקציר ידני - העבר עכבר מעל הכרטיס כדי להוסיף'}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1 font-semibold text-amber-800 not-italic">
+                        📝 <span>תקציר ידני</span>
+                      </div>
+                      {candidate.manualSummary && candidate.manualSummaryUpdatedAt && (
+                        <span className="text-[10px] text-slate-500 font-normal not-italic" title={new Date(candidate.manualSummaryUpdatedAt).toLocaleString('he-IL')}>
+                          🕐 {new Date(candidate.manualSummaryUpdatedAt).toLocaleDateString('he-IL')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="line-clamp-2 whitespace-pre-wrap leading-tight">
+                      {candidate.manualSummary || 'טרם נרשם - לחץ/רחף לעריכה'}
+                    </div>
+                  </div>
+
                   {/* Premium Footer */}
                   <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                     <div className="flex flex-col gap-1">
@@ -851,6 +895,59 @@ export default function CandidatesPageModern() {
                 </CardContent>
               </Card>
               </Link>
+
+              {/* 🆕 Popover תקציר ידני בעת hover */}
+              {(hoverCandidateId === candidate.id || pinnedSummaryId === candidate.id) && (
+                <div
+                  dir="rtl"
+                  className="absolute z-30 top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 animate-in fade-in slide-in-from-top-2"
+                  onClick={(e) => e.preventDefault()}
+                  onMouseEnter={() => setHoverCandidateId(candidate.id)}
+                  onMouseLeave={() => {
+                    if (pinnedSummaryId !== candidate.id) setHoverCandidateId(null)
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-bold text-amber-900 flex items-center gap-1">
+                      📝 תקציר ידני
+                    </h4>
+                    {candidate.source && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {candidate.source === 'UPLOAD' ? '📂 מהמחשב' :
+                         candidate.source === 'EMAIL_AUTO' ? '📧 מייל' :
+                         candidate.source === 'EMAIL_HISTORICAL' ? '📧 מייל (היסטורי)' :
+                         candidate.source === 'WHATSAPP' ? '💬 וואטסאפ' :
+                         candidate.source === 'MANUAL' ? '✍️ ידני' :
+                         candidate.source}
+                      </Badge>
+                    )}
+                  </div>
+                  <CandidateManualSummary
+                    candidateId={candidate.id}
+                    initialSummary={candidate.manualSummary}
+                    initialUpdatedAt={candidate.manualSummaryUpdatedAt}
+                    variant="compact"
+                    onEditingChange={(isEditing) => {
+                      setPinnedSummaryId(isEditing ? candidate.id : null)
+                    }}
+                    onSaved={(newSummary, newUpdatedAt) => {
+                      // עדכון לוקלי של הרשימה + ביטול ה-pin
+                      setFilteredCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, manualSummary: newSummary, manualSummaryUpdatedAt: newUpdatedAt } : c))
+                      setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, manualSummary: newSummary, manualSummaryUpdatedAt: newUpdatedAt } : c))
+                      setPinnedSummaryId(null)
+                    }}
+                  />
+                  {candidate.lastViewedAt && (
+                    <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                      👁️ נצפה לאחרונה: {new Date(candidate.lastViewedAt).toLocaleString('he-IL')}
+                      {candidate.lastViewedBy?.name ? ` · ${candidate.lastViewedBy.name}` : ''}
+                    </div>
+                  )}
+                  <div className="mt-2 text-[10px] text-slate-400 text-center">
+                    💡 לחץ "ערוך"/"כתוב" כדי לנעוץ ולערוך
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

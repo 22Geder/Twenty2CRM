@@ -29,6 +29,8 @@ export default function CandidateNotes({ candidateId }: CandidateNotesProps) {
     type: 'GENERAL',
     isPrivate: false
   });
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
     fetchNotes();
@@ -88,6 +90,36 @@ export default function CandidateNotes({ candidateId }: CandidateNotesProps) {
       }
     } catch (error) {
       console.error('Error deleting note:', error);
+    }
+  };
+
+  const startEditing = (note: Note) => {
+    setEditingNoteId(note.id);
+    setEditingContent(note.content);
+  };
+
+  const cancelEditing = () => {
+    setEditingNoteId(null);
+    setEditingContent('');
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!editingContent.trim()) return;
+    try {
+      const response = await fetch(`/api/notes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editingContent.trim() })
+      });
+      if (response.ok) {
+        await fetchNotes();
+        cancelEditing();
+      } else {
+        alert('שגיאה בעדכון הערה');
+      }
+    } catch (error) {
+      console.error('Error updating note:', error);
+      alert('שגיאה בעדכון הערה');
     }
   };
 
@@ -204,22 +236,60 @@ export default function CandidateNotes({ candidateId }: CandidateNotesProps) {
                     </span>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => deleteNote(note.id)}
-                  className="text-red-600 hover:bg-red-50"
-                >
-                  🗑️
-                </Button>
+                <div className="flex gap-1">
+                  {editingNoteId !== note.id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEditing(note)}
+                      className="text-blue-600 hover:bg-blue-50"
+                    >
+                      ✏️
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => deleteNote(note.id)}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    🗑️
+                  </Button>
+                </div>
               </div>
 
-              <div className="text-sm text-gray-800 whitespace-pre-wrap">
-                {note.content}
-              </div>
+              {editingNoteId === note.id ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editingContent}
+                    onChange={e => setEditingContent(e.target.value)}
+                    rows={4}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => saveEdit(note.id)}
+                    >
+                      שמור
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={cancelEditing}>
+                      ביטול
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                  {note.content}
+                </div>
+              )}
 
               <div className="text-xs text-gray-400 mt-2">
                 🕐 {new Date(note.createdAt).toLocaleString('he-IL')}
+                {note.updatedAt !== note.createdAt && (
+                  <span className="mr-2">(עודכן: {new Date(note.updatedAt).toLocaleString('he-IL')})</span>
+                )}
               </div>
             </Card>
           ))}

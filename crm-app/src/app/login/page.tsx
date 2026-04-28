@@ -15,6 +15,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isRegister, setIsRegister] = useState(false)
   const [error, setError] = useState("")
+  const [isLocked, setIsLocked] = useState(false)
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -67,6 +69,29 @@ export default function LoginPage() {
 
         if (result?.error) {
           setIsLoading(false)
+          
+          // 🔒 בדיקת נעילת חשבון
+          if (result.error === "ACCOUNT_LOCKED") {
+            setIsLocked(true)
+            setError("🔒 החשבון ננעל! נשלח מייל לאדמין עם קישור שחרור.")
+            return
+          }
+
+          // ⛔ בדיקת חשבון לא פעיל
+          if (result.error === "ACCOUNT_INACTIVE") {
+            setError("⛔ החשבון שלך לא פעיל. פנה לאדמין להפעלה.")
+            return
+          }
+          
+          // בדיקת ניסיונות נותרים
+          const failedMatch = result.error.match(/FAILED_ATTEMPT_(\d+)/)
+          if (failedMatch) {
+            const remaining = parseInt(failedMatch[1])
+            setRemainingAttempts(remaining)
+            setError(`⚠️ סיסמה שגויה! נותרו ${remaining} ניסיונות לפני נעילה.`)
+            return
+          }
+          
           setError("אימייל או סיסמה שגויים")
           return
         }
@@ -202,11 +227,14 @@ export default function LoginPage() {
               </div>
               
               {error && (
-                <div className="bg-gradient-to-r from-red-50 to-red-100 border-r-4 border-red-500 text-red-700 px-4 py-3 rounded-xl shadow-sm animate-shake">
+                <div className={`${isLocked ? 'bg-gradient-to-r from-red-100 to-red-200 border-red-600' : remainingAttempts !== null && remainingAttempts <= 1 ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-500' : 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-500'} border-r-4 text-red-700 px-4 py-3 rounded-xl shadow-sm animate-shake`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">⚠️</span>
+                    <span className="text-xl">{isLocked ? '🔒' : '⚠️'}</span>
                     <span className="font-medium">{error}</span>
                   </div>
+                  {isLocked && (
+                    <p className="text-sm text-red-500 mt-2">נשלח מייל לאדמין הראשי (office@hr22group.com) עם קישור שחרור</p>
+                  )}
                 </div>
               )}
 
@@ -217,7 +245,7 @@ export default function LoginPage() {
                     ? 'bg-gradient-to-r from-[#7CB342] to-[#8BC34A] hover:shadow-green-500/30' 
                     : 'bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] hover:shadow-teal-500/30'
                 }`}
-                disabled={isLoading}
+                disabled={isLoading || isLocked}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-3">
@@ -256,6 +284,20 @@ export default function LoginPage() {
                     : "אין לך חשבון? הירשם כאן 👈"}
                 </button>
               </div>
+
+              {/* שכחת סיסמה */}
+              {!isRegister && (
+                <div className="text-center pt-1">
+                  <p className="text-sm text-slate-400">
+                    שכחת סיסמה? פנה לאדמין: <a href="mailto:office@hr22group.com" className="text-[#FF8C00] hover:underline font-medium">office@hr22group.com</a>
+                  </p>
+                  {isLocked && (
+                    <p className="text-sm text-red-400 mt-1 font-medium">
+                      🔒 החשבון ננעל - נשלח מייל אוטומטי לאדמין לשחרור
+                    </p>
+                  )}
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import {
   Settings, User, Bell, Shield, Database, Mail,
   Palette, Globe, Key, Save, Check, RefreshCw,
-  Zap, MessageSquare, Upload, Brain, Clock, Sparkles
+  Zap, MessageSquare, Upload, Brain, Clock, Sparkles,
+  Lock, Eye, EyeOff
 } from "lucide-react"
 
 // הגדרות ברירת מחדל
@@ -43,9 +45,20 @@ const DEFAULT_SETTINGS = {
 }
 
 export default function SettingsPage() {
+  const { data: session } = useSession()
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // סטייט לשינוי סיסמה
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [passwordChanging, setPasswordChanging] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState("")
+  const [passwordError, setPasswordError] = useState("")
 
   // טעינת הגדרות מ-localStorage
   useEffect(() => {
@@ -69,6 +82,48 @@ export default function SettingsPage() {
   // עדכון הגדרה בודדת
   const updateSetting = (key: string, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }))
+  }
+
+  // 🔑 שינוי סיסמה
+  const handlePasswordChange = async () => {
+    setPasswordMessage("")
+    setPasswordError("")
+
+    if (!currentPassword || !newPassword) {
+      setPasswordError("יש למלא סיסמה נוכחית וסיסמה חדשה")
+      return
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("הסיסמה החדשה חייבת להכיל לפחות 6 תווים")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("הסיסמאות החדשות לא תואמות")
+      return
+    }
+
+    setPasswordChanging(true)
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      const data = await res.json()
+      
+      if (res.ok) {
+        setPasswordMessage(data.message || "הסיסמה שונתה בהצלחה! ✅")
+        setCurrentPassword("")
+        setNewPassword("")
+        setConfirmPassword("")
+      } else {
+        setPasswordError(data.error || "שגיאה בשינוי הסיסמה")
+      }
+    } catch {
+      setPasswordError("שגיאת חיבור לשרת")
+    } finally {
+      setPasswordChanging(false)
+    }
   }
 
   // Toggle component
@@ -188,6 +243,102 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+
+      {/* 🔑 שינוי סיסמה */}
+      <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl flex items-center justify-center shadow-md shadow-red-500/20">
+            <Lock className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">שינוי סיסמה</h2>
+            <p className="text-sm text-muted-foreground">
+              שנה את סיסמת ההתחברות שלך
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 max-w-md">
+          {/* סיסמה נוכחית */}
+          <div>
+            <Label className="text-slate-700 font-medium">סיסמה נוכחית</Label>
+            <div className="relative mt-1">
+              <Input
+                type={showCurrentPassword ? "text" : "password"}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="הזן סיסמה נוכחית"
+                className="pl-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* סיסמה חדשה */}
+          <div>
+            <Label className="text-slate-700 font-medium">סיסמה חדשה</Label>
+            <div className="relative mt-1">
+              <Input
+                type={showNewPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="הזן סיסמה חדשה (לפחות 6 תווים)"
+                className="pl-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* אימות סיסמה חדשה */}
+          <div>
+            <Label className="text-slate-700 font-medium">אימות סיסמה חדשה</Label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="הזן שוב את הסיסמה החדשה"
+              className="mt-1"
+            />
+          </div>
+
+          {/* הודעות */}
+          {passwordError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+              ❌ {passwordError}
+            </div>
+          )}
+          {passwordMessage && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
+              {passwordMessage}
+            </div>
+          )}
+
+          <Button
+            onClick={handlePasswordChange}
+            disabled={passwordChanging}
+            className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 shadow-lg shadow-red-500/20 rounded-xl"
+          >
+            {passwordChanging ? (
+              <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Key className="ml-2 h-4 w-4" />
+            )}
+            {passwordChanging ? 'משנה...' : 'שנה סיסמה'}
+          </Button>
+        </div>
+      </Card>
 
       {/* סטטוס כל התכונות */}
       <Card className="p-6 mb-6 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-md border-green-200/60 rounded-2xl shadow-md">

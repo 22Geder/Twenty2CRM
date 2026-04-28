@@ -50,6 +50,8 @@ export async function GET(
             employer: true,
           },
         },
+        uploadedBy: { select: { id: true, name: true, email: true } },
+        lastViewedBy: { select: { id: true, name: true, email: true } },
       },
     })
 
@@ -58,6 +60,19 @@ export async function GET(
         { error: "Candidate not found" },
         { status: 404 }
       )
+    }
+
+    // 🆕 עדכון מעקב צפייה - לא חוסם שגיאה אם נכשל
+    try {
+      const userId = (session.user as any)?.id
+      if (userId) {
+        await prisma.candidate.update({
+          where: { id },
+          data: { lastViewedAt: new Date(), lastViewedById: userId },
+        })
+      }
+    } catch (viewErr) {
+      console.error("Failed to update lastViewedAt:", viewErr)
     }
 
     return NextResponse.json(candidate)
@@ -114,6 +129,7 @@ export async function PUT(
       inProcessPositionId,  // 🆕 באיזו משרה המועמד בתהליך
       inProcessAt,  // 🆕 מתי נכנס לתהליך
       interviewDate,  // 🆕 תאריך ראיון מתוכנן
+      manualSummary,  // 🆕 תקציר ידני של המשתמש
     } = body
 
     // Check if candidate exists
@@ -182,6 +198,13 @@ export async function PUT(
         ...('inProcessAt' in body && { inProcessAt: inProcessAt ? new Date(inProcessAt) : null }),
         ...('interviewDate' in body && { interviewDate: interviewDate ? new Date(interviewDate) : null }),
         ...('interviewDate' in body && interviewDate && { interviewReminderSent: false }),  // איפוס תזכורת כשמעדכנים תאריך
+        // 🆕 תקציר ידני - מעדכן גם את timestamp העריכה רק כשהתוכן באמת משתנה
+        ...('manualSummary' in body && {
+          manualSummary: manualSummary || null,
+          manualSummaryUpdatedAt: (manualSummary || null) !== (existingCandidate.manualSummary || null)
+            ? new Date()
+            : existingCandidate.manualSummaryUpdatedAt,
+        }),
       },
       include: {
         applications: {

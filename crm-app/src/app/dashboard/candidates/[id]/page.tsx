@@ -37,6 +37,7 @@ import { DualMatchingView } from "@/components/dual-matching-view"
 import { AdvancedMatchingView } from "@/components/advanced-matching-view"
 import { SmartAIMatching } from "@/components/smart-ai-matching"
 import { ErrorBoundary } from "@/components/error-boundary"
+import CandidateManualSummary from "@/components/candidate-manual-summary"
 
 interface CandidateDetailsProps {
   params: Promise<{
@@ -1239,6 +1240,50 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
                 ) : (
                   <p className="text-sm whitespace-pre-wrap">{candidate.notes}</p>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 🆕 תקציר ידני + מקור הגעה + נצפה לאחרונה */}
+          {candidateId && candidate && (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <CandidateManualSummary
+                  candidateId={candidateId}
+                  initialSummary={candidate.manualSummary}
+                  initialUpdatedAt={candidate.manualSummaryUpdatedAt}
+                  variant="inline"
+                />
+                <div className="flex flex-wrap gap-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                  {candidate.source && (
+                    <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-1 rounded">
+                      📥 מקור הגעה:
+                      <strong className="text-slate-800">
+                        {candidate.source === 'UPLOAD' ? 'הועלה מהמחשב' :
+                         candidate.source === 'EMAIL_AUTO' ? 'סריקת מייל אוטומטית' :
+                         candidate.source === 'EMAIL_HISTORICAL' ? 'סריקת מיילים היסטורית' :
+                         candidate.source === 'EMAIL_WEBHOOK' ? 'Webhook מייל' :
+                         candidate.source === 'WHATSAPP' ? 'וואטסאפ' :
+                         candidate.source === 'MANUAL' ? 'הוזן ידנית' :
+                         candidate.source}
+                      </strong>
+                    </span>
+                  )}
+                  {candidate.uploadedBy?.name && (
+                    <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-1 rounded">
+                      👤 הועלה ע״י: <strong>{candidate.uploadedBy.name}</strong>
+                    </span>
+                  )}
+                  {candidate.lastViewedAt && (
+                    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                      👁️ נצפה לאחרונה:
+                      <strong>
+                        {new Date(candidate.lastViewedAt).toLocaleString('he-IL')}
+                        {candidate.lastViewedBy?.name ? ` · ${candidate.lastViewedBy.name}` : ''}
+                      </strong>
+                    </span>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}

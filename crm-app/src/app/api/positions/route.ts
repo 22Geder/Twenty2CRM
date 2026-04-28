@@ -147,13 +147,6 @@ export async function POST(request: NextRequest) {
       ruDescription,
       openings,
       priority,
-      keywords,
-      contactName,
-      contactEmail,
-      workHours,
-      benefits,
-      transportation,
-      tagIds,
     } = body
 
     // Validation
@@ -193,17 +186,6 @@ export async function POST(request: NextRequest) {
         ruDescription: ruDescription || null,
         openings: openings ? parseInt(openings) : 1,
         priority: priority ? parseInt(priority) : 0,
-        keywords: keywords || null,
-        contactName: contactName || null,
-        contactEmail: contactEmail || null,
-        workHours: workHours || null,
-        benefits: benefits || null,
-        transportation: transportation || null,
-        ...(tagIds && tagIds.length > 0 ? {
-          tags: {
-            connect: tagIds.map((id: string) => ({ id })),
-          },
-        } : {}),
       },
       include: {
         employer: true,

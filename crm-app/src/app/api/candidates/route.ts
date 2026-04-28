@@ -121,6 +121,13 @@ export async function GET(request: NextRequest) {
               email: true,
             },
           },
+          lastViewedBy: {  // 🆕 מי נכנס אחרון לכרטיס
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           // 🆕 לאיזה מעסיק התקבל
           hiredToEmployer: {
             select: {

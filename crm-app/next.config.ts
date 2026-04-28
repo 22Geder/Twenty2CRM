@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['pdf-parse'],
+  serverExternalPackages: ['pdf-parse', 'googleapis', 'google-auth-library'],
   
   // 🔒 Security Headers
   async headers() {

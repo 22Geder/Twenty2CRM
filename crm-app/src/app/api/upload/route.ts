@@ -99,8 +99,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   // 1. נסה קודם pdf-parse לPDF רגיל עם טקסט
   try {
     let pdfParse: any;
-    try { pdfParse = require('pdf-parse/lib/pdf-parse'); }
-    catch { pdfParse = require('pdf-parse'); }
+    pdfParse = require('pdf-parse');
     const data = await Promise.race([
       pdfParse(buffer),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('pdf-parse timeout')), 15000))

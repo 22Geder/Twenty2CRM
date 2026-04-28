@@ -78,11 +78,21 @@ export default function BulkUploadPage() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/msword': ['.doc'],
-      'image/*': ['.png', '.jpg', '.jpeg']
+    // 🆕 קבל את כל הקבצים - נבדוק סיומת ידנית (MIME לא אמין מ-WhatsApp/Gmail)
+    accept: undefined,
+    validator: (file) => {
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+      const allowed = [
+        '.pdf', '.docx', '.doc', '.rtf', '.txt', '.odt',
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.bmp', '.tiff', '.tif'
+      ];
+      if (!allowed.includes(ext)) {
+        return { code: 'unsupported-format', message: `סוג קובץ לא נתמך: ${ext}` };
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        return { code: 'file-too-large', message: 'הקובץ גדול מ-25MB' };
+      }
+      return null;
     },
     maxFiles: 500
   });

@@ -160,13 +160,16 @@ export default function MobileUploadPage() {
 
   // בדיקה וטיפול בקובץ
   const handleFile = (file: File) => {
-    // בדיקת סוג קובץ - כולל תמונות!
+    // בדיקת סוג קובץ - תמיכה בכל הפורמטים!
     const allowedTypes = [
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
-      // 🆕 תמיכה בתמונות (קורות חיים סרוקים)
+      'text/rtf',
+      'application/rtf',
+      'application/vnd.oasis.opendocument.text',
+      // תמיכה בתמונות (קורות חיים סרוקים)
       'image/jpeg',
       'image/jpg',
       'image/png',
@@ -174,23 +177,25 @@ export default function MobileUploadPage() {
       'image/webp',
       'image/heic',
       'image/heif',
+      'image/bmp',
+      'image/tiff',
     ]
     
     const allowedExtensions = [
-      '.pdf', '.doc', '.docx', '.txt',
-      // 🆕 סיומות תמונה
-      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'
+      '.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt',
+      // סיומות תמונה
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.bmp', '.tiff', '.tif'
     ]
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
     
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('קובץ לא נתמך. אנא העלו PDF, Word, תמונה או TXT')
+      setError('קובץ לא נתמך. פורמטים נתמכים: PDF, Word (DOC/DOCX), RTF, TXT, ODT, ותמונות (JPG, PNG, WEBP, HEIC)')
       return
     }
     
-    // בדיקת גודל (מקסימום 20MB לתמונות גדולות)
-    if (file.size > 20 * 1024 * 1024) {
-      setError('הקובץ גדול מדי. מקסימום 20MB')
+    // בדיקת גודל (מקסימום 25MB - מותאם לשרת)
+    if (file.size > 25 * 1024 * 1024) {
+      setError('הקובץ גדול מדי. מקסימום 25MB')
       return
     }
     
@@ -344,7 +349,7 @@ export default function MobileUploadPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
+                accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.bmp,.tiff,.tif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf,text/rtf,application/vnd.oasis.opendocument.text,image/*"
                 onChange={handleFileSelect}
                 className="file-input"
               />
@@ -354,7 +359,9 @@ export default function MobileUploadPage() {
                   <div className="file-icon">
                     {selectedFile.name.endsWith('.pdf') ? '📕' : 
                      selectedFile.name.endsWith('.doc') || selectedFile.name.endsWith('.docx') ? '📘' :
-                     selectedFile.type?.startsWith('image/') || ['.jpg','.jpeg','.png','.gif','.webp','.heic'].some(ext => selectedFile.name.toLowerCase().endsWith(ext)) ? '🖼️' : '📄'}
+                     selectedFile.name.endsWith('.rtf') || selectedFile.name.endsWith('.odt') ? '📝' :
+                     selectedFile.name.endsWith('.txt') ? '📄' :
+                     selectedFile.type?.startsWith('image/') || ['.jpg','.jpeg','.png','.gif','.webp','.heic','.bmp','.tiff','.tif'].some(ext => selectedFile.name.toLowerCase().endsWith(ext)) ? '🖼️' : '📄'}
                   </div>
                   <div className="file-info">
                     <span className="file-name">{selectedFile.name}</span>

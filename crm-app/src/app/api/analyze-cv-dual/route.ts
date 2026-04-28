@@ -317,6 +317,28 @@ export async function POST(request: Request) {
       )
     }
 
+    // 🆕 זיהוי ג'יבריש מהעתקה של PDF עם פונטים מוטבעים
+    let readable = 0, total = 0
+    for (const ch of cvText as string) {
+      const code = ch.codePointAt(0) || 0
+      if (code <= 32) continue
+      total++
+      if ((code >= 0x0590 && code <= 0x05FF) || // Hebrew
+          (code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A) || // English
+          (code >= 0x30 && code <= 0x39) || // digits
+          (code >= 0x00C0 && code <= 0x024F) || // Latin extended
+          '.,;:!?"\'()[]{}@#$%&*+-=/\\|_~`<>'.includes(ch)) {
+        readable++
+      }
+    }
+    const readableRatio = total > 0 ? readable / total : 1
+    if (readableRatio < 0.4) {
+      return NextResponse.json(
+        { error: "הטקסט מכיל תווים לא קריאים (ג'יבריש). סביר להניח שהעתקת מ-PDF עם פונט מוטבע. העלה את הקובץ ישירות במקום להעתיק." },
+        { status: 400 }
+      )
+    }
+
     // 🔍 שלב 1: זיהוי התחומים של המועמד
     const candidateIndustries = detectIndustries(cvText)
     console.log('Detected industries:', candidateIndustries)

@@ -931,6 +931,25 @@ export default function RecruitmentBoard() {
 
   const analyze = async () => {
     if (!cvText.trim()) { showToast('יש להדביק קורות חיים'); return; }
+    
+    // 🆕 בדיקת ג'יבריש מצד הלקוח - מניעה מוקדמת
+    let readable = 0, total = 0;
+    for (const ch of cvText) {
+      const code = ch.codePointAt(0) || 0;
+      if (code <= 32) continue;
+      total++;
+      if ((code >= 0x0590 && code <= 0x05FF) || 
+          (code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A) || 
+          (code >= 0x30 && code <= 0x39) ||
+          '.,;:!?"\'()[]{}@#$%&*+-=/\\|_~`<> '.includes(ch)) {
+        readable++;
+      }
+    }
+    if (total > 50 && readable / total < 0.4) {
+      showToast('⚠️ הטקסט מכיל ג\'יבריש - סביר להניח שהעתקת מ-PDF עם פונט מוטבע. העלה את הקובץ ישירות במקום להעתיק.');
+      return;
+    }
+    
     setLoading(true);
     setSaved(false);
     

@@ -10,6 +10,27 @@ import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTa
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+// 🆕 Retry helper for Gemini API calls - handles 429 rate limiting
+async function withGeminiRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const isRateLimit = error?.message?.includes('429') || 
+                          error?.message?.includes('quota') || 
+                          error?.message?.includes('RESOURCE_EXHAUSTED');
+      if (isRateLimit && attempt < maxRetries) {
+        const waitMs = (attempt + 1) * 3000; // 3s, 6s
+        console.log(`⏳ Gemini rate limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Gemini retry exhausted');
+}
+
 // 🆕 קריאת PDF עם Gemini Vision (לקבצים סרוקים!) - with timeout
 async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
   // Timeout helper
@@ -44,7 +65,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
 
     // Race between API call and 30 second timeout
     const result = await Promise.race([
-      model.generateContent([
+      withGeminiRetry(() => model.generateContent([
         prompt,
         {
           inlineData: {
@@ -52,7 +73,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
             data: base64Data
           }
         }
-      ]),
+      ])),
       timeout(30000)
     ]) as any;
     
@@ -62,9 +83,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
     console.log('📄 Gemini PDF OCR extracted text length:', text.length);
     return text;
   } catch (error: any) {
-    if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
-      console.error('⚠️ Gemini PDF OCR quota exceeded - falling back to text extraction');
-    } else if (error?.message?.includes('timeout')) {
+    if (error?.message?.includes('timeout')) {
       console.error('⚠️ PDF OCR timeout - falling back to text extraction');
     } else {
       console.error('Error extracting text from PDF with Gemini:', error?.message || error);
@@ -79,8 +98,13 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   
   // 1. נסה קודם pdf-parse לPDF רגיל עם טקסט
   try {
-    const pdfParse = require('pdf-parse/lib/pdf-parse');
-    const data = await pdfParse(buffer);
+    let pdfParse: any;
+    try { pdfParse = require('pdf-parse/lib/pdf-parse'); }
+    catch { pdfParse = require('pdf-parse'); }
+    const data = await Promise.race([
+      pdfParse(buffer),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('pdf-parse timeout')), 15000))
+    ]);
     pdfParseText = data.text || '';
     console.log('📄 pdf-parse extracted:', pdfParseText.length, 'chars');
     
@@ -112,9 +136,204 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
   try {
     const result = await mammoth.extractRawText({ buffer });
-    return result.value;
+    if (result.value && result.value.trim().length > 20) {
+      console.log('📄 DOCX extraction successful:', result.value.length, 'chars');
+      return result.value;
+    }
+    console.log('⚠️ DOCX extraction returned too little text:', result.value?.length || 0);
   } catch (error) {
-    console.error('Error parsing DOCX:', error);
+    console.error('Error parsing DOCX with mammoth:', error);
+  }
+  return '';
+}
+
+// Helper to extract text from old DOC format (binary)
+async function extractTextFromDOC(buffer: Buffer): Promise<string> {
+  // 1. נסה קודם עם mammoth (לפעמים עובד גם עם .doc)
+  try {
+    const result = await mammoth.extractRawText({ buffer });
+    if (result.value && result.value.trim().length > 50) {
+      console.log('📄 DOC extraction via mammoth:', result.value.length, 'chars');
+      return result.value;
+    }
+  } catch (err: any) {
+    console.log('⚠️ mammoth failed for DOC:', err.message);
+  }
+  
+  // 2. חילוץ טקסט ישירות מהבינארי של .doc
+  try {
+    // Old .doc files store text as readable strings embedded in binary
+    const rawText = buffer.toString('latin1');
+    
+    // Extract meaningful text chunks (runs of readable characters)
+    const chunks: string[] = [];
+    let currentChunk = '';
+    
+    for (let i = 0; i < rawText.length; i++) {
+      const charCode = rawText.charCodeAt(i);
+      // Readable ASCII or Hebrew UTF range
+      if ((charCode >= 32 && charCode <= 126) || 
+          (charCode >= 0xC0 && charCode <= 0xFF) ||
+          charCode === 10 || charCode === 13 || charCode === 9) {
+        currentChunk += rawText[i];
+      } else {
+        if (currentChunk.trim().length > 3) {
+          chunks.push(currentChunk.trim());
+        }
+        currentChunk = '';
+      }
+    }
+    if (currentChunk.trim().length > 3) {
+      chunks.push(currentChunk.trim());
+    }
+    
+    const extractedText = chunks.join('\n');
+    if (extractedText.length > 50) {
+      console.log('📄 DOC binary extraction:', extractedText.length, 'chars');
+      return extractedText;
+    }
+  } catch (err: any) {
+    console.log('⚠️ DOC binary extraction failed:', err.message);
+  }
+  
+  // 3. שלח ל-Gemini Vision כ-fallback
+  try {
+    console.log('📄 Trying Gemini Vision for DOC file...');
+    const geminiText = await extractTextFromPDFWithGemini(buffer);
+    if (geminiText && geminiText.length > 50) {
+      console.log('✅ Gemini extracted DOC text:', geminiText.length, 'chars');
+      return geminiText;
+    }
+  } catch (err: any) {
+    console.log('⚠️ Gemini DOC extraction failed:', err.message);
+  }
+  
+  return '';
+}
+
+// Helper to extract text from TXT files (handles different encodings)
+async function extractTextFromTXT(buffer: Buffer): Promise<string> {
+  // נסה UTF-8 קודם
+  try {
+    const text = buffer.toString('utf-8');
+    // Remove BOM if present
+    const cleanText = text.replace(/^\uFEFF/, '');
+    if (cleanText && cleanText.trim().length > 0) {
+      console.log('📄 TXT extraction (UTF-8):', cleanText.length, 'chars');
+      return cleanText;
+    }
+  } catch {}
+  
+  // נסה UTF-16LE (נפוץ ב-Windows)
+  try {
+    const text = buffer.toString('utf16le');
+    const cleanText = text.replace(/^\uFEFF/, '');
+    if (cleanText && cleanText.trim().length > 0) {
+      console.log('📄 TXT extraction (UTF-16LE):', cleanText.length, 'chars');
+      return cleanText;
+    }
+  } catch {}
+  
+  // Fallback to latin1
+  try {
+    const text = buffer.toString('latin1');
+    console.log('📄 TXT extraction (latin1):', text.length, 'chars');
+    return text;
+  } catch {}
+  
+  return '';
+}
+
+// Helper to extract text from RTF files
+async function extractTextFromRTF(buffer: Buffer): Promise<string> {
+  try {
+    let text = buffer.toString('utf-8');
+    
+    // Strip RTF control words and formatting
+    // Handle Unicode escapes \'XX
+    text = text.replace(/\\'([0-9a-fA-F]{2})/g, (_, hex) => {
+      return String.fromCharCode(parseInt(hex, 16));
+    });
+    
+    // Handle unicode \uNNNN
+    text = text.replace(/\\u(\d+)\??/g, (_, code) => {
+      return String.fromCharCode(parseInt(code));
+    });
+    
+    // Remove header/font/color tables
+    text = text.replace(/\{\\fonttbl[^}]*\}/g, '');
+    text = text.replace(/\{\\colortbl[^}]*\}/g, '');
+    text = text.replace(/\{\\stylesheet[^}]*\}/g, '');
+    text = text.replace(/\{\\info[^}]*\}/g, '');
+    text = text.replace(/\{\\header[^}]*\}/g, '');
+    text = text.replace(/\{\\footer[^}]*\}/g, '');
+    text = text.replace(/\{\\pict[^}]*\}/g, '');
+    
+    // Convert paragraph markers to newlines
+    text = text.replace(/\\par[d]?\s*/g, '\n');
+    text = text.replace(/\\line\s*/g, '\n');
+    text = text.replace(/\\tab\s*/g, '\t');
+    
+    // Remove remaining RTF control words
+    text = text.replace(/\\[a-z]+[-]?\d*\s?/gi, '');
+    
+    // Remove braces
+    text = text.replace(/[{}]/g, '');
+    
+    // Clean up whitespace
+    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/[ \t]{2,}/g, ' ');
+    text = text.trim();
+    
+    if (text.length > 20) {
+      console.log('📄 RTF extraction:', text.length, 'chars');
+      return text;
+    }
+  } catch (err: any) {
+    console.log('⚠️ RTF parsing failed:', err.message);
+  }
+  
+  // Fallback: try Gemini
+  try {
+    console.log('📄 Trying Gemini for RTF file...');
+    const geminiText = await extractTextFromPDFWithGemini(buffer);
+    if (geminiText && geminiText.length > 50) {
+      return geminiText;
+    }
+  } catch {}
+  
+  return '';
+}
+
+// 🆕 Universal fallback: try to extract text with Gemini from any document
+async function extractTextWithGeminiFallback(buffer: Buffer, fileName: string, mimeType: string): Promise<string> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const base64Data = buffer.toString('base64');
+    
+    const prompt = `קרא את המסמך הזה וחלץ את כל הטקסט שיש בו.
+    זה קובץ בשם: ${fileName}
+    חלץ את כל המידע כולל: שם, טלפון, אימייל, כתובת, ניסיון תעסוקתי, השכלה, כישורים.
+    החזר את הטקסט המלא.`;
+    
+    const result = await Promise.race([
+      withGeminiRetry(() => model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: mimeType || 'application/octet-stream',
+            data: base64Data
+          }
+        }
+      ])),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Gemini fallback timeout')), 30000))
+    ]) as any;
+    
+    const text = result.response.text();
+    console.log('🔄 Gemini fallback extracted:', text.length, 'chars');
+    return text;
+  } catch (err: any) {
+    console.log('⚠️ Gemini fallback failed:', err.message);
     return '';
   }
 }
@@ -151,7 +370,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
 
     // Race between API call and 30 second timeout (images take longer)
     const result = await Promise.race([
-      model.generateContent([
+      withGeminiRetry(() => model.generateContent([
         prompt,
         {
           inlineData: {
@@ -159,7 +378,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
             data: base64Data
           }
         }
-      ]),
+      ])),
       timeout(30000)
     ]) as any;
     
@@ -169,9 +388,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
     console.log('🖼️ OCR extracted text length:', text.length);
     return text;
   } catch (error: any) {
-    if (error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
-      console.error('⚠️ Gemini Vision API quota exceeded - cannot process image OCR');
-    } else if (error?.message?.includes('timeout')) {
+    if (error?.message?.includes('timeout')) {
       console.error('⚠️ OCR timeout - image too complex or API slow');
     } else {
       console.error('Error extracting text from image with Gemini Vision:', error?.message || error);
@@ -242,10 +459,10 @@ ${text.substring(0, 6000)}
 - קיבוצים ומושבים הם ערים תקינות - רשום אותם!
 - החזר JSON תקין בלבד`;
 
-    // Race between API call and 15 second timeout
+    // Race between API call and 45 second timeout (complex CVs need time)
     const result = await Promise.race([
-      model.generateContent(prompt),
-      timeout(15000)
+      withGeminiRetry(() => model.generateContent(prompt)),
+      timeout(45000)
     ]) as any;
     
     const responseText = result.response.text();
@@ -607,6 +824,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🆕 בדיקת גודל קובץ - מקסימום 25MB
+    const MAX_FILE_SIZE = 25 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `הקובץ גדול מדי (${(file.size / 1024 / 1024).toFixed(1)}MB). גודל מקסימלי: 25MB` },
+        { status: 400 }
+      );
+    }
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -621,16 +847,76 @@ export async function POST(request: NextRequest) {
       text = await extractTextFromPDF(buffer);
       console.log('📄 PDF extraction result length:', text?.length || 0);
       
-      if (!text || text.length < 20) {
+      if (!text || text.length < 10) {
         console.error('❌ PDF text extraction failed or returned too little text');
         return NextResponse.json(
           { error: 'לא הצלחנו לקרוא את קובץ ה-PDF. ייתכן שהקובץ מוגן או שהוא קובץ סרוק באיכות נמוכה. נסה להעלות קובץ PDF אחר או תמונה.' },
           { status: 400 }
         );
       }
-    } else if (fileExtension === 'docx' || fileExtension === 'doc') {
+    } else if (fileExtension === 'docx') {
+      console.log('📄 Processing DOCX:', file.name, 'Size:', buffer.length);
       text = await extractTextFromDOCX(buffer);
-    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(fileExtension || '')) {
+      
+      // אם mammoth לא הצליח - נסה Gemini Vision כ-fallback
+      if (!text || text.length < 10) {
+        console.log('⚠️ DOCX extraction failed, trying Gemini fallback...');
+        text = await extractTextWithGeminiFallback(buffer, file.name, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      }
+      
+      if (!text || text.length < 10) {
+        return NextResponse.json(
+          { error: 'לא הצלחנו לקרוא את קובץ ה-DOCX. הקובץ עלול להיות פגום. נסה לשמור אותו מחדש או להמיר ל-PDF.' },
+          { status: 400 }
+        );
+      }
+    } else if (fileExtension === 'doc') {
+      console.log('📄 Processing DOC (old format):', file.name, 'Size:', buffer.length);
+      text = await extractTextFromDOC(buffer);
+      
+      if (!text || text.length < 10) {
+        console.log('⚠️ DOC extraction failed, trying Gemini fallback...');
+        text = await extractTextWithGeminiFallback(buffer, file.name, 'application/msword');
+      }
+      
+      if (!text || text.length < 10) {
+        return NextResponse.json(
+          { error: 'לא הצלחנו לקרוא את קובץ ה-DOC. נסה להמיר את הקובץ ל-PDF או DOCX.' },
+          { status: 400 }
+        );
+      }
+    } else if (fileExtension === 'txt') {
+      console.log('📄 Processing TXT:', file.name, 'Size:', buffer.length);
+      text = await extractTextFromTXT(buffer);
+      
+      if (!text || text.length < 10) {
+        return NextResponse.json(
+          { error: 'קובץ הטקסט ריק או לא קריא.' },
+          { status: 400 }
+        );
+      }
+    } else if (fileExtension === 'rtf') {
+      console.log('📄 Processing RTF:', file.name, 'Size:', buffer.length);
+      text = await extractTextFromRTF(buffer);
+      
+      if (!text || text.length < 10) {
+        return NextResponse.json(
+          { error: 'לא הצלחנו לקרוא את קובץ ה-RTF. נסה להמיר ל-PDF או DOCX.' },
+          { status: 400 }
+        );
+      }
+    } else if (fileExtension === 'odt') {
+      // OpenDocument format - try Gemini
+      console.log('📄 Processing ODT:', file.name, 'Size:', buffer.length);
+      text = await extractTextWithGeminiFallback(buffer, file.name, 'application/vnd.oasis.opendocument.text');
+      
+      if (!text || text.length < 10) {
+        return NextResponse.json(
+          { error: 'לא הצלחנו לקרוא את קובץ ה-ODT. נסה להמיר ל-PDF או DOCX.' },
+          { status: 400 }
+        );
+      }
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp', 'tiff', 'tif'].includes(fileExtension || '')) {
       // 🆕 OCR for images using Gemini Vision
       console.log('🖼️ Processing image with OCR:', file.name, 'MIME:', mimeType, 'Size:', buffer.length);
       
@@ -638,14 +924,20 @@ export async function POST(request: NextRequest) {
       let actualMimeType = mimeType || 'image/jpeg';
       if (fileExtension === 'heic' || fileExtension === 'heif') {
         actualMimeType = 'image/heic';
+      } else if (fileExtension === 'bmp') {
+        actualMimeType = 'image/bmp';
+      } else if (fileExtension === 'tiff' || fileExtension === 'tif') {
+        actualMimeType = 'image/tiff';
+      } else if (fileExtension === 'webp') {
+        actualMimeType = 'image/webp';
       } else if (!actualMimeType.startsWith('image/')) {
-        actualMimeType = `image/${fileExtension}`;
+        actualMimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
       }
       
       text = await extractTextFromImage(buffer, actualMimeType);
       console.log('🖼️ OCR result length:', text?.length || 0);
       
-      if (!text || text.length < 20) {
+      if (!text || text.length < 10) {
         console.error('❌ OCR failed or returned too little text');
         return NextResponse.json(
           { error: 'לא הצלחנו לקרוא את התמונה. נסה תמונה באיכות גבוהה יותר, וודא שהטקסט קריא, או העלה קובץ PDF' },
@@ -653,10 +945,16 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      return NextResponse.json(
-        { error: 'סוג קובץ לא נתמך. השתמש ב-PDF, DOCX או תמונה (JPG, PNG)' },
-        { status: 400 }
-      );
+      // 🆕 נסה Gemini כ-fallback אוניברסלי לכל סוג קובץ
+      console.log('📄 Unknown format, trying Gemini universal fallback:', fileExtension, file.name);
+      text = await extractTextWithGeminiFallback(buffer, file.name, mimeType || 'application/octet-stream');
+      
+      if (!text || text.length < 10) {
+        return NextResponse.json(
+          { error: `סוג קובץ לא נתמך: .${fileExtension}. פורמטים נתמכים: PDF, DOCX, DOC, RTF, TXT, ODT, ותמונות (JPG, PNG, WEBP, HEIC, GIF, BMP, TIFF)` },
+          { status: 400 }
+        );
+      }
     }
 
     // 🆕 נסה קודם AI extraction, ואז fallback to regex
@@ -823,9 +1121,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 🆕 בדיקה - האם יש מספיק מידע ליצירת מועמד?
+    // שודרג: שומרים גם עם מידע חלקי - עדיף מועמד עם שם בלבד מאשר לזרוק את הקובץ
     const hasMinimalData = dataQuality.hasName || dataQuality.hasPhone || dataQuality.hasEmail;
     
-    if (!hasMinimalData && qualityScore < 25) {
+    if (!hasMinimalData && qualityScore < 10 && text.length < 50) {
       console.error('❌ Not enough data extracted from CV');
       return NextResponse.json({
         error: 'לא הצלחנו לחלץ מספיק פרטים מקורות החיים. ודא שהקובץ קריא ומכיל שם, טלפון או אימייל.',
@@ -961,10 +1260,53 @@ export async function POST(request: NextRequest) {
       }
     } catch (dbError: any) {
       console.error('❌ Database error saving candidate:', dbError);
-      return NextResponse.json({
-        error: 'שגיאה בשמירת המועמד למסד הנתונים: ' + (dbError.message || 'שגיאה לא ידועה'),
-        extractedData: candidateData
-      }, { status: 500 });
+      
+      // 🆕 טיפול בשגיאת unique constraint - נסה שוב עם upsert
+      if (dbError?.code === 'P2002' && normalizedEmail) {
+        try {
+          console.log('🔄 Retrying with upsert after unique constraint error...');
+          candidateRecord = await prisma.candidate.upsert({
+            where: { email: normalizedEmail },
+            create: {
+              name,
+              email: normalizedEmail,
+              phone,
+              city,
+              currentTitle,
+              yearsOfExperience,
+              skills: skills.length ? skills.join(', ') : null,
+              resumeUrl,
+              resume: text,
+              aiProfile: aiProfileJson,
+              source: 'UPLOAD',
+              notes: `נוצר אוטומטית מהעלאת קובץ: ${file.name}`,
+              uploadedById,
+            },
+            update: {
+              name,
+              phone: phone ?? undefined,
+              city: city ?? undefined,
+              currentTitle: currentTitle ?? undefined,
+              resumeUrl,
+              resume: text,
+              aiProfile: aiProfileJson,
+            },
+            select: { id: true },
+          });
+          createdCandidate = false;
+        } catch (retryError: any) {
+          console.error('❌ Retry also failed:', retryError.message);
+          return NextResponse.json({
+            error: 'שגיאה בשמירת המועמד למסד הנתונים. נסה שוב.',
+            extractedData: candidateData
+          }, { status: 500 });
+        }
+      } else {
+        return NextResponse.json({
+          error: 'שגיאה בשמירת המועמד למסד הנתונים. נסה שוב.',
+          extractedData: candidateData
+        }, { status: 500 });
+      }
     }
 
     candidateId = candidateRecord?.id ?? null;
@@ -1206,10 +1548,35 @@ export async function POST(request: NextRequest) {
       aiAnalysis
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
+    
+    // 🆕 שגיאות ספציפיות עם הודעות מותאמות
+    const errorMessage = error?.message || '';
+    
+    if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+      return NextResponse.json(
+        { error: 'הקובץ לקח יותר מדי זמן לעיבוד. נסה קובץ קטן יותר או בפורמט אחר (PDF מומלץ).' },
+        { status: 408 }
+      );
+    }
+    
+    if (errorMessage.includes('ENOSPC') || errorMessage.includes('quota')) {
+      return NextResponse.json(
+        { error: 'שגיאת שרת זמנית - נסה שוב בעוד כמה דקות.' },
+        { status: 503 }
+      );
+    }
+    
+    if (errorMessage.includes('Could not parse') || errorMessage.includes('Invalid') || errorMessage.includes('corrupt')) {
+      return NextResponse.json(
+        { error: 'הקובץ פגום או לא קריא. נסה לשמור אותו מחדש בפורמט PDF ולהעלות שוב.' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to process file' },
+      { error: 'שגיאה בעיבוד הקובץ. נסה שוב או העלה בפורמט אחר (PDF מומלץ).' },
       { status: 500 }
     );
   }

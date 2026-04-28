@@ -269,6 +269,47 @@ function detectTags(text: string): string[] {
   return detectedTags;
 }
 
+// 🆕 זיהוי טקסט ג'יבריש - קורה כשמעתיקים מ-PDF עם פונטים מוטבעים
+function detectGibberish(text: string): { isGibberish: boolean; readableRatio: number } {
+  if (!text || text.length < 50) {
+    return { isGibberish: false, readableRatio: 1 };
+  }
+
+  let readable = 0;
+  let total = 0;
+
+  for (const ch of text) {
+    const code = ch.codePointAt(0) || 0;
+    
+    // רווחים ותווי שליטה - דלג
+    if (code <= 32) continue;
+    total++;
+
+    // עברית: U+0590-U+05FF
+    if (code >= 0x0590 && code <= 0x05FF) { readable++; continue; }
+    // אנגלית בסיסית: A-Z, a-z
+    if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A)) { readable++; continue; }
+    // ספרות: 0-9
+    if (code >= 0x30 && code <= 0x39) { readable++; continue; }
+    // סימני פיסוק רגילים
+    if ('.,;:!?"\'()[]{}@#$%&*+-=/\\|_~`<>'.includes(ch)) { readable++; continue; }
+    // ערבית (לפעמים מופיע בקו"ח)
+    if (code >= 0x0600 && code <= 0x06FF) { readable++; continue; }
+    // Latin Extended
+    if (code >= 0x00C0 && code <= 0x024F) { readable++; continue; }
+    // אמוג'י נפוצים (בקו"ח מודרניים)
+    if (code >= 0x1F300 && code <= 0x1F9FF) { readable++; continue; }
+    
+    // אחרת - תווים לא קריאים (CID, PUA, symbols נדירים)
+    // Private Use Area: U+E000-U+F8FF - סימן מובהק של CID font מ-PDF
+    // Dingbats: U+2700-U+27BF - לפעמים מופיע כג'יבריש
+  }
+
+  const readableRatio = total > 0 ? readable / total : 0;
+  // אם פחות מ-40% מהתווים קריאים - זה ג'יבריש
+  return { isGibberish: readableRatio < 0.4, readableRatio };
+}
+
 // ניתוח עם Gemini AI
 async function analyzeWithGemini(cvText: string) {
   try {
@@ -324,6 +365,16 @@ export async function POST(request: NextRequest) {
 
     if (!cvText || cvText.trim().length < 50) {
       return NextResponse.json({ error: 'טקסט קורות חיים קצר מדי' }, { status: 400 });
+    }
+
+    // 🆕 זיהוי טקסט ג'יבריש - קורה כשמעתיקים מ-PDF עם פונטים מוטבעים (CID/PUA)
+    const gibberishCheck = detectGibberish(cvText);
+    if (gibberishCheck.isGibberish) {
+      return NextResponse.json({ 
+        error: 'הטקסט שהדבקת מכיל תווים לא קריאים (ג\'יבריש). סביר להניח שהעתקת מ-PDF עם פונט מוטבע. פתרון: העלה את קובץ ה-PDF/Word ישירות במקום להעתיק ולהדביק - המערכת תחלץ את הטקסט בעצמה.',
+        gibberish: true,
+        readableRatio: gibberishCheck.readableRatio
+      }, { status: 400 });
     }
 
     // נסה עם Gemini אם יש API key

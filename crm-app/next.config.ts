@@ -28,6 +28,21 @@ const nextConfig: NextConfig = {
 
   // 🔒 הסתר מידע על מנוע השרת
   poweredByHeader: false,
+
+  // 🚫 חסימת נתיבי אדמין נפוצים - מחזיר 404 (החליף את proxy.ts)
+  async redirects() {
+    return [
+      { source: '/admin', destination: '/404', permanent: false },
+      { source: '/admin/:path*', destination: '/404', permanent: false },
+      { source: '/administrator', destination: '/404', permanent: false },
+      { source: '/administrator/:path*', destination: '/404', permanent: false },
+      { source: '/wp-admin', destination: '/404', permanent: false },
+      { source: '/wp-admin/:path*', destination: '/404', permanent: false },
+      { source: '/wp-login.php', destination: '/404', permanent: false },
+      { source: '/phpmyadmin', destination: '/404', permanent: false },
+      { source: '/phpmyadmin/:path*', destination: '/404', permanent: false },
+    ]
+  },
 }
 
 export default nextConfig;

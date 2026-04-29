@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { sendProcessEntryEmail } from "@/lib/process-notifications"
 
 // POST /api/candidates/[id]/add-positions - הוספת מועמד למספר משרות בתהליך
 export async function POST(
@@ -39,6 +40,7 @@ export async function POST(
     // בדיקה שכל המשרות קיימות
     const positions = await prisma.position.findMany({
       where: { id: { in: positionIds } },
+      include: { employer: true },
     })
 
     if (positions.length !== positionIds.length) {
@@ -107,6 +109,7 @@ export async function POST(
 
     // עדכון המועמד - שינוי לסטטוס "בתהליך" עם המשרה הראשונה
     const firstPositionId = positionIds[0]
+    const wasAlreadyInProcess = candidate.employmentStatus === 'IN_PROCESS'
     await prisma.candidate.update({
       where: { id: candidateId },
       data: {
@@ -115,6 +118,17 @@ export async function POST(
         inProcessAt: candidate.inProcessAt || new Date(),
       },
     })
+
+    // 🆕 שליחת מייל כניסה לתהליך (רק אם לא היה בתהליך לפני כן)
+    if (!wasAlreadyInProcess) {
+      const firstPos = positions.find(p => p.id === firstPositionId)
+      sendProcessEntryEmail({
+        candidateName: candidate.name,
+        positionTitle: firstPos?.title || null,
+        employerName: (firstPos as any)?.employer?.name || null,
+        phone: candidate.phone,
+      }).catch(() => {})
+    }
 
     return NextResponse.json({
       success: true,

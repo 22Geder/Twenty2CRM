@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 import { Resend } from "resend"
 import { getResendApiKey, getResendFromEmail } from '@/lib/env'
+import { sendWeeklyProcessCheckEmail } from '@/lib/process-notifications'
 
 // פונקציית שליחת מייל - Resend (HTTP) או SMTP
 async function sendEmail(options: { from: string, to: string, subject: string, html: string }) {
@@ -43,7 +44,7 @@ async function sendEmail(options: { from: string, to: string, subject: string, h
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type') || 'both' // 'interviews', 'in-process', 'both'
+    const type = searchParams.get('type') || 'both' // 'interviews', 'in-process', 'weekly-process', 'both'
     
     const results: any = {
       interviewReminders: [],
@@ -190,6 +191,27 @@ export async function GET(request: NextRequest) {
 
         results.inProcessReminders = inProcessCandidates.map(c => ({ id: c.id, name: c.name }))
       }
+    }
+
+    // ⏰ מעקב שבועי - מועמדים שבתהליך כבר 7+ ימים
+    if (type === 'weekly-process') {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+      const weeklyProcessCandidates = await prisma.candidate.findMany({
+        where: {
+          employmentStatus: 'IN_PROCESS',
+          inProcessAt: { lte: oneWeekAgo },
+        },
+        include: {
+          inProcessPosition: {
+            include: { employer: true }
+          }
+        },
+        orderBy: { inProcessAt: 'asc' }
+      })
+
+      await sendWeeklyProcessCheckEmail(weeklyProcessCandidates)
+      results.weeklyProcessReminders = weeklyProcessCandidates.map(c => ({ id: c.id, name: c.name }))
     }
 
     return NextResponse.json({

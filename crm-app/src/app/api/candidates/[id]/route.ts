@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { sendProcessEntryEmail } from "@/lib/process-notifications"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -244,6 +245,34 @@ export async function PUT(
           })
         }
       }
+    }
+
+    // 🆕 שליחת מייל כניסה לתהליך - רק כשהסטטוס עכשיו שונה ל-IN_PROCESS
+    if (
+      'employmentStatus' in body &&
+      employmentStatus === 'IN_PROCESS' &&
+      existingCandidate.employmentStatus !== 'IN_PROCESS'
+    ) {
+      const posIdForEmail = (inProcessPositionId as string | undefined) || candidate.inProcessPositionId
+      let posTitle: string | null = null
+      let empName: string | null = null
+      if (posIdForEmail) {
+        try {
+          const pos = await prisma.position.findUnique({
+            where: { id: posIdForEmail },
+            include: { employer: true },
+          })
+          posTitle = pos?.title || null
+          empName = pos?.employer?.name || null
+        } catch { /* ignore */ }
+      }
+      // שליחה ברקע - לא חוסמת את התגובה
+      sendProcessEntryEmail({
+        candidateName: candidate.name,
+        positionTitle: posTitle,
+        employerName: empName,
+        phone: candidate.phone,
+      }).catch(() => {})
     }
 
     return NextResponse.json(candidate)

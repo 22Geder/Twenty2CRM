@@ -67,8 +67,26 @@ export async function register() {
       timezone: 'Asia/Jerusalem'
     });
 
+    // ⏰ בדיקה שבועית - כל יום שני ב-9:00 (מועמדים שבתהליך 7+ ימים)
+    cron.schedule('0 7 * * 1', async () => {
+      console.log('⏰ Running weekly process check...');
+      try {
+        const response = await fetch(`${baseUrl}/api/interview-reminders?type=weekly-process`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const result = await response.json();
+        console.log('✅ Weekly process check sent:', result.message);
+      } catch (error) {
+        console.error('❌ Failed to send weekly process check:', error);
+      }
+    }, {
+      timezone: 'Asia/Jerusalem'
+    });
+
     console.log('✅ Cron jobs scheduled:');
     console.log('   📅 Interview reminders: Every day at 7:00 AM (Israel time)');
     console.log('   🔄 In-process updates: Every 4 hours (8:00, 12:00, 16:00, 20:00)');
+    console.log('   ⏰ Weekly process check: Every Monday at 9:00 AM (Israel time)');
   }
 }

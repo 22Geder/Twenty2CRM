@@ -28,12 +28,27 @@ import {
 } from "lucide-react"
 
 // 🔧 Safe encoder that handles malformed characters
+// NOTE: Avoids lookbehind regex (?<!...) for compatibility with older browsers (Safari < 16.4)
 const safeEncodeURIComponent = (str: string): string => {
   try {
-    // First sanitize the string to remove any problematic characters
-    const sanitized = String(str || '')
-      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '') // Remove lone high surrogates
-      .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '') // Remove lone low surrogates
+    const s = String(str || '')
+    let sanitized = ''
+    for (let i = 0; i < s.length; i++) {
+      const code = s.charCodeAt(i)
+      if (code >= 0xD800 && code <= 0xDBFF) {
+        // High surrogate - must be followed by a low surrogate
+        const next = s.charCodeAt(i + 1)
+        if (next >= 0xDC00 && next <= 0xDFFF) {
+          sanitized += s.charAt(i) + s.charAt(i + 1)
+          i++
+        }
+        // else: lone high surrogate - skip
+      } else if (code >= 0xDC00 && code <= 0xDFFF) {
+        // Lone low surrogate - skip
+      } else {
+        sanitized += s.charAt(i)
+      }
+    }
     return encodeURIComponent(sanitized)
   } catch (e) {
     console.error('Error encoding:', e)

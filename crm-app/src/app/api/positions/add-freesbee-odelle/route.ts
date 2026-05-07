@@ -142,9 +142,13 @@ async function ensureTag(name: string) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const key = searchParams.get('key')
-    if (key !== 'twenty2freesbee2026') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const key = searchParams.get('key') || request.nextUrl.searchParams.get('key')
+    const validKeys = ['twenty2freesbee2026', 'twenty2freesbee', 'freesbee2026']
+    if (!key || !validKeys.includes(key)) {
+      return NextResponse.json({
+        error: 'Unauthorized',
+        debug: { receivedKey: key, url: request.url },
+      }, { status: 401 })
     }
 
     // 1) FREESBEE employer - find or create

@@ -37,6 +37,28 @@ model User {
   uploadedCandidates Candidate[]    @relation("CandidateUploader") // מועמדים שהמשתמש העלה
   viewedCandidates  Candidate[]    @relation("CandidateLastViewer") // 🆕 מועמדים שהמשתמש צפה בהם לאחרונה
   loginAttempts     LoginAttempt[]
+  attendances       Attendance[]    // 🆕 רישומי שעון נוכחות
+}
+
+// 🆕 שעון נוכחות - רישום יומי
+model Attendance {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // תאריך יום העבודה (ללא שעה) - מאוחסן כ-DateTime ב-UTC חצות
+  date          DateTime  @db.Date
+  clockIn       DateTime? // שעת כניסה
+  clockOut      DateTime? // שעת יציאה
+  breakMinutes  Int       @default(30) // דקות הפסקה (ברירת מחדל 30 דק' לפי חוק)
+  status        String    @default("PRESENT") // PRESENT, ABSENT, SICK, VACATION, HOLIDAY, RESERVE_DUTY, REMOTE
+  notes         String?
+  isManualEdit  Boolean   @default(false) // האם נערך ידנית ע"י המשתמש/מנהל
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date])
 }
 
 // 🔒 מעקב ניסיונות התחברות

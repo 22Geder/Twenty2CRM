@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   BarChart3, Settings, Bell, CheckSquare, Mail, FileText,
-  Search, User, Upload, Sparkles, TrendingUp, Menu, X
+  Search, User, Upload, Sparkles, TrendingUp, Menu, X, Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +42,13 @@ const navigationItems = [
     badgeColor: "t22-success"
   },
   {
+    name: "שעון נוכחות",
+    href: "/dashboard/attendance",
+    icon: Clock,
+    badge: "NEW",
+    badgeColor: "t22-accent"
+  },
+  {
     name: "משרות",
     href: "/dashboard/positions",
     icon: Briefcase,
@@ -60,6 +67,13 @@ const navigationItems = [
     name: "הגדרות",
     href: "/dashboard/settings",
     icon: Settings,
+  },
+  {
+    name: "פנקס רישום",
+    href: "/dashboard/system-registry",
+    icon: FileText,
+    badge: "LIVE",
+    badgeColor: "t22-success"
   },
 ]
 

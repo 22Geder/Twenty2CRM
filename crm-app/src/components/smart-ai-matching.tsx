@@ -24,7 +24,8 @@ import {
   Eye,
   Search,
   Navigation,
-  MessageCircle
+  MessageCircle,
+  ExternalLink
 } from "lucide-react"
 
 // 🔧 Safe encoder that handles malformed characters
@@ -383,6 +384,23 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* כפתור פתיחת המשרה - תמיד גלוי */}
+            <a
+              href={`/dashboard/positions/${match.positionId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title="פתח את עמוד המשרה המלא בלשונית חדשה"
+            >
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                <ExternalLink className="h-4 w-4 ml-1" />
+                פתח משרה
+              </Button>
+            </a>
             {/* כפתור וואטסאפ ישירות בכרטיס - תמיד גלוי! */}
             {candidatePhone ? (
               <a
@@ -466,6 +484,21 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
           </div>
 
           <div className="flex gap-2">
+            {/* פתח את עמוד המשרה המלא */}
+            <a
+              href={`/dashboard/positions/${match.positionId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1"
+            >
+              <Button
+                variant="outline"
+                className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                פתח את עמוד המשרה
+              </Button>
+            </a>
             {/* WhatsApp Button */}
             {candidatePhone && (
               <a

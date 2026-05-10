@@ -833,6 +833,8 @@ export default function RecruitmentBoard() {
   const [customJobs, setCustomJobs] = useState<CustomJob[]>([]);
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddEmployer, setShowAddEmployer] = useState(false);
+  // Job details modal - להצגת פרטי משרה מלאים בלחיצה
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   
   // New Job Form
   const [newJob, setNewJob] = useState({ title: '', location: '', employerId: '', salary: '', requirements: '', notes: '' });
@@ -1615,7 +1617,12 @@ yossi@email.com
                     {matches.slice(0, 15).map((m, i) => (
                       <div
                         key={m.job.id}
-                        className={`p-8 rounded-2xl border-3 transition-all hover:shadow-lg ${
+                        onClick={() => setSelectedJob(m.job)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedJob(m.job); } }}
+                        title="לחץ לצפייה בפרטי המשרה המלאים"
+                        className={`cursor-pointer p-8 rounded-2xl border-3 transition-all hover:shadow-2xl hover:scale-[1.01] ${
                           i === 0 ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-400 ring-4 ring-green-100' :
                           i < 3 && m.score >= 70 ? 'bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-400' :
                           m.score >= 60 ? 'bg-green-50 border-green-300' :
@@ -2182,6 +2189,178 @@ yossi@email.com
           </div>
         )}
       </div>
+
+      {/* ========== JOB DETAILS MODAL - פרטי משרה מלאים ========== */}
+      {selectedJob && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 overflow-y-auto"
+          onClick={() => setSelectedJob(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-cyan-600 text-white p-8 rounded-t-3xl flex justify-between items-start z-10">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  {selectedJob.status === 'urgent' && (
+                    <span className="bg-red-500 text-white px-4 py-1 rounded-full text-sm font-bold animate-pulse">🔥 דחוף</span>
+                  )}
+                  {selectedJob.status === 'open' && (
+                    <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">✅ פתוח</span>
+                  )}
+                  {selectedJob.status === 'closed' && (
+                    <span className="bg-slate-500 text-white px-4 py-1 rounded-full text-sm font-bold">סגור</span>
+                  )}
+                  {selectedJob.jobCode && (
+                    <span className="bg-white/20 text-white px-4 py-1 rounded-full text-sm font-mono">קוד: {selectedJob.jobCode}</span>
+                  )}
+                  {selectedJob.category && (
+                    <span className="bg-white/20 text-white px-4 py-1 rounded-full text-sm">{selectedJob.category}</span>
+                  )}
+                </div>
+                <h2 className="text-4xl font-black mb-2">{selectedJob.title}</h2>
+                <div className="text-xl text-teal-50 flex items-center gap-4 flex-wrap">
+                  <span>🏢 {selectedJob.client}</span>
+                  <span>📍 {selectedJob.location}</span>
+                  {selectedJob.region && <span>🗺️ {selectedJob.region}</span>}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedJob(null)}
+                className="text-white/80 hover:text-white text-4xl leading-none mr-2"
+                aria-label="סגור"
+                title="סגור"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 space-y-6">
+              {selectedJob.address && (
+                <div className="bg-slate-50 p-5 rounded-2xl">
+                  <div className="text-sm text-slate-500 mb-1">כתובת מלאה</div>
+                  <div className="text-lg font-bold text-slate-800">{selectedJob.address}</div>
+                </div>
+              )}
+
+              {selectedJob.description && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">📝 תיאור המשרה</h3>
+                  <p className="text-slate-700 text-lg leading-relaxed whitespace-pre-line bg-slate-50 p-5 rounded-2xl">
+                    {selectedJob.description}
+                  </p>
+                </div>
+              )}
+
+              {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">✅ דרישות התפקיד</h3>
+                  <ul className="space-y-2">
+                    {selectedJob.requirements.map((r, i) => (
+                      <li key={i} className="bg-teal-50 border-r-4 border-teal-400 p-4 rounded-xl text-slate-700 text-lg flex gap-3">
+                        <span className="text-teal-600 font-bold">✓</span>
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedJob.conditions && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">💼 תנאי העסקה</h3>
+                  <p className="text-slate-700 text-lg leading-relaxed whitespace-pre-line bg-amber-50 border-r-4 border-amber-400 p-5 rounded-2xl">
+                    {selectedJob.conditions}
+                  </p>
+                </div>
+              )}
+
+              {(selectedJob.salary || selectedJob.salaryDetails) && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">💰 שכר</h3>
+                  <div className="bg-green-50 border-2 border-green-200 p-5 rounded-2xl">
+                    {selectedJob.salary && <div className="text-2xl font-black text-green-700 mb-2">{selectedJob.salary}</div>}
+                    {selectedJob.salaryDetails?.monthly && (
+                      <div className="text-slate-700"><span className="font-bold">חודשי:</span> {selectedJob.salaryDetails.monthly}</div>
+                    )}
+                    {selectedJob.salaryDetails?.yearly && (
+                      <div className="text-slate-700"><span className="font-bold">שנתי:</span> {selectedJob.salaryDetails.yearly}</div>
+                    )}
+                    {selectedJob.salaryDetails?.bonus && (
+                      <div className="text-slate-700"><span className="font-bold">בונוס:</span> {selectedJob.salaryDetails.bonus}</div>
+                    )}
+                    {selectedJob.salaryDetails?.notes && (
+                      <div className="text-slate-500 text-sm mt-2">{selectedJob.salaryDetails.notes}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedJob.workHours && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">🕐 שעות עבודה</h3>
+                  <p className="text-slate-700 text-lg bg-slate-50 p-5 rounded-2xl whitespace-pre-line">{selectedJob.workHours}</p>
+                </div>
+              )}
+
+              {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">🎁 הטבות</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedJob.benefits.map((b, i) => (
+                      <span key={i} className="bg-purple-100 text-purple-700 px-4 py-2 rounded-xl font-medium">
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(selectedJob.clientEmail || selectedJob.clientPhone) && (
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">📞 פרטי קשר</h3>
+                  <div className="bg-slate-50 p-5 rounded-2xl space-y-2">
+                    {selectedJob.clientEmail && (
+                      <div className="text-lg"><span className="font-bold">📧 מייל:</span> <span className="font-mono text-teal-700">{selectedJob.clientEmail}</span></div>
+                    )}
+                    {selectedJob.clientPhone && (
+                      <div className="text-lg"><span className="font-bold">📱 טלפון:</span> <span className="font-mono text-teal-700">{selectedJob.clientPhone}</span></div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(selectedJob.positionType || selectedJob.branchType) && (
+                <div className="flex gap-3 flex-wrap">
+                  {selectedJob.positionType && (
+                    <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl font-medium">
+                      סוג משרה: {selectedJob.positionType === 'permanent' ? 'קבועה' : selectedJob.positionType === 'temporary' ? 'זמנית' : 'החלפת חופשת לידה'}
+                    </span>
+                  )}
+                  {selectedJob.branchType && (
+                    <span className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-medium">
+                      סניף: {selectedJob.branchType === 'continuous' ? 'רצוף' : 'מפוצל'}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 p-6 rounded-b-3xl flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedJob(null)}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-xl font-bold text-lg transition-all"
+              >
+                סגור
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

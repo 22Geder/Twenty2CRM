@@ -422,17 +422,22 @@ export async function GET(request: NextRequest) {
     }
 
     // === Employer ===
+    // מחפשים גם לפי שם ישן ("יוסי כהן - אשדוד") וגם לפי המייל הישן,
+    // כדי לעדכן בקיים את השם החדש "יונדאי אשדוד" במקום ליצור כפילות.
     let employer = await prisma.employer.findFirst({
       where: {
         OR: [
           { email: EMPLOYER_EMAIL },
+          { email: 'yossi.cohen.ashdod@twenty2crm.local' },
           { name: { contains: 'יונדאי אשדוד' } },
           { name: { contains: 'HYUNDAI' } },
           { name: { contains: 'Hyundai' } },
+          { name: { contains: 'יוסי כהן - אשדוד' } },
         ],
       },
     })
     let employerCreated = false
+    let employerRenamed = false
     if (!employer) {
       employer = await prisma.employer.create({
         data: {
@@ -443,9 +448,40 @@ export async function GET(request: NextRequest) {
         },
       })
       employerCreated = true
+    } else if (employer.name !== EMPLOYER_NAME) {
+      // עדכון רשומת employer קיימת לשם החדש
+      employer = await prisma.employer.update({
+        where: { id: employer.id },
+        data: {
+          name: EMPLOYER_NAME,
+          email: EMPLOYER_EMAIL,
+          phone: EMPLOYER_PHONE,
+          description: 'יונדאי אשדוד - סוכנות רכב / מוסך מורשה. איש קשר: יוסי כהן.',
+        },
+      })
+      employerRenamed = true
     }
 
     const results: any[] = []
+
+    // ניקוי משרות ישנות (שנוצרו עם שם המעסיק הישן ובלי "יונדאי" בכותרת)
+    // נטרל אותן כדי שלא יופיעו פעמיים. שמירה על safety: רק משרות של ה-employer הזה.
+    const legacyPositions = await prisma.position.findMany({
+      where: {
+        employerId: employer.id,
+        NOT: { title: { contains: 'יונדאי' } },
+      },
+      select: { id: true, title: true },
+    })
+    let legacyDeactivated = 0
+    if (legacyPositions.length > 0) {
+      // deactivation בלבד (active=false) - ללא delete הרסני, ללא שינוי title
+      const upd = await prisma.position.updateMany({
+        where: { id: { in: legacyPositions.map(p => p.id) } },
+        data: { active: false },
+      })
+      legacyDeactivated = upd.count
+    }
 
     for (const p of POSITIONS) {
       // Gemini
@@ -556,10 +592,12 @@ export async function GET(request: NextRequest) {
         name: employer.name,
         email: employer.email,
         created: employerCreated,
+        renamed: employerRenamed,
       },
       recruiter: { name: RECRUITER_NAME, email: EMPLOYER_EMAIL },
       positions: results,
       total: results.length,
+      legacyDeactivated,
     })
   } catch (error: any) {
     console.error('[YossiCohen] Error:', error)

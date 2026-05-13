@@ -2,19 +2,22 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-const BENEFITS_STANDARD = `חדר אוכל - ארוחות צהריים מסובסדות
+const BENEFITS_STANDARD = `קליטה ישירה למאיר, עובד חברה מהיום הראשון
+ק"ה לאחר שנתיים
 ביטוח רפואי פרטי במימון החברה
-ביגוד
+חדר אוכל - ארוחות צהריים מסובסדות
 חניה`;
 
-const BENEFITS_WITH_BONUS = `חדר אוכל - ארוחות צהריים מסובסדות
+// מענק התמדה - רק למכונאים ואנשי דיאגנוסטיקה
+const BENEFITS_WITH_BONUS = `קליטה ישירה למאיר, עובד חברה מהיום הראשון
+ק"ה לאחר שנתיים
 ביטוח רפואי פרטי במימון החברה
-ביגוד
+חדר אוכל - ארוחות צהריים מסובסדות
 חניה
 מענק התמדה במשך שנתיים`;
 
-const HOURS_FULL = 'משרה מלאה 5 ימים בשבוע, 7:30–16:30, ימי שישי לסירוגין 7:30–12:00';
-const HOURS_MOBILE = 'עבודה מהשעה 7:30 עד 14:00 במרכז השירות ולאחר מכן כוננות, ימי שישי לסירוגין כולל כוננות';
+const HOURS_FULL = `עבודה במשרה מלאה, ימים א'-ה' 7:30-16:30, שישי לסירוגין 7:30-12:00 (משולם כש"נ)`;
+const HOURS_MOBILE = `עבודה מהשעה 7:30 עד 14:00 במרכז השירות ולאחר מכן כוננות, ימי שישי לסירוגין כולל כוננות (משולם כש"נ)`;
 
 async function main() {
   console.log('🏢 מוסיף קבוצת מאיר ומשרות...');
@@ -39,7 +42,7 @@ async function main() {
     data: {
       title: 'יועץ שירות',
       employerId: meir.id,
-      location: 'מרכז שירות עמק חפר',
+      location: 'נתניה / חדרה',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -63,7 +66,7 @@ async function main() {
     data: {
       title: 'דיאגנוסטיקה',
       employerId: meir.id,
-      location: 'מרכז שירות עמק חפר',
+      location: 'נתניה / חדרה',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -85,7 +88,7 @@ async function main() {
     data: {
       title: 'מכונאי ניידת',
       employerId: meir.id,
-      location: 'מרכז שירות רמלה',
+      location: 'רמלה',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -107,7 +110,7 @@ async function main() {
     data: {
       title: 'מכונאי צמ"ה',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -129,7 +132,7 @@ async function main() {
     data: {
       title: 'בוחן',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -153,7 +156,7 @@ async function main() {
     data: {
       title: 'מכונאי ניידת שירות 24/7',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -175,7 +178,7 @@ async function main() {
     data: {
       title: 'מכונאי',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 4,
@@ -196,7 +199,7 @@ async function main() {
     data: {
       title: 'נהג',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -217,7 +220,7 @@ async function main() {
     data: {
       title: 'מחסנאי',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 2,
@@ -240,7 +243,7 @@ async function main() {
     data: {
       title: 'מסגר',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -261,7 +264,7 @@ async function main() {
     data: {
       title: 'פחח',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -282,7 +285,7 @@ async function main() {
     data: {
       title: 'מכונאי ניידת שירות',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -304,7 +307,7 @@ async function main() {
     data: {
       title: 'מכונאי ניידת צמ"ה',
       employerId: meir.id,
-      location: 'מרכז שירות אשדוד',
+      location: 'אשדוד',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -326,7 +329,7 @@ async function main() {
     data: {
       title: 'דיאגנוסטיקה',
       employerId: meir.id,
-      location: 'מרכז שירות דרום',
+      location: 'באר שבע',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -347,7 +350,7 @@ async function main() {
     data: {
       title: 'יועץ שירות',
       employerId: meir.id,
-      location: 'מרכז שירות דרום',
+      location: 'באר שבע',
       employmentType: 'Full-time',
       active: true,
       openings: 1,
@@ -358,8 +361,7 @@ async function main() {
       requirements: `ניסיון בשירות לקוחות – חובה
 תודעה גבוהה למתן שירות`,
       workHours: HOURS_FULL,
-      benefits: `ביגוד
-חניה`,
+      benefits: BENEFITS_STANDARD,
       keywords: JSON.stringify([
         'יועץ שירות','שירות לקוחות','מרכז שירות דרום','ממשקים','תודעת שירות','דרום'
       ]),

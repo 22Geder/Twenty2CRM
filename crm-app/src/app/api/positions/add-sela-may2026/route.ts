@@ -257,10 +257,10 @@ async function ensureTag(name: string) {
   return tag
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const key = searchParams.get('key')
+    const body = await request.json().catch(() => ({}))
+    const key = body?.key ?? ''
     if (!key || !VALID_KEYS.includes(key)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

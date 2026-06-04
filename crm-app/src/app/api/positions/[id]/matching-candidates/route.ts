@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
-import { GoogleGenerativeAI } from "@google/generative-ai"
 import { calculateLocationScore } from "@/lib/israel-distance"
 import { 
   findMatchingTags, 
@@ -10,133 +9,6 @@ import {
   calculateTagMatchScore,
   findRelatedCategories 
 } from "@/lib/recruitment-tags"
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
-
-// 🧠 פונקציה לקבלת ציוני התאמה מ-Gemini AI (25 נקודות מקסימום)
-async function getGeminiMatchScores(
-  candidates: Array<{
-    candidate: {
-      id: string
-      name: string
-      resume?: string | null
-      currentTitle?: string | null
-      skills?: string | null
-    }
-    tagScore: number
-    locationScore: number
-  }>,
-  position: {
-    title: string
-    description?: string | null
-    requirements?: string | null
-    location?: string | null
-  }
-): Promise<Record<string, { score: number; reason: string }>> {
-  const results: Record<string, { score: number; reason: string }> = {}
-  
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
-    
-    // יצירת תיאור המשרה
-    const jobDescription = `
-שם המשרה: ${position.title}
-תיאור: ${position.description || 'לא צוין'}
-דרישות: ${position.requirements || 'לא צוין'}
-מיקום: ${position.location || 'לא צוין'}
-`.trim()
-
-    // מעבד מועמדים בקבוצות של 10 (לחסוך rate limits)
-    const batchSize = 10
-    for (let i = 0; i < candidates.length; i += batchSize) {
-      const batch = candidates.slice(i, i + batchSize)
-      
-      // יצירת prompt לקבוצה
-      const candidatesList = batch.map((item, idx) => {
-        const cv = item.candidate.resume || ''
-        const cvSummary = cv.length > 1500 ? cv.substring(0, 1500) + '...' : cv
-        return `
-מועמד ${idx + 1} (ID: ${item.candidate.id}):
-שם: ${item.candidate.name}
-תפקיד נוכחי: ${item.candidate.currentTitle || 'לא צוין'}
-כישורים: ${item.candidate.skills || 'לא צוין'}
-קורות חיים:
-${cvSummary}
----`
-      }).join('\n')
-
-      const prompt = `אתה מומחה גיוס. נתח את ההתאמה בין המועמדים הבאים למשרה.
-
-פרטי המשרה:
-${jobDescription}
-
-רשימת מועמדים:
-${candidatesList}
-
-לכל מועמד, תן ציון מ-0 עד 25 לפי התאמת קורות החיים למשרה:
-- 20-25: התאמה מצוינת - ניסיון ישיר בתחום, כישורים מתאימים מאוד
-- 15-19: התאמה טובה - ניסיון רלוונטי, רוב הכישורים מתאימים
-- 10-14: התאמה בינונית - ניסיון חלקי, יש פוטנציאל
-- 5-9: התאמה נמוכה - מעט קשר לתחום
-- 0-4: אין התאמה - תחום שונה לגמרי
-
-החזר JSON בפורמט:
-{
-  "candidates": [
-    {"id": "ID של המועמד", "score": ציון 0-25, "reason": "הסבר קצר בעברית למה הציון הזה"}
-  ]
-}
-
-החזר רק את ה-JSON, ללא טקסט נוסף.`
-
-      try {
-        const result = await model.generateContent(prompt)
-        const text = result.response.text()
-        
-        // חילוץ JSON מהתשובה
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0])
-          if (parsed.candidates && Array.isArray(parsed.candidates)) {
-            for (const c of parsed.candidates) {
-              if (c.id && typeof c.score === 'number') {
-                results[c.id] = {
-                  score: Math.min(Math.max(c.score, 0), 25), // בין 0-25
-                  reason: c.reason || ''
-                }
-              }
-            }
-          }
-        }
-      } catch (batchError) {
-        console.error(`Gemini batch error:`, batchError)
-        // בשגיאה - נותן ציון בסיסי לכל הקבוצה
-        for (const item of batch) {
-          results[item.candidate.id] = {
-            score: Math.min(item.tagScore / 25 * 15, 15),
-            reason: 'ציון אוטומטי - לא ניתח ע"י AI'
-          }
-        }
-      }
-      
-      // המתנה קצרה בין קבוצות
-      if (i + batchSize < candidates.length) {
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-    }
-  } catch (error) {
-    console.error('Gemini scoring error:', error)
-    // בשגיאה כללית - ציון בסיסי לכולם
-    for (const item of candidates) {
-      results[item.candidate.id] = {
-        score: Math.min(item.tagScore / 25 * 15, 15),
-        reason: 'ציון אוטומטי'
-      }
-    }
-  }
-  
-  return results
-}
 
 interface RouteParams {
   params: Promise<{
@@ -174,9 +46,7 @@ export async function GET(
       )
     }
 
-    // חישוב תאריך לפני 21 יום
-    const twentyOneDaysAgo = new Date()
-    twentyOneDaysAgo.setDate(twentyOneDaysAgo.getDate() - 21)
+    // 🔍 חיפוש כל המאגר (ללא מגבלת זמן)
 
     // 🧠 חילוץ מילות מפתח מהמשרה
     const positionText = `${position.title} ${position.description || ''} ${position.requirements || ''} ${position.location || ''}`
@@ -185,17 +55,12 @@ export async function GET(
     const positionTagKeywords = positionRecruitmentTags.map(t => t.keyword)
     const positionLocation = (position.location || '').toLowerCase()
 
-    // שליפת כל המועמדים מה-21 ימים האחרונים
+    // שליפת כל המועמדים מהמאגר המלא (ללא מגבלת תאריך)
     const candidates = await prisma.candidate.findMany({
-      where: {
-        createdAt: {
-          gte: twentyOneDaysAgo,
-        },
-      },
       orderBy: {
         createdAt: "desc",
       },
-      take: 200, // יותר מועמדים כדי למצוא התאמות טובות יותר
+      take: 500, // כל המאגר - עד 500 מועמדים
       include: {
         tags: true,
         applications: {
@@ -210,11 +75,11 @@ export async function GET(
       },
     })
 
-    // 🔥🧠 אלגוריתם AI ULTRA V5 - 50% מיקום / 25% תגיות / 25% GEMINI AI (פברואר 2026)
-    // סה"כ 100 נקודות: 
+    // 🔥 אלגוריתם FAST V6 - 50% מיקום / 25% תגיות / 25% מילות מפתח (ללא Gemini)
+    // סה"כ 100 נקודות - מהיר, כל החישוב מקומי:
     // - מיקום: 50 נקודות (50%) - הכי חשוב!
-    // - תגיות: 25 נקודות (25%) - 5 תגיות תואמות = מלא
-    // - GEMINI AI: 25 נקודות (25%) - קריאת קורות חיים והתאמה למשרה!
+    // - תגיות DB: 25 נקודות (25%) - 5 תגיות תואמות = מלא
+    // - מילות מפתח/טקסט: 25 נקודות (25%) - מהיר, ללא Gemini
     
     // שלב 1: חישוב מיקום ותגיות לכל המועמדים
     const candidatesWithBasicScore = candidates.map((candidate) => {
@@ -292,33 +157,22 @@ export async function GET(
       }
     })
 
-    // מיון לפי ציון בסיסי (מיקום + תגיות) כדי לקבוע מי יקבל ניתוח Gemini
+    // מיון לפי ציון בסיסי
     candidatesWithBasicScore.sort((a, b) => (b.locationScore + b.tagScore) - (a.locationScore + a.tagScore))
 
-    // שלב 2: שליחת TOP 50 מועמדים ל-Gemini לניתוח AI
-    const top50Candidates = candidatesWithBasicScore.slice(0, 50)
-    
-    // יצירת prompts בבת אחת ל-Gemini
-    const geminiScores = await getGeminiMatchScores(top50Candidates, position)
-
-    // שלב 3: חיבור הציונים - מיקום + תגיות + Gemini
-    const candidatesWithScore = candidatesWithBasicScore.map((item, index) => {
+    // שלב 2: חישוב ציון מילות מפתח (מקומי, מהיר - במקום Gemini)
+    const candidatesWithScore = candidatesWithBasicScore.map((item) => {
       const { candidate, tagScore, locationScore, locationMatch, locationMatchType, distanceKm,
               matchingTags, categoryOverlap, candidateRecruitmentTags, candidateCategories,
               recruitmentTagMatch, educationStatus, candidateCity } = item
 
-      // ציון Gemini - רק ל-50 המועמדים הראשונים, אחרים מקבלים ציון על בסיס תגיות
-      let geminiScore = 0
-      let geminiReason = ''
-      
-      if (index < 50 && geminiScores[candidate.id]) {
-        geminiScore = geminiScores[candidate.id].score
-        geminiReason = geminiScores[candidate.id].reason
-      } else {
-        // ציון בסיסי למועמדים שלא נבדקו ע"י Gemini - יחסי לתגיות
-        // אם יש 5 תגיות תואמות (25 נק') -> מקבל 25 נק' גם ב-Gemini (מקסימום אפשרי)
-        geminiScore = tagScore // עד 25 נקודות - יחסי לתגיות
-      }
+      // ⚡ ניקוד מילות מפתח מהיר (במקום Gemini) - עד 25 נקודות
+      // 5 מילות מפתח תואמות = 25 נקודות
+      const keywordMatchCount = recruitmentTagMatch.matchedTags.length
+      const keywordScore = Math.min(keywordMatchCount * 5, 25)
+      const keywordReason = keywordMatchCount > 0
+        ? `${keywordMatchCount} מילות מפתח תואמות: ${recruitmentTagMatch.matchedTags.slice(0, 3).join(', ')}`
+        : ''
 
       // 🔑 יצירת עד 30 תגיות השוואה
       const comparisonTags = generateComparisonTags(
@@ -331,7 +185,7 @@ export async function GET(
       )
 
       // 📝 יצירת הסבר למה מתאים
-      const whySuitable = geminiReason || generateWhySuitable(
+      const whySuitable = keywordReason || generateWhySuitable(
         candidate,
         position,
         matchingTags,
@@ -342,14 +196,13 @@ export async function GET(
       )
 
       // ============================================
-      // 🎯 חישוב ציון סופי:
+      // 🎯 חישוב ציון סופי (FAST - ללא Gemini):
       // מיקום: 50 נקודות (50%)
-      // תגיות: 25 נקודות (25%) - 5 תגיות = מלא
-      // GEMINI AI: 25 נקודות (25%) - קריאת CV והתאמה
+      // תגיות DB: 25 נקודות (25%) - 5 תגיות = מלא
+      // מילות מפתח: 25 נקודות (25%) - 5 keywords = מלא
       // ============================================
       
-      const rawScore = locationScore + tagScore + geminiScore
-
+      const rawScore = locationScore + tagScore + keywordScore
       const finalScore = Math.min(Math.round(rawScore), 100)
 
       return {
@@ -369,17 +222,15 @@ export async function GET(
         whySuitable,
         candidateRecruitmentTags: candidateRecruitmentTags.slice(0, 15).map(t => t.keyword),
         scoreBreakdown: {
-          // 50% מיקום
           location: Math.round(locationScore),
           locationMaxPossible: 50,
-          // 25% תגיות (5 תגיות = 25 נק')
           tags: tagScore,
           matchingTagsCount: matchingTags.length,
           tagsMaxPossible: 25,
-          // 25% GEMINI AI - קריאת CV
-          geminiAI: Math.round(geminiScore),
-          geminiMaxPossible: 25,
-          geminiAnalyzed: index < 50,
+          keywordMatch: keywordScore,
+          keywordMatchCount,
+          keywordMaxPossible: 25,
+          geminiAnalyzed: false, // Gemini נטען רק לפי דרישה
         }
       }
     })
@@ -405,18 +256,17 @@ export async function GET(
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
 
-    // סינון - רק מועמדים עם ציון סביר
-    const relevantCandidates = candidatesWithScore.filter(c => c.matchScore >= 20 || c.locationMatch)
-
+    // הצג את כל המועמדים ממוינים (ללא סינון נוקשה)
     return NextResponse.json({
-      candidates: relevantCandidates.slice(0, 100),
+      candidates: candidatesWithScore.slice(0, 100),
       positionTags: position.tags,
       positionCategories,
-      totalCount: relevantCandidates.length,
-      daysBack: 21,
-      aiPowered: true,
-      geminiAnalyzed: Math.min(candidates.length, 50),
-      algorithm: '50% מיקום / 25% תגיות / 25% GEMINI AI',
+      totalCount: candidatesWithScore.length,
+      totalSearched: candidates.length,
+      daysBack: null, // כל המאגר
+      aiPowered: false,
+      geminiAnalyzed: 0,
+      algorithm: '50% מיקום / 25% תגיות DB / 25% מילות מפתח (מהיר)',
     })
   } catch (error) {
     console.error("Error fetching matching candidates:", error)

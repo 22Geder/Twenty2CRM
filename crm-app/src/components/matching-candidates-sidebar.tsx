@@ -892,7 +892,7 @@ export function MatchingCandidatesSidebar({
                   )}
 
                   {/* 📝 Why Suitable - למה מתאים */}
-                  {candidate.whySuitable && candidate.whySuitable.length > 0 && (
+                  {Array.isArray(candidate.whySuitable) && candidate.whySuitable.length > 0 && (
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
                       <div className="text-sm font-bold text-green-800 mb-2 flex items-center gap-1">
                         <span>💡</span>
@@ -909,7 +909,7 @@ export function MatchingCandidatesSidebar({
                   )}
 
                   {/* 🔑 Comparison Tags - עד 30 תגיות השוואה */}
-                  {candidate.comparisonTags && candidate.comparisonTags.length > 0 && (
+                  {Array.isArray(candidate.comparisonTags) && candidate.comparisonTags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {candidate.comparisonTags.map((tag, idx) => (
                         <span
@@ -936,7 +936,7 @@ export function MatchingCandidatesSidebar({
                   )}
 
                   {/* Matching Tags */}
-                  {candidate.matchingTags && candidate.matchingTags.length > 0 && (
+                  {Array.isArray(candidate.matchingTags) && candidate.matchingTags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {candidate.matchingTags.map(tag => (
                         <Badge 

@@ -63,6 +63,11 @@ export function formatMinutes(minutes: number): string {
 export const STANDARD_DAILY_NET_MINUTES = 8 * 60
 
 /**
+ * יעד שעות חודשי: 168 שעות
+ */
+export const MONTHLY_TARGET_MINUTES = 168 * 60
+
+/**
  * חישוב סטטוס איחור / יציאה מוקדמת
  */
 export function getDayDelta(
@@ -158,11 +163,23 @@ export function getMonthRange(monthStr: string): { start: Date; end: Date; year:
 }
 
 /**
- * עזר - תאריך כיום עבודה: מאפס שעות (UTC) כדי שיתאים ל-@db.Date
+ * עזר - תאריך כיום עבודה: מחזיר UTC חצות של התאריך הישראלי (Asia/Jerusalem)
+ * מתקן את בעיית ה-timezone: כניסה ב-01:00 ישראל (22:00 UTC יום קודם)
+ * תירשם לתאריך הישראלי הנכון ולא לתאריך ה-UTC של השרת.
  */
 export function toWorkDate(d: Date | string): Date {
   const date = new Date(d)
-  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0))
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Jerusalem',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(date)
+    const get = (t: string) => parseInt(parts.find((p) => p.type === t)?.value ?? '0', 10)
+    return new Date(Date.UTC(get('year'), get('month') - 1, get('day'), 0, 0, 0, 0))
+  } catch {
+    // fallback: השתמש בתאריך ה-UTC של השרת
+    return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0))
+  }
 }
 
 /**

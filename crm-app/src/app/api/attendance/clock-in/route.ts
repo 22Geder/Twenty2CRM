@@ -37,7 +37,7 @@ export async function POST(_request: NextRequest) {
         userId,
         date: today,
         clockIn: now,
-        breakMinutes: 30,
+        breakMinutes: 0,
         status: 'PRESENT',
       },
       update: {

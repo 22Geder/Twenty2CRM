@@ -177,7 +177,7 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              {position.employer.name} • {position.location || "מיקום לא צוין"}
+              {position.employer?.name || "ללא מעסיק"} • {position.location || "מיקום לא צוין"}
             </p>
           </div>
           <div className="flex gap-2">

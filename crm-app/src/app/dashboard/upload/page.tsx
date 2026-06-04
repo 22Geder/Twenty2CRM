@@ -20,6 +20,7 @@ interface DataQuality {
   hasCity: boolean;
   hasTitle: boolean;
   hasSkills: boolean;
+  hasIdNumber?: boolean;
   confidence: { name: number; phone: number; email: number; city: number };
 }
 
@@ -43,6 +44,7 @@ interface ProcessedFile {
     name: string;
     email: string;
     phone: string;
+    idNumber?: string | null;
     city: string;
     currentTitle: string;
     skills: string[];
@@ -571,7 +573,7 @@ export default function BulkUploadPage() {
                   </div>
 
                   {/* מה נקלט */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-sm">
                     <div className={`p-2 rounded ${file.dataQuality?.hasName ? 'bg-green-100' : 'bg-red-100'}`}>
                       <span className="text-gray-600">שם:</span>
                       <p className="font-medium truncate">{file.candidate?.name || 'לא זוהה'}</p>
@@ -583,6 +585,10 @@ export default function BulkUploadPage() {
                     <div className={`p-2 rounded ${file.dataQuality?.hasEmail ? 'bg-green-100' : 'bg-red-100'}`}>
                       <span className="text-gray-600">אימייל:</span>
                       <p className="font-medium truncate">{file.candidate?.email || 'לא זוהה'}</p>
+                    </div>
+                    <div className={`p-2 rounded ${file.candidate?.idNumber ? 'bg-green-100' : 'bg-gray-100'}`}>
+                      <span className="text-gray-600">ת.ז.:</span>
+                      <p className="font-medium truncate">{file.candidate?.idNumber || 'לא זוהה'}</p>
                     </div>
                     <div className={`p-2 rounded ${file.dataQuality?.hasCity ? 'bg-green-100' : 'bg-red-100'}`}>
                       <span className="text-gray-600">עיר:</span>

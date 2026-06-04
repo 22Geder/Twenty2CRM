@@ -34,6 +34,7 @@ function extractFromCVText(text: string): {
   email: string;
   phone: string;
   alternatePhone: string;
+  idNumber: string;
   city: string;
   address: string;
   country: string;
@@ -46,13 +47,13 @@ function extractFromCVText(text: string): {
 } {
   const lines = text.split('\n').filter(line => line.trim());
   
-  // חילוץ אימייל
-  const emailRegex = /[\w\.-]+@[\w\.-]+\.\w+/;
+  // חילוץ אימייל - תומך גם ב-+ בכתובת (user+tag@domain.com)
+  const emailRegex = /[\w\.\-\+]+@[\w\.-]+\.[a-zA-Z]{2,}/;
   const emailMatch = text.match(emailRegex);
   const email = emailMatch ? emailMatch[0] : '';
 
-  // חילוץ טלפונים (פורמט ישראלי) - תומך במספר טלפונים
-  const phoneRegex = /0(?:5[0-9]|[2-4]|[7-9])[\-\s]?[0-9]{3}[\-\s]?[0-9]{4}/g;
+  // חילוץ טלפונים (פורמט ישראלי) - תומך בנקודות וסוגריים
+  const phoneRegex = /0(?:5[0-9]|[2-4]|[7-9])[\-\s.]?[0-9]{3}[\-\s.]?[0-9]{4}/g;
   const phoneMatches = text.match(phoneRegex);
   const phone = phoneMatches && phoneMatches[0] ? phoneMatches[0].replace(/[\-\s]/g, '') : '';
   const alternatePhone = phoneMatches && phoneMatches[1] ? phoneMatches[1].replace(/[\-\s]/g, '') : '';
@@ -230,6 +231,19 @@ function extractFromCVText(text: string): {
     }
   }
 
+  // חילוץ תעודת זהות - 9 ספרות
+  let idNumber = '';
+  const idKeywordMatch = text.match(/(?:ת\.?ז\.?|תעודת זהות|מספר זהות|id\s*number|identity)[:\s]*(\d{9})/i);
+  if (idKeywordMatch) {
+    idNumber = idKeywordMatch[1];
+  } else {
+    const standaloneId = text.match(/(?<!\d)(\d{9})(?!\d)/);
+    const allPhones = (text.match(/0(?:5[0-9]|[2-4]|[7-9])[\-\s.]?[0-9]{3}[\-\s.]?[0-9]{4}/g) || []).map(p => p.replace(/\D/g, ''));
+    if (standaloneId && !allPhones.some(p => p.includes(standaloneId[1]))) {
+      idNumber = standaloneId[1];
+    }
+  }
+
   // חילוץ שנות ניסיון
   const expRegex = /(\d+)\s*(שנ[יה]|years?|שנות|שנים)/gi;
   const expMatch = text.match(expRegex);
@@ -283,6 +297,7 @@ function extractFromCVText(text: string): {
     email,
     phone,
     alternatePhone,
+    idNumber,
     city,
     address,
     country,

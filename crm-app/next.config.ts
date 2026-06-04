@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['pdf-parse', 'googleapis', 'google-auth-library'],
+  serverExternalPackages: ['pdf-parse'],
+  experimental: {
+    instrumentationHook: true,
+  },
   
   // 🔒 Security Headers
   async headers() {
@@ -16,7 +19,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
@@ -28,21 +31,6 @@ const nextConfig: NextConfig = {
 
   // 🔒 הסתר מידע על מנוע השרת
   poweredByHeader: false,
-
-  // 🚫 חסימת נתיבי אדמין נפוצים - מחזיר 404 (החליף את proxy.ts)
-  async redirects() {
-    return [
-      { source: '/admin', destination: '/404', permanent: false },
-      { source: '/admin/:path*', destination: '/404', permanent: false },
-      { source: '/administrator', destination: '/404', permanent: false },
-      { source: '/administrator/:path*', destination: '/404', permanent: false },
-      { source: '/wp-admin', destination: '/404', permanent: false },
-      { source: '/wp-admin/:path*', destination: '/404', permanent: false },
-      { source: '/wp-login.php', destination: '/404', permanent: false },
-      { source: '/phpmyadmin', destination: '/404', permanent: false },
-      { source: '/phpmyadmin/:path*', destination: '/404', permanent: false },
-    ]
-  },
 }
 
 export default nextConfig;

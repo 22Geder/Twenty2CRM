@@ -152,7 +152,7 @@ export default async function PositionsPage() {
                       <div className="grid gap-2 text-sm text-slate-600 mb-3">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-[#06B6D4]" />
-                          <span>{position.employer.name}</span>
+                          <span>{position.employer?.name || "ללא מעסיק"}</span>
                         </div>
                         {position.location && (
                           <div className="flex items-center gap-2">
@@ -213,7 +213,7 @@ export default async function PositionsPage() {
                       <div className="text-sm text-slate-500">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-slate-400" />
-                          <span>{position.employer.name}</span>
+                          <span>{position.employer?.name || "ללא מעסיק"}</span>
                         </div>
                       </div>
                     </div>

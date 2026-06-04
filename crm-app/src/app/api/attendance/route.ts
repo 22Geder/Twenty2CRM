@@ -115,18 +115,36 @@ export async function POST(request: NextRequest) {
     const [yy, mm, dd] = body.date.split('-').map(Number)
     const workDate = new Date(Date.UTC(yy, mm - 1, dd, 0, 0, 0, 0))
 
+    // עוזר: מחזיר את ה-offset של ישראל (Asia/Jerusalem) ב-דקות עבור תאריך UTC נתון
+    // (חיובי = UTC+ ; קיץ = +180, חורף = +120)
+    const getIsraelOffsetMinutes = (utcDate: Date): number => {
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Jerusalem',
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: 'numeric', minute: 'numeric', second: 'numeric',
+          hour12: false,
+        }).formatToParts(utcDate)
+        const get = (t: string) => parseInt(parts.find((p) => p.type === t)?.value ?? '0', 10)
+        const hour = get('hour') % 24 // מטפל ב-24:00
+        const israelMs = Date.UTC(get('year'), get('month') - 1, get('day'), hour, get('minute'), get('second'))
+        return Math.round((israelMs - utcDate.getTime()) / 60000)
+      } catch {
+        return 180 // fallback: קיץ UTC+3
+      }
+    }
+
     // בנה שעות מלאות (אם הגיעו רק "HH:MM")
     const buildDateTime = (timeStr: string | undefined | null): Date | null => {
       if (!timeStr) return null
       // תמיכה גם ב-ISO וגם ב-"HH:MM"
       if (/^\d{2}:\d{2}$/.test(timeStr)) {
         const [h, m] = timeStr.split(':').map(Number)
-        // שעון ישראל (Asia/Jerusalem) - מאחסנים כ-UTC על ידי הפחתת 3 שעות (DST: 2 שעות).
-        // לפשטות נשמור את השעה המקומית ע"י יצירת תאריך מקומי - הדפדפן ישמור באזור הזמן של השרת/המשתמש.
-        // השרת ב-Railway רץ ב-UTC, אז ניצור Date שמייצג את השעה הישראלית בצורה אמינה ע"י offset קבוע +3.
-        // נשתמש ב-toISOString של Date שנבנה כ-local; כיוון שצוות בישראל - נחשב כ-UTC+3 (קיץ) / +2 (חורף).
-        // פתרון פשוט ויציב: נשמור כ-local time של השרת ע"י new Date(year, monthIdx, day, h, m).
-        return new Date(yy, mm - 1, dd, h, m, 0, 0)
+        // המשתמש הזין שעה ישראלית (Asia/Jerusalem) - ממירים ל-UTC
+        // דוגמה: 08:00 ישראל קיץ → 05:00 UTC
+        const approxUTC = new Date(Date.UTC(yy, mm - 1, dd, h, m, 0, 0))
+        const offsetMin = getIsraelOffsetMinutes(approxUTC)
+        return new Date(approxUTC.getTime() - offsetMin * 60000)
       }
       const d = new Date(timeStr)
       return Number.isNaN(d.getTime()) ? null : d
@@ -145,7 +163,7 @@ export async function POST(request: NextRequest) {
         date: workDate,
         clockIn,
         clockOut,
-        breakMinutes: breakMinutes ?? 30,
+        breakMinutes: breakMinutes ?? 0,
         status: status ?? 'PRESENT',
         notes,
         isManualEdit: true,

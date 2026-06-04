@@ -96,12 +96,13 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   let pdfParseText = '';
   
-  // 1. נסה קודם pdf-parse לPDF רגיל עם טקסט
+  // 1. נסה קודם pdf-parse לPDF רגיל עם טקסט (v1 function-based API)
   try {
     let pdfParse: any;
-    pdfParse = require('pdf-parse');
+    try { pdfParse = require('pdf-parse/lib/pdf-parse'); }
+    catch { pdfParse = require('pdf-parse'); }
     const data = await Promise.race([
-      pdfParse(buffer),
+      pdfParse(buffer) as Promise<{ text: string }>,
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('pdf-parse timeout')), 15000))
     ]);
     pdfParseText = data.text || '';
@@ -425,6 +426,7 @@ ${text.substring(0, 6000)}
   "name": "שם מלא",
   "email": "אימייל או null",
   "phone": "טלפון בפורמט 05XXXXXXXX או null",
+  "idNumber": "תעודת זהות - 9 ספרות אם מופיעה בטקסט (ת.ז/תז/תעודת זהות), אחרת null",
   "city": "עיר/יישוב/קיבוץ/מושב - כולל מקומות קטנים כמו גליל ים, קיבוצים, מושבים",
   "currentTitle": "תפקיד מדויק עם הקשר - לדוגמה: 'איש מכירות רכב', 'מנהל מחסן', 'סגן מנהל סניף רכב'",
   "professionalBackground": "תיאור קצר של הרקע המקצועי - מה באמת עשה המועמד",
@@ -493,14 +495,14 @@ ${text.substring(0, 6000)}
 function analyzeCVText(text: string): any {
   const lines = text.split('\n').filter(line => line.trim());
   
-  // Extract email
-  const emailRegex = /[\w\.-]+@[\w\.-]+\.\w+/;
+  // Extract email - תומך גם ב-+ בכתובת (user+tag@domain.com)
+  const emailRegex = /[\w\.\-\+]+@[\w\.-]+\.[a-zA-Z]{2,}/;
   const emailMatch = text.match(emailRegex);
   const email = emailMatch ? emailMatch[0] : '';
 
-  // Extract phone (Israeli format) - 🆕 תומך בכל הפורמטים
-  // תומך: 05X-XXX-XXXX, 05XXXXXXXXX, +972-XX-XXX-XXXX, 972XXXXXXXXX
-  const phoneRegex = /(?:\+?972[-\s]?|0)(?:5[0-9]|[2-4]|[7-9])[-\s]?[0-9]{3}[-\s]?[0-9]{4}/g;
+  // Extract phone (Israeli format) - תומך בכל הפורמטים כולל נקודות וסוגריים
+  // תומך: 05X-XXX-XXXX, 05XXXXXXXXX, +972-XX-XXX-XXXX, 052.123.4567, (052) 123-4567
+  const phoneRegex = /(?:\+?972[-\s.]?|0)(?:5[0-9]|[2-4]|[7-9])[-\s.]?[0-9]{3}[-\s.]?[0-9]{4}/g;
   const phoneMatches = text.match(phoneRegex);
   let phone = '';
   
@@ -520,13 +522,64 @@ function analyzeCVText(text: string): any {
     }
   }
 
-  // Extract name (usually first line or after certain keywords)
+  // Extract ID number (תעודת זהות) - 9 ספרות
+  let idNumber: string | null = null;
+  // חפש לפי מילת מפתח קודם
+  const idKeywordMatch = text.match(/(?:ת\.?ז\.?|תעודת זהות|מספר זהות|id\s*number|identity)[:\s]*(\d{9})/i);
+  if (idKeywordMatch) {
+    idNumber = idKeywordMatch[1];
+  } else {
+    // חפש מספר עצמאי בן 9 ספרות (לא חלק ממספר טלפון)
+    const standaloneId = text.match(/(?<!\d)(\d{9})(?!\d)/);
+    if (standaloneId && !phone.includes(standaloneId[1])) {
+      idNumber = standaloneId[1];
+    }
+  }
+
+  // Extract name - תומך ב"שם:" prefix ובדיקה רחבה יותר
   let name = '';
-  for (const line of lines.slice(0, 5)) {
-    if (line.length > 3 && line.length < 50 && !line.includes('@') && !line.match(/\d{5,}/)) {
-      const words = line.trim().split(/\s+/);
+  
+  // מילים שלא יכולות להיות שמות
+  const notNames = [
+    'קורות חיים', 'resume', 'cv', 'curriculum', 'vitae', 'פרטים אישיים',
+    'personal', 'details', 'info', 'information', 'contact', 'about',
+    'ניסיון תעסוקתי', 'השכלה', 'education', 'experience', 'work', 'מיומנויות',
+    'skills', 'summary', 'objective', 'תקציר', 'מטרה', 'פרופיל', 'profile'
+  ];
+
+  // נסה קודם תבנית "שם:" / "Name:"
+  const nameKeywordMatch = text.match(/(?:שם[:\s]+|name[:\s]+)([א-ת]{2,15}(?:\s+[א-ת]{2,15})+|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i);
+  if (nameKeywordMatch && nameKeywordMatch[1] && nameKeywordMatch[1].trim().length > 3) {
+    name = nameKeywordMatch[1].trim();
+  }
+  
+  // אם לא נמצא - חפש בשורות הראשונות (עד 8 שורות)
+  if (!name) {
+    for (const line of lines.slice(0, 8)) {
+      const cleanLine = line.trim();
+      // דלג על שורות קצרות / ארוכות / עם @ / עם מספרים רבים
+      if (cleanLine.length < 3 || cleanLine.length > 50) continue;
+      if (cleanLine.includes('@') || /\d{5,}/.test(cleanLine)) continue;
+      // דלג על שורות שהן מילות מפתח שאינן שמות
+      if (notNames.some(n => cleanLine.toLowerCase().includes(n.toLowerCase()))) continue;
+      // דלג על מספרי טלפון
+      if (/^0\d/.test(cleanLine) || /^\+972/.test(cleanLine)) continue;
+      // דלג על שורות שמתחילות בנקודתיים (כותרות)
+      if (/^[\w\s]+:$/.test(cleanLine)) continue;
+      
+      const words = cleanLine.split(/\s+/);
+      // שם טיפוסי: 2-4 מילים
       if (words.length >= 2 && words.length <= 4) {
-        name = line.trim();
+        // וודא שהמילים מתחילות באות גדולה או בעברית
+        const looksLikeName = words.every(w => /^[א-ת]/.test(w) || /^[A-Z]/.test(w));
+        if (looksLikeName) {
+          name = cleanLine;
+          break;
+        }
+      }
+      // שם בן מילה אחת בעברית (שם פרטי בלבד)
+      if (words.length === 1 && /^[א-ת]{2,15}$/.test(cleanLine)) {
+        name = cleanLine;
         break;
       }
     }
@@ -739,6 +792,7 @@ function analyzeCVText(text: string): any {
     name: name || 'לא זוהה',
     email: email || 'לא זוהה',
     phone: phone || 'לא זוהה',
+    idNumber: idNumber || null,
     city: city || 'לא זוהה',
     currentTitle: currentTitle || 'לא זוהה',
     skills: skills.length > 0 ? skills : ['לא זוהו'],
@@ -983,6 +1037,7 @@ export async function POST(request: NextRequest) {
           name: aiData.name || 'לא זוהה',
           email: aiData.email || 'לא זוהה',
           phone: aiData.phone || 'לא זוהה',
+          idNumber: aiData.idNumber || null,
           city: aiData.city || 'לא זוהה',
           currentTitle: aiData.currentTitle || 'לא זוהה',
           skills: aiData.skills || [],
@@ -1022,6 +1077,7 @@ export async function POST(request: NextRequest) {
       hasTitle: candidateData.currentTitle && candidateData.currentTitle !== 'לא זוהה',
       hasSkills: Array.isArray(candidateData.skills) && candidateData.skills.length > 0 && 
                  !candidateData.skills.includes('לא זוהו'),
+      hasIdNumber: !!candidateData.idNumber,
       confidence
     };
     
@@ -1158,6 +1214,7 @@ export async function POST(request: NextRequest) {
 
     // 🆕 יצירת פרופיל AI משופר לשמירה
     const aiProfileData = {
+      idNumber: candidateData?.idNumber || null,
       skills: candidateData?.skills || [],
       mainIndustries: candidateData?.mainIndustries || [],
       relevantFor: candidateData?.relevantFor || [],

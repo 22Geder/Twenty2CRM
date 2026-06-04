@@ -153,7 +153,7 @@ export default function AttendancePage() {
   const [editForm, setEditForm] = useState<{ clockIn: string; clockOut: string; breakMinutes: string; status: string; notes: string }>({
     clockIn: '',
     clockOut: '',
-    breakMinutes: '30',
+    breakMinutes: '0',
     status: 'PRESENT',
     notes: '',
   })
@@ -497,6 +497,72 @@ export default function AttendancePage() {
       </Card>
 
       {/* Bonus + Hires summary */}
+      {/* 📊 יעד שעות חודשי: 168 שעות */}
+      {(() => {
+        const MONTHLY_TARGET_MIN = 168 * 60
+        const done = summary.totalMinutes
+        const remaining = Math.max(0, MONTHLY_TARGET_MIN - done)
+        const pct = Math.min(100, Math.round((done / MONTHLY_TARGET_MIN) * 100))
+        const overTarget = done > MONTHLY_TARGET_MIN
+        return (
+          <Card className={`border-2 ${overTarget ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50' : 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50'}`}>
+            <CardContent className="p-5">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                    <Clock className={`w-4 h-4 ${overTarget ? 'text-green-600' : 'text-indigo-600'}`} />
+                    יעד שעות חודשי: 168 שעות
+                  </div>
+                  <div className={`text-3xl font-mono font-bold mt-1 ${overTarget ? 'text-green-800' : 'text-indigo-800'}`}>
+                    {formatMinutes(done)}
+                    <span className="text-base font-normal text-gray-500 mr-2">/ 168:00</span>
+                  </div>
+                </div>
+                <div className="flex gap-4 text-center">
+                  <div className="bg-white/80 rounded-xl border px-5 py-3">
+                    <div className="text-xs text-gray-500">בוצע</div>
+                    <div className={`text-xl font-bold font-mono ${overTarget ? 'text-green-700' : 'text-indigo-700'}`}>
+                      {Math.floor(done / 60)}ש׳ {done % 60}ד׳
+                    </div>
+                  </div>
+                  <div className={`rounded-xl border px-5 py-3 ${overTarget ? 'bg-green-100 border-green-300' : 'bg-amber-50 border-amber-300'}`}>
+                    <div className="text-xs text-gray-500">{overTarget ? 'עודף' : 'נשאר'}</div>
+                    <div className={`text-xl font-bold font-mono ${overTarget ? 'text-green-700' : 'text-amber-700'}`}>
+                      {overTarget
+                        ? `+${Math.floor((done - MONTHLY_TARGET_MIN) / 60)}ש׳ ${(done - MONTHLY_TARGET_MIN) % 60}ד׳`
+                        : `${Math.floor(remaining / 60)}ש׳ ${remaining % 60}ד׳`}
+                    </div>
+                  </div>
+                  <div className="bg-white/80 rounded-xl border px-5 py-3">
+                    <div className="text-xs text-gray-500">אחוז</div>
+                    <div className={`text-xl font-bold ${overTarget ? 'text-green-700' : pct >= 80 ? 'text-blue-700' : 'text-gray-700'}`}>
+                      {pct}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div
+                    className={[
+                      'h-3 rounded-full transition-all duration-500',
+                      overTarget ? 'bg-green-500' : pct >= 80 ? 'bg-indigo-500' : pct >= 50 ? 'bg-blue-400' : 'bg-amber-400',
+                    ].join(' ')}
+                    {...{ style: { width: `${pct}%` } }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>0ש׳</span>
+                  <span className="font-semibold">{pct}% הושלם</span>
+                  <span>168ש׳</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">

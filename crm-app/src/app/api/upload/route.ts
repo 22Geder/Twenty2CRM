@@ -39,7 +39,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
@@ -308,7 +308,7 @@ async function extractTextFromRTF(buffer: Buffer): Promise<string> {
 // 🆕 Universal fallback: try to extract text with Gemini from any document
 async function extractTextWithGeminiFallback(buffer: Buffer, fileName: string, mimeType: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     const base64Data = buffer.toString('base64');
     
     const prompt = `קרא את המסמך הזה וחלץ את כל הטקסט שיש בו.
@@ -346,7 +346,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
@@ -406,7 +406,7 @@ async function extractCVWithAI(text: string): Promise<any> {
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     
     const prompt = `אתה מגייס מקצועי עם 15 שנות ניסיון. קרא את קורות החיים האלו ונתח אותם כמו שמגייס אנושי היה עושה.
 
@@ -869,6 +869,8 @@ export async function POST(request: NextRequest) {
     const confirmOnly = formData.get('confirmOnly') === 'true'; // 🆕 מצב אישור בלבד
     const forceUpdate = formData.get('forceUpdate') === 'true'; // 🆕 עדכון בכפייה למועמד קיים
     const allowDuplicate = formData.get('allowDuplicate') === 'true'; // 🆕 התעלם מכפילות
+    // 🆕 נתונים מחולצים מראש מ-confirmOnly - מונע קריאה כפולה ל-Gemini
+    const preExtractedDataStr = formData.get('preExtractedData') as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -1014,9 +1016,24 @@ export async function POST(request: NextRequest) {
     let candidateData: any = null;
     let aiExtracted = false;
     let confidence: any = { name: 0, phone: 0, email: 0, city: 0 };
-    
-    // Try AI extraction first
-    if (text.length > 50) {
+
+    // ♻️ אם יש נתונים מחולצים מראש (confirmOnly) - דלג על Gemini ישירות
+    if (preExtractedDataStr) {
+      try {
+        const preExtracted = JSON.parse(preExtractedDataStr);
+        if (preExtracted && preExtracted.name) {
+          candidateData = preExtracted;
+          aiExtracted = true;
+          confidence = { name: 80, phone: 80, email: 80, city: 80 };
+          console.log('♻️ Using pre-extracted candidate data (skipping Gemini):', candidateData.name);
+        }
+      } catch {
+        console.warn('⚠️ Failed to parse preExtractedData, will run AI extraction');
+      }
+    }
+
+    // Try AI extraction first (only if no pre-extracted data)
+    if (!candidateData && text.length > 50) {
       const aiData = await extractCVWithAI(text);
       if (aiData && aiData.name && aiData.name !== 'null') {
         // 🆕 שדרוג: שימוש בשדות החדשים מה-AI החכם

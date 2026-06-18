@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 async function generateMatchingPointsWithGemini(candidate: any, position: any): Promise<string[] | null> {
   if (!process.env.GEMINI_API_KEY) return null
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
     const candidateTags = candidate.tags?.map((t: any) => t.name).join(', ') || 'לא צוין'
     const positionTags = position.tags?.map((t: any) => t.name).join(', ') || 'לא צוין'
 

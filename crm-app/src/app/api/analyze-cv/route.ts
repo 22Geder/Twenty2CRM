@@ -313,7 +313,7 @@ function detectGibberish(text: string): { isGibberish: boolean; readableRatio: n
 // ניתוח עם Gemini AI
 async function analyzeWithGemini(cvText: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || 'gemini-2.5-flash') });
 
     const prompt = `אתה מומחה HR ישראלי. נתח את קורות החיים הבאים וחלץ מידע מדויק.
 

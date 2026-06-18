@@ -424,7 +424,7 @@ export async function POST(request: Request) {
 🔗 תגיות תואמות: ${p.matchedTags.join(', ') || 'אין'}`
     ).join('\n\n---\n\n')
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     const prompt = `אתה מנהל הגיוס הבכיר ביותר של חברת "2טו-גדר" (Twenty2Geder).
 אתה מומחה בהתאמת מועמדים למשרות, מנתח דאטה מהשורה הראשונה.

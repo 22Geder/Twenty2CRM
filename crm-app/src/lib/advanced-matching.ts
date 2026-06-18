@@ -239,7 +239,7 @@ export interface HumanReadingResult {
  */
 export async function analyzeResumeDeep(resumeText: string): Promise<DeepResumeAnalysis> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     // חילוץ מילות מפתח מתגיות המערכת
     const allSystemKeywords = getAllSystemKeywords()
@@ -385,7 +385,7 @@ export async function analyzePositionDeep(
   transportation?: string
 ): Promise<DeepPositionAnalysis> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
     
     const allSystemKeywords = getAllSystemKeywords()
     
@@ -610,7 +610,7 @@ async function performHumanReading(
   originalResumeText: string
 ): Promise<HumanReadingResult> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
     
     // בניית פרופיל מיקום מפורט
     const positionProfile = `
@@ -1246,7 +1246,7 @@ async function calculateAILogicScore(
   position: DeepPositionAnalysis
 ): Promise<{ score: number; reasoning: string }> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
     
     const prompt = `האם המועמד הזה מתאים למשרה? תן ציון 0-10 בלבד.
 

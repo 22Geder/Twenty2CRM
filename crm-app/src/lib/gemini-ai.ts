@@ -32,7 +32,7 @@ export async function analyzeResumeWithGemini(resumeText: string): Promise<{
 }> {
   try {
     // Using the latest stable model
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     const prompt = `Analyze this resume and extract the following information in Hebrew:
 
@@ -88,7 +88,7 @@ export async function analyzeJobDescriptionWithGemini(jobDescription: string): P
   keyRequirements: string[]
 }> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     const prompt = `Analyze this job description and extract the following information in Hebrew:
 
@@ -162,7 +162,7 @@ export async function calculateMatchScoreWithGemini(
     const safeJoin = (arr: string[] | undefined, sep = ", ") => 
       Array.isArray(arr) ? arr.join(sep) : "לא צוין";
     
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     const prompt = `Analyze the match between a candidate and a job position:
 
@@ -234,7 +234,7 @@ export async function improveMatchingWithFeedback(
   improvementAreas: string[]
 }> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     const feedbackText = feedback
       .map(
@@ -365,7 +365,7 @@ export async function performDualLayerMatching(
   }>
 ): Promise<DualLayerMatchResult> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     // בניית רשימת מילות מפתח מכל המשרות
     const allPositionKeywords = new Set<string>()
@@ -606,7 +606,7 @@ export async function generateCandidateQuickCard(
   availableTags: string[]
 ): Promise<CandidateCard> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
     const prompt = `נתח את קורות החיים וחלץ את המידע הבא:
 

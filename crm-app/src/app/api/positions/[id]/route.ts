@@ -59,16 +59,18 @@ export async function GET(
         },
         applications: {
           include: {
-            candidate: true,
+            candidate: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            },
           },
           orderBy: { appliedAt: "desc" },
         },
-        interviews: {
-          include: {
-            candidate: true,
-            scheduler: true,
-          },
-          orderBy: { scheduledAt: "desc" },
+        _count: {
+          select: { interviews: true },
         },
         tags: true,
       },

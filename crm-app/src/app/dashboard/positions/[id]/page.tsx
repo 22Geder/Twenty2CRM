@@ -262,7 +262,7 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {position.applications.slice(0, 5).map((app: any) => (
+                  {position.applications.slice(0, 5).filter((app: any) => app.candidate).map((app: any) => (
                     <div key={app.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <Link
@@ -415,7 +415,7 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">ראיונות מתוכננים</p>
-                <p className="text-2xl font-bold">{position.interviews?.length || 0}</p>
+                <p className="text-2xl font-bold">{position._count?.interviews ?? position.interviews?.length ?? 0}</p>
               </div>
               {applicationsByStatus && Object.keys(applicationsByStatus).length > 0 && (
                 <div>

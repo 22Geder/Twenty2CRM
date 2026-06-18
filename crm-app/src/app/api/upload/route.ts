@@ -869,8 +869,10 @@ export async function POST(request: NextRequest) {
     const confirmOnly = formData.get('confirmOnly') === 'true'; // 🆕 מצב אישור בלבד
     const forceUpdate = formData.get('forceUpdate') === 'true'; // 🆕 עדכון בכפייה למועמד קיים
     const allowDuplicate = formData.get('allowDuplicate') === 'true'; // 🆕 התעלם מכפילות
-    // 🆕 נתונים מחולצים מראש מ-confirmOnly - מונע קריאה כפולה ל-Gemini
+    // ♻️ נתונים מחולצים מראש מ-confirmOnly - מונע קריאות כפולות ל-Gemini
     const preExtractedDataStr = formData.get('preExtractedData') as string | null;
+    // ♻️ טקסט מחולץ מראש - מונע חילוץ טקסט כפול (pdf-parse / Gemini OCR) בשמירה
+    const preExtractedText = formData.get('preExtractedText') as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -897,7 +899,11 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const mimeType = file.type;
 
-    if (fileExtension === 'pdf') {
+    // ♻️ אם יש טקסט מחולץ מראש מ-confirmOnly - דלג על כל חילוץ הטקסט
+    if (preExtractedText && preExtractedText.length >= 10) {
+      text = preExtractedText;
+      console.log('♻️ Using pre-extracted text (skipping extraction):', text.length, 'chars');
+    } else if (fileExtension === 'pdf') {
       console.log('📄 Processing PDF:', file.name, 'Size:', buffer.length);
       text = await extractTextFromPDF(buffer);
       console.log('📄 PDF extraction result length:', text?.length || 0);
@@ -1154,6 +1160,7 @@ export async function POST(request: NextRequest) {
         dataQuality,
         candidate: candidateData,
         extractedText: text.substring(0, 1000),
+        fullExtractedText: text,  // ♻️ טקסט מלא לשמירה מחדש (ללא חילוץ כפול)
         aiExtracted,
         fileName: file.name,
         // 🆕 מידע על מועמד קיים

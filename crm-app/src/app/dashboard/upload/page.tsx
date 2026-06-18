@@ -147,7 +147,7 @@ export default function BulkUploadPage() {
                   existingCandidate: checkData.existingCandidate,
                   qualityScore: checkData.qualityScore,
                   dataQuality: checkData.dataQuality,
-                  extractedText: checkData.extractedText,
+                  extractedText: checkData.fullExtractedText || checkData.extractedText,
                   aiExtracted: checkData.aiExtracted
                 }
               : f
@@ -165,7 +165,7 @@ export default function BulkUploadPage() {
                   candidate: checkData.candidate,
                   qualityScore: checkData.qualityScore,
                   dataQuality: checkData.dataQuality,
-                  extractedText: checkData.extractedText,
+                  extractedText: checkData.fullExtractedText || checkData.extractedText,
                   aiExtracted: checkData.aiExtracted
                 }
               : f
@@ -174,9 +174,12 @@ export default function BulkUploadPage() {
           // הקובץ נקלט טוב - שמור אותו
           const saveFormData = new FormData();
           saveFormData.append('file', originalFile);
-          // ♻️ העבר נתונים מחולצים כדי לדלג על Gemini בשמירה
+          // ♻️ העבר נתונים מחולצים כדי לדלג על Gemini ועל חילוץ טקסט בשמירה
           if (checkData.candidate) {
             saveFormData.append('preExtractedData', JSON.stringify(checkData.candidate));
+          }
+          if (checkData.fullExtractedText) {
+            saveFormData.append('preExtractedText', checkData.fullExtractedText);
           }
           
           const saveResponse = await fetch('/api/upload', {
@@ -237,10 +240,13 @@ export default function BulkUploadPage() {
       const formData = new FormData();
       formData.append('file', originalFile);
       
-      // ♻️ השתמש בנתונים ערוכים/מחולצים כדי לדלג על Gemini
+      // ♻️ השתמש בנתונים ערוכים/מחולצים כדי לדלג על Gemini ועל חילוץ טקסט
       const preExtracted = editedData[fileName] || files[fileIndex]?.candidate;
       if (preExtracted) {
         formData.append('preExtractedData', JSON.stringify(preExtracted));
+      }
+      if (files[fileIndex]?.extractedText) {
+        formData.append('preExtractedText', files[fileIndex].extractedText!);
       }
 
       const response = await fetch('/api/upload', {
@@ -296,10 +302,13 @@ export default function BulkUploadPage() {
       const formData = new FormData();
       formData.append('file', originalFile);
       formData.append('forceUpdate', 'true'); // כפה עדכון
-      // ♻️ העבר נתונים מחולצים כדי לדלג על Gemini
+      // ♻️ העבר נתונים מחולצים כדי לדלג על Gemini ועל חילוץ טקסט
       const preExtracted = files[fileIndex]?.candidate;
       if (preExtracted) {
         formData.append('preExtractedData', JSON.stringify(preExtracted));
+      }
+      if (files[fileIndex]?.extractedText) {
+        formData.append('preExtractedText', files[fileIndex].extractedText!);
       }
 
       const response = await fetch('/api/upload', {

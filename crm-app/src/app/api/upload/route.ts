@@ -39,7 +39,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
@@ -63,7 +63,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
 אל תדלג על מידע - חלץ הכל!
 אם יש טבלאות, המר אותן לטקסט קריא.`;
 
-    // Race between API call and 30 second timeout
+    // Race between API call and 45 second timeout
     const result = await Promise.race([
       withGeminiRetry(() => model.generateContent([
         prompt,
@@ -74,7 +74,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
           }
         }
       ])),
-      timeout(30000)
+      timeout(45000)
     ]) as any;
     
     const response = result.response;
@@ -308,7 +308,7 @@ async function extractTextFromRTF(buffer: Buffer): Promise<string> {
 // 🆕 Universal fallback: try to extract text with Gemini from any document
 async function extractTextWithGeminiFallback(buffer: Buffer, fileName: string, mimeType: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
     const base64Data = buffer.toString('base64');
     
     const prompt = `קרא את המסמך הזה וחלץ את כל הטקסט שיש בו.
@@ -326,7 +326,7 @@ async function extractTextWithGeminiFallback(buffer: Buffer, fileName: string, m
           }
         }
       ])),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Gemini fallback timeout')), 30000))
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Gemini fallback timeout')), 45000))
     ]) as any;
     
     const text = result.response.text();
@@ -346,7 +346,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
@@ -368,7 +368,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
 החזר את הטקסט המלא כפי שהוא מופיע בקורות החיים.
 אל תדלג על מידע - חלץ הכל!`;
 
-    // Race between API call and 30 second timeout (images take longer)
+    // Race between API call and 45 second timeout (images take longer)
     const result = await Promise.race([
       withGeminiRetry(() => model.generateContent([
         prompt,
@@ -379,7 +379,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
           }
         }
       ])),
-      timeout(30000)
+      timeout(45000)
     ]) as any;
     
     const response = result.response;
@@ -406,7 +406,7 @@ async function extractCVWithAI(text: string): Promise<any> {
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
     
     const prompt = `אתה מגייס מקצועי עם 15 שנות ניסיון. קרא את קורות החיים האלו ונתח אותם כמו שמגייס אנושי היה עושה.
 

@@ -178,7 +178,8 @@ export async function POST(request: NextRequest) {
       where: {
         OR: [
           { name: { contains: 'iCon' } },
-          { name: { contains: 'icon' } },
+          { name: { contains: 'Apple' } },
+          { email: { contains: 'icon-hr' } },
         ],
       },
     })
@@ -187,7 +188,7 @@ export async function POST(request: NextRequest) {
       iconEmployer = await prisma.employer.create({
         data: {
           name: 'iCon',
-          email: 'career@idigital.co.il',
+          email: 'icon-hr@idigital.co.il',
           phone: '',
           website: '',
           description:

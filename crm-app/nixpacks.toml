@@ -8,6 +8,7 @@ cmds = ["npm install --legacy-peer-deps"]
 cmds = [
   "npx prisma generate",
   "npx prisma db push --skip-generate",
+  "rm -rf .next",
   "npm run build"
 ]
 

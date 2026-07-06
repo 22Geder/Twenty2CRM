@@ -184,8 +184,8 @@ export async function GET(
         educationStatus
       )
 
-      // 📝 יצירת הסבר למה מתאים
-      const whySuitable = keywordReason || generateWhySuitable(
+      // 📝 יצירת הסבר למה מתאים - תמיד מערך! (string גרם לקריסת client עם .map)
+      const generatedReasons = generateWhySuitable(
         candidate,
         position,
         matchingTags,
@@ -194,6 +194,9 @@ export async function GET(
         educationStatus,
         candidateRecruitmentTags
       )
+      const whySuitable = keywordReason
+        ? [`🔑 ${keywordReason}`, ...generatedReasons].slice(0, 8)
+        : generatedReasons
 
       // ============================================
       // 🎯 חישוב ציון סופי (FAST - ללא Gemini):

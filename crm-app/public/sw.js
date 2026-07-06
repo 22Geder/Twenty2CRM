@@ -1,8 +1,8 @@
 // 🔄 Service Worker - Twenty2 CRM PWA
 // =====================================
-// עודכן: מרץ 2026 - תיקון בעיות cache בטלפונים חדשים
+// עודכן: יולי 2026 - ניקוי cache ישן שגרם ל-Application error בדפי משרות
 
-const CACHE_NAME = 'twenty2-crm-v5-march2026'
+const CACHE_NAME = 'twenty2-crm-v6-july2026'
 const STATIC_ASSETS = [
   '/',
   '/upload-cv',
@@ -17,7 +17,7 @@ const STATIC_ASSETS = [
 
 // התקנה - שמירת קבצים סטטיים בקאש
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Installing v5 (March 2026)...')
+  console.log('🔧 Service Worker: Installing v6 (July 2026)...')
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('📦 Service Worker: Caching static assets')
@@ -30,7 +30,7 @@ self.addEventListener('install', (event) => {
 
 // הפעלה - ניקוי קאשים ישנים (כולל v3, v4)
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker: Activated v5 - March 2026')
+  console.log('✅ Service Worker: Activated v6 - July 2026')
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -267,4 +267,4 @@ self.addEventListener('message', (event) => {
   }
 })
 
-console.log('🚀 Twenty2 CRM Service Worker v5 (March 2026) loaded')
+console.log('🚀 Twenty2 CRM Service Worker v6 (July 2026) loaded')

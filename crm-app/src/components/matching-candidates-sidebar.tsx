@@ -143,12 +143,14 @@ export function MatchingCandidatesSidebar({
 }: MatchingCandidatesSidebarProps) {
   const [candidates, setCandidates] = useState<MatchingCandidate[]>([])
   const [positionTags, setPositionTags] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [totalCount, setTotalCount] = useState(0)
   const [applying, setApplying] = useState<string | null>(null)
   const [sending, setSending] = useState<'sms' | 'email' | null>(null)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  // 🚀 מכווץ כברירת מחדל - לא טוען עד שהמשתמש פותח
+  const [isCollapsed, setIsCollapsed] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [showScoreDetails, setShowScoreDetails] = useState<string | null>(null)
   const [sendingToEmployer, setSendingToEmployer] = useState<string | null>(null)
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
@@ -156,11 +158,14 @@ export function MatchingCandidatesSidebar({
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'location'>('score')
   const [whatsAppLastSent, setWhatsAppLastSent] = useState<Record<string, string | null>>({})
 
-  useEffect(() => {
-    if (positionId) {
+  // אין useEffect אוטומטי - טעינה רק בעת פתיחה
+
+  const handleExpand = () => {
+    setIsCollapsed(false)
+    if (!hasLoaded && positionId) {
       fetchMatchingCandidates()
     }
-  }, [positionId])
+  }
 
   const fetchMatchingCandidates = async () => {
     try {
@@ -170,9 +175,20 @@ export function MatchingCandidatesSidebar({
         throw new Error("Failed to fetch matching candidates")
       }
       const data = await response.json()
-      setCandidates(data.candidates || [])
+      // 🛡️ נרמול: whySuitable חייב להיות מערך (API ישן החזיר string וגרם לקריסה)
+      const normalizedCandidates = (data.candidates || []).map((c: any) => ({
+        ...c,
+        whySuitable: Array.isArray(c.whySuitable)
+          ? c.whySuitable
+          : (c.whySuitable ? [String(c.whySuitable)] : []),
+        comparisonTags: Array.isArray(c.comparisonTags) ? c.comparisonTags : [],
+        matchingTags: Array.isArray(c.matchingTags) ? c.matchingTags : [],
+        tags: Array.isArray(c.tags) ? c.tags : [],
+      }))
+      setCandidates(normalizedCandidates)
       setPositionTags(data.positionTags || [])
       setTotalCount(data.totalCount || 0)
+      setHasLoaded(true)
       // Fetch WhatsApp last sent dates
       const cands = data.candidates || []
       if (cands.length > 0) {
@@ -533,12 +549,34 @@ export function MatchingCandidatesSidebar({
     }
   }
 
-  if (loading) {
+  // מצב מכווץ - רק כפתור (ברירת מחדל)
+  if (isCollapsed) {
     return (
       <div className="fixed left-4 top-20 z-10">
-        <Card className="w-16">
-          <CardContent className="p-4">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Button
+          onClick={handleExpand}
+          className="h-12 w-12 rounded-full shadow-lg"
+          variant="default"
+          title="הצג מועמדים מתאימים"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="mt-2 text-center">
+          <Badge variant="secondary" className="text-xs">
+            👥
+          </Badge>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="fixed left-4 top-20 bottom-4 z-10 w-96 hidden xl:flex flex-col">
+        <Card className="h-32">
+          <CardContent className="p-6 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <p className="text-sm text-muted-foreground">מחפש מועמדים מתאימים...</p>
           </CardContent>
         </Card>
       </div>
@@ -548,31 +586,12 @@ export function MatchingCandidatesSidebar({
   if (error) {
     return (
       <div className="fixed left-4 top-20 z-10">
-        <Card className="w-16 border-red-200">
-          <CardContent className="p-4">
-            <p className="text-red-600 text-xs">{error}</p>
+        <Card className="w-72 border-red-200">
+          <CardContent className="p-4 flex flex-col gap-2">
+            <p className="text-red-600 text-sm">שגיאה בטעינת מועמדים</p>
+            <Button size="sm" variant="outline" onClick={fetchMatchingCandidates}>נסה שוב</Button>
           </CardContent>
         </Card>
-      </div>
-    )
-  }
-
-  // מצב מכווץ - רק כפתור
-  if (isCollapsed) {
-    return (
-      <div className="fixed left-4 top-20 z-10">
-        <Button
-          onClick={() => setIsCollapsed(false)}
-          className="h-12 w-12 rounded-full shadow-lg"
-          variant="default"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <div className="mt-2 text-center">
-          <Badge variant="secondary" className="text-xs">
-            {totalCount}
-          </Badge>
-        </div>
       </div>
     )
   }

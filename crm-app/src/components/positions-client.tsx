@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Building2, Search, Users, X } from "lucide-react"
 import Link from "next/link"
 import { PositionActions, DeletePositionButton, ToggleActiveButton } from "@/components/position-actions"
+import { extractCities, sortCitiesHe } from "@/lib/israeli-cities"
+import { buildSearchMatcher, normalizeHe } from "@/lib/job-search"
 
 type PositionWithRelations = {
   id: string
@@ -26,49 +28,64 @@ type PositionWithRelations = {
 export function PositionsClient({ positions }: { positions: PositionWithRelations[] }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "draft">("all")
-  const [filterLocation, setFilterLocation] = useState("")
+  const [filterCity, setFilterCity] = useState("")
   const [filterEmployer, setFilterEmployer] = useState("")
 
-  const locations = useMemo(() => {
-    const locs = positions.map(p => p.location).filter((l): l is string => !!l)
-    return [...new Set(locs)].sort()
+  const cityCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const p of positions) {
+      for (const city of new Set(extractCities(p.location))) {
+        counts.set(city, (counts.get(city) ?? 0) + 1)
+      }
+    }
+    return counts
   }, [positions])
+
+  const cities = useMemo(() => sortCitiesHe([...cityCounts.keys()]), [cityCounts])
 
   const employers = useMemo(() => {
     const emps = positions.map(p => p.employer?.name).filter((e): e is string => !!e)
     return [...new Set(emps)].sort()
   }, [positions])
 
+  const searchMatcher = useMemo(() => buildSearchMatcher(searchQuery), [searchQuery])
+
   const filtered = useMemo(() => {
     return positions.filter(p => {
-      const q = searchQuery.toLowerCase().trim()
-      if (q) {
-        const match =
-          p.title.toLowerCase().includes(q) ||
-          (p.location?.toLowerCase().includes(q) ?? false) ||
-          (p.employer?.name.toLowerCase().includes(q) ?? false) ||
-          (p.description?.toLowerCase().includes(q) ?? false) ||
-          (p.employmentType?.toLowerCase().includes(q) ?? false)
-        if (!match) return false
+      if (searchMatcher) {
+        const haystack = normalizeHe(
+          [
+            p.title,
+            p.description,
+            p.location,
+            p.employer?.name,
+            p.employmentType,
+            p.keywords,
+            extractCities(p.location).join(" "),
+          ]
+            .filter(Boolean)
+            .join(" ")
+        )
+        if (!searchMatcher(haystack)) return false
       }
 
       if (filterStatus === "active" && !p.active) return false
       if (filterStatus === "draft" && p.active) return false
-      if (filterLocation && p.location !== filterLocation) return false
+      if (filterCity && !extractCities(p.location).includes(filterCity)) return false
       if (filterEmployer && p.employer?.name !== filterEmployer) return false
 
       return true
     })
-  }, [positions, searchQuery, filterStatus, filterLocation, filterEmployer])
+  }, [positions, searchMatcher, filterStatus, filterCity, filterEmployer])
 
   const activeFiltered = filtered.filter(p => p.active)
   const draftFiltered = filtered.filter(p => !p.active)
-  const hasFilters = !!searchQuery || filterStatus !== "all" || !!filterLocation || !!filterEmployer
+  const hasFilters = !!searchQuery || filterStatus !== "all" || !!filterCity || !!filterEmployer
 
   function clearFilters() {
     setSearchQuery("")
     setFilterStatus("all")
-    setFilterLocation("")
+    setFilterCity("")
     setFilterEmployer("")
   }
 
@@ -83,7 +100,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
             <Input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="חפש לפי תפקיד, מיקום או מעסיק..."
+              placeholder="חפש משרה לפי עיר או תפקיד — למשל: תל אביב, מחסן, מכירות..."
               className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#10B981] rounded-xl bg-slate-50/50"
             />
             {searchQuery && (
@@ -119,16 +136,16 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
               ))}
             </div>
 
-            {/* Location Filter */}
-            {locations.length > 0 && (
+            {/* City Filter */}
+            {cities.length > 0 && (
               <select
-                value={filterLocation}
-                onChange={e => setFilterLocation(e.target.value)}
+                value={filterCity}
+                onChange={e => setFilterCity(e.target.value)}
                 className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-600 bg-white focus:border-[#10B981] outline-none cursor-pointer"
               >
-                <option value="">📍 כל המיקומים</option>
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
+                <option value="">📍 כל הערים</option>
+                {cities.map(city => (
+                  <option key={city} value={city}>{city} ({cityCounts.get(city)})</option>
                 ))}
               </select>
             )}

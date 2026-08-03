@@ -49,11 +49,20 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
     try {
       const response = await fetch(`/api/positions/${positionId}`)
       if (!response.ok) {
-        throw new Error("Failed to fetch position")
+        let errMsg = `שגיאה ${response.status}`
+        try {
+          const errData = await response.json()
+          errMsg = errData.error || errMsg
+        } catch {}
+        throw new Error(errMsg)
       }
       const data = await response.json()
+      if (!data || typeof data !== "object") {
+        throw new Error("תגובה לא תקינה מהשרת")
+      }
       setPosition(data)
     } catch (err: any) {
+      console.error("fetchPosition error:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -278,7 +287,7 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
                       <div className="text-left">
                         <Badge variant="secondary">{app.status}</Badge>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(app.appliedAt).toLocaleDateString("he-IL")}
+                          {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString("he-IL") : ""}
                         </p>
                       </div>
                     </div>
@@ -360,7 +369,7 @@ export default function PositionDetailsPage({ params }: PositionDetailsProps) {
 
               <div>
                 <p className="text-sm font-semibold">נוצר ב</p>
-                <p className="text-sm">{new Date(position.createdAt).toLocaleDateString("he-IL")}</p>
+                <p className="text-sm">{position.createdAt ? new Date(position.createdAt).toLocaleDateString("he-IL") : ""}</p>
               </div>
             </CardContent>
           </Card>

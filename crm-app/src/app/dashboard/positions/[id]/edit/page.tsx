@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,15 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Save, X, Plus, Tag as TagIcon } from "lucide-react"
 import Link from "next/link"
 
-interface PositionEditProps {
-  params: Promise<{
-    id: string
-  }>
-}
-
-export default function EditPositionPage({ params }: PositionEditProps) {
+export default function EditPositionPage() {
   const router = useRouter()
-  const [positionId, setPositionId] = useState<string>("")
+  const params = useParams()
+  const positionId = params.id as string
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
@@ -53,12 +48,6 @@ export default function EditPositionPage({ params }: PositionEditProps) {
     benefits: "",
     transportation: "",
   })
-
-  useEffect(() => {
-    params.then(p => {
-      setPositionId(p.id)
-    })
-  }, [params])
 
   useEffect(() => {
     if (positionId) {

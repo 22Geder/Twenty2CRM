@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,15 +24,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-interface InterviewDetailsProps {
-  params: Promise<{
-    id: string
-  }>
-}
-
-export default function InterviewDetailsPage({ params }: InterviewDetailsProps) {
+export default function InterviewDetailsPage() {
   const router = useRouter()
-  const [interviewId, setInterviewId] = useState<string>("")
+  const params = useParams()
+  const interviewId = params.id as string
   const [interview, setInterview] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -51,12 +46,6 @@ export default function InterviewDetailsPage({ params }: InterviewDetailsProps) 
     rating: "",
     status: "",
   })
-
-  useEffect(() => {
-    params.then(p => {
-      setInterviewId(p.id)
-    })
-  }, [params])
 
   useEffect(() => {
     if (interviewId) {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,24 +20,13 @@ import {
 import Link from "next/link"
 import { MatchingCandidatesSidebar } from "@/components/matching-candidates-sidebar"
 
-interface PositionDetailsProps {
-  params: Promise<{
-    id: string
-  }>
-}
-
-export default function PositionDetailsPage({ params }: PositionDetailsProps) {
+export default function PositionDetailsPage() {
   const router = useRouter()
-  const [positionId, setPositionId] = useState<string>("")
+  const params = useParams()
+  const positionId = params.id as string
   const [position, setPosition] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    params.then(p => {
-      setPositionId(p.id)
-    })
-  }, [params])
 
   useEffect(() => {
     if (positionId) {

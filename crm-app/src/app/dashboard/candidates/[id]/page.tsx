@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,15 +39,10 @@ import { SmartAIMatching } from "@/components/smart-ai-matching"
 import { ErrorBoundary } from "@/components/error-boundary"
 import CandidateManualSummary from "@/components/candidate-manual-summary"
 
-interface CandidateDetailsProps {
-  params: Promise<{
-    id: string
-  }>
-}
-
-export default function CandidateDetailsPage({ params }: CandidateDetailsProps) {
+export default function CandidateDetailsPage() {
   const router = useRouter()
-  const [candidateId, setCandidateId] = useState<string>("")
+  const params = useParams()
+  const candidateId = params.id as string
   const [candidate, setCandidate] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -112,12 +107,6 @@ export default function CandidateDetailsPage({ params }: CandidateDetailsProps) 
     if (Number.isNaN(date.getTime())) return ""
     return date.toISOString().split("T")[0]
   }
-
-  useEffect(() => {
-    params.then(p => {
-      setCandidateId(p.id)
-    })
-  }, [params])
 
   useEffect(() => {
     if (candidateId) {

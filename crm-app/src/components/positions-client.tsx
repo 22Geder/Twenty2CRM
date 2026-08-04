@@ -1,4 +1,6 @@
 "use client"
+// eslint-disable-next-line react-compiler/react-compiler
+"use no memo"
 
 import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"

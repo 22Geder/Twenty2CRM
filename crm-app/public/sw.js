@@ -2,7 +2,7 @@
 // =====================================
 // עודכן: יולי 2026 - ניקוי cache ישן שגרם ל-Application error בדפי משרות
 
-const CACHE_NAME = 'twenty2-crm-v7-search'
+const CACHE_NAME = 'twenty2-crm-v8-fix-search'
 const STATIC_ASSETS = [
   '/',
   '/upload-cv',
@@ -30,7 +30,7 @@ self.addEventListener('install', (event) => {
 
 // הפעלה - ניקוי קאשים ישנים (כולל v3, v4)
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker: Activated v6 - July 2026')
+  console.log('✅ Service Worker: Activated v8 - August 2026 - fix search')
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(

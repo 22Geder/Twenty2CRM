@@ -8,15 +8,6 @@ import { PositionsClient } from "@/components/positions-client"
 async function getPositions() {
   return await prisma.position.findMany({
     orderBy: { createdAt: 'desc' },
-    include: {
-      employer: true,
-      department: true,
-      _count: {
-        select: {
-          applications: true
-        }
-      }
-    },
     select: {
       id: true,
       title: true,

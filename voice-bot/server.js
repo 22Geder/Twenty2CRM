@@ -16,7 +16,7 @@ const {
   CRM_BASE_URL,
   VOICE_API_KEY,
   OPENAI_REALTIME_MODEL = "gpt-realtime",
-  PUBLIC_HOST, // e.g. voice-bot-production.up.railway.app (no protocol)
+  PUBLIC_HOST = "localhost:5050", // default fallback
 } = process.env
 
 if (!OPENAI_API_KEY) {

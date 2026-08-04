@@ -17,7 +17,20 @@ async function getPositions() {
         }
       }
     },
-    // Adding keywords to the select
+    select: {
+      id: true,
+      title: true,
+      active: true,
+      priority: true,
+      location: true,
+      employmentType: true,
+      description: true,
+      keywords: true,
+      createdAt: true,
+      employer: { select: { id: true, name: true } },
+      department: { select: { id: true, name: true } },
+      _count: { select: { applications: true } },
+    },
   })
 }
 

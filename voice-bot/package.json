@@ -1,0 +1,17 @@
+{
+  "name": "twenty2-voice-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenAI Realtime voice bot bridged to Twilio phone calls, with access to TWENTY2CRM job positions",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}

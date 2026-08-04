@@ -1,0 +1,51 @@
+name: Daily Drive Backup
+
+# 🛡️ גיבוי יומי ל-Google Drive (מיקום #2)
+# - פועל במקביל ל-daily-backup.yml (שמגבה ל-GitHub artifacts)
+# - מפעיל endpoint שמייצא את ה-DB ומעלה ל-Drive
+# - READ ONLY - לא משנה כלום במערכת
+
+on:
+  schedule:
+    # 04:30 UTC כל יום (07:30 ישראל) - חצי שעה אחרי הגיבוי הראשי
+    - cron: '30 4 * * *'
+  workflow_dispatch: # הפעלה ידנית
+
+jobs:
+  drive-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Trigger DB backup to Google Drive
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          BACKUP_CRON_TOKEN: ${{ secrets.BACKUP_CRON_TOKEN }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$BACKUP_CRON_TOKEN" ]; then
+            echo "❌ Missing secrets: APP_URL or BACKUP_CRON_TOKEN"
+            echo "Add them in: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "🔄 Triggering Drive backup at $APP_URL"
+          HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" \
+            -X POST "$APP_URL/api/admin/drive-db-backup" \
+            -H "Content-Type: application/json" \
+            -H "x-backup-token: $BACKUP_CRON_TOKEN" \
+            --max-time 600)
+          echo "HTTP: $HTTP_CODE"
+          echo "--- Response ---"
+          cat response.json
+          echo ""
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Drive backup failed"
+            exit 1
+          fi
+          echo "✅ Drive backup completed"
+
+      - name: Upload response as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drive-backup-response-${{ github.run_id }}
+          path: response.json
+          retention-days: 7

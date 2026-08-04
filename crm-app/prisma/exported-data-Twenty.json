@@ -1,0 +1,25 @@
+{
+  "candidates": [],
+  "positions": [],
+  "employers": [],
+  "tags": [],
+  "users": [
+    {
+      "id": "897ab4a8-a540-48fb-b810-3650447ab689",
+      "email": "22geder@gmail.com",
+      "name": "קבוצה טוגדר בעמ",
+      "password": "$2b$12$jlSZZj96tdAFb2NAqosrMuyyhTqpc1sp2CJ/ajymzD0oOcgpMk9Eu",
+      "role": "RECRUITER",
+      "avatar": null,
+      "phone": null,
+      "departmentId": null,
+      "createdAt": 1770285650232,
+      "updatedAt": 1770285650232,
+      "lastLoginAt": null,
+      "active": 1
+    }
+  ],
+  "departments": [],
+  "applications": [],
+  "candidateTags": []
+}

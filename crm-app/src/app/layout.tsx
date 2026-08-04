@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Heebo } from "next/font/google";
 import "./globals.css";
 import MobileUploadButton from "@/components/MobileUploadButton";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,8 +88,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} antialiased`}
       >
-        {children}
-        <MobileUploadButton />
+        <Providers>
+          {children}
+          <MobileUploadButton />
+        </Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `

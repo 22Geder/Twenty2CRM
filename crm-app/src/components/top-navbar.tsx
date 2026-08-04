@@ -5,11 +5,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
-  BarChart3, Settings, Bell, CheckSquare, Mail, FileText,
+  Settings, Bell, FileText,
   Search, User, Upload, Sparkles, TrendingUp, Menu, X, Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 
 const navigationItems = [
   {
@@ -123,7 +122,7 @@ export function TopNavbar() {
                   variant="ghost"
                   className={`relative transition-all duration-300 text-[13px] ${
                     isActive 
-                      ? "bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 ring-1 ring-cyan-400/30" 
+                      ? "bg-[#06B6D4]/15 text-[#22D3EE] ring-1 ring-[#06B6D4]/30 shadow-[inset_0_-2px_0_#06B6D4]" 
                       : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                   size="sm"
@@ -132,10 +131,10 @@ export function TopNavbar() {
                   {item.name}
                   {item.badge && (
                     <span 
-                      className={`absolute -top-1 -left-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center ${
+                      className={`absolute -top-1 -left-1 px-1 text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center ring-1 ring-[#0f0b2e] ${
                         item.badgeColor === 't22-accent' 
-                          ? 'bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white' 
-                          : 'bg-gradient-to-r from-[#10B981] to-[#34D399] text-white'
+                          ? 'bg-[#F97316] text-white' 
+                          : 'bg-[#10B981] text-white'
                       }`}
                     >
                       {item.badge}
@@ -161,9 +160,6 @@ export function TopNavbar() {
           {/* Notifications */}
           <Button variant="outline" size="sm" className="relative bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#F97316] transition-all">
             <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -left-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white min-w-[18px] h-4 flex items-center justify-center">
-              8
-            </span>
           </Button>
 
           {/* User Profile */}
@@ -178,7 +174,7 @@ export function TopNavbar() {
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-indigo-900/50 bg-[#0f0b2e]/95 backdrop-blur-sm">
+        <div className="lg:hidden border-t border-indigo-900/50 bg-[#0f0b2e]/95 backdrop-blur-sm t22-animate-fade-in">
           <nav className="flex flex-col py-2">
             {navigationItems.map((item) => {
               const Icon = item.icon
@@ -203,8 +199,8 @@ export function TopNavbar() {
                       <span 
                         className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
                           item.badgeColor === 't22-accent' 
-                            ? 'bg-gradient-to-r from-[#F97316] to-[#C2410C] text-white' 
-                            : 'bg-gradient-to-r from-[#10B981] to-[#34D399] text-white'
+                            ? 'bg-[#F97316] text-white' 
+                            : 'bg-[#10B981] text-white'
                         }`}
                       >
                         {item.badge}

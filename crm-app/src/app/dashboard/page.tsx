@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Info, Settings, ChevronLeft, Bell, Send, HelpCircle, AlertTriangle, Clock, UserCheck, CheckCircle, Users, Briefcase } from "lucide-react"
+import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users } from "lucide-react"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { UrgentCandidatesAlert } from "@/components/urgent-candidates-alert"
 
@@ -314,62 +314,17 @@ export default async function CiviDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8]" dir="rtl">
-      {/* Top Header Bar - Hidden on mobile (already have TopNavbar) */}
-      <div className="hidden lg:block bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] text-white shadow-xl">
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] flex items-center justify-center font-bold text-white shadow-lg">
-              22
-            </div>
-            <span className="text-xl font-bold">Twenty22JobsCRM</span>
-          </div>
-          
-          {/* Navigation */}
-          <nav className="flex items-center gap-1">
-            <Link href="/dashboard/candidates" className="px-4 py-2 rounded-lg hover:bg-white/10 transition-colors font-medium">
-              מועמדים ▼
-            </Link>
-            <Link href="/dashboard/employers" className="px-4 py-2 rounded-lg hover:bg-white/10 transition-colors font-medium">
-              לקוחות ▼
-            </Link>
-            <Link href="/dashboard/positions" className="px-4 py-2 rounded-lg hover:bg-white/10 transition-colors font-medium">
-              משרות ▼
-            </Link>
-            <Link href="/dashboard/candidates" className="px-4 py-2 rounded-lg hover:bg-white/10 transition-colors font-medium">
-              סינון ראשוני ▼
-            </Link>
-            <Link href="/dashboard/activity" className="px-4 py-2 rounded-lg hover:bg-white/10 transition-colors font-medium">
-              פעילות
-            </Link>
-            <Link href="/dashboard/tags" className="px-4 py-2 rounded-lg hover:bg-white/10 transition-colors font-medium">
-              תגיות ▼
-            </Link>
-          </nav>
-
-          {/* Right side icons */}
-          <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-              <Bell className="h-5 w-5" />
-            </button>
-            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-              <Send className="h-5 w-5" />
-            </button>
-            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-              <Settings className="h-5 w-5" />
-            </button>
-            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-              <HelpCircle className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Page Title */}
       <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <h1 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">דף הבית - {session.user?.name || 'משתמש'}</h1>
-          <DashboardRefresher />
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/activity" className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-[#0891B2] hover:bg-[#ECFEFF] transition-colors">
+              <Clock className="h-4 w-4" />
+              פעילות
+            </Link>
+            <DashboardRefresher />
+          </div>
         </div>
       </div>
 

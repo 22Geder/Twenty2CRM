@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -112,6 +112,11 @@ export default function CandidatesPageModern() {
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(new Set())
   const [activeView, setActiveView] = useState<'list' | 'ai-search'>('list')
 
+  // 🆕 טעינה מדורגת (infinite scroll) - מציג 50 בהתחלה, טוען עוד בגלילה למטה
+  const PAGE_SIZE = 50
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
   // 🆕 בחירת/ביטול בחירת מועמד
   const toggleSelect = (id: string) => {
     setSelectedCandidates(prev => {
@@ -220,10 +225,31 @@ export default function CandidatesPageModern() {
     applyFilters()
   }, [filters, search, candidates, statusFilter])
 
+  // 🆕 איפוס הטעינה המדורגת ל-50 כשמשנים חיפוש/סינון/סטטוס (חוזרים לראש הרשימה)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [search, filters, statusFilter])
+
+  // 🆕 טעינת עוד 50 מועמדים אוטומטית כשמגיעים לתחתית הרשימה (IntersectionObserver)
+  useEffect(() => {
+    const el = loadMoreRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredCandidates.length))
+        }
+      },
+      { rootMargin: '300px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [filteredCandidates.length, visibleCount])
+
   const fetchCandidates = async () => {
     try {
-      // 🆕 טעינת כל המועמדים (בלי פגינציה)
-      const response = await fetch('/api/candidates?limit=10000')
+      // 🆕 טעינת כל המועמדים במצב קליל (מהיר) - בלי relations כבדים
+      const response = await fetch('/api/candidates?limit=10000&light=1')
       if (response.ok) {
         const data = await response.json()
         setCandidates(data.candidates || [])
@@ -735,8 +761,9 @@ export default function CandidatesPageModern() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCandidates.map((candidate) => (
+          {filteredCandidates.slice(0, visibleCount).map((candidate) => (
             <div
               key={candidate.id}
               className="relative"
@@ -951,6 +978,16 @@ export default function CandidatesPageModern() {
             </div>
           ))}
         </div>
+        {visibleCount < filteredCandidates.length && (
+          <div
+            ref={loadMoreRef}
+            className="flex items-center justify-center gap-2 py-8 text-slate-500"
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-[#06B6D4]" />
+            <span>טוען עוד מועמדים... ({visibleCount} מתוך {filteredCandidates.length})</span>
+          </div>
+        )}
+        </>
       )}
 
       {/* 🆕 מודל התאמות טובות ביותר */}

@@ -81,6 +81,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
     const skip = (page - 1) * limit
+    // 🆕 מצב קליל לרשימת המועמדים - מדלג על relations כבדים (position/employer)
+    // כדי שטעינת ~1700 מועמדים תהיה מהירה. opt-in בלבד, תאימות מלאה לאחור.
+    const light = searchParams.get("light") === "1"
 
     const where = search
       ? {
@@ -92,54 +95,31 @@ export async function GET(request: NextRequest) {
         }
       : {}
 
-    const [candidates, total] = await Promise.all([
-      prisma.candidate.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
+    // 🆕 include קליל - רק מה שהרשימה באמת מציגה/מסננת לפיו
+    const lightInclude = {
+      applications: {
+        select: { status: true },
+      },
+      tags: true,
+      uploadedBy: {
+        select: { id: true, name: true, email: true },
+      },
+      lastViewedBy: {
+        select: { id: true, name: true, email: true },
+      },
+      _count: {
+        select: {
+          applications: true,
+          interviews: true,
+        },
+      },
+    }
+
+    const fullInclude = {
+      applications: {
         include: {
-          applications: {
+          position: {
             include: {
-              position: {
-                include: {
-                  employer: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          tags: true,  // הוסף תגיות למועמדים
-          uploadedBy: {  // 🆕 מי העלה את המועמד
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          lastViewedBy: {  // 🆕 מי נכנס אחרון לכרטיס
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          // 🆕 לאיזה מעסיק התקבל
-          hiredToEmployer: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          // 🆕 לאיזה משרה בתהליך
-          inProcessPosition: {
-            select: {
-              id: true,
-              title: true,
               employer: {
                 select: {
                   id: true,
@@ -148,13 +128,58 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          _count: {
+        },
+      },
+      tags: true,  // הוסף תגיות למועמדים
+      uploadedBy: {  // 🆕 מי העלה את המועמד
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      lastViewedBy: {  // 🆕 מי נכנס אחרון לכרטיס
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      // 🆕 לאיזה מעסיק התקבל
+      hiredToEmployer: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      // 🆕 לאיזה משרה בתהליך
+      inProcessPosition: {
+        select: {
+          id: true,
+          title: true,
+          employer: {
             select: {
-              applications: true,
-              interviews: true,
+              id: true,
+              name: true,
             },
           },
         },
+      },
+      _count: {
+        select: {
+          applications: true,
+          interviews: true,
+        },
+      },
+    }
+
+    const [candidates, total] = await Promise.all([
+      prisma.candidate.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: light ? lightInclude : fullInclude,
       }),
       prisma.candidate.count({ where }),
     ])

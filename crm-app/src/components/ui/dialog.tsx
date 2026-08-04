@@ -16,7 +16,7 @@ const Dialog = ({
   return (
     <div className="fixed inset-0 z-50">
       <div 
-        className="fixed inset-0 bg-black/50" 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm t22-animate-fade-in" 
         onClick={() => onOpenChange?.(false)}
       />
       <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -34,7 +34,7 @@ const DialogContent = ({
   className?: string
 }) => {
   return (
-    <div className={`relative bg-white rounded-lg shadow-lg max-w-md w-full p-6 ${className}`}>
+    <div className={`relative bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 t22-animate-scale-in ${className}`}>
       {children}
     </div>
   )

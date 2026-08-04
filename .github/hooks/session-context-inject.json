@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "windows": "powershell -NoProfile -Command \"$msg = '=== TWENTY2CRM SESSION START ===\\n\\n🛡️ כללי בטיחות פעילים:\\n- אסור: prisma migrate reset, git push --force, rm -rf\\n- דורש אישור: שינוי schema, מחיקת endpoint, npm install\\n- סודות: לא לגעת ב-.env / service-account-key.json\\n\\n📦 Stack: Next.js 14 + Prisma + PostgreSQL + Railway\\n🤖 AI: Gemini 1.5-flash (GEMINI_API_KEY)\\n📧 Gmail OAuth polling (כל 10 דקות)\\n💾 Backup: Google Drive (service account)\\n📱 SMS: Inforu | Email: Brevo/SMTP\\n\\n⚠️ לפני כל שינוי גדול — גבה ב-POST /api/backup'; $out = @{ systemMessage = $msg } | ConvertTo-Json; Write-Output $out\"",
+        "linux": "echo '{\"systemMessage\": \"=== TWENTY2CRM SESSION START ===\\n🛡️ Safety rules active. Stack: Next.js + Prisma + PostgreSQL + Railway. Backup before major changes: POST /api/backup\"}'",
+        "timeout": 5
+      }
+    ]
+  }
+}

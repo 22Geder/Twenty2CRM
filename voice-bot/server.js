@@ -15,7 +15,7 @@ const {
   OPENAI_API_KEY,
   CRM_BASE_URL,
   VOICE_API_KEY,
-  OPENAI_REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17",
+  OPENAI_REALTIME_MODEL = "gpt-4o-realtime-preview",
   PUBLIC_HOST = "localhost:5050", // default fallback
 } = process.env
 

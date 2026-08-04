@@ -2,7 +2,7 @@
 // =====================================
 // עודכן: יולי 2026 - ניקוי cache ישן שגרם ל-Application error בדפי משרות
 
-const CACHE_NAME = 'twenty2-crm-v6-july2026'
+const CACHE_NAME = 'twenty2-crm-v7-search'
 const STATIC_ASSETS = [
   '/',
   '/upload-cv',

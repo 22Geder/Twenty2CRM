@@ -111,38 +111,62 @@ const NORM_GROUPS: Group[] = SYNONYM_GROUPS.map((words) => ({
 }))
 
 /**
- * מרחיב שאילתת חיפוש לרשימת מונחים (מנורמלים):
- * המונח עצמו + כל המילים הנרדפות מקטגוריות שהוא נוגע בהן.
+ * מרחיב מילה בודדת (מנורמלת) לרשימת מונחים:
+ * המילה עצמה + כל המילים הנרדפות מקטגוריות שהיא נוגעת בהן.
  */
-export function expandSearchTerms(query: string): string[] {
-  const q = normalizeHe(query)
-  if (!q) return []
-
-  const terms = new Set<string>([q])
-
+function expandWord(word: string): string[] {
+  const terms = new Set<string>([word])
   for (const group of NORM_GROUPS) {
     let hit = false
-    for (const word of group.normSet) {
-      // התאמה דו-כיוונית: "מחסן"⊂"מחסנאי" וגם "מחסנאי"⊃"מחסן"
-      if (word.includes(q) || q.includes(word)) {
+    for (const w of group.normSet) {
+      // התאמה דו-כיוונית: "מחסנ"⊂"מחסנאי" וגם "מחסנאי"⊃"מחסנ"
+      if (w.includes(word) || word.includes(w)) {
         hit = true
         break
       }
     }
-    if (hit) {
-      for (const word of group.normSet) terms.add(word)
-    }
+    if (hit) for (const w of group.normSet) terms.add(w)
   }
-
   return [...terms]
 }
 
 /**
- * בונה פונקציית התאמה יחידה עבור שאילתה (מחשב הרחבה פעם אחת).
- * מחזיר null אם אין שאילתה — כלומר אין לסנן לפי טקסט.
+ * מרחיב שאילתה שלמה לרשימת מונחים (לשם תצוגה/דיבוג).
+ * מאחד את ההרחבות של כל המילים.
+ */
+export function expandSearchTerms(query: string): string[] {
+  const q = normalizeHe(query)
+  if (!q) return []
+  const all = new Set<string>()
+  for (const word of q.split(" ")) {
+    if (!word) continue
+    for (const t of expandWord(word)) all.add(t)
+  }
+  return [...all]
+}
+
+/**
+ * בונה פונקציית התאמה מדויקת עבור שאילתה.
+ *
+ * דיוק: כל מילה בשאילתה חייבת להימצא (AND בין מילים), כאשר כל מילה
+ * מורחבת למילים נרדפות (OR בתוך קבוצת המילה). כך:
+ *   "מחסן אשדוד" → משרות מחסן (מחסנאי/מלגזן/מלקט...) *וגם* באשדוד.
+ *   "טלר ירושלים" → טלר/בנקאי *וגם* בירושלים.
+ * מילה בת תו אחד מתעלמים ממנה (רעש).
+ *
+ * מחזיר null אם אין שאילתה משמעותית — כלומר אין לסנן לפי טקסט.
  */
 export function buildSearchMatcher(query: string): ((normText: string) => boolean) | null {
-  const terms = expandSearchTerms(query)
-  if (terms.length === 0) return null
-  return (normText: string) => terms.some((t) => normText.includes(t))
+  const q = normalizeHe(query)
+  if (!q) return null
+
+  const wordGroups = q
+    .split(" ")
+    .filter((w) => w.length >= 1)
+    .map((w) => expandWord(w))
+
+  if (wordGroups.length === 0) return null
+
+  return (normText: string) =>
+    wordGroups.every((terms) => terms.some((t) => normText.includes(t)))
 }

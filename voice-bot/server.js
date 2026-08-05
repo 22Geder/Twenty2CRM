@@ -27,6 +27,7 @@ if (!CRM_BASE_URL || !VOICE_API_KEY) {
   console.error("❌ Missing CRM_BASE_URL or VOICE_API_KEY")
   process.exit(1)
 }
+console.log(`🔗 CRM_BASE_URL = ${CRM_BASE_URL}`)
 
 // הוראות המערכת לבוט (עברית) – התאם לפי הצורך
 const SYSTEM_INSTRUCTIONS = `
@@ -85,8 +86,11 @@ async function crmFetch(params) {
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v))
   }
+  console.log(`🌐 CRM fetch: ${url.toString()}`)
   const res = await fetch(url, { headers: { "x-api-key": VOICE_API_KEY } })
   if (!res.ok) {
+    const body = await res.text().catch(() => "")
+    console.error(`🌐 CRM fetch failed: ${res.status} ${res.statusText} - ${body.slice(0, 300)}`)
     return { error: `CRM request failed (${res.status})` }
   }
   return res.json()

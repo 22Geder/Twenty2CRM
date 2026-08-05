@@ -133,7 +133,6 @@ wss.on("connection", (twilioWs) => {
   console.log("📞 Twilio media stream connected")
 
   let streamSid = null
-  let responseActive = false // מונע ביטול תשובה כשאין תשובה פעילה (false positives מ-VAD)
   const openaiWs = new WebSocket(
     `wss://api.openai.com/v1/realtime?model=${OPENAI_REALTIME_MODEL}`,
     {
@@ -208,18 +207,17 @@ wss.on("connection", (twilioWs) => {
       )
     }
 
-    // קטיעת דיבור הבוט כשהמתקשר מתחיל לדבר - רק אם יש באמת תשובה פעילה
-    // (מונע ביטול שקרי כתוצאה מרעש רקע/הד שגורם ל-VAD לזהות "דיבור" בטעות)
+    // כשהמתקשר מתחיל לדבר - השרת של OpenAI כבר מבטל אוטומטית כל תשובה פעילה בעצמו
+    // (ראה תיעוד: "the server will automatically cancel any in-progress model response").
+    // לכן לא שולחים response.cancel ידני - זה רק גורם לשגיאת race condition (response_cancel_not_active).
+    // כאן רק מנקים את בופר האודיו הממתין ב-Twilio כדי שלא ישמע חפיפה/שאריות.
     if (msg.type === "input_audio_buffer.speech_started" && streamSid) {
       twilioWs.send(JSON.stringify({ event: "clear", streamSid }))
-      if (responseActive) sendToOpenAI({ type: "response.cancel" })
     }
 
-    if (msg.type === "response.created") {
-      responseActive = true
-    }
-    if (msg.type === "response.done" || msg.type === "response.cancelled") {
-      responseActive = false
+    // לוג של מה שהבוט עצמו אמר בקול - עוזר לאבחן מה קרה בפועל בשיחה
+    if (msg.type === "response.output_audio_transcript.done") {
+      console.log(`🗣️  bot said: "${msg.transcript}"`)
     }
 
     // לוג של מה שהמערכת "שמעה" - עוזר לאבחן טעויות זיהוי דיבור

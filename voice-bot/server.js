@@ -133,6 +133,7 @@ wss.on("connection", (twilioWs) => {
   console.log("📞 Twilio media stream connected")
 
   let streamSid = null
+  let responseActive = false // מונע ביטול תשובה כשאין תשובה פעילה (false positives מ-VAD)
   const openaiWs = new WebSocket(
     `wss://api.openai.com/v1/realtime?model=${OPENAI_REALTIME_MODEL}`,
     {
@@ -158,8 +159,9 @@ wss.on("connection", (twilioWs) => {
             format: { type: "audio/pcmu" },
             turn_detection: {
               type: "server_vad",
-              threshold: 0.5,
-              silence_duration_ms: 600,
+              threshold: 0.6,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 700,
             },
             transcription: {
               model: "gpt-4o-transcribe",
@@ -206,10 +208,18 @@ wss.on("connection", (twilioWs) => {
       )
     }
 
-    // קטיעת דיבור הבוט כשהמתקשר מתחיל לדבר
+    // קטיעת דיבור הבוט כשהמתקשר מתחיל לדבר - רק אם יש באמת תשובה פעילה
+    // (מונע ביטול שקרי כתוצאה מרעש רקע/הד שגורם ל-VAD לזהות "דיבור" בטעות)
     if (msg.type === "input_audio_buffer.speech_started" && streamSid) {
       twilioWs.send(JSON.stringify({ event: "clear", streamSid }))
-      sendToOpenAI({ type: "response.cancel" })
+      if (responseActive) sendToOpenAI({ type: "response.cancel" })
+    }
+
+    if (msg.type === "response.created") {
+      responseActive = true
+    }
+    if (msg.type === "response.done" || msg.type === "response.cancelled") {
+      responseActive = false
     }
 
     // לוג של מה שהמערכת "שמעה" - עוזר לאבחן טעויות זיהוי דיבור

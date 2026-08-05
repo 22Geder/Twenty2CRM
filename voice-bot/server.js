@@ -15,7 +15,7 @@ const {
   OPENAI_API_KEY,
   CRM_BASE_URL,
   VOICE_API_KEY,
-  OPENAI_REALTIME_MODEL = "gpt-4o-realtime-preview",
+  OPENAI_REALTIME_MODEL = "gpt-realtime",
   PUBLIC_HOST = "localhost:5050", // default fallback
 } = process.env
 
@@ -151,12 +151,19 @@ wss.on("connection", (twilioWs) => {
     sendToOpenAI({
       type: "session.update",
       session: {
-        turn_detection: { type: "server_vad" },
-        input_audio_format: "g711_ulaw",
-        output_audio_format: "g711_ulaw",
-        voice: "alloy",
+        type: "realtime",
+        output_modalities: ["audio"],
+        audio: {
+          input: {
+            format: { type: "audio/pcmu" },
+            turn_detection: { type: "server_vad" },
+          },
+          output: {
+            format: { type: "audio/pcmu" },
+            voice: "alloy",
+          },
+        },
         instructions: SYSTEM_INSTRUCTIONS,
-        modalities: ["text", "audio"],
         tools: TOOLS,
         tool_choice: "auto",
       },
@@ -179,7 +186,7 @@ wss.on("connection", (twilioWs) => {
       return
     }
 
-    if (msg.type === "response.audio.delta" && msg.delta && streamSid) {
+    if (msg.type === "response.output_audio.delta" && msg.delta && streamSid) {
       twilioWs.send(
         JSON.stringify({
           event: "media",

@@ -170,7 +170,7 @@ wss.on("connection", (twilioWs) => {
           },
           output: {
             format: { type: "audio/pcmu" },
-            voice: "cedar",
+            voice: "marin",
           },
         },
         instructions: SYSTEM_INSTRUCTIONS,

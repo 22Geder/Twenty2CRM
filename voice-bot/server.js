@@ -119,11 +119,135 @@ async function handleToolCall(name, args) {
   }
 }
 
+// הוראות מערכת לבוט הוואטסאפ (טקסט) - מבוסס על אותה לוגיקה כמו הבוט הקולי, מותאם לכתיבה
+const WHATSAPP_SYSTEM_INSTRUCTIONS = `
+את נציגת שירות בוואטסאפ של חברת ההשמה "Twenty2Jobs". את אישה, כתבי בגוף נקבה על עצמך תמיד.
+כתבי עברית טבעית, חמה ומקצועית. הודעות קצרות וברורות, מתאימות לצ'אט (לא פסקאות ארוכות). אפשר להשתמש באימוג'ים בצמצום ובטעם טוב (למשל 😊 📍 💰).
+
+תהליך חובה לכל חיפוש:
+1. כשהמתקשר מזכיר עיר/אזור/מקצוע - אשרי בקצרה את מה שהבנת לפני חיפוש, למשל: "הבנתי, מחפש עבודה כמזכירה באשדוד - נכון?" וחכי לאישור. בטקסט (לא כמו בטלפון) יש פחות סיכון לטעויות זיהוי דיבור, אז אם ברור לגמרי מה המתקשר ביקש - אפשר לחפש ישר בלי לשאול.
+2. קראי לכלי search_positions עם התחום/מקצוע ו/או המיקום.
+3. לפרטים מלאים על משרה ספציפית, השתמשי ב-get_position_details.
+- הציגי עד 3-5 משרות בכל פעם: תפקיד, מעסיק ומיקום. שאלי אם רוצים לשמוע עוד או פרטים מלאים.
+- אם החיפוש לא מחזיר תוצאות, אמרי זאת בבירור והציעי לחפש בתחום/מיקום אחר. אל תמציאי משרות שלא הוחזרו מהכלים.
+- בתחילת שיחה חדשה (הודעה ראשונה), פתחי בברכה: "שלום, הגעתם ל-Twenty2Jobs! 😊 אנחנו שמחים שיצרתם קשר. בקצרה - במסגרת 'חבר מביא חבר', כל מי שממליץ לנו על חבר שמתקבל לעבודה מקבל 500 ₪ מתנה! איך אפשר לעזור לך היום?"
+- בסוף השיחה הציעי להשאיר טלפון/שם כדי שנחזור אליו, ותודי לו על הפנייה.
+`.trim()
+
+// המרת פורמט הכלים (Realtime) לפורמט הנדרש ע"י Chat Completions API
+const CHAT_TOOLS = TOOLS.map((t) => ({
+  type: "function",
+  function: { name: t.name, description: t.description, parameters: t.parameters },
+}))
+
+// זיכרון שיחה זמני לכל מספר טלפון (נמחק בכל restart של השרת - מספיק לשיחה בודדת)
+const waConversations = new Map()
+const WA_HISTORY_LIMIT = 20 // מספר הודעות מקסימלי לשמירה בזיכרון לכל משתמש
+
+async function callOpenAIChat(messages) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      messages,
+      tools: CHAT_TOOLS,
+      tool_choice: "auto",
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => "")
+    console.error(`[whatsapp] OpenAI error: ${res.status} - ${body.slice(0, 300)}`)
+    throw new Error(`OpenAI request failed (${res.status})`)
+  }
+  return res.json()
+}
+
+// מריץ שיחת Chat Completions עם תמיכה בכלים, עד לקבלת תשובת טקסט סופית
+async function runWhatsAppTurn(history) {
+  let messages = history
+  for (let i = 0; i < 5; i++) {
+    const data = await callOpenAIChat(messages)
+    const choice = data.choices?.[0]
+    const msg = choice?.message
+    if (!msg) throw new Error("No message from OpenAI")
+
+    if (msg.tool_calls && msg.tool_calls.length > 0) {
+      messages = [...messages, msg]
+      for (const call of msg.tool_calls) {
+        let args = {}
+        try {
+          args = JSON.parse(call.function.arguments || "{}")
+        } catch {
+          args = {}
+        }
+        console.log(`🔧 [whatsapp] tool: ${call.function.name}`, args)
+        const result = await handleToolCall(call.function.name, args)
+        messages = [
+          ...messages,
+          {
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify(result),
+          },
+        ]
+      }
+      continue // חוזרים לשלוח ל-OpenAI עם תוצאות הכלים
+    }
+
+    return { reply: msg.content || "", messages: [...messages, msg] }
+  }
+  return { reply: "מצטערים, קרתה תקלה זמנית. נסה שוב בעוד רגע.", messages }
+}
+
 // ── Express: TwiML לשיחה נכנסת ──────────────────────────────────
 const app = express()
 app.use(express.urlencoded({ extended: false }))
 
 app.get("/", (_req, res) => res.send("Twenty2 Voice Bot is running ✅"))
+
+// ── Webhook להודעות וואטסאפ נכנסות (Twilio WhatsApp) ───────────
+app.post("/whatsapp", async (req, res) => {
+  const from = req.body.From // לדוגמה: "whatsapp:+972501234567"
+  const body = (req.body.Body || "").trim()
+  console.log(`📱 [whatsapp] from ${from}: "${body}"`)
+
+  try {
+    let history = waConversations.get(from)
+    if (!history) {
+      history = [{ role: "system", content: WHATSAPP_SYSTEM_INSTRUCTIONS }]
+    }
+    history = [...history, { role: "user", content: body }]
+
+    const { reply, messages } = await runWhatsAppTurn(history)
+
+    // חיתוך היסטוריה כדי לא לגדול בלי גבול (שומרים system + N אחרונות)
+    const trimmed = [messages[0], ...messages.slice(-WA_HISTORY_LIMIT)]
+    waConversations.set(from, trimmed)
+
+    console.log(`🗣️  [whatsapp] reply: "${reply}"`)
+    res.type("text/xml").send(
+      `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`
+    )
+  } catch (err) {
+    console.error("[whatsapp] error:", err)
+    res
+      .type("text/xml")
+      .send(
+        `<?xml version="1.0" encoding="UTF-8"?><Response><Message>מצטערים, קרתה תקלה זמנית. נסה שוב בעוד רגע 🙏</Message></Response>`
+      )
+  }
+})
+
+function escapeXml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+}
 
 function twiml(host) {
   return `<?xml version="1.0" encoding="UTF-8"?>

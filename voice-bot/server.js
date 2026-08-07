@@ -17,6 +17,10 @@ const {
   VOICE_API_KEY,
   OPENAI_REALTIME_MODEL = "gpt-realtime",
   PUBLIC_HOST = "localhost:5050", // default fallback
+  TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN,
+  TWILIO_WHATSAPP_FROM = "whatsapp:+97233822232",
+  OWNER_WHATSAPP_TO = "whatsapp:+972545478667",
 } = process.env
 
 if (!OPENAI_API_KEY) {
@@ -28,6 +32,11 @@ if (!CRM_BASE_URL || !VOICE_API_KEY) {
   process.exit(1)
 }
 console.log(`🔗 CRM_BASE_URL = ${CRM_BASE_URL}`)
+if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+  console.warn(
+    "⚠️  Missing TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN - סיכומי שיחה והתראות למגייס לא יישלחו"
+  )
+}
 
 // הוראות המערכת לבוט (עברית) – התאם לפי הצורך
 const SYSTEM_INSTRUCTIONS = `
@@ -58,7 +67,17 @@ const SYSTEM_INSTRUCTIONS = `
 - לפרטים מלאים על משרה ספציפית, השתמש ב-get_position_details.
 - הקרא עד 3 משרות בכל פעם, בקצרה: תפקיד, מעסיק ומיקום. שאל אם רוצים לשמוע עוד או פרטים מלאים.
 - אם החיפוש לא מחזיר תוצאות, אמור זאת בבירור ("לא מצאתי כרגע משרות ב...") והציע לחפש בתחום או מיקום אחר. אל תמציא משרות שלא הוחזרו מהכלים.
-- בסוף השיחה הציע להשאיר טלפון/שם כדי שנחזור אליו, ותודה לו על הפנייה.
+
+הקשבה חכמה ואיתותים תוך כדי שיחה:
+- הגב בקצרה למה שהמתקשר אמר לפני שעוברים לשאלה הבאה (למשל: "וואו, 5 שנים נהג משאית, ניסיון רציני") - אל תעבור משאלה לשאלה כמו טופס יבש.
+- שים לב לפרטים סמויים שעולים בשיחה: וותק/ניסיון, האם יש דחיפות למצוא עבודה (משפיע על "פתוח למרחקים"), האם יש רישיון נהיגה/הובלה (B, C1, וכו') - זה פותח דלת למשרות רכב, הובלה ולוגיסטיקה גם אם המתקשר לא הזכיר את זה בעצמו.
+- שאל בשלב מתאים "מה הכי חשוב לך במשרה הבאה?" - שכר? קרבה לבית? משמרות בוקר בלבד? זה קריטריון סינון חשוב, אל תשכח לשאול את זה.
+
+מעבר למגייס אנושי:
+- בכל שלב בשיחה, אם המתקשר מבקש לדבר עם בן אדם/מגייס אמיתי, או אם עולה נושא רגיש/מורכב שאתה לא בטוח לגביו - הצע לו זאת באופן טבעי ("אני יכול להעביר את הפרטים למגייס אנושי אצלנו, שיחזור אליך ממש בקרוב - מתאים לך?"), ואם הוא מסכים קרא מיד לכלי request_human_agent עם סיכום קצר של מה שעלה בשיחה. לאחר הקריאה, עדכן אותו שהפרטים הועברו והמגייס יחזור אליו.
+
+סיום שיחה:
+- בסוף כל שיחה, ודא שיש פעולת המשך ברורה: אמור למתקשר שהפרטים שלו נשמרו וצוות הגיוס יחזור אליו בקרוב עם עדכונים, או הצע לו במפורש לעבור למגייס אנושי (request_human_agent) אם הוא רוצה שיחזרו אליו כבר עכשיו. תודה לו על הפנייה בחום.
 `.trim()
 
 // ברכת הפתיחה - נאמרת בקול ע"י הבוט מיד כשהשיחה מתחילה
@@ -100,7 +119,87 @@ const TOOLS = [
       required: ["id"],
     },
   },
+  {
+    type: "function",
+    name: "request_human_agent",
+    description:
+      "משמש כשהמועמד מבקש לדבר עם בן אדם/מגייס אמיתי, או במצב רגיש/דחוף שדורש טיפול אנושי. שולח למגייס האנושי התראה מיידית עם פרטי המועמד כדי שיחזור אליו בהקדם.",
+    parameters: {
+      type: "object",
+      properties: {
+        candidate_name: { type: "string", description: "שם המועמד, אם ידוע." },
+        candidate_phone: {
+          type: "string",
+          description: "מספר טלפון ליצירת קשר עם המועמד, אם נמסר בשיחה (לרוב לא נדרש בטלפון - יש caller ID).",
+        },
+        reason: { type: "string", description: "למה המועמד מבקש מגייס אנושי / מה הנושא." },
+        summary: {
+          type: "string",
+          description: "סיכום קצר של מה שכבר עלה בשיחה (רקע, עיר, תחום מבוקש, משרות שהוצגו).",
+        },
+      },
+      required: ["reason"],
+    },
+  },
 ]
+
+// ── שליחת הודעות וואטסאפ יזומות דרך Twilio REST API (סיכומים/התראות למגייס) ──
+async function sendWhatsAppMessage(to, body) {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) return
+  try {
+    const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64")
+    const params = new URLSearchParams({ From: TWILIO_WHATSAPP_FROM, To: to, Body: body })
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params,
+      }
+    )
+    if (!res.ok) {
+      const t = await res.text().catch(() => "")
+      console.error(`📨 Twilio send failed: ${res.status} - ${t.slice(0, 300)}`)
+    } else {
+      console.log(`📨 WhatsApp alert sent to ${to}`)
+    }
+  } catch (err) {
+    console.error("📨 sendWhatsAppMessage error:", err)
+  }
+}
+
+// ── סיכום שיחה קצר בעברית באמצעות GPT (לשיחות טלפון וגם וואטסאפ) ──
+async function summarizeConversation(transcriptText) {
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "אתה עוזר שמסכם שיחות של מועמדים לעבודה עם בוט השמה בשם אביגדור. תן סיכום קצר וברור בעברית (עד 6 שורות): שם המועמד (אם ידוע), עיר מגורים, רקע תעסוקתי/ניסיון, תחום עבודה מבוקש, האם פתוח למרחקים, משרות שהוצגו לו, וכל דבר חשוב נוסף (למשל דחיפות, שכר מבוקש, בקשה למגייס אנושי). אם משהו לא עלה בשיחה, פשוט דלג עליו - אל תמציא.",
+          },
+          { role: "user", content: transcriptText },
+        ],
+      }),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.choices?.[0]?.message?.content?.trim() || null
+  } catch (err) {
+    console.error("[summarize] error:", err)
+    return null
+  }
+}
 
 // ── קריאות ל-CRM ────────────────────────────────────────────────
 async function crmFetch(params) {
@@ -118,13 +217,34 @@ async function crmFetch(params) {
   return res.json()
 }
 
-async function handleToolCall(name, args) {
+async function handleToolCall(name, args, context = {}) {
   try {
     if (name === "search_positions") {
       return await crmFetch({ search: args.search, location: args.location, limit: 5 })
     }
     if (name === "get_position_details") {
       return await crmFetch({ id: args.id })
+    }
+    if (name === "request_human_agent") {
+      const callerInfo = context.callerNumber ? `📞 מספר: ${context.callerNumber}` : ""
+      const channelInfo = context.channel === "whatsapp" ? "וואטסאפ" : "טלפון"
+      const alert = [
+        `🙋 בקשה למגייס אנושי (${channelInfo})`,
+        callerInfo,
+        args.candidate_name ? `שם: ${args.candidate_name}` : "",
+        args.candidate_phone ? `טלפון שנמסר: ${args.candidate_phone}` : "",
+        args.reason ? `סיבה: ${args.reason}` : "",
+        args.summary ? `סיכום: ${args.summary}` : "",
+        "",
+        `⏰ נא לחזור בהקדם למספר שהתקשר/כתב.`,
+      ]
+        .filter(Boolean)
+        .join("\n")
+      await sendWhatsAppMessage(OWNER_WHATSAPP_TO, alert)
+      return {
+        ok: true,
+        message: "הפרטים הועברו למגייס אנושי, הוא יחזור אליך בהקדם.",
+      }
     }
     return { error: "Unknown tool" }
   } catch (err) {
@@ -158,8 +278,20 @@ const WHATSAPP_SYSTEM_INSTRUCTIONS = `
 - בצע יותר מחיפוש אחד אם צריך: קודם חיפוש ממוקד לפי מה שהתבקש, ואז - אם רלוונטי - חיפוש נוסף בתחום קרוב שזיהית כמתאים, כדי להציג את האפשרות הכי טובה, גם אם לא התבקשה במפורש. הסבר בקצרה למה אתה מציע את זה ("ראיתי שיש לך ניסיון בנהיגה, אז מלבד משרות נהג יש לנו גם משרות בלוגיסטיקה שיכולות להתאים - רוצה שאספר עליהן?").
 - הצג עד 3-5 משרות בכל פעם: תפקיד, מעסיק ומיקום. שאל אם רוצים לשמוע עוד או פרטים מלאים.
 - אם החיפוש לא מחזיר תוצאות, אמור זאת בבירור והציע לחפש בתחום/מיקום אחר. אל תמציא משרות שלא הוחזרו מהכלים.
-- בתחילת שיחה חדשה (הודעה ראשונה), פתח בברכה קצרה: "שלום, הגעתם ל-Twenty2Jobs 😊 מדבר אביגדור, הנציג הדיגיטלי של החברה. שמח שיצרת קשר! איך קוראים לך?" ואז המשך בשלב ההיכרות לפני הצעת משרות.
-- בסוף השיחה הציע להשאיר טלפון נוסף אם צריך, ותודה לו על הפנייה.
+
+הקשבה חכמה ואיתותים תוך כדי שיחה:
+- הגב בקצרה למה שנכתב לך לפני שעוברים לשאלה הבאה (למשל: "וואו, 5 שנים נהג משאית, ניסיון רציני") - אל תעבור משאלה לשאלה כמו טופס יבש.
+- שים לב לפרטים סמויים שעולים בשיחה: וותק/ניסיון, האם יש דחיפות למצוא עבודה (משפיע על "פתוח למרחקים"), האם יש רישיון נהיגה/הובלה (B, C1, וכו') - זה פותח דלת למשרות רכב, הובלה ולוגיסטיקה גם אם לא הוזכר במפורש.
+- שאל בשלב מתאים "מה הכי חשוב לך במשרה הבאה?" - שכר? קרבה לבית? משמרות בוקר בלבד? זה קריטריון סינון חשוב, אל תשכח לשאול את זה.
+
+מעבר למגייס אנושי:
+- בכל שלב בשיחה, אם המועמד מבקש לדבר עם בן אדם/מגייס אמיתי, או אם עולה נושא רגיש/מורכב - הצע לו זאת באופן טבעי ("אני יכול להעביר את הפרטים למגייס אנושי אצלנו, שיחזור אליך ממש בקרוב - מתאים?"), ואם מסכים קרא מיד לכלי request_human_agent עם סיכום קצר של מה שעלה בשיחה. עדכן אותו שהפרטים הועברו.
+
+סיום שיחה:
+- בסוף כל שיחה, ודא שיש פעולת המשך ברורה: אמור שהפרטים נשמרו וצוות הגיוס יחזור בקרוב, או הצע לעבור למגייס אנושי (request_human_agent) אם רוצה שיחזרו כבר עכשיו. תודה בחום על הפנייה.
+
+פתיחת שיחה:
+- בתחילת שיחה חדשה (הודעה ראשונה של המשתמש), פתח בברכה קצרה: "שלום, הגעתם ל-Twenty2Jobs 😊 מדבר אביגדור, הנציג הדיגיטלי של החברה. שמח שיצרת קשר! איך קוראים לך?" ואז המשך בשלב ההיכרות לפני הצעת משרות.
 `.trim()
 
 // המרת פורמט הכלים (Realtime) לפורמט הנדרש ע"י Chat Completions API
@@ -195,7 +327,7 @@ async function callOpenAIChat(messages) {
 }
 
 // מריץ שיחת Chat Completions עם תמיכה בכלים, עד לקבלת תשובת טקסט סופית
-async function runWhatsAppTurn(history) {
+async function runWhatsAppTurn(history, fromNumber) {
   let messages = history
   for (let i = 0; i < 5; i++) {
     const data = await callOpenAIChat(messages)
@@ -213,7 +345,10 @@ async function runWhatsAppTurn(history) {
           args = {}
         }
         console.log(`🔧 [whatsapp] tool: ${call.function.name}`, args)
-        const result = await handleToolCall(call.function.name, args)
+        const result = await handleToolCall(call.function.name, args, {
+          channel: "whatsapp",
+          callerNumber: fromNumber,
+        })
         messages = [
           ...messages,
           {
@@ -229,6 +364,33 @@ async function runWhatsAppTurn(history) {
     return { reply: msg.content || "", messages: [...messages, msg] }
   }
   return { reply: "מצטערים, קרתה תקלה זמנית. נסה שוב בעוד רגע.", messages }
+}
+
+// שולח לבעל המערכת סיכום שיחת וואטסאפ אחרי X דקות ללא הודעה חדשה מהמשתמש
+const WA_SUMMARY_DEBOUNCE_MS = 5 * 60 * 1000 // 5 דקות
+const waSummaryTimers = new Map()
+
+function scheduleWhatsAppSummary(fromNumber) {
+  const existing = waSummaryTimers.get(fromNumber)
+  if (existing) clearTimeout(existing)
+  const timer = setTimeout(async () => {
+    waSummaryTimers.delete(fromNumber)
+    const history = waConversations.get(fromNumber)
+    if (!history) return
+    const transcriptText = history
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => `${m.role === "user" ? "מועמד" : "אביגדור"}: ${m.content || ""}`)
+      .join("\n")
+    if (!transcriptText.trim()) return
+    const summary = await summarizeConversation(transcriptText)
+    if (summary) {
+      await sendWhatsAppMessage(
+        OWNER_WHATSAPP_TO,
+        `📱 סיכום שיחת וואטסאפ מ-${fromNumber}:\n\n${summary}`
+      )
+    }
+  }, WA_SUMMARY_DEBOUNCE_MS)
+  waSummaryTimers.set(fromNumber, timer)
 }
 
 // ── Express: TwiML לשיחה נכנסת ──────────────────────────────────
@@ -250,11 +412,12 @@ app.post("/whatsapp", async (req, res) => {
     }
     history = [...history, { role: "user", content: body }]
 
-    const { reply, messages } = await runWhatsAppTurn(history)
+    const { reply, messages } = await runWhatsAppTurn(history, from)
 
     // חיתוך היסטוריה כדי לא לגדול בלי גבול (שומרים system + N אחרונות)
     const trimmed = [messages[0], ...messages.slice(-WA_HISTORY_LIMIT)]
     waConversations.set(from, trimmed)
+    scheduleWhatsAppSummary(from)
 
     console.log(`🗣️  [whatsapp] reply: "${reply}"`)
     res.type("text/xml").send(
@@ -277,18 +440,21 @@ function escapeXml(str) {
     .replace(/>/g, "&gt;")
 }
 
-function twiml(host) {
+function twiml(host, callerNumber) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <Stream url="wss://${host}/media-stream" />
+    <Stream url="wss://${host}/media-stream">
+      <Parameter name="callerNumber" value="${escapeXml(callerNumber || "")}" />
+    </Stream>
   </Connect>
 </Response>`
 }
 
 app.all("/incoming-call", (req, res) => {
   const host = PUBLIC_HOST || req.headers.host
-  res.type("text/xml").send(twiml(host))
+  const callerNumber = req.body?.From || req.query?.From || ""
+  res.type("text/xml").send(twiml(host, callerNumber))
 })
 
 // ── WebSocket bridge: Twilio ↔ OpenAI Realtime ─────────────────
@@ -299,6 +465,8 @@ wss.on("connection", (twilioWs) => {
   console.log("📞 Twilio media stream connected")
 
   let streamSid = null
+  let callerNumber = null
+  const transcriptLog = [] // {who: 'caller'|'avigdor', text}
   const openaiWs = new WebSocket(
     `wss://api.openai.com/v1/realtime?model=${OPENAI_REALTIME_MODEL}`,
     {
@@ -382,11 +550,13 @@ wss.on("connection", (twilioWs) => {
     // לוג של מה שהבוט עצמו אמר בקול - עוזר לאבחן מה קרה בפועל בשיחה
     if (msg.type === "response.output_audio_transcript.done") {
       console.log(`🗣️  bot said: "${msg.transcript}"`)
+      transcriptLog.push({ who: "אביגדור", text: msg.transcript })
     }
 
     // לוג של מה שהמערכת "שמעה" - עוזר לאבחן טעויות זיהוי דיבור
     if (msg.type === "conversation.item.input_audio_transcription.completed") {
       console.log(`🎙️  heard: "${msg.transcript}"`)
+      transcriptLog.push({ who: "מועמד", text: msg.transcript })
     }
 
     // קריאת פונקציה שהמודל ביקש
@@ -398,7 +568,7 @@ wss.on("connection", (twilioWs) => {
         args = {}
       }
       console.log(`🔧 tool: ${msg.name}`, args)
-      const result = await handleToolCall(msg.name, args)
+      const result = await handleToolCall(msg.name, args, { channel: "voice", callerNumber })
       sendToOpenAI({
         type: "conversation.item.create",
         item: {
@@ -430,7 +600,8 @@ wss.on("connection", (twilioWs) => {
     switch (data.event) {
       case "start":
         streamSid = data.start.streamSid
-        console.log("▶️  stream started:", streamSid)
+        callerNumber = data.start.customParameters?.callerNumber || null
+        console.log("▶️  stream started:", streamSid, "caller:", callerNumber)
         break
       case "media":
         sendToOpenAI({
@@ -447,6 +618,21 @@ wss.on("connection", (twilioWs) => {
   twilioWs.on("close", () => {
     console.log("📞 Twilio disconnected")
     if (openaiWs.readyState === WebSocket.OPEN) openaiWs.close()
+
+    // שליחת סיכום שיחה למגייס אחרי סיום השיחה (לא חוסם את סגירת ה-WS)
+    if (transcriptLog.length > 0) {
+      const transcriptText = transcriptLog.map((t) => `${t.who}: ${t.text}`).join("\n")
+      summarizeConversation(transcriptText)
+        .then((summary) => {
+          if (summary) {
+            return sendWhatsAppMessage(
+              OWNER_WHATSAPP_TO,
+              `📞 סיכום שיחת טלפון${callerNumber ? ` מ-${callerNumber}` : ""}:\n\n${summary}`
+            )
+          }
+        })
+        .catch((err) => console.error("[voice summary] error:", err))
+    }
   })
 })
 

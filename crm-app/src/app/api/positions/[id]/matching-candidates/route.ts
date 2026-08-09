@@ -194,9 +194,11 @@ export async function GET(
         educationStatus,
         candidateRecruitmentTags
       )
-      const whySuitable = keywordReason
+      const whySuitableRaw = keywordReason
         ? [`🔑 ${keywordReason}`, ...generatedReasons].slice(0, 8)
         : generatedReasons
+      // 🛡️ הגנה כפולה: whySuitable חייב תמיד להיות מערך
+      const whySuitable = Array.isArray(whySuitableRaw) ? whySuitableRaw : []
 
       // ============================================
       // 🎯 חישוב ציון סופי (FAST - ללא Gemini):

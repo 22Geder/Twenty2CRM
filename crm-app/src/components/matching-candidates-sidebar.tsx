@@ -918,7 +918,7 @@ export function MatchingCandidatesSidebar({
                         למה מתאים למשרה:
                       </div>
                       <ul className="space-y-1">
-                        {candidate.whySuitable.map((reason, idx) => (
+                        {(Array.isArray(candidate.whySuitable) ? candidate.whySuitable : []).map((reason, idx) => (
                           <li key={idx} className="text-xs text-green-700">
                             {reason}
                           </li>

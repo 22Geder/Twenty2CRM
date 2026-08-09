@@ -892,14 +892,14 @@ export function MatchingCandidatesSidebar({
                   )}
 
                   {/* 📝 Why Suitable - למה מתאים */}
-                  {candidate.whySuitable && candidate.whySuitable.length > 0 && (
+                  {Array.isArray(candidate.whySuitable) && candidate.whySuitable.length > 0 && (
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
                       <div className="text-sm font-bold text-green-800 mb-2 flex items-center gap-1">
                         <span>💡</span>
                         למה מתאים למשרה:
                       </div>
                       <ul className="space-y-1">
-                        {candidate.whySuitable.map((reason, idx) => (
+                        {(Array.isArray(candidate.whySuitable) ? candidate.whySuitable : []).map((reason, idx) => (
                           <li key={idx} className="text-xs text-green-700">
                             {reason}
                           </li>

@@ -314,13 +314,33 @@ export default async function CiviDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8]" dir="rtl">
-      {/* Page Title */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3 md:py-4 flex items-center justify-between">
-          <h1 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">דף הבית - {session.user?.name || 'משתמש'}</h1>
+      {/* Premium Page Header */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0d1535]">
+        {/* Background grid */}
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="dashGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#06B6D4" strokeWidth="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dashGrid)" />
+          </svg>
+        </div>
+        {/* Ambient glows */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#06B6D4]/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#F97316]/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-[1600px] mx-auto px-4 md:px-6 py-5 md:py-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#22D3EE] via-[#06B6D4] to-[#10B981] bg-clip-text text-transparent tracking-tight">
+              📊 לוח בקרה
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">שלום, <span className="text-[#22D3EE] font-semibold">{session.user?.name || 'משתמש'}</span> — הנה מה שקורה היום</p>
+          </div>
           <div className="flex items-center gap-2">
-            <Link href="/dashboard/activity" className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-[#0891B2] hover:bg-[#ECFEFF] transition-colors">
-              <Clock className="h-4 w-4" />
+            <Link href="/dashboard/activity" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 hover:border-[#06B6D4]/40 transition-all">
+              <Clock className="h-4 w-4 text-[#06B6D4]" />
               פעילות
             </Link>
             <DashboardRefresher />
@@ -421,62 +441,67 @@ export default async function CiviDashboardPage() {
         {/* Top Stats Row - 5 Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {/* Card 1 - Started Work This Month */}
-          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-teal-200 transition-all duration-300 cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2.5 py-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-teal-200/50">
-                <UserCheck className="h-6 w-6 text-[#06B6D4]" />
+          <Link href="/dashboard/candidates?status=hired" className="group relative bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:shadow-teal-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex flex-col gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#06B6D4] to-[#0891B2] rounded-xl flex items-center justify-center shadow-lg shadow-teal-400/30">
+                <UserCheck className="h-5 w-5 text-white" />
               </div>
-              <div className="text-4xl font-bold text-[#06B6D4]">{stats.startedWorkThisMonth}</div>
-              <div className="text-sm text-slate-500 text-center leading-tight">התחילו לעבוד החודש</div>
+              <div className="text-3xl font-black text-[#06B6D4]">{stats.startedWorkThisMonth}</div>
+              <div className="text-xs font-medium text-slate-500 leading-tight">התחילו לעבוד החודש</div>
             </div>
           </Link>
 
           {/* Card 2 - Upcoming Interviews */}
-          <Link href="/dashboard/interviews" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-orange-200 transition-all duration-300 cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2.5 py-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-orange-200/50">
-                <Bell className="h-6 w-6 text-[#F97316]" />
+          <Link href="/dashboard/interviews" className="group relative bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-[#F97316] to-[#FB923C] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex flex-col gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#F97316] to-[#EA580C] rounded-xl flex items-center justify-center shadow-lg shadow-orange-400/30">
+                <Bell className="h-5 w-5 text-white" />
               </div>
-              <div className="text-4xl font-bold text-[#F97316]">{stats.upcomingInterviews}</div>
-              <div className="text-sm text-slate-500 text-center leading-tight">ראיונות קרובים</div>
+              <div className="text-3xl font-black text-[#F97316]">{stats.upcomingInterviews}</div>
+              <div className="text-xs font-medium text-slate-500 leading-tight">ראיונות קרובים</div>
             </div>
           </Link>
 
           {/* Card 3 - Hired This Month */}
-          <Link href="/dashboard/candidates?status=hired" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-green-200 transition-all duration-300 cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2.5 py-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-green-200/50">
-                <CheckCircle className="h-6 w-6 text-[#10B981]" />
+          <Link href="/dashboard/candidates?status=hired" className="group relative bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-[#10B981] to-[#34D399] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex flex-col gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#10B981] to-[#059669] rounded-xl flex items-center justify-center shadow-lg shadow-green-400/30">
+                <CheckCircle className="h-5 w-5 text-white" />
               </div>
-              <div className="text-4xl font-bold text-[#10B981]">{stats.hiredThisMonth}</div>
-              <div className="text-sm text-slate-500 text-center leading-tight">התקבלו לעבודה החודש</div>
+              <div className="text-3xl font-black text-[#10B981]">{stats.hiredThisMonth}</div>
+              <div className="text-xs font-medium text-slate-500 leading-tight">התקבלו לעבודה החודש</div>
             </div>
           </Link>
 
           {/* Card 4 - Referrals This Month */}
-          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-purple-200 transition-all duration-300 cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2.5 py-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-purple-200/50">
-                <Send className="h-6 w-6 text-[#A855F7]" />
+          <Link href="/dashboard/candidates?status=in-process" className="group relative bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-[#A855F7] to-[#C084FC] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex flex-col gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#A855F7] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-lg shadow-purple-400/30">
+                <Send className="h-5 w-5 text-white" />
               </div>
-              <div className="text-4xl font-bold text-[#A855F7]">{stats.applicationsThisMonth}</div>
-              <div className="text-sm text-slate-500 text-center leading-tight">הפניות החודש</div>
+              <div className="text-3xl font-black text-[#A855F7]">{stats.applicationsThisMonth}</div>
+              <div className="text-xs font-medium text-slate-500 leading-tight">הפניות החודש</div>
             </div>
           </Link>
 
           {/* Card 5 - Candidates in Process */}
-          <Link href="/dashboard/candidates?status=in-process" className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 relative hover:shadow-xl hover:border-blue-200 transition-all duration-300 cursor-pointer group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            <div className="relative flex flex-col items-center gap-2.5 py-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center shadow-sm ring-1 ring-blue-200/50">
-                <Users className="h-6 w-6 text-[#3B82F6]" />
+          <Link href="/dashboard/candidates?status=in-process" className="group relative bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-[#3B82F6] to-[#60A5FA] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex flex-col gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] rounded-xl flex items-center justify-center shadow-lg shadow-blue-400/30">
+                <Users className="h-5 w-5 text-white" />
               </div>
-              <div className="text-4xl font-bold text-[#3B82F6]">{stats.inProcess}</div>
-              <div className="text-sm text-slate-500 text-center leading-tight">מועמדים בתהליך</div>
+              <div className="text-3xl font-black text-[#3B82F6]">{stats.inProcess}</div>
+              <div className="text-xs font-medium text-slate-500 leading-tight">מועמדים בתהליך</div>
             </div>
           </Link>
         </div>

@@ -549,52 +549,51 @@ export default function CandidatesPageModern() {
       </Card>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white rounded-2xl p-2.5 shadow-md border border-slate-100 flex-wrap">
-        <Filter className="h-5 w-5 text-slate-400 mr-2" />
-        <span className="text-sm text-slate-500 ml-2">סינון לפי סטטוס:</span>
+      <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-2xl p-2.5 shadow-md border border-slate-200/60 flex-wrap">
+        <Filter className="h-4 w-4 text-slate-400 mr-1 flex-shrink-0" />
         <Button
-          variant={statusFilter === 'all' ? 'default' : 'outline'}
+          variant={statusFilter === 'all' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => handleStatusFilterChange('all')}
-          className={statusFilter === 'all' ? 'bg-slate-800 text-white' : 'hover:bg-slate-100'}
+          className={statusFilter === 'all' ? 'bg-slate-800 text-white shadow-md' : 'hover:bg-slate-100 text-slate-600'}
         >
-          <Users className="h-4 w-4 ml-1" />
+          <Users className="h-3.5 w-3.5 ml-1" />
           הכל ({candidates.length})
         </Button>
         <Button
-          variant={statusFilter === 'in-process' ? 'default' : 'outline'}
+          variant={statusFilter === 'in-process' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => handleStatusFilterChange('in-process')}
-          className={statusFilter === 'in-process' ? 'bg-[#2196F3] text-white hover:bg-[#1976D2]' : 'hover:bg-[#2196F3]/10 text-[#2196F3] border-[#2196F3]/30'}
+          className={statusFilter === 'in-process' ? 'bg-[#2196F3] text-white shadow-md shadow-blue-200' : 'hover:bg-blue-50 text-[#2196F3]'}
         >
-          <Clock className="h-4 w-4 ml-1" />
+          <Clock className="h-3.5 w-3.5 ml-1" />
           בתהליך ({candidates.filter(c => getCandidateStatus(c) === 'in-process').length})
         </Button>
         <Button
-          variant={statusFilter === 'hired' ? 'default' : 'outline'}
+          variant={statusFilter === 'hired' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => handleStatusFilterChange('hired')}
-          className={statusFilter === 'hired' ? 'bg-[#10B981] text-white hover:bg-[#689F38]' : 'hover:bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'}
+          className={statusFilter === 'hired' ? 'bg-[#10B981] text-white shadow-md shadow-green-200' : 'hover:bg-green-50 text-[#10B981]'}
         >
-          <CheckCircle className="h-4 w-4 ml-1" />
+          <CheckCircle className="h-3.5 w-3.5 ml-1" />
           התקבל ({candidates.filter(c => getCandidateStatus(c) === 'hired').length})
         </Button>
         <Button
-          variant={statusFilter === 'rejected' ? 'default' : 'outline'}
+          variant={statusFilter === 'rejected' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => handleStatusFilterChange('rejected')}
-          className={statusFilter === 'rejected' ? 'bg-[#F44336] text-white hover:bg-[#D32F2F]' : 'hover:bg-[#F44336]/10 text-[#F44336] border-[#F44336]/30'}
+          className={statusFilter === 'rejected' ? 'bg-[#F44336] text-white shadow-md shadow-red-200' : 'hover:bg-red-50 text-[#F44336]'}
         >
-          <XCircle className="h-4 w-4 ml-1" />
+          <XCircle className="h-3.5 w-3.5 ml-1" />
           לא התקבל ({candidates.filter(c => getCandidateStatus(c) === 'rejected').length})
         </Button>
         <Button
-          variant={statusFilter === 'new' ? 'default' : 'outline'}
+          variant={statusFilter === 'new' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => handleStatusFilterChange('new')}
-          className={statusFilter === 'new' ? 'bg-[#F97316] text-white hover:bg-[#C2410C]' : 'hover:bg-[#F97316]/10 text-[#F97316] border-[#F97316]/30'}
+          className={statusFilter === 'new' ? 'bg-[#F97316] text-white shadow-md shadow-orange-200' : 'hover:bg-orange-50 text-[#F97316]'}
         >
-          <Star className="h-4 w-4 ml-1" />
+          <Star className="h-3.5 w-3.5 ml-1" />
           חדש ({candidates.filter(c => getCandidateStatus(c) === 'new').length})
         </Button>
       </div>
@@ -785,20 +784,22 @@ export default function CandidatesPageModern() {
                 />
               </div>
               <Link href={`/dashboard/candidates/${candidate.id}`}>
-              <Card className={`group hover:shadow-2xl hover:shadow-[#06B6D4]/20 transition-all duration-500 hover:-translate-y-2 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden relative ${selectedCandidates.has(candidate.id) ? 'ring-2 ring-[#06B6D4] bg-[#06B6D4]/5' : ''}`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#06B6D4]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <CardHeader className="relative">
+              <Card className={`group hover:shadow-2xl hover:shadow-[#06B6D4]/15 transition-all duration-400 hover:-translate-y-2 cursor-pointer border border-slate-200/70 bg-white/95 backdrop-blur-sm overflow-hidden relative rounded-2xl ${selectedCandidates.has(candidate.id) ? 'ring-2 ring-[#06B6D4] border-[#06B6D4]/40 bg-[#06B6D4]/3' : ''}`}>
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#06B6D4] via-[#22D3EE] to-[#10B981] opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-t-2xl" />
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#06B6D4]/4 via-transparent to-[#10B981]/3 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none" />
+                <CardHeader className="relative pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg mb-2 flex items-center gap-2 group-hover:text-[#06B6D4] transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-[15px] mb-1.5 flex items-center gap-2 group-hover:text-[#06B6D4] transition-colors font-bold truncate pr-1">
                         {candidate.name}
                         {candidate.rating && candidate.rating >= 4 && (
-                          <Award className="h-4 w-4 text-[#F97316]" />
+                          <Award className="h-4 w-4 text-[#F97316] flex-shrink-0" />
                         )}
                       </CardTitle>
                       {candidate.currentTitle && (
-                        <p className="text-sm text-slate-600 font-medium">
+                        <p className="text-xs text-slate-500 font-medium truncate">
                           {candidate.currentTitle}
                         </p>
                       )}
@@ -806,50 +807,50 @@ export default function CandidatesPageModern() {
                     {renderStars(candidate.rating)}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 relative">
+                <CardContent className="space-y-2.5 relative pt-0">
                   {candidate.email && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Mail className="h-4 w-4 text-[#06B6D4]" />
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Mail className="h-3.5 w-3.5 text-[#06B6D4] flex-shrink-0" />
                       <span className="truncate">{candidate.email}</span>
                     </div>
                   )}
 
                   {candidate.phone && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Phone className="h-4 w-4 text-[#10B981]" />
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Phone className="h-3.5 w-3.5 text-[#10B981] flex-shrink-0" />
                       {candidate.phone}
                     </div>
                   )}
 
                   {candidate.city && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <MapPin className="h-4 w-4 text-[#F97316]" />
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <MapPin className="h-3.5 w-3.5 text-[#F97316] flex-shrink-0" />
                       {candidate.city}
                     </div>
                   )}
 
                   {candidate.yearsOfExperience !== null && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Briefcase className="h-4 w-4 text-purple-500" />
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Briefcase className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
                       {candidate.yearsOfExperience} שנות ניסיון
                     </div>
                   )}
 
                   {/* Tags */}
                   {candidate.tags && candidate.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-2">
+                    <div className="flex flex-wrap gap-1 pt-1">
                       {candidate.tags.slice(0, 4).map((tag) => (
                         <Badge
                           key={tag.id}
                           variant="secondary"
-                          className="text-xs"
-                          style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                          className="text-[10px] px-2 py-0.5 font-medium rounded-full"
+                          style={{ backgroundColor: `${tag.color}18`, color: tag.color, border: `1px solid ${tag.color}30` }}
                         >
                           {tag.name}
                         </Badge>
                       ))}
                       {candidate.tags.length > 4 && (
-                        <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
+                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
                           +{candidate.tags.length - 4}
                         </Badge>
                       )}
@@ -858,45 +859,45 @@ export default function CandidatesPageModern() {
 
                   {/* 🆕 קיצור תקציר ידני (2 שורות) - ב-hover נפתח המלא */}
                   <div
-                    className={`mt-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                    className={`mt-1.5 px-3 py-2 rounded-xl border text-xs transition-colors ${
                       candidate.manualSummary
-                        ? 'bg-amber-50/70 border-amber-200 text-slate-700'
-                        : 'bg-slate-50 border-dashed border-slate-200 text-slate-400 italic'
+                        ? 'bg-amber-50/80 border-amber-200/70 text-slate-700'
+                        : 'bg-slate-50/80 border-dashed border-slate-200 text-slate-400 italic'
                     }`}
                     title={candidate.manualSummary || 'אין תקציר ידני - העבר עכבר מעל הכרטיס כדי להוסיף'}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1 font-semibold text-amber-800 not-italic">
+                      <div className="flex items-center gap-1 font-semibold text-amber-700 not-italic text-[10px]">
                         📝 <span>תקציר ידני</span>
                       </div>
                       {candidate.manualSummary && candidate.manualSummaryUpdatedAt && (
-                        <span className="text-[10px] text-slate-500 font-normal not-italic" title={new Date(candidate.manualSummaryUpdatedAt).toLocaleString('he-IL')}>
-                          🕐 {new Date(candidate.manualSummaryUpdatedAt).toLocaleDateString('he-IL')}
+                        <span className="text-[9px] text-slate-400 font-normal not-italic" title={new Date(candidate.manualSummaryUpdatedAt).toLocaleString('he-IL')}>
+                          {new Date(candidate.manualSummaryUpdatedAt).toLocaleDateString('he-IL')}
                         </span>
                       )}
                     </div>
-                    <div className="line-clamp-2 whitespace-pre-wrap leading-tight">
+                    <div className="line-clamp-2 whitespace-pre-wrap leading-tight text-[11px]">
                       {candidate.manualSummary || 'טרם נרשם - לחץ/רחף לעריכה'}
                     </div>
                   </div>
 
                   {/* Premium Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
                     <div className="flex flex-col gap-1">
-                      <div className="flex gap-3 text-xs text-slate-500">
-                        <span className="bg-[#06B6D4]/10 text-[#06B6D4] px-2 py-1 rounded-full">{candidate._count?.applications || 0} מועמדויות</span>
-                        <span className="bg-[#F97316]/10 text-[#F97316] px-2 py-1 rounded-full">{candidate._count?.interviews || 0} ראיונות</span>
+                      <div className="flex gap-2 text-[10px]">
+                        <span className="bg-[#06B6D4]/10 text-[#0891B2] px-2 py-0.5 rounded-full font-medium">{candidate._count?.applications || 0} מועמדויות</span>
+                        <span className="bg-[#F97316]/10 text-[#EA580C] px-2 py-0.5 rounded-full font-medium">{candidate._count?.interviews || 0} ראיונות</span>
                       </div>
                       {/* 🆕 הצגת מי העלה */}
                       {candidate.uploadedBy && (
-                        <div className="text-xs text-slate-400 flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          <span>הועלה ע"י: {candidate.uploadedBy.name}</span>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Users className="h-2.5 w-2.5" />
+                          <span>{candidate.uploadedBy.name}</span>
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button 
+                    <div className="flex gap-1.5">
+                      <Button
                         variant="ghost" 
                         size="sm" 
                         className="h-8 relative group/btn hover:bg-[#06B6D4]/10"

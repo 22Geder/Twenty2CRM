@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   Settings, Bell, FileText,
@@ -79,6 +80,17 @@ const navigationItems = [
 export function TopNavbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session } = useSession()
+  
+  // שם ראשון בלבד (ספיר, דור, אבירן...)
+  const fullName = session?.user?.name || ''
+  const firstName = fullName.split(' ')[0] || fullName || 'משתמש'
+  const initials = fullName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U'
 
   return (
     <div className="border-b border-white/5 bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] sticky top-0 z-50 shadow-2xl shadow-black/20">
@@ -164,10 +176,10 @@ export function TopNavbar() {
 
           {/* User Profile */}
           <Button variant="outline" size="sm" className="gap-2 bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#10B981] transition-all">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center">
-              <User className="h-3 w-3 text-white" />
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-[10px] font-bold">{initials}</span>
             </div>
-            <span className="hidden md:inline">Admin</span>
+            <span className="hidden md:inline font-medium">{firstName}</span>
           </Button>
         </div>
       </div>

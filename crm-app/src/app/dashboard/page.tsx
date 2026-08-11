@@ -357,84 +357,109 @@ export default async function CiviDashboardPage() {
         {/* Candidate Status Overview - 3 Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {/* In Process - בתהליך */}
-          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white px-5 py-3.5 flex items-center justify-between">
-              <span className="font-bold text-[15px]">בתהליך</span>
-              <span className="bg-white/25 px-3 py-0.5 rounded-full text-sm font-bold backdrop-blur-sm">{inProcessCandidates.length}</span>
+          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white px-5 py-4 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-[15px]">🔄 בתהליך</span>
+                <div className="text-blue-100 text-xs mt-0.5">עדכון אחרון: היום</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-black">{stats.inProcess}</div>
+                <div className="text-blue-200 text-[10px]">סה"כ</div>
+              </div>
             </div>
-            <div className="max-h-[240px] overflow-y-auto">
+            <div className="max-h-[220px] overflow-y-auto">
               {inProcessCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
                   {inProcessCandidates.map((c: any) => (
-                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`} 
-                          className="block px-4 py-2 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-slate-700">{c.name}</span>
-                          <span className="text-xs text-slate-400 mr-2">(בתהליך)</span>
-                        </div>
-                        <span className="text-xs text-slate-500">{new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
+                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`}
+                          className="flex items-center justify-between px-4 py-2.5 hover:bg-blue-50/60 transition-colors group/row">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-700 text-sm truncate group-hover/row:text-blue-600 transition-colors">{c.name}</div>
+                        <div className="text-xs text-blue-500 truncate">{c.inProcessPosition?.title || 'משרה לא צוינה'}</div>
                       </div>
-                      <div className="text-xs text-blue-600 truncate">{c.inProcessPosition?.title || 'משרה לא צוינה'}</div>
+                      <span className="text-[11px] text-slate-400 flex-shrink-0 mr-2">{new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="p-4 text-center text-slate-400 text-sm">אין מועמדים בתהליך</div>
+                <div className="py-8 text-center text-slate-400 text-sm">אין מועמדים בתהליך</div>
               )}
             </div>
+            {stats.inProcess > 10 && (
+              <Link href="/dashboard/candidates?status=in-process" className="flex items-center justify-center gap-1 py-2.5 text-xs text-blue-500 font-medium bg-blue-50/50 hover:bg-blue-100/60 border-t border-blue-100 transition-colors">
+                + עוד {stats.inProcess - inProcessCandidates.length} מועמדים בתהליך →
+              </Link>
+            )}
           </div>
 
           {/* Rejected - לא מתאים */}
-          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div className="bg-gradient-to-r from-rose-500 via-red-500 to-red-600 text-white px-5 py-3.5 flex items-center justify-between">
-              <span className="font-bold text-[15px]">לא מתאים</span>
-              <span className="bg-white/25 px-3 py-0.5 rounded-full text-sm font-bold backdrop-blur-sm">{rejectedCandidates.length}</span>
+          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-gradient-to-r from-rose-500 via-red-500 to-red-600 text-white px-5 py-4 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-[15px]">❌ לא מתאים</span>
+                <div className="text-rose-100 text-xs mt-0.5">אחרונים שנדחו</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-black">{stats.statusMap?.REJECTED || rejectedCandidates.length}</div>
+                <div className="text-rose-200 text-[10px]">סה"כ</div>
+              </div>
             </div>
-            <div className="max-h-[240px] overflow-y-auto">
+            <div className="max-h-[220px] overflow-y-auto">
               {rejectedCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
                   {rejectedCandidates.map((c: any) => (
-                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`} 
-                          className="block px-4 py-2 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-700">{c.name}</span>
-                        <span className="text-xs text-slate-500">{new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
+                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`}
+                          className="flex items-center justify-between px-4 py-2.5 hover:bg-red-50/60 transition-colors group/row">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-700 text-sm truncate group-hover/row:text-red-500 transition-colors">{c.name}</div>
+                        <div className="text-xs text-red-400 truncate">{c.applications?.[0]?.position?.title || 'משרה לא צוינה'}</div>
                       </div>
-                      <div className="text-xs text-red-600 truncate">{c.applications?.[0]?.position?.title || 'משרה לא צוינה'}</div>
+                      <span className="text-[11px] text-slate-400 flex-shrink-0 mr-2">{new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="p-4 text-center text-slate-400 text-sm">אין מועמדים שנדחו</div>
+                <div className="py-8 text-center text-slate-400 text-sm">אין מועמדים שנדחו</div>
               )}
             </div>
           </div>
 
           {/* Hired - התקבלו */}
-          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white px-5 py-3.5 flex items-center justify-between">
-              <span className="font-bold text-[15px]">התקבלו</span>
-              <span className="bg-white/25 px-3 py-0.5 rounded-full text-sm font-bold backdrop-blur-sm">{hiredCandidates.length}</span>
+          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white px-5 py-4 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-[15px]">✅ התקבלו</span>
+                <div className="text-green-100 text-xs mt-0.5">אחרונים שהתקבלו</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-black">{stats.hiredThisMonth}</div>
+                <div className="text-green-200 text-[10px]">החודש</div>
+              </div>
             </div>
-            <div className="max-h-[240px] overflow-y-auto">
+            <div className="max-h-[220px] overflow-y-auto">
               {hiredCandidates.length > 0 ? (
                 <div className="divide-y divide-slate-100">
                   {hiredCandidates.map((c: any) => (
-                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`} 
-                          className="block px-4 py-2 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-700">{c.name}</span>
-                        <span className="text-xs text-slate-500">{c.hiredAt ? new Date(c.hiredAt).toLocaleDateString('he-IL') : new Date(c.updatedAt).toLocaleDateString('he-IL')}</span>
+                    <Link key={c.id} href={`/dashboard/candidates/${c.id}`}
+                          className="flex items-center justify-between px-4 py-2.5 hover:bg-green-50/60 transition-colors group/row">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-700 text-sm truncate group-hover/row:text-green-600 transition-colors">{c.name}</div>
+                        <div className="text-xs text-green-500 truncate">{c.hiredToEmployer?.name || 'מעסיק לא צוין'}</div>
                       </div>
-                      <div className="text-xs text-green-600 truncate">{c.hiredToEmployer?.name || 'מעסיק לא צוין'}</div>
+                      <span className="text-[11px] text-slate-400 flex-shrink-0 mr-2">
+                        {c.hiredAt ? new Date(c.hiredAt).toLocaleDateString('he-IL') : new Date(c.updatedAt).toLocaleDateString('he-IL')}
+                      </span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="p-4 text-center text-slate-400 text-sm">אין מועמדים שהתקבלו</div>
+                <div className="py-8 text-center text-slate-400 text-sm">אין מועמדים שהתקבלו</div>
               )}
             </div>
+            <Link href="/dashboard/candidates?status=hired" className="flex items-center justify-center gap-1 py-2.5 text-xs text-green-600 font-medium bg-green-50/50 hover:bg-green-100/60 border-t border-green-100 transition-colors">
+              כל המתקבלים →
+            </Link>
           </div>
         </div>
 

@@ -786,7 +786,7 @@ export default function CandidatesPageModern() {
               </div>
 
               <Link href={`/dashboard/candidates/${candidate.id}`}>
-                <div className={`group relative bg-white rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-200/80 overflow-hidden cursor-pointer
+                <div className={`candidate-card group relative bg-white rounded-2xl border transition-all duration-300 overflow-hidden cursor-pointer
                   ${selectedCandidates.has(candidate.id) ? 'border-[#06B6D4] ring-2 ring-[#06B6D4]/20' : 'border-slate-200/80 hover:border-[#06B6D4]/30'}`}>
 
                   {/* Top color strip by status */}

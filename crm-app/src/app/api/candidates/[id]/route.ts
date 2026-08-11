@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
-import { sendProcessEntryEmail } from "@/lib/process-notifications"
+import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -272,6 +272,69 @@ export async function PUT(
         positionTitle: posTitle,
         employerName: empName,
         phone: candidate.phone,
+      }).catch(() => {})
+    }
+
+    // 📧 מייל שינוי סטטוס - התקבל / נדחה
+    if (
+      'employmentStatus' in body &&
+      (employmentStatus === 'EMPLOYED' || employmentStatus === 'REJECTED') &&
+      existingCandidate.employmentStatus !== employmentStatus
+    ) {
+      // מביא פרטי המשרה האחרונה בתהליך (אם ידועה)
+      let posTitle: string | null = null
+      let empName: string | null = null
+      const posId = existingCandidate.inProcessPositionId || candidate.inProcessPositionId
+      if (posId) {
+        try {
+          const pos = await prisma.position.findUnique({
+            where: { id: posId },
+            include: { employer: true },
+          })
+          posTitle = pos?.title || null
+          empName = pos?.employer?.name || null
+        } catch { /* ignore */ }
+      }
+      sendCandidateStatusChangeEmail({
+        candidateName: candidate.name,
+        phone: candidate.phone,
+        positionTitle: posTitle,
+        employerName: empName,
+        newStatus: employmentStatus,
+        oldStatus: existingCandidate.employmentStatus,
+        candidateId: candidate.id,
+      }).catch(() => {})
+    }
+
+    // 📧 מועמד ירד מתהליך (חזרה לחדש - ללא דחייה רשמית)
+    if (
+      'employmentStatus' in body &&
+      existingCandidate.employmentStatus === 'IN_PROCESS' &&
+      employmentStatus !== 'IN_PROCESS' &&
+      employmentStatus !== 'EMPLOYED' &&
+      employmentStatus !== 'REJECTED'
+    ) {
+      const prevPosId = existingCandidate.inProcessPositionId
+      let prevPosTitle: string | null = null
+      let prevEmpName: string | null = null
+      if (prevPosId) {
+        try {
+          const pos = await prisma.position.findUnique({
+            where: { id: prevPosId },
+            include: { employer: true },
+          })
+          prevPosTitle = pos?.title || null
+          prevEmpName = pos?.employer?.name || null
+        } catch { /* ignore */ }
+      }
+      sendCandidateStatusChangeEmail({
+        candidateName: candidate.name,
+        phone: candidate.phone,
+        positionTitle: prevPosTitle,
+        employerName: prevEmpName,
+        newStatus: 'WITHDRAWN',
+        oldStatus: 'IN_PROCESS',
+        candidateId: candidate.id,
       }).catch(() => {})
     }
 

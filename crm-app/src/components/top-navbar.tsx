@@ -6,75 +6,22 @@ import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
-  Settings, Bell, FileText,
-  Search, User, Upload, Sparkles, TrendingUp, Menu, X, Clock
+  Settings, Bell, FileText, Upload, Sparkles, TrendingUp, Menu, X, Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const navigationItems = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "הכנסת מועמד",
-    href: "/dashboard/recruitment-board",
-    icon: Sparkles,
-    badge: "AI",
-    badgeColor: "t22-accent"
-  },
-  {
-    name: "מועמדים",
-    href: "/dashboard/candidates",
-    icon: Users,
-  },
-  {
-    name: "העלאה המונית",
-    href: "/dashboard/upload",
-    icon: Upload,
-  },
-  {
-    name: "סטטוס חודשי",
-    href: "/dashboard/monthly-status",
-    icon: TrendingUp,
-    badge: "NEW",
-    badgeColor: "t22-success"
-  },
-  {
-    name: "שעון נוכחות",
-    href: "/dashboard/attendance",
-    icon: Clock,
-    badge: "NEW",
-    badgeColor: "t22-accent"
-  },
-  {
-    name: "משרות",
-    href: "/dashboard/positions",
-    icon: Briefcase,
-  },
-  {
-    name: "מעסיקים",
-    href: "/dashboard/employers",
-    icon: Building2,
-  },
-  {
-    name: "ראיונות",
-    href: "/dashboard/interviews",
-    icon: Calendar,
-  },
-  {
-    name: "הגדרות",
-    href: "/dashboard/settings",
-    icon: Settings,
-  },
-  {
-    name: "פנקס רישום",
-    href: "/dashboard/system-registry",
-    icon: FileText,
-    badge: "LIVE",
-    badgeColor: "t22-success"
-  },
+  { name: "לוח בקרה", href: "/dashboard", icon: LayoutDashboard },
+  { name: "הכנסת מועמד", href: "/dashboard/recruitment-board", icon: Sparkles, badge: "AI" },
+  { name: "מועמדים", href: "/dashboard/candidates", icon: Users },
+  { name: "העלאה המונית", href: "/dashboard/upload", icon: Upload },
+  { name: "סטטוס חודשי", href: "/dashboard/monthly-status", icon: TrendingUp, badge: "NEW" },
+  { name: "שעון נוכחות", href: "/dashboard/attendance", icon: Clock },
+  { name: "משרות", href: "/dashboard/positions", icon: Briefcase },
+  { name: "מעסיקים", href: "/dashboard/employers", icon: Building2 },
+  { name: "ראיונות", href: "/dashboard/interviews", icon: Calendar },
+  { name: "הגדרות", href: "/dashboard/settings", icon: Settings },
+  { name: "פנקס רישום", href: "/dashboard/system-registry", icon: FileText },
 ]
 
 export function TopNavbar() {
@@ -82,7 +29,6 @@ export function TopNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = useSession()
   
-  // שם ראשון בלבד (ספיר, דור, אבירן...)
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || fullName || 'משתמש'
   const initials = fullName
@@ -92,134 +38,82 @@ export function TopNavbar() {
     .toUpperCase()
     .slice(0, 2) || 'U'
 
+  // Get current page name
+  const currentPage = navigationItems.find(item => 
+    item.href === pathname || pathname?.startsWith(item.href + '/')
+  )
+
   return (
-    <div className="border-b border-white/5 bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] sticky top-0 z-50 shadow-2xl shadow-black/20">
-      <div className="flex items-center justify-between px-3 md:px-6 py-2.5 md:py-3">
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="md:hidden text-slate-300 hover:text-white hover:bg-slate-800"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+    <header className="h-14 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center px-4 gap-3 shadow-sm">
+      {/* Mobile hamburger */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="lg:hidden text-slate-500 hover:text-slate-800"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      >
+        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+
+      {/* Mobile Logo */}
+      <Link href="/dashboard" className="lg:hidden flex items-center gap-2">
+        <div className="w-8 h-8 bg-gradient-to-br from-[#22D3EE] to-[#0E7490] rounded-lg flex items-center justify-center">
+          <span className="text-white font-black text-sm">22</span>
+        </div>
+      </Link>
+
+      {/* Page title */}
+      <div className="hidden lg:flex items-center gap-2 flex-1">
+        {currentPage && (
+          <>
+            <span className="text-xs text-slate-400">TWENTY2CRM</span>
+            <span className="text-slate-300">/</span>
+            <span className="text-sm font-semibold text-slate-700">{currentPage.name}</span>
+          </>
+        )}
+      </div>
+      <div className="flex-1 lg:hidden" />
+
+      {/* Right: notifications + user */}
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="relative text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <Bell className="h-4 w-4" />
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#F97316] rounded-full border border-white" />
         </Button>
-
-        {/* Premium Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2 md:gap-4 group">
-          <div className="relative">
-            <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-[#22D3EE] via-[#06B6D4] to-[#0E7490] rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/40 group-hover:shadow-cyan-400/60 transition-all duration-500 group-hover:scale-110 ring-2 ring-cyan-400/20">
-              <span className="text-white font-black text-base md:text-lg">22</span>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-gradient-to-br from-[#F97316] to-[#C2410C] rounded-full border-2 border-[#0f0b2e] animate-pulse"></div>
+        
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all cursor-pointer">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-[10px] font-black">{initials}</span>
           </div>
-          <div className="hidden sm:block text-xl md:text-2xl font-bold leading-none">
-            <span className="text-[#22D3EE]">Twenty</span>
-            <span className="bg-gradient-to-r from-[#22D3EE] to-[#06B6D4] bg-clip-text text-transparent">2</span>
-            <span className="bg-gradient-to-r from-[#F97316] to-[#C2410C] bg-clip-text text-transparent">2</span>
-            <span className="text-[#F97316]">Jobs</span>
-            <span className="text-slate-400 text-sm font-normal mr-3 hidden lg:inline">CRM</span>
-          </div>
-        </Link>
-
-        {/* Desktop Navigation - Hidden on mobile */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {navigationItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
-            
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant="ghost"
-                  className={`relative transition-all duration-300 text-[13px] ${
-                    isActive 
-                      ? "bg-[#06B6D4]/15 text-[#22D3EE] ring-1 ring-[#06B6D4]/30 shadow-[inset_0_-2px_0_#06B6D4]" 
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
-                  }`}
-                  size="sm"
-                >
-                  <Icon className="h-4 w-4 ml-2" />
-                  {item.name}
-                  {item.badge && (
-                    <span 
-                      className={`absolute -top-1 -left-1 px-1 text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center ring-1 ring-[#0f0b2e] ${
-                        item.badgeColor === 't22-accent' 
-                          ? 'bg-[#F97316] text-white' 
-                          : 'bg-[#10B981] text-white'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </Button>
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* Right Side */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Search - Hidden on mobile */}
-          <Button variant="outline" size="sm" className="hidden md:flex gap-2 bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#06B6D4] transition-all">
-            <Search className="h-4 w-4" />
-            <span className="hidden lg:inline">חיפוש</span>
-            <kbd className="hidden lg:inline-flex px-2 py-0.5 text-xs font-semibold text-slate-400 bg-slate-700 border border-slate-600 rounded">
-              Ctrl K
-            </kbd>
-          </Button>
-
-          {/* Notifications */}
-          <Button variant="outline" size="sm" className="relative bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#F97316] transition-all">
-            <Bell className="h-4 w-4" />
-          </Button>
-
-          {/* User Profile */}
-          <div className="flex items-center gap-2 bg-[#1a1444]/60 border border-indigo-700/40 rounded-xl px-3 py-1.5 hover:bg-indigo-900/60 hover:border-[#10B981]/50 transition-all cursor-pointer">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center flex-shrink-0 shadow-md shadow-green-500/30">
-              <span className="text-white text-xs font-black">{initials}</span>
-            </div>
-            <div className="hidden md:flex flex-col leading-none">
-              <span className="text-white text-sm font-bold">{firstName}</span>
-              <span className="text-slate-400 text-[10px]">מחובר</span>
-            </div>
+          <div className="hidden sm:flex flex-col leading-none">
+            <span className="text-slate-800 text-sm font-semibold">{firstName}</span>
+            <span className="text-[#10B981] text-[9px] font-medium">מחובר</span>
           </div>
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-indigo-900/50 bg-[#0f0b2e]/95 backdrop-blur-sm t22-animate-fade-in">
-          <nav className="flex flex-col py-2">
+        <div className="absolute top-14 left-0 right-0 bg-white border-b border-slate-200 shadow-xl z-50 lg:hidden">
+          <nav className="flex flex-col py-2 max-h-[80vh] overflow-y-auto">
             {navigationItems.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
-              
+              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
               return (
-                <Link 
-                  key={item.href} 
+                <Link
+                  key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <div
-                    className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
-                      isActive 
-                        ? "bg-gradient-to-r from-[#06B6D4]/20 to-[#22D3EE]/10 text-[#22D3EE] border-r-4 border-[#22D3EE]" 
-                        : "text-slate-300 hover:text-white hover:bg-indigo-900/40"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-medium">{item.name}</span>
+                  <div className={`flex items-center gap-3 px-4 py-3 transition-all ${
+                    isActive ? 'bg-[#06B6D4]/8 text-[#06B6D4] border-r-2 border-[#06B6D4]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}>
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium text-sm">{item.name}</span>
                     {item.badge && (
-                      <span 
-                        className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                          item.badgeColor === 't22-accent' 
-                            ? 'bg-[#F97316] text-white' 
-                            : 'bg-[#10B981] text-white'
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
+                      <span className={`mr-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                        item.badge === 'AI' ? 'bg-[#F97316]/15 text-[#F97316]' : 'bg-[#10B981]/15 text-[#10B981]'
+                      }`}>{item.badge}</span>
                     )}
                   </div>
                 </Link>
@@ -228,6 +122,8 @@ export function TopNavbar() {
           </nav>
         </div>
       )}
-    </div>
+    </header>
   )
 }
+
+

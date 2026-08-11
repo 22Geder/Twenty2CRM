@@ -138,8 +138,8 @@ export async function sendWeeklyProcessCheckEmail(
   }>
 ) {
   try {
-    const toEmail = process.env.CRM_NOTIFY_EMAIL || process.env.SMTP_USER
-    if (!toEmail) return
+    // מייל מעקב שבועי תמיד יגיע לoffice@hr22group.com
+    const toEmail = process.env.OFFICE_NOTIFY_EMAIL || 'office@hr22group.com'
     if (candidates.length === 0) return
 
     const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
@@ -215,5 +215,125 @@ export async function sendWeeklyProcessCheckEmail(
     console.log(`📧 Weekly process-check email sent (${candidates.length} candidates)`)
   } catch (err) {
     console.error('❌ Failed to send weekly process-check email:', err)
+  }
+}
+
+// -----------------------------------------------------------
+// 3️⃣  מייל שינוי סטטוס מועמד - כל שלב בתהליך
+// -----------------------------------------------------------
+
+const STATUS_META: Record<string, { emoji: string; label: string; headerBg: string }> = {
+  // סטטוס ברמת מועמד
+  EMPLOYED:         { emoji: '🎉', label: 'התקבל לעבודה!',      headerBg: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
+  REJECTED:         { emoji: '❌', label: 'נדחה',               headerBg: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' },
+  IN_PROCESS:       { emoji: '⚙️', label: 'נכנס לתהליך',        headerBg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
+  // שלבי pipeline של בקשה
+  NEW:              { emoji: '🆕', label: 'מועמדות חדשה',       headerBg: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' },
+  SCREENING:        { emoji: '📋', label: 'עבר לשלב סינון',     headerBg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' },
+  PHONE_INTERVIEW:  { emoji: '📞', label: 'ראיון טלפוני',       headerBg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' },
+  ONSITE_INTERVIEW: { emoji: '🏢', label: 'ראיון פרונטלי',      headerBg: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' },
+  OFFER:            { emoji: '💼', label: 'הצעת עבודה',         headerBg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
+  ACCEPTED:         { emoji: '✅', label: 'קיבל את ההצעה',      headerBg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
+  HIRED:            { emoji: '🎊', label: 'התקבל!',             headerBg: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
+  WITHDRAWN:        { emoji: '🚪', label: 'הסתלק',              headerBg: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)' },
+}
+
+export async function sendCandidateStatusChangeEmail({
+  candidateName,
+  phone,
+  positionTitle,
+  employerName,
+  newStatus,
+  oldStatus,
+  rejectionReason,
+  candidateId,
+}: {
+  candidateName: string
+  phone?: string | null
+  positionTitle?: string | null
+  employerName?: string | null
+  newStatus: string
+  oldStatus?: string | null
+  rejectionReason?: string | null
+  candidateId?: string | null
+}) {
+  try {
+    const toEmail = process.env.CRM_NOTIFY_EMAIL || process.env.SMTP_USER
+    if (!toEmail) return
+
+    const meta = STATUS_META[newStatus] || {
+      emoji: '🔔',
+      label: newStatus,
+      headerBg: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+    }
+    const oldMeta = oldStatus ? (STATUS_META[oldStatus] || { emoji: '', label: oldStatus }) : null
+    const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://twenty2crm-production-7997.up.railway.app'
+    const candidateLink = candidateId
+      ? `${baseUrl}/dashboard/candidates/${candidateId}`
+      : `${baseUrl}/dashboard/candidates`
+    const positionInfo =
+      [positionTitle, employerName ? `(${employerName})` : null].filter(Boolean).join(' ') || null
+
+    const html = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="he">
+      <head><meta charset="UTF-8"></head>
+      <body style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="background: ${meta.headerBg}; color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 26px;">${meta.emoji} ${meta.label}</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 14px;">${now}</p>
+          </div>
+          <div style="padding: 30px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280; width: 40%;">שם מועמד:</td>
+                <td style="padding: 12px 0; font-weight: bold; color: #111;">${candidateName}</td>
+              </tr>
+              ${phone ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">טלפון:</td>
+                <td style="padding: 12px 0; color: #111;">${phone}</td>
+              </tr>` : ''}
+              ${positionInfo ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">משרה / מעסיק:</td>
+                <td style="padding: 12px 0; color: #111;">${positionInfo}</td>
+              </tr>` : ''}
+              ${oldMeta ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">שלב קודם:</td>
+                <td style="padding: 12px 0; color: #6b7280;">${oldMeta.emoji} ${oldMeta.label}</td>
+              </tr>` : ''}
+              <tr${rejectionReason ? ' style="border-bottom: 1px solid #e5e7eb;"' : ''}>
+                <td style="padding: 12px 0; color: #6b7280;">שלב נוכחי:</td>
+                <td style="padding: 12px 0; font-weight: bold; color: #111;">${meta.emoji} ${meta.label}</td>
+              </tr>
+              ${rejectionReason ? `<tr>
+                <td style="padding: 12px 0; color: #6b7280; vertical-align: top;">סיבת דחייה:</td>
+                <td style="padding: 12px 0; color: #ef4444;">${rejectionReason}</td>
+              </tr>` : ''}
+            </table>
+            <div style="margin-top: 24px;">
+              <a href="${candidateLink}"
+                 style="display: inline-block; background: #3b82f6; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px;">
+                צפה במועמד
+              </a>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    const subject = `${meta.emoji} ${candidateName} - ${meta.label}${positionTitle ? ` | ${positionTitle}` : ''}`
+
+    await sendEmail({
+      from: `"עדכון מועמד - Twenty2CRM" <${process.env.SMTP_USER || toEmail}>`,
+      to: toEmail,
+      subject,
+      html,
+    })
+    console.log(`📧 Status-change email sent: ${candidateName} → ${newStatus}`)
+  } catch (err) {
+    console.error('❌ Failed to send status-change email:', err)
   }
 }

@@ -602,64 +602,70 @@ export default function CandidatesPageModern() {
       <AdvancedCandidateFilters onFilterChange={setFilters} />
 
       {/* Premium Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-0 bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] text-white shadow-xl shadow-[#06B6D4]/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-2 relative">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              סה"כ מועמדים
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">{filteredCandidates.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 bg-gradient-to-br from-[#10B981] to-[#34D399] text-white shadow-xl shadow-[#10B981]/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-2 relative">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Star className="h-4 w-4" />
-              מועמדים מדורגים
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">
-              {filteredCandidates.filter(c => c.rating && c.rating >= 4).length}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Stat 1 */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#06B6D4] to-[#0891B2] p-5 shadow-xl shadow-cyan-500/25">
+          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">סה"כ</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.length}</div>
+            <div className="text-white/80 text-sm font-medium">מועמדים</div>
+          </div>
+        </div>
 
-        <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-xl shadow-purple-500/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-2 relative">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              עם ניסיון 5+ שנים
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">
-              {filteredCandidates.filter(c => (c.yearsOfExperience || 0) >= 5).length}
+        {/* Stat 2 */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#10B981] to-[#059669] p-5 shadow-xl shadow-emerald-500/25">
+          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Star className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">⭐ 4+</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.filter(c => c.rating && c.rating >= 4).length}</div>
+            <div className="text-white/80 text-sm font-medium">מדורגים גבוה</div>
+          </div>
+        </div>
 
-        <Card className="border-0 bg-gradient-to-br from-[#F97316] to-[#C2410C] text-white shadow-xl shadow-[#F97316]/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-2 relative">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              מועמדויות פעילות
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">
-              {filteredCandidates.reduce((sum, c) => sum + (c._count?.applications || 0), 0)}
+        {/* Stat 3 */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#A855F7] to-[#7C3AED] p-5 shadow-xl shadow-purple-500/25">
+          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Briefcase className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">5+ שנים</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.filter(c => (c.yearsOfExperience || 0) >= 5).length}</div>
+            <div className="text-white/80 text-sm font-medium">ותיקים בתחום</div>
+          </div>
+        </div>
+
+        {/* Stat 4 */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F97316] to-[#DC2626] p-5 shadow-xl shadow-orange-500/25">
+          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">פעיל</span>
+            </div>
+            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.reduce((sum, c) => sum + (c._count?.applications || 0), 0)}</div>
+            <div className="text-white/80 text-sm font-medium">מועמדויות</div>
+          </div>
+        </div>
       </div>
 
       {/* 🆕 Bulk Delete Toolbar */}
@@ -751,177 +757,161 @@ export default function CandidatesPageModern() {
 
       {/* Premium Candidates Grid */}
       {filteredCandidates.length === 0 ? (
-        <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
-          <CardContent className="py-16 text-center">
-            <div className="p-6 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 inline-block mb-4">
-              <Users className="h-12 w-12 text-slate-400" />
-            </div>
-            <p className="text-slate-600">לא נמצאו מועמדים התואמים לקריטריונים</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-50 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+            <Users className="h-12 w-12 text-slate-300" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-600 mb-2">לא נמצאו מועמדים</h3>
+          <p className="text-slate-400 text-sm">נסה לשנות את פרמטרי החיפוש</p>
+        </div>
       ) : (
         <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredCandidates.slice(0, visibleCount).map((candidate) => (
             <div
               key={candidate.id}
               className="relative"
               onMouseEnter={() => setHoverCandidateId(candidate.id)}
               onMouseLeave={() => {
-                // לא סוגר אם הקלט נעוץ (עריכה פתוחה)
                 if (pinnedSummaryId !== candidate.id) setHoverCandidateId(null)
               }}
             >
-              {/* 🆕 Checkbox for bulk select */}
-              <div 
-                className="absolute top-4 left-4 z-10"
-                onClick={(e) => e.stopPropagation()}
-              >
+              {/* Checkbox */}
+              <div className="absolute top-4 left-4 z-10" onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                   checked={selectedCandidates.has(candidate.id)}
                   onCheckedChange={() => toggleSelect(candidate.id)}
                   className="bg-white border-2 shadow-sm"
                 />
               </div>
+
               <Link href={`/dashboard/candidates/${candidate.id}`}>
-              <Card className={`group hover:shadow-2xl hover:shadow-[#06B6D4]/15 transition-all duration-400 hover:-translate-y-2 cursor-pointer border border-slate-200/70 bg-white/95 backdrop-blur-sm overflow-hidden relative rounded-2xl ${selectedCandidates.has(candidate.id) ? 'ring-2 ring-[#06B6D4] border-[#06B6D4]/40 bg-[#06B6D4]/3' : ''}`}>
-                {/* Top accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#06B6D4] via-[#22D3EE] to-[#10B981] opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-t-2xl" />
-                {/* Hover glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#06B6D4]/4 via-transparent to-[#10B981]/3 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none" />
-                <CardHeader className="relative pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-[15px] mb-1.5 flex items-center gap-2 group-hover:text-[#06B6D4] transition-colors font-bold truncate pr-1">
-                        {candidate.name}
-                        {candidate.rating && candidate.rating >= 4 && (
-                          <Award className="h-4 w-4 text-[#F97316] flex-shrink-0" />
-                        )}
-                      </CardTitle>
-                      {candidate.currentTitle && (
-                        <p className="text-xs text-slate-500 font-medium truncate">
-                          {candidate.currentTitle}
-                        </p>
-                      )}
-                    </div>
-                    {renderStars(candidate.rating)}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2.5 relative pt-0">
-                  {candidate.email && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Mail className="h-3.5 w-3.5 text-[#06B6D4] flex-shrink-0" />
-                      <span className="truncate">{candidate.email}</span>
-                    </div>
-                  )}
+                <div className={`group relative bg-white rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-200/80 overflow-hidden cursor-pointer
+                  ${selectedCandidates.has(candidate.id) ? 'border-[#06B6D4] ring-2 ring-[#06B6D4]/20' : 'border-slate-200/80 hover:border-[#06B6D4]/30'}`}>
 
-                  {candidate.phone && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Phone className="h-3.5 w-3.5 text-[#10B981] flex-shrink-0" />
-                      {candidate.phone}
-                    </div>
-                  )}
+                  {/* Top color strip by status */}
+                  <div className={`h-1 w-full ${
+                    candidate.hiredAt ? 'bg-gradient-to-r from-[#10B981] to-[#34D399]' :
+                    candidate.applications?.some(a => a.status === 'REJECTED') ? 'bg-gradient-to-r from-red-400 to-rose-400' :
+                    candidate.applications?.length ? 'bg-gradient-to-r from-[#3B82F6] to-[#60A5FA]' :
+                    'bg-gradient-to-r from-[#F97316] to-[#FB923C]'
+                  }`} />
 
-                  {candidate.city && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <MapPin className="h-3.5 w-3.5 text-[#F97316] flex-shrink-0" />
-                      {candidate.city}
-                    </div>
-                  )}
-
-                  {candidate.yearsOfExperience !== null && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Briefcase className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
-                      {candidate.yearsOfExperience} שנות ניסיון
-                    </div>
-                  )}
-
-                  {/* Tags */}
-                  {candidate.tags && candidate.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {candidate.tags.slice(0, 4).map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          variant="secondary"
-                          className="text-[10px] px-2 py-0.5 font-medium rounded-full"
-                          style={{ backgroundColor: `${tag.color}18`, color: tag.color, border: `1px solid ${tag.color}30` }}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                      {candidate.tags.length > 4 && (
-                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
-                          +{candidate.tags.length - 4}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 🆕 קיצור תקציר ידני (2 שורות) - ב-hover נפתח המלא */}
-                  <div
-                    className={`mt-1.5 px-3 py-2 rounded-xl border text-xs transition-colors ${
-                      candidate.manualSummary
-                        ? 'bg-amber-50/80 border-amber-200/70 text-slate-700'
-                        : 'bg-slate-50/80 border-dashed border-slate-200 text-slate-400 italic'
-                    }`}
-                    title={candidate.manualSummary || 'אין תקציר ידני - העבר עכבר מעל הכרטיס כדי להוסיף'}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1 font-semibold text-amber-700 not-italic text-[10px]">
-                        📝 <span>תקציר ידני</span>
+                  <div className="p-5">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      {/* Avatar + Name */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#06B6D4] to-[#0891B2] flex items-center justify-center flex-shrink-0 shadow-md shadow-cyan-200/50">
+                          <span className="text-white font-bold text-base">
+                            {candidate.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-slate-800 text-[15px] truncate group-hover:text-[#06B6D4] transition-colors">
+                            {candidate.name}
+                            {candidate.rating && candidate.rating >= 4 && <Award className="inline h-3.5 w-3.5 text-[#F97316] mr-1" />}
+                          </h3>
+                          {candidate.currentTitle && (
+                            <p className="text-xs text-slate-500 truncate">{candidate.currentTitle}</p>
+                          )}
+                        </div>
                       </div>
-                      {candidate.manualSummary && candidate.manualSummaryUpdatedAt && (
-                        <span className="text-[9px] text-slate-400 font-normal not-italic" title={new Date(candidate.manualSummaryUpdatedAt).toLocaleString('he-IL')}>
-                          {new Date(candidate.manualSummaryUpdatedAt).toLocaleDateString('he-IL')}
-                        </span>
-                      )}
-                    </div>
-                    <div className="line-clamp-2 whitespace-pre-wrap leading-tight text-[11px]">
-                      {candidate.manualSummary || 'טרם נרשם - לחץ/רחף לעריכה'}
-                    </div>
-                  </div>
-
-                  {/* Premium Footer */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex gap-2 text-[10px]">
-                        <span className="bg-[#06B6D4]/10 text-[#0891B2] px-2 py-0.5 rounded-full font-medium">{candidate._count?.applications || 0} מועמדויות</span>
-                        <span className="bg-[#F97316]/10 text-[#EA580C] px-2 py-0.5 rounded-full font-medium">{candidate._count?.interviews || 0} ראיונות</span>
-                      </div>
-                      {/* 🆕 הצגת מי העלה */}
-                      {candidate.uploadedBy && (
-                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Users className="h-2.5 w-2.5" />
-                          <span>{candidate.uploadedBy.name}</span>
+                      {/* Stars */}
+                      {candidate.rating && (
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`h-3 w-3 ${i < candidate.rating! ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'}`} />
+                          ))}
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-1.5">
-                      <Button
+
+                    {/* Info grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+                      {candidate.phone && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <Phone className="h-3.5 w-3.5 text-[#10B981] flex-shrink-0" />
+                          <span className="truncate">{candidate.phone}</span>
+                        </div>
+                      )}
+                      {candidate.city && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <MapPin className="h-3.5 w-3.5 text-[#F97316] flex-shrink-0" />
+                          <span className="truncate">{candidate.city}</span>
+                        </div>
+                      )}
+                      {candidate.email && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 col-span-2">
+                          <Mail className="h-3.5 w-3.5 text-[#06B6D4] flex-shrink-0" />
+                          <span className="truncate">{candidate.email}</span>
+                        </div>
+                      )}
+                      {candidate.yearsOfExperience !== null && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <Briefcase className="h-3.5 w-3.5 text-purple-400 flex-shrink-0" />
+                          <span>{candidate.yearsOfExperience} שנ׳ ניסיון</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tags */}
+                    {candidate.tags && candidate.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {candidate.tags.slice(0, 4).map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="text-[10px] px-2 py-0.5 rounded-md font-semibold"
+                            style={{ backgroundColor: `${tag.color}18`, color: tag.color, border: `1px solid ${tag.color}25` }}
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                        {candidate.tags.length > 4 && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 font-medium">+{candidate.tags.length - 4}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Manual summary */}
+                    {candidate.manualSummary && (
+                      <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50/80 border border-amber-200/60 text-[11px] text-slate-700">
+                        <span className="font-semibold text-amber-700">📝 </span>
+                        <span className="line-clamp-2">{candidate.manualSummary}</span>
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                      <div className="flex gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] bg-[#06B6D4]/10 text-[#0891B2] px-2.5 py-1 rounded-lg font-semibold">
+                          📋 {candidate._count?.applications || 0}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10px] bg-[#F97316]/10 text-[#EA580C] px-2.5 py-1 rounded-lg font-semibold">
+                          🎙 {candidate._count?.interviews || 0}
+                        </span>
+                      </div>
+                      <div className="flex gap-1" onClick={(e) => e.preventDefault()}>
+                        <Button
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 relative group/btn hover:bg-[#06B6D4]/10"
+                        className="h-8 w-8 p-0 rounded-xl hover:bg-[#06B6D4]/10"
                         onClick={(e) => handleAutoMatch(candidate.id, candidate.name, e)}
                         disabled={matchingCandidate === candidate.id}
                       >
                         {matchingCandidate === candidate.id ? (
                           <Loader2 className="h-4 w-4 animate-spin text-[#06B6D4]" />
                         ) : (
-                          <>
-                            <Bot className="h-4 w-4 text-[#06B6D4] group-hover/btn:scale-125 transition-transform" />
-                            <span className="absolute -top-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap">
-                              התאמה חכמה AI
-                            </span>
-                          </>
+                          <Bot className="h-4 w-4 text-[#06B6D4]" />
                         )}
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 hover:bg-[#10B981]/10">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-xl hover:bg-[#10B981]/10">
                         <Eye className="h-4 w-4 text-[#10B981]" />
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
               </Link>
 
               {/* 🆕 Popover תקציר ידני בעת hover */}

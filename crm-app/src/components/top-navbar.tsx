@@ -175,12 +175,15 @@ export function TopNavbar() {
           </Button>
 
           {/* User Profile */}
-          <Button variant="outline" size="sm" className="gap-2 bg-[#1a1444]/50 border-indigo-800/50 text-slate-300 hover:bg-indigo-900/60 hover:text-white hover:border-[#10B981] transition-all">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-[10px] font-bold">{initials}</span>
+          <div className="flex items-center gap-2 bg-[#1a1444]/60 border border-indigo-700/40 rounded-xl px-3 py-1.5 hover:bg-indigo-900/60 hover:border-[#10B981]/50 transition-all cursor-pointer">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#10B981] to-[#34D399] flex items-center justify-center flex-shrink-0 shadow-md shadow-green-500/30">
+              <span className="text-white text-xs font-black">{initials}</span>
             </div>
-            <span className="hidden md:inline font-medium">{firstName}</span>
-          </Button>
+            <div className="hidden md:flex flex-col leading-none">
+              <span className="text-white text-sm font-bold">{firstName}</span>
+              <span className="text-slate-400 text-[10px]">מחובר</span>
+            </div>
+          </div>
         </div>
       </div>
 

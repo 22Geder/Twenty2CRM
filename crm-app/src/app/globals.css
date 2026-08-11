@@ -813,3 +813,218 @@ button:not(:disabled):active {
   }
 }
 
+/* ========================================================================
+   TWENTY2CRM — Navy Glass Upgrade v3.0
+   שדרוג עיצובי גלובלי — CSS בלבד, ללא שינוי בלוגיקה/API/DB/TSX
+   ======================================================================== */
+
+/* === 1. CSS Variables Override — glass tint throughout === */
+:root {
+  --card: 220 30% 99%;
+  --background: 220 20% 97%;
+  --border: 215 25% 88%;
+  --radius: 1rem;
+
+  /* Enhanced shadow system with teal glow */
+  --t22-shadow-sm:   0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --t22-shadow-md:   0 4px 16px rgba(6,182,212,0.07), 0 2px 6px rgba(0,0,0,0.05);
+  --t22-shadow-lg:   0 10px 30px rgba(6,182,212,0.10), 0 4px 12px rgba(0,0,0,0.06);
+  --t22-shadow-xl:   0 20px 50px rgba(6,182,212,0.12), 0 8px 20px rgba(0,0,0,0.07);
+  --t22-shadow-teal: 0 4px 20px rgba(6,182,212,0.30), 0 0 0 1px rgba(6,182,212,0.15);
+  --t22-shadow-glow: 0 0 0 3px rgba(6,182,212,0.20), 0 4px 20px rgba(6,182,212,0.25);
+}
+
+/* === 2. Richer Body Background — navy mesh gradient === */
+body {
+  background:
+    radial-gradient(ellipse 70% 60% at 5%  5%,  rgba(6,182,212,0.06)  0%, transparent 65%),
+    radial-gradient(ellipse 60% 50% at 95% 10%,  rgba(99,102,241,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 95%,  rgba(249,115,22,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 70% at 80% 60%,  rgba(16,185,129,0.03) 0%, transparent 60%),
+    linear-gradient(160deg, #f8faff 0%, #eef2fb 35%, #f0f9ff 70%, #f5f7ff 100%);
+  background-attachment: fixed;
+}
+
+/* === 3. Dashboard layout wrapper — rich navy ambient glow === */
+[dir="rtl"].flex.flex-col.h-screen {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 20%,  rgba(6,182,212,0.09)  0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%,  rgba(99,102,241,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 50%,  rgba(249,115,22,0.04) 0%, transparent 55%),
+    linear-gradient(155deg, #f8faff 0%, #f0f2fa 40%, #eaf5fb 100%) !important;
+}
+
+/* === 4. Page entry animation — smooth fade on every page === */
+main > * {
+  animation: t22-fade-in 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* === 5. Glass effect on all white rounded cards === */
+.bg-white.rounded-2xl,
+.bg-white.rounded-xl {
+  background: rgba(255, 255, 255, 0.90) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
+  border-color: rgba(203, 213, 225, 0.55) !important;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 4px 20px rgba(6,182,212,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.95) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* === 6. Card hover — float + teal glow === */
+.bg-white.rounded-2xl:hover,
+.bg-white.rounded-xl:hover {
+  background: rgba(255, 255, 255, 0.97) !important;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.06),
+    0 12px 40px rgba(6,182,212,0.12),
+    inset 0 1px 0 rgba(255,255,255,1) !important;
+  border-color: rgba(6, 182, 212, 0.22) !important;
+  transform: translateY(-2px);
+}
+
+/* === 7. Shadcn Card component glass treatment === */
+[class*="rounded-2xl"][class*="bg-card"],
+[class*="rounded-2xl"][class*="border-slate"] {
+  background: rgba(255, 255, 255, 0.88) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-color: rgba(203, 213, 225, 0.50) !important;
+  box-shadow: 0 2px 16px rgba(6,182,212,0.07), 0 1px 3px rgba(0,0,0,0.04) !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease !important;
+}
+
+[class*="rounded-2xl"][class*="bg-card"]:hover {
+  border-color: rgba(6, 182, 212, 0.20) !important;
+  box-shadow: 0 6px 28px rgba(6,182,212,0.11), 0 2px 8px rgba(0,0,0,0.05) !important;
+  transform: translateY(-1px);
+}
+
+/* === 8. Page header bar — glass effect === */
+.bg-white\/80.backdrop-blur-md {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-bottom-color: rgba(203, 213, 225, 0.45) !important;
+  box-shadow: 0 1px 12px rgba(6,182,212,0.08), 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+/* === 9. Enhanced shadow-xl hover on cards === */
+.hover\:shadow-xl:hover {
+  box-shadow:
+    0 8px 30px rgba(6,182,212,0.14),
+    0 20px 60px rgba(0,0,0,0.08) !important;
+}
+
+/* === 10. Button glow effects === */
+button:not(:disabled):focus-visible,
+button:not(:disabled):hover {
+  outline: none;
+}
+
+/* Primary action buttons (blue/teal gradients) */
+[class*="from-blue"][class*="to-indigo"]:hover,
+[class*="from-cyan"][class*="to-blue"]:hover,
+[class*="bg-cyan"]:hover,
+[class*="bg-blue-6"]:hover {
+  box-shadow: 0 4px 18px rgba(6,182,212,0.35), 0 0 0 2px rgba(6,182,212,0.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* === 11. Table rows — refined hover === */
+tbody tr {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+tbody tr:hover {
+  background: linear-gradient(90deg, rgba(6,182,212,0.04) 0%, rgba(6,182,212,0.02) 100%) !important;
+  box-shadow: inset 3px 0 0 rgba(6,182,212,0.5) !important;
+}
+
+/* === 12. Input focus — teal glow ring === */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: rgba(6,182,212,0.60) !important;
+  box-shadow: 0 0 0 3px rgba(6,182,212,0.15), 0 1px 6px rgba(6,182,212,0.10) !important;
+}
+
+/* === 13. Link hover underline accent === */
+a:not([class]):hover {
+  color: var(--t22-teal-dark);
+}
+
+/* === 14. Page content dividers — gradient line === */
+.border-b.border-slate-100,
+.border-b.border-slate-200,
+.divide-y.divide-slate-100 > * + * {
+  border-color: rgba(203, 213, 225, 0.50) !important;
+}
+
+/* === 15. Scrollbar — navy teal === */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(6,182,212,0.5) 0%, rgba(14,116,144,0.7) 100%) !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+  border-radius: 100px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8) !important;
+  border-radius: 100px !important;
+}
+
+/* === 16. Stat/KPI card number — gradient text === */
+.text-3xl.font-bold,
+.text-4xl.font-bold {
+  background: linear-gradient(135deg, var(--t22-gray-900) 0%, var(--t22-gray-700) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === 17. Badge — subtle glass effect === */
+.rounded-full.bg-white,
+.rounded-full.bg-slate-100 {
+  background: rgba(255,255,255,0.85) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(203,213,225,0.40) !important;
+}
+
+/* === 18. Smooth top-of-page transition stripe === */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--t22-teal), var(--t22-teal-light), var(--t22-orange));
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* === 19. Loading skeleton — enhanced shimmer === */
+.t22-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(226,232,240,0.8) 0%,
+    rgba(203,213,225,0.6) 30%,
+    rgba(241,245,249,0.9) 60%,
+    rgba(226,232,240,0.8) 100%
+  ) !important;
+  background-size: 300% 100% !important;
+  animation: t22-shimmer 1.8s ease-in-out infinite !important;
+}
+
+/* === 20. Transition on interactive list items === */
+.hover\:bg-slate-50:hover {
+  background: linear-gradient(90deg, rgba(6,182,212,0.04) 0%, rgba(241,245,249,0.8) 100%) !important;
+}
+
+.hover\:bg-slate-100:hover {
+  background: linear-gradient(90deg, rgba(6,182,212,0.06) 0%, rgba(226,232,240,0.9) 100%) !important;
+}
+

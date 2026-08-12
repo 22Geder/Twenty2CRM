@@ -55,7 +55,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [collapsed, setCollapsed] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
   const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null)
   
   const fullName = session?.user?.name || ''
@@ -136,7 +136,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav Groups */}
-      <nav className="flex-1 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none relative z-10">
+      <nav className="flex-shrink min-h-0 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none relative z-10">
         {dynamicNavGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
@@ -235,6 +235,19 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* לוגו גדול ממלא את השטח הריק בתחתית הסרגל */}
+      {!collapsed && (
+        <div className="flex-1 min-h-0 flex items-center justify-center px-4 py-4 relative z-10">
+          <Image
+            src="/logo-22jobs-clean.png"
+            alt="22JOBS"
+            width={220}
+            height={220}
+            className="object-contain max-h-full w-auto max-w-[80%] drop-shadow-[0_8px_24px_rgba(56,189,248,0.15)]"
+          />
+        </div>
+      )}
 
       {/* Expand button when collapsed */}
       {collapsed && (

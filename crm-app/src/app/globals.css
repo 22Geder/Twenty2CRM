@@ -980,9 +980,11 @@ a:not([class]):hover {
   border-radius: 100px !important;
 }
 
-/* === 16. Stat/KPI card number — gradient text === */
-.text-3xl.font-bold,
-.text-4xl.font-bold {
+/* === 16. Stat/KPI card number — gradient text (ONLY on neutral text, never white) === */
+.text-3xl.font-bold.text-slate-800,
+.text-3xl.font-bold.text-slate-900,
+.text-4xl.font-bold.text-slate-800,
+.text-4xl.font-bold.text-slate-900 {
   background: linear-gradient(135deg, var(--t22-gray-900) 0%, var(--t22-gray-700) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -998,7 +1000,7 @@ a:not([class]):hover {
   border: 1px solid rgba(203,213,225,0.40) !important;
 }
 
-/* === 18. Smooth top-of-page transition stripe === */
+/* === 18. Smooth top-of-page transition stripe — subtle single accent === */
 body::after {
   content: '';
   position: fixed;
@@ -1006,9 +1008,10 @@ body::after {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--t22-teal), var(--t22-teal-light), var(--t22-orange));
+  background: linear-gradient(90deg, transparent, var(--brand-primary, #4F46E5), var(--brand-teal, #14B8A6), transparent);
   z-index: 9999;
   pointer-events: none;
+  opacity: 0.5;
 }
 
 /* === 19. Loading skeleton — enhanced shimmer === */
@@ -1107,4 +1110,177 @@ body::after {
 .stat-panel:hover {
   transform: translateY(-4px) !important;
 }
+
+/* ========================================================================
+   ✨ TWENTY2CRM — Modern SaaS Design System v4.0
+   מערכת עיצוב מודרנית — Design Tokens + Components (CSS בלבד)
+   פלטה 60-30-10 • Whitespace • Soft shadows • Pill badges • Dark-mode ready
+   ======================================================================== */
+
+:root {
+  /* ===== 10% — Brand Accents (מעודן, לא זוהר) ===== */
+  --brand-primary:      #4F46E5;   /* Indigo — deep blue primary */
+  --brand-primary-600:  #4338CA;
+  --brand-primary-50:   #EEF2FF;
+  --brand-teal:         #14B8A6;   /* Turquoise */
+  --brand-teal-50:      #F0FDFA;
+  --brand-lavender:     #A78BFA;   /* Lavender purple */
+  --brand-lavender-50:  #F5F3FF;
+
+  /* ===== 60% — Surfaces (רקע ניטרלי) ===== */
+  --surface:            #FFFFFF;
+  --surface-muted:      #F8FAFC;
+  --surface-sunken:     #F1F5F9;
+  --app-bg:             #F6F7FB;
+
+  /* ===== 30% — Text & Structure ===== */
+  --text-strong:        #0F172A;   /* כותרות */
+  --text-body:          #334155;
+  --text-muted:         #64748B;   /* משני */
+  --text-faint:         #94A3B8;   /* עמום */
+  --hairline:           rgba(15, 23, 42, 0.06);
+  --hairline-strong:    rgba(15, 23, 42, 0.10);
+
+  /* ===== Soft Shadow System (neumorphism-light) ===== */
+  --shadow-soft-xs: 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-soft-sm: 0 1px 3px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.03);
+  --shadow-soft-md: 0 4px 12px rgba(15,23,42,0.06), 0 2px 4px rgba(15,23,42,0.03);
+  --shadow-soft-lg: 0 12px 28px rgba(15,23,42,0.08), 0 4px 8px rgba(15,23,42,0.04);
+  --shadow-soft-xl: 0 24px 48px rgba(15,23,42,0.10), 0 8px 16px rgba(15,23,42,0.05);
+  --shadow-ring:    0 0 0 3px rgba(79,70,229,0.12);
+
+  /* ===== Spacing scale (מאוורר) ===== */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+
+  /* ===== Radius ===== */
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px;
+}
+
+/* === Modern soft card === */
+.t22-card-soft {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft-sm);
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
+}
+.t22-card-soft:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-soft-lg);
+  border-color: var(--hairline-strong);
+}
+
+/* === Pill badges — 10% tint background + strong text === */
+.t22-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.t22-pill::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+.t22-pill--success { background: rgba(16,185,129,0.10);  color: #047857; }
+.t22-pill--danger  { background: rgba(239,68,68,0.10);   color: #B91C1C; }
+.t22-pill--info    { background: rgba(59,130,246,0.10);  color: #1D4ED8; }
+.t22-pill--warning { background: rgba(245,158,11,0.12);  color: #B45309; }
+.t22-pill--primary { background: rgba(79,70,229,0.10);   color: #4338CA; }
+.t22-pill--teal    { background: rgba(20,184,166,0.10);  color: #0F766E; }
+.t22-pill--neutral { background: rgba(100,116,139,0.10); color: #475569; }
+
+/* === Button hierarchy === */
+.t22-btn-primary {
+  background: var(--brand-primary);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+  transition: all 0.18s ease;
+}
+.t22-btn-primary:hover {
+  background: var(--brand-primary-600);
+  box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+  transform: translateY(-1px);
+}
+.t22-btn-outline {
+  background: var(--surface);
+  color: var(--text-body);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-md);
+  transition: all 0.18s ease;
+}
+.t22-btn-outline:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  background: var(--brand-primary-50);
+}
+.t22-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  transition: all 0.18s ease;
+}
+.t22-btn-ghost:hover {
+  background: var(--surface-sunken);
+  color: var(--text-strong);
+}
+
+/* === Sticky filter/search bar — frosted glass === */
+.t22-sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255,255,255,0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* === Section title hierarchy === */
+.t22-h1 { font-size: 1.5rem;  font-weight: 800; color: var(--text-strong); letter-spacing: -0.02em; }
+.t22-h2 { font-size: 1.125rem; font-weight: 700; color: var(--text-strong); letter-spacing: -0.01em; }
+.t22-sub { font-size: 0.875rem; font-weight: 400; color: var(--text-muted); }
+
+/* === Tabular numbers alignment === */
+.t22-num { font-variant-numeric: tabular-nums; letter-spacing: 0; }
+
+/* === Empty state === */
+.t22-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: var(--space-10) var(--space-6);
+  color: var(--text-faint);
+}
+.t22-empty-icon {
+  width: 64px; height: 64px; border-radius: var(--radius-xl);
+  background: var(--surface-sunken);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-4);
+  color: var(--text-faint);
+}
+
+/* === App background — cleaner, calmer === */
+body {
+  background:
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(79,70,229,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(20,184,166,0.03) 0%, transparent 60%),
+    var(--app-bg) !important;
+  background-attachment: fixed;
+  color: var(--text-body);
+}
+
 

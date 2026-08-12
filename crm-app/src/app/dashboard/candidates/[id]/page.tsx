@@ -103,7 +103,7 @@ function ProfileAvatar({ candidate }: { candidate: any }) {
         className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white flex items-center justify-center border-2 border-slate-100 overflow-hidden"
         style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.18)' }}
       >
-        <img src="/logo-22jobs.png" alt="22jobs" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+        <img src="/logo-22jobs-clean.png" alt="22jobs" style={{ width: 20, height: 20, objectFit: 'contain' }} />
       </div>
     </div>
   )

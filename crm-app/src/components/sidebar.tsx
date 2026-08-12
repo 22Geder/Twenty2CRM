@@ -95,13 +95,13 @@ export function Sidebar() {
         {!collapsed ? (
           <Link href="/dashboard" className="flex flex-col items-center group py-2">
             <div className="relative w-20 h-20 flex-shrink-0">
-              <Image src="/logo-22jobs.png" alt="22JOBS" width={80} height={80} className="object-contain w-full h-full drop-shadow-lg group-hover:scale-105 transition-transform" />
+              <Image src="/logo-22jobs-clean.png" alt="22JOBS" width={80} height={80} className="object-contain w-full h-full drop-shadow-lg group-hover:scale-105 transition-transform" />
             </div>
           </Link>
         ) : (
           <Link href="/dashboard">
             <div className="w-14 h-14 flex-shrink-0">
-              <Image src="/logo-22jobs.png" alt="22JOBS" width={56} height={56} className="object-contain w-full h-full" />
+              <Image src="/logo-22jobs-clean.png" alt="22JOBS" width={56} height={56} className="object-contain w-full h-full" />
             </div>
           </Link>
         )}
@@ -221,12 +221,6 @@ export function Sidebar() {
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
-      )}
-
-      {/* דמות האריה - אווטאר מותג בתחתית הפאנל, כמו בעיצוב המקורי */}
-      {!collapsed && (
-        <div className="pointer-events-none absolute bottom-16 left-0 right-0 h-40 opacity-[0.14] bg-bottom bg-contain bg-no-repeat"
-          style={{ backgroundImage: 'url(/avigdor-lion.png)' }} />
       )}
 
       {/* User Section */}

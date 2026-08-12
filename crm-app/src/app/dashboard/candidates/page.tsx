@@ -138,7 +138,7 @@ function CandidateAvatar({ candidate }: { candidate: { name: string; currentTitl
         className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center overflow-hidden border border-slate-200"
         style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}
       >
-        <img src="/logo-22jobs.png" alt="22jobs" width={16} height={16} style={{ borderRadius: '50%', objectFit: 'cover', width: 16, height: 16 }} />
+        <img src="/logo-22jobs-clean.png" alt="22jobs" width={16} height={16} style={{ objectFit: 'contain', width: 16, height: 16 }} />
       </div>
     </div>
   )

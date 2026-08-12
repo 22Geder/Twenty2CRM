@@ -28,9 +28,9 @@ export default async function DashboardLayout({
           className="flex-1 overflow-y-auto p-4 md:p-6 relative"
           style={{ background: '#EEF2F7' }}
         >
-          {/* רקע אריה גדול ושקוף - מיתוג 22JOBS מאחורי כל התוכן, בדיוק כמו בדוגמה */}
+          {/* רקע אריה גדול ושקוף - הלוגו המלא (עם הרקע המקורי שלו) מופיע פעם אחת בלבד, במרכז הבסיס של כל ה-CRM */}
           <div
-            className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 w-[80%] max-w-[820px] aspect-square bg-center bg-contain bg-no-repeat opacity-[0.14] z-0"
+            className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] max-w-[760px] aspect-square bg-center bg-contain bg-no-repeat opacity-[0.12] z-0"
             style={{ backgroundImage: "url(/avigdor-lion.png)" }}
           />
           <div className="max-w-[1400px] mx-auto relative z-10">

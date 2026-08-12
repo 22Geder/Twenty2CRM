@@ -135,13 +135,13 @@ export default function LoginPage() {
           {/* לוגו תמונה אמיתית */}
           <div className="relative mx-auto mb-6 flex justify-center">
             <div className="absolute inset-0 bg-[#FF8C00]/20 rounded-full blur-3xl scale-90" />
-            <div className="relative w-44 h-44 rounded-full overflow-hidden bg-white shadow-2xl ring-4 ring-white/20 flex items-center justify-center">
+            <div className="relative w-44 h-44 rounded-full overflow-hidden bg-white shadow-2xl ring-4 ring-white/20 flex items-center justify-center p-3">
               <Image 
-                src="/logo-22jobs.png" 
+                src="/logo-22jobs-clean.png" 
                 alt="22JOBS Logo" 
                 width={176}
                 height={176}
-                className="object-cover w-full h-full"
+                className="object-contain w-full h-full"
                 priority
               />
             </div>

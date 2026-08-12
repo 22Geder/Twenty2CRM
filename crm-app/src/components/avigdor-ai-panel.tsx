@@ -22,8 +22,10 @@ export function AvigdorAiPanel() {
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragCounter = useRef(0)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
@@ -106,13 +108,72 @@ export function AvigdorAiPanel() {
     }
   }
 
+  // 🖐️ תמיכה בגרירת קובץ קורות חיים ישירות לפאנל (drag & drop)
+  const isFileDrag = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer?.types || []).includes("Files")
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isFileDrag(e) || loading) return
+    dragCounter.current += 1
+    setDragActive(true)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isFileDrag(e) && !loading) e.dataTransfer.dropEffect = "copy"
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current -= 1
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current = 0
+    setDragActive(false)
+    if (loading) return
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleFile(file)
+  }
+
   return (
     <aside
       dir="rtl"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       className="hidden xl:flex flex-col w-[250px] h-full flex-shrink-0 relative overflow-hidden ml-[2cm]
         border-r border-white/[0.06] shadow-[4px_0_24px_rgba(0,0,0,0.25)]"
       style={{ background: 'linear-gradient(180deg, #0F172A 0%, #111c34 45%, #0d1526 100%)' }}
     >
+      {/* 🖐️ שכבת גרירה - מופיעה כשגוררים קובץ מעל הפאנל */}
+      {dragActive && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3
+          bg-[#0F172A]/85 backdrop-blur-sm border-2 border-dashed border-[#F97316] rounded-lg m-2 pointer-events-none">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center animate-bounce"
+            style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
+            <FileText className="h-8 w-8 text-white" />
+          </div>
+          <div className="text-slate-100 text-[15px] font-semibold text-center px-4">
+            שחרר כאן ואביגדור ינתח 🦁
+          </div>
+          <div className="text-slate-400 text-[12px] text-center px-4">
+            PDF, Word או תמונה של קורות חיים
+          </div>
+        </div>
+      )}
+
       {/* Decorative glow */}
       <div className="absolute top-0 left-0 w-full h-40 pointer-events-none z-0"
         style={{ background: 'radial-gradient(ellipse at top left, rgba(249,115,22,0.14) 0%, transparent 70%)' }} />
@@ -203,7 +264,7 @@ export function AvigdorAiPanel() {
           className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11.5px] text-slate-400 hover:text-slate-200 disabled:opacity-40 transition-colors text-center leading-tight"
         >
           <FileText className="h-3.5 w-3.5 flex-shrink-0" />
-          העלה קורות חיים להמלצת משרות אוטומטית
+          גרור או העלה קורות חיים להמלצת משרות אוטומטית
         </button>
       </div>
     </aside>

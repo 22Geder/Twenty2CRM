@@ -89,37 +89,26 @@ export function Sidebar() {
       <div className="absolute top-0 right-0 w-full h-40 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at top right, rgba(37,99,235,0.14) 0%, transparent 70%)' }} />
 
-      {/* Logo Section */}
-      <div className={`flex items-center h-24 px-4 border-b border-white/[0.06] flex-shrink-0 relative
-        ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      {/* Logo Section - באדג' מלא של האריה, בדיוק כמו העיצוב המקורי */}
+      <div className={`flex items-center h-28 px-4 border-b border-white/[0.06] flex-shrink-0 relative
+        ${collapsed ? 'justify-center' : 'justify-center'}`}>
         {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="relative w-16 h-16 flex-shrink-0">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl shadow-cyan-500/40 group-hover:shadow-cyan-400/60 transition-all overflow-hidden p-0.5">
-                <Image src="/logo-22jobs.png" alt="22JOBS" width={64} height={64} className="object-cover w-full h-full rounded-full" />
-              </div>
-              <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 bg-[#F97316] rounded-full border-2 border-[#0F172A] animate-pulse" />
-            </div>
-            <div className="leading-none">
-              <div className="text-[20px] font-black tracking-tight">
-                <span className="text-[#22D3EE]">22</span><span className="text-[#F97316]">JOBS</span>
-              </div>
-              <div className="text-[9px] text-slate-400 font-semibold tracking-[0.05em] mt-1 leading-tight">
-                חברת כוח אדם והשמה בישראל בע&quot;מ
-              </div>
+          <Link href="/dashboard" className="flex flex-col items-center group py-2">
+            <div className="relative w-20 h-20 flex-shrink-0">
+              <Image src="/logo-22jobs.png" alt="22JOBS" width={80} height={80} className="object-contain w-full h-full drop-shadow-lg group-hover:scale-105 transition-transform" />
             </div>
           </Link>
         ) : (
           <Link href="/dashboard">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-xl shadow-cyan-500/40 hover:shadow-cyan-400/60 transition-all overflow-hidden p-0.5">
-              <Image src="/logo-22jobs.png" alt="22JOBS" width={56} height={56} className="object-cover w-full h-full rounded-full" />
+            <div className="w-14 h-14 flex-shrink-0">
+              <Image src="/logo-22jobs.png" alt="22JOBS" width={56} height={56} className="object-contain w-full h-full" />
             </div>
           </Link>
         )}
         {!collapsed && (
           <button
             onClick={() => setCollapsed(true)}
-            className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-white/8 transition-all border border-white/5 hover:border-white/10"
+            className="absolute left-3 top-3 w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-white/8 transition-all border border-white/5 hover:border-white/10"
           >
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
@@ -232,6 +221,12 @@ export function Sidebar() {
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
+      )}
+
+      {/* דמות האריה - אווטאר מותג בתחתית הפאנל, כמו בעיצוב המקורי */}
+      {!collapsed && (
+        <div className="pointer-events-none absolute bottom-16 left-0 right-0 h-40 opacity-[0.14] bg-bottom bg-contain bg-no-repeat"
+          style={{ backgroundImage: 'url(/avigdor-lion.png)' }} />
       )}
 
       {/* User Section */}

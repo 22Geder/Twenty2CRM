@@ -22,10 +22,21 @@ export default async function DashboardLayout({
       <Sidebar />
       
       {/* Main content — scrolls independently, never under the sidebar */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         <TopNavbar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="max-w-[1400px] mx-auto">
+        <main
+          className="flex-1 overflow-y-auto p-4 md:p-6 relative"
+          style={{
+            background: 'linear-gradient(180deg, #0F172A 0%, #16213e 100%)',
+            backgroundImage: 'url(/avigdor-lion.png)',
+            backgroundRepeat: 'repeat',
+            backgroundSize: '340px 340px',
+            backgroundBlendMode: 'luminosity',
+          }}
+        >
+          {/* שכבת כהות מעל התבנית החוזרת של האריה, כדי לשמור על ניגודיות לתוכן */}
+          <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'rgba(13,21,38,0.94)' }} />
+          <div className="max-w-[1400px] mx-auto relative z-10">
             {children}
           </div>
         </main>

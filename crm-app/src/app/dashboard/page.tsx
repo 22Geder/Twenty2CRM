@@ -788,35 +788,74 @@ export default async function CiviDashboardPage() {
         {/* Bottom Row - 3 More Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
           
-          {/* Left - Open Standards/Employers */}
+          {/* Left - Status Donut Chart */}
           <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
-                  <Info className="h-4 w-4 text-indigo-500" />
+                  <Users className="h-4 w-4 text-indigo-500" />
                 </div>
-                <span className="font-bold text-slate-800">לקוחות פעילים</span>
+                <span className="font-bold text-slate-800">חלוקה לפי סטטוס</span>
               </div>
-              <span className="text-2xl font-bold text-slate-700">{stats.totalEmployers}</span>
+              <span className="text-2xl font-bold text-slate-700">{stats.totalCandidates}</span>
             </div>
             
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-right py-2 font-medium text-slate-600">סה"כ משרות</th>
-                  <th className="text-right py-2 font-medium text-slate-600">שם הלקוח</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={2} className="py-8 text-center text-slate-400">
-                    <Link href="/dashboard/employers" className="text-[#06B6D4] hover:underline">
-                      צפה בכל הלקוחות &larr;
+            {/* Status Donut */}
+            {(() => {
+              const statusItems = [
+                { label: 'בתהליך', count: stats.inProcess, color: '#3B82F6' },
+                { label: 'התקבלו', count: stats.hiredThisMonth, color: '#10B981' },
+                { label: 'נדחו', count: stats.statusMap.REJECTED || 0, color: '#EF4444' },
+                { label: 'חדשים', count: stats.candidatesThisMonth, color: '#F97316' },
+              ].filter(s => s.count > 0)
+              const total = statusItems.reduce((a, b) => a + b.count, 0) || 1
+              const R = 50, cx = 60, cy = 60, strokeW = 16
+              const circumference = 2 * Math.PI * R
+              let offset = 0
+              const segments = statusItems.map(s => {
+                const pct = s.count / total
+                const dash = pct * circumference
+                const seg = { dash, gap: circumference - dash, offset, color: s.color, label: s.label, count: s.count, pct: Math.round(pct * 100) }
+                offset += dash
+                return seg
+              })
+              return (
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                      <circle cx={cx} cy={cy} r={R} fill="none" stroke="#F1F5F9" strokeWidth={strokeW} />
+                      {segments.map((seg, i) => (
+                        <circle key={i} cx={cx} cy={cy} r={R}
+                          fill="none" stroke={seg.color} strokeWidth={strokeW}
+                          strokeDasharray={`${seg.dash} ${seg.gap}`}
+                          strokeDashoffset={-seg.offset}
+                          transform="rotate(-90, 60, 60)" />
+                      ))}
+                      <text x={cx} y={cy - 6} textAnchor="middle" fontSize="16" fontWeight="800" fill="#1E293B">{total}</text>
+                      <text x={cx} y={cy + 9} textAnchor="middle" fontSize="9" fill="#94A3B8">סה״כ</text>
+                    </svg>
+                  </div>
+                  <div className="flex-1 space-y-2.5">
+                    {segments.map((seg, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
+                          {seg.label}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-slate-800">{seg.count}</span>
+                          <span className="text-[10px] text-slate-400">({seg.pct}%)</span>
+                        </span>
+                      </div>
+                    ))}
+                    <Link href="/dashboard/employers" className="flex items-center gap-1 text-[#06B6D4] text-xs mt-2 hover:underline pt-1 border-t border-slate-100">
+                      <ChevronLeft className="h-3 w-3" />
+                      לקוחות פעילים: {stats.totalEmployers}
                     </Link>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           {/* Middle - Tasks by Due Date */}
@@ -868,45 +907,83 @@ export default async function CiviDashboardPage() {
             </Link>
           </div>
 
-          {/* Right - Leading Recruitment Sources */}
+          {/* Right - Leading Recruitment Sources with Donut Chart */}
           <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-100 to-violet-50 flex items-center justify-center">
                   <Info className="h-4 w-4 text-violet-500" />
                 </div>
-                <span className="font-bold text-slate-800">מקורות גיוס מובילים בחודש האחרון</span>
+                <span className="font-bold text-slate-800">מקורות גיוס</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{sourcePercentages.length}</span>
             </div>
             
-            {/* Source Bars */}
-            <div className="space-y-4">
-              {sourcePercentages.length === 0 ? (
-                <div className="py-4 text-center text-slate-400">אין נתונים על מקורות</div>
-              ) : (
-                sourcePercentages.map((source, i) => (
-                  <div key={i}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: sourceColors[i % sourceColors.length] }}></span>
-                        <span className="truncate">{source.source}</span>
-                      </span>
-                      <span className="text-xs font-medium text-slate-600 mr-2 flex-shrink-0">{source.count} <span className="text-slate-400">({source.percentage}%)</span></span>
+            {/* Donut + Bars layout */}
+            {sourcePercentages.length === 0 ? (
+              <div className="py-4 text-center text-slate-400">אין נתונים על מקורות</div>
+            ) : (
+              <div className="flex items-center gap-4">
+                {/* SVG Donut */}
+                <div className="flex-shrink-0">
+                  {(() => {
+                    const R = 52, cx = 62, cy = 62, strokeW = 18
+                    const circumference = 2 * Math.PI * R
+                    let offset = 0
+                    const segments = sourcePercentages.slice(0, 5).map((s, i) => {
+                      const dash = (s.percentage / 100) * circumference
+                      const gap = circumference - dash
+                      const seg = { dash, gap, offset, color: sourceColors[i % sourceColors.length] }
+                      offset += dash
+                      return seg
+                    })
+                    const totalCount = sourcePercentages.reduce((a, b) => a + b.count, 0)
+                    return (
+                      <svg width="124" height="124" viewBox="0 0 124 124">
+                        {/* Background track */}
+                        <circle cx={cx} cy={cy} r={R} fill="none" stroke="#F1F5F9" strokeWidth={strokeW} />
+                        {segments.map((seg, i) => (
+                          <circle
+                            key={i}
+                            cx={cx} cy={cy} r={R}
+                            fill="none"
+                            stroke={seg.color}
+                            strokeWidth={strokeW}
+                            strokeDasharray={`${seg.dash} ${seg.gap}`}
+                            strokeDashoffset={-seg.offset}
+                            transform="rotate(-90, 62, 62)"
+                            style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                          />
+                        ))}
+                        {/* Center text */}
+                        <text x={cx} y={cy - 8} textAnchor="middle" fontSize="18" fontWeight="800" fill="#1E293B">{totalCount}</text>
+                        <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#94A3B8">מועמדים</text>
+                      </svg>
+                    )
+                  })()}
+                </div>
+                {/* Legend bars */}
+                <div className="flex-1 space-y-2.5">
+                  {sourcePercentages.slice(0, 5).map((source, i) => (
+                    <div key={i}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sourceColors[i % sourceColors.length] }}></span>
+                          <span className="truncate">{source.source}</span>
+                        </span>
+                        <span className="text-xs font-bold text-slate-700 mr-1 flex-shrink-0">{source.percentage}%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-1.5 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.max(source.percentage, 2)}%`, backgroundColor: sourceColors[i % sourceColors.length] }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-2 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.max(source.percentage, 2)}%`,
-                          backgroundColor: sourceColors[i % sourceColors.length]
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -172,26 +172,49 @@ export function buildSearchMatcher(query: string): ((normText: string) => boolea
 }
 
 /**
- * בונה פונקציית התאמה במצב OR עבור רשימת מילים נרדפות.
+ * בונה פונקציית התאמה סמנטית לרשימת מילות־מפתח של קטגוריה.
  *
- * בשונה מ-buildSearchMatcher (שדורש שכל המילים יופיעו - AND), כאן מספיק
- * שמונח *אחד* מהרשימה (או ההרחבה הנרדפת שלו) יופיע בטקסט. מתאים לרשימות
- * מילים נרדפות של קטגוריה, למשל: "תוכנה מתכנת developer פיתוח" - מספיק
- * שאחת מהן תופיע כדי לסמן משרת תוכנה.
+ * בשונה מ-buildSearchMatcher (שדורש שכל המילים יופיעו - AND), כאן נדרש
+ * שלפחות `minMatches` *מילות־בסיס שונות* מהרשימה יופיעו בטקסט (כל מילה
+ * מורחבת לנרדפות שלה, אך נספרת פעם אחת). כך משיגים דיוק: משרת תוכנה אמיתית
+ * מזכירה בדרך כלל 2+ מונחים ("מפתח" + "תוכנה"), בעוד אזכור מקרי יחיד נחסם.
+ *
+ * דוגמה: "תוכנה מתכנת developer פיתוח" עם minMatches=2 → המשרה חייבת להכיל
+ * לפחות שתיים מהמילים הללו (או נרדפות שלהן) כדי להיחשב התאמה.
  *
  * מחזיר null אם אין שאילתה משמעותית.
  */
-export function buildSemanticMatcher(query: string): ((normText: string) => boolean) | null {
+export function buildSemanticMatcher(
+  query: string,
+  minMatches = 2,
+): ((normText: string) => boolean) | null {
   const q = normalizeHe(query)
   if (!q) return null
 
-  const terms = new Set<string>()
-  for (const word of q.split(" ")) {
-    if (!word) continue
-    for (const t of expandWord(word)) terms.add(t)
+  // כל מילת־בסיס → ההרחבה הנרדפת שלה. מילים נרדפות מאותה קטגוריה מקבלות
+  // הרחבה זהה, ולכן נאחד אותן ל"מושג" אחד כדי שהסף יספור מושגים שונים
+  // (ולא ניפוח של נרדפות): "בנק/טלר/בנקאי" = מושג אחד, "תוכנה" ו"פיתוח" = שניים.
+  const byConcept = new Map<string, string[]>()
+  for (const word of q.split(" ").filter(Boolean)) {
+    const terms = expandWord(word)
+    const key = [...terms].sort().join("|")
+    if (!byConcept.has(key)) byConcept.set(key, terms)
   }
-  if (terms.size === 0) return null
+  const concepts = [...byConcept.values()]
+  if (concepts.length === 0) return null
 
-  const list = [...terms]
-  return (normText: string) => list.some((t) => normText.includes(t))
+  // הסף הוא מספר המושגים השונים שנדרשים; לא יעלה על מספר המושגים הזמינים
+  // (תגית עם מושג אחד בלבד תדרוש התאמה אחת, כדי לא לחסום אותה לחלוטין).
+  const need = Math.min(minMatches, concepts.length)
+
+  return (normText: string) => {
+    let hits = 0
+    for (const terms of concepts) {
+      if (terms.some((t) => normText.includes(t))) {
+        hits++
+        if (hits >= need) return true
+      }
+    }
+    return false
+  }
 }

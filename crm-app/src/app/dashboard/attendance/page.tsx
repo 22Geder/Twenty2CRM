@@ -518,24 +518,24 @@ export default function AttendancePage() {
                     <span className="text-base font-normal text-gray-500 mr-2">/ 168:00</span>
                   </div>
                 </div>
-                <div className="flex gap-4 text-center">
-                  <div className="bg-white/80 rounded-xl border px-5 py-3">
-                    <div className="text-xs text-gray-500">בוצע</div>
-                    <div className={`text-xl font-bold font-mono ${overTarget ? 'text-green-700' : 'text-indigo-700'}`}>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-white/80 rounded-xl border px-4 py-3">
+                    <div className="text-xs text-gray-500 mb-1">בוצע</div>
+                    <div className={`text-lg font-bold font-mono ${overTarget ? 'text-green-700' : 'text-indigo-700'}`}>
                       {Math.floor(done / 60)}ש׳ {done % 60}ד׳
                     </div>
                   </div>
-                  <div className={`rounded-xl border px-5 py-3 ${overTarget ? 'bg-green-100 border-green-300' : 'bg-amber-50 border-amber-300'}`}>
-                    <div className="text-xs text-gray-500">{overTarget ? 'עודף' : 'נשאר'}</div>
-                    <div className={`text-xl font-bold font-mono ${overTarget ? 'text-green-700' : 'text-amber-700'}`}>
+                  <div className={`rounded-xl border px-4 py-3 ${overTarget ? 'bg-green-100 border-green-300' : 'bg-amber-50 border-amber-300'}`}>
+                    <div className="text-xs text-gray-500 mb-1">{overTarget ? 'עודף' : 'נשאר'}</div>
+                    <div className={`text-lg font-bold font-mono ${overTarget ? 'text-green-700' : 'text-amber-700'}`}>
                       {overTarget
                         ? `+${Math.floor((done - MONTHLY_TARGET_MIN) / 60)}ש׳ ${(done - MONTHLY_TARGET_MIN) % 60}ד׳`
                         : `${Math.floor(remaining / 60)}ש׳ ${remaining % 60}ד׳`}
                     </div>
                   </div>
-                  <div className="bg-white/80 rounded-xl border px-5 py-3">
-                    <div className="text-xs text-gray-500">אחוז</div>
-                    <div className={`text-xl font-bold ${overTarget ? 'text-green-700' : pct >= 80 ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className="bg-white/80 rounded-xl border px-4 py-3">
+                    <div className="text-xs text-gray-500 mb-1">אחוז</div>
+                    <div className={`text-lg font-bold ${overTarget ? 'text-green-700' : pct >= 80 ? 'text-blue-700' : 'text-gray-700'}`}>
                       {pct}%
                     </div>
                   </div>
@@ -734,7 +734,7 @@ export default function AttendancePage() {
                     const editing = editingDate === dateStr
 
                     const rowBg = editing
-                      ? 'bg-yellow-50'
+                      ? 'bg-blue-50'
                       : isToday
                       ? 'bg-indigo-50'
                       : isWeekend

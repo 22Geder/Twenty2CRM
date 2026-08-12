@@ -122,8 +122,8 @@ export function AvigdorAiPanel() {
 
       {/* Header */}
       <div className="flex items-center gap-2.5 h-28 px-3.5 border-b border-white/[0.06] flex-shrink-0 relative z-10">
-        <div className="relative w-14 h-14 flex-shrink-0">
-          <Image src="/logo-22jobs-clean.png" alt="אביגדור" width={56} height={56} className="object-contain w-full h-full drop-shadow-lg" />
+        <div className="relative w-[72px] h-[72px] flex-shrink-0">
+          <Image src="/logo-22jobs-clean.png" alt="אביגדור" width={72} height={72} className="object-contain w-full h-full drop-shadow-lg" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[18px] font-bold text-slate-100 leading-tight">

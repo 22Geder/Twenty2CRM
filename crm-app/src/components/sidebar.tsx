@@ -54,7 +54,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
+  const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null)
   
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || 'משתמש'
@@ -148,7 +149,6 @@ export function Sidebar() {
                 return (
                   <Link key={item.href} href={item.href}>
                     <div
-                      title={collapsed ? item.name : undefined}
                       className={`flex items-center gap-3 px-2.5 py-2.5 rounded-xl transition-all duration-200 group/item relative overflow-hidden
                         ${collapsed ? 'justify-center' : ''}
                       `}
@@ -163,12 +163,17 @@ export function Sidebar() {
                           (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)'
                           ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.05)'
                         }
+                        if (collapsed) {
+                          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                          setTooltip({ text: item.name, top: rect.top + rect.height / 2 })
+                        }
                       }}
                       onMouseLeave={e => {
                         if (!isActive) {
                           (e.currentTarget as HTMLDivElement).style.background = ''
                           ;(e.currentTarget as HTMLDivElement).style.borderColor = 'transparent'
                         }
+                        setTooltip(null)
                       }}
                     >
                       {/* Active right indicator */}
@@ -257,6 +262,27 @@ export function Sidebar() {
           )}
         </div>
       </div>
+
+      {/* Tooltip מרחף - מוצג בעת ריחוף על כפתור כשהסרגל סגור */}
+      {collapsed && tooltip && (
+        <div
+          dir="rtl"
+          className="fixed z-[60] pointer-events-none -translate-y-1/2 px-3 py-1.5 rounded-lg
+            text-[12px] font-semibold text-white whitespace-nowrap
+            shadow-[0_8px_24px_rgba(0,0,0,0.45)] border border-white/10"
+          style={{
+            top: tooltip.top,
+            right: 82,
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          }}
+        >
+          {tooltip.text}
+          <span
+            className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 rotate-45 border-t border-l border-white/10"
+            style={{ background: '#1e293b' }}
+          />
+        </div>
+      )}
     </motion.aside>
   )
 }

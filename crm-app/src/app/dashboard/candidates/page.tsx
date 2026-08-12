@@ -435,67 +435,38 @@ export default function CandidatesPageModern() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-5 bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-slate-100 min-h-screen">
-      {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="candGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#06B6D4" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#candGrid)" />
-          </svg>
-        </div>
-        
-        {/* Floating Orbs */}
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#F97316]/30 to-transparent rounded-full blur-2xl"></div>
-        
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#06B6D4] via-[#22D3EE] to-[#10B981] bg-clip-text text-transparent">
-              📋 מועמדים
-            </h1>
-            <p className="text-slate-300 mt-2 text-lg">
-              <span className="font-semibold text-[#22D3EE]">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-[#F97316]">{candidates.length}</span> מועמדים
-            </p>
-            <div className="mt-4 flex items-center gap-2 text-sm flex-wrap">
-              <div className="bg-[#06B6D4]/20 text-[#22D3EE] px-4 py-2 rounded-full flex items-center gap-1 border border-[#06B6D4]/30">
-                ⚡ החדשים ראשונים
-              </div>
-              <div className="bg-[#10B981]/20 text-[#10B981] px-4 py-2 rounded-full border border-[#10B981]/30">
-                🔄 מתעדכן אוטומטית
-              </div>
-              <Link 
-                href="/clear-cache"
-                className="bg-slate-700/50 text-slate-300 px-3 py-2 rounded-full border border-slate-600/30 hover:bg-slate-600/50 transition-colors text-xs"
-                title="רענן אפליקציה (ניקוי מטמון)"
-              >
-                🔧 רענן אפליקציה
-              </Link>
+    <div className="p-4 md:p-8 space-y-5 min-h-screen" style={{ background: 'var(--app-bg)' }}>
+      {/* Clean modern header */}
+      <div className="t22-card-soft p-6 md:p-7">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
+              <Users className="h-7 w-7" style={{ color: 'var(--brand-primary)' }} />
+            </div>
+            <div>
+              <h1 className="t22-h1">מועמדים</h1>
+              <p className="t22-sub mt-1">
+                <span className="font-semibold t22-num" style={{ color: 'var(--brand-primary)' }}>{filteredCandidates.length}</span> מתוך <span className="font-semibold t22-num text-slate-700">{candidates.length}</span> מועמדים
+              </p>
             </div>
           </div>
-          <div className="flex gap-3">
-            {/* 🆕 כפתור התאמות טובות ביותר */}
+          <div className="flex gap-2.5">
             <Button 
               onClick={loadBestMatches}
               disabled={loadingBestMatches}
-              className="bg-gradient-to-r from-[#F97316] to-[#C2410C] hover:from-[#C2410C] hover:to-[#D84315] shadow-lg shadow-[#F97316]/30 text-white border-0"
+              className="t22-btn-outline gap-2"
             >
               {loadingBestMatches ? (
-                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Target className="h-4 w-4 ml-2" />
+                <Target className="h-4 w-4" style={{ color: 'var(--brand-primary)' }} />
               )}
-              התאמות טובות ביותר
+              <span className="hidden sm:inline">התאמות טובות ביותר</span>
             </Button>
             <Link href="/dashboard/candidates/new">
-              <Button className="bg-gradient-to-r from-[#06B6D4] to-[#22D3EE] hover:from-[#0891B2] hover:to-[#0EA5E9] shadow-lg shadow-[#06B6D4]/30 text-white border-0">
-                <Plus className="h-4 w-4 ml-2" />
-                הוסף מועמד חדש
+              <Button className="t22-btn-primary gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">הוסף מועמד חדש</span>
               </Button>
             </Link>
           </div>
@@ -549,49 +520,49 @@ export default function CandidatesPageModern() {
       </Card>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-2xl p-2.5 shadow-md border border-slate-200/60 flex-wrap">
+      <div className="flex items-center gap-2 t22-card-soft p-2.5 flex-wrap">
         <Filter className="h-4 w-4 text-slate-400 mr-1 flex-shrink-0" />
         <Button
-          variant={statusFilter === 'all' ? 'default' : 'ghost'}
+          variant="ghost"
           size="sm"
           onClick={() => handleStatusFilterChange('all')}
-          className={statusFilter === 'all' ? 'bg-slate-800 text-white shadow-md' : 'hover:bg-slate-100 text-slate-600'}
+          className={statusFilter === 'all' ? 'rounded-full bg-slate-900 text-white' : 'rounded-full text-slate-500 hover:bg-slate-100'}
         >
           <Users className="h-3.5 w-3.5 ml-1" />
           הכל ({candidates.length})
         </Button>
         <Button
-          variant={statusFilter === 'in-process' ? 'default' : 'ghost'}
+          variant="ghost"
           size="sm"
           onClick={() => handleStatusFilterChange('in-process')}
-          className={statusFilter === 'in-process' ? 'bg-[#2196F3] text-white shadow-md shadow-blue-200' : 'hover:bg-blue-50 text-[#2196F3]'}
+          className={statusFilter === 'in-process' ? 'rounded-full bg-[#1D4ED8] text-white' : 'rounded-full text-[#1D4ED8] hover:bg-blue-50'}
         >
           <Clock className="h-3.5 w-3.5 ml-1" />
           בתהליך ({candidates.filter(c => getCandidateStatus(c) === 'in-process').length})
         </Button>
         <Button
-          variant={statusFilter === 'hired' ? 'default' : 'ghost'}
+          variant="ghost"
           size="sm"
           onClick={() => handleStatusFilterChange('hired')}
-          className={statusFilter === 'hired' ? 'bg-[#10B981] text-white shadow-md shadow-green-200' : 'hover:bg-green-50 text-[#10B981]'}
+          className={statusFilter === 'hired' ? 'rounded-full bg-[#047857] text-white' : 'rounded-full text-[#047857] hover:bg-green-50'}
         >
           <CheckCircle className="h-3.5 w-3.5 ml-1" />
           התקבל ({candidates.filter(c => getCandidateStatus(c) === 'hired').length})
         </Button>
         <Button
-          variant={statusFilter === 'rejected' ? 'default' : 'ghost'}
+          variant="ghost"
           size="sm"
           onClick={() => handleStatusFilterChange('rejected')}
-          className={statusFilter === 'rejected' ? 'bg-[#F44336] text-white shadow-md shadow-red-200' : 'hover:bg-red-50 text-[#F44336]'}
+          className={statusFilter === 'rejected' ? 'rounded-full bg-[#B91C1C] text-white' : 'rounded-full text-[#B91C1C] hover:bg-red-50'}
         >
           <XCircle className="h-3.5 w-3.5 ml-1" />
           לא התקבל ({candidates.filter(c => getCandidateStatus(c) === 'rejected').length})
         </Button>
         <Button
-          variant={statusFilter === 'new' ? 'default' : 'ghost'}
+          variant="ghost"
           size="sm"
           onClick={() => handleStatusFilterChange('new')}
-          className={statusFilter === 'new' ? 'bg-[#F97316] text-white shadow-md shadow-orange-200' : 'hover:bg-orange-50 text-[#F97316]'}
+          className={statusFilter === 'new' ? 'rounded-full bg-[#B45309] text-white' : 'rounded-full text-[#B45309] hover:bg-orange-50'}
         >
           <Star className="h-3.5 w-3.5 ml-1" />
           חדש ({candidates.filter(c => getCandidateStatus(c) === 'new').length})
@@ -601,69 +572,49 @@ export default function CandidatesPageModern() {
       {/* Advanced Filters */}
       <AdvancedCandidateFilters onFilterChange={setFilters} />
 
-      {/* Premium Statistics Cards */}
+      {/* Clean Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Stat 1 */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#06B6D4] to-[#0891B2] p-5 shadow-xl shadow-cyan-500/25">
-          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <Users className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">סה"כ</span>
-            </div>
-            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.length}</div>
-            <div className="text-white/80 text-sm font-medium">מועמדים</div>
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
+            <Users className="h-6 w-6" style={{ color: 'var(--brand-primary)' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.length}</div>
+            <div className="text-sm text-slate-500 font-medium">מועמדים</div>
           </div>
         </div>
 
         {/* Stat 2 */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#10B981] to-[#059669] p-5 shadow-xl shadow-emerald-500/25">
-          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <Star className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">⭐ 4+</span>
-            </div>
-            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.filter(c => c.rating && c.rating >= 4).length}</div>
-            <div className="text-white/80 text-sm font-medium">מדורגים גבוה</div>
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.12)' }}>
+            <Star className="h-6 w-6" style={{ color: '#D97706' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.filter(c => c.rating && c.rating >= 4).length}</div>
+            <div className="text-sm text-slate-500 font-medium">מדורגים גבוה</div>
           </div>
         </div>
 
         {/* Stat 3 */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#A855F7] to-[#7C3AED] p-5 shadow-xl shadow-purple-500/25">
-          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <Briefcase className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">5+ שנים</span>
-            </div>
-            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.filter(c => (c.yearsOfExperience || 0) >= 5).length}</div>
-            <div className="text-white/80 text-sm font-medium">ותיקים בתחום</div>
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-lavender-50)' }}>
+            <Briefcase className="h-6 w-6" style={{ color: 'var(--brand-lavender)' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.filter(c => (c.yearsOfExperience || 0) >= 5).length}</div>
+            <div className="text-sm text-slate-500 font-medium">ותיקים בתחום</div>
           </div>
         </div>
 
         {/* Stat 4 */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F97316] to-[#DC2626] p-5 shadow-xl shadow-orange-500/25">
-          <div className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          <div className="absolute bottom-0 right-0 w-16 h-16 bg-black/10 rounded-full blur-lg" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <Calendar className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-white/70 text-xs font-medium bg-white/15 px-2 py-1 rounded-full">פעיל</span>
-            </div>
-            <div className="text-4xl font-black text-white mb-1">{filteredCandidates.reduce((sum, c) => sum + (c._count?.applications || 0), 0)}</div>
-            <div className="text-white/80 text-sm font-medium">מועמדויות</div>
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-teal-50)' }}>
+            <Calendar className="h-6 w-6" style={{ color: 'var(--brand-teal)' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.reduce((sum, c) => sum + (c._count?.applications || 0), 0)}</div>
+            <div className="text-sm text-slate-500 font-medium">מועמדויות</div>
           </div>
         </div>
       </div>

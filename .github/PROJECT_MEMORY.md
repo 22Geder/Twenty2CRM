@@ -51,3 +51,55 @@
 - כל ה-API routes, Prisma schema, ו-business logic — לא נגעו
 - Build עבר ✅ (exit code 0)
 - TypeScript errors הנותרות הן pre-existing ב-API routes
+
+---
+
+### 2025-07 — UI Component Styling Upgrade (commit: 7fc31d8)
+**משימה:** שיפור עיצוב קומפוננטים — CSS/className בלבד
+
+**קבצים ששונו:**
+
+- `crm-app/src/components/positions-client.tsx`
+  - SearchCard: הוסף `t22-card-soft`
+  - ActivePositionCard: הוסף `t22-card-elevated`
+  - DraftPositionCard: הוסף `t22-card-soft`
+  - כפתורי "צפה בפרטים" / "ערוך": הוסף `rounded-xl`
+  - No-results card: הוסף `t22-card-soft`
+
+- `crm-app/src/app/dashboard/positions/bulk-upload/page.tsx`
+  - **שינוי מרכזי:** כל הדף שונה מ-dark theme (slate-900/800) ל-light theme (white/slate-50)
+  - כותרת: עטוף ב-`t22-card-soft p-6` עם `t22-h1` + `t22-sub`
+  - Cards: `bg-slate-900/60 border-slate-700/50` → `t22-card-soft`
+  - Inputs/textareas/selects: `bg-slate-800 text-white border-slate-600` → `bg-white text-slate-800 border-2 border-slate-200 rounded-xl`
+  - Labels: `text-slate-400` → `font-semibold text-slate-700`
+  - טקסטים: `text-white/text-slate-400` → `text-slate-900/text-slate-600`
+  - Tags: `bg-orange-950/40 text-orange-300 border-orange-800/30` → `bg-orange-50 text-orange-700 border-orange-200`
+  - Bottom save bar: `bg-slate-950/90 border-slate-700/50` → `t22-card-soft sticky bottom-4`
+  - AddTagButton: `bg-slate-800 text-white` → `bg-white text-slate-800`
+
+- `crm-app/src/app/dashboard/positions/new/page.tsx`
+  - Header wrapper: הוסף `t22-card-soft p-6 mb-6`; `h1` → `t22-h1`; `p` → `t22-sub`
+  - Cards: `mb-6` → `t22-card-soft mb-6` על כל כרטיסי הטופס
+  - Labels: הוסף `font-semibold text-slate-700`
+  - Inputs: הוסף `rounded-xl border-2`
+  - Selects: `rounded-md border border-input` → `rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`
+  - כפתור שמירה: הוסף `t22-btn-primary rounded-xl px-6 py-2.5`
+
+- `crm-app/src/app/dashboard/candidates/page.tsx`
+  - Search Card: הוסף `t22-card-soft`
+  - Email span: `truncate` → `overflow-hidden text-ellipsis whitespace-nowrap`
+  - Manual summary: inline style → classes `bg-[#FEFCE8] border-amber-100 rounded-lg`
+
+- `crm-app/src/app/dashboard/employers/page.tsx`
+  - Employer cards: הוסף `t22-card-elevated` (בנוסף ל-`t22-card-soft` קיים)
+  - Description: הוסף `max-h-20 overflow-hidden`
+  - "לפרטים" button: `t22-btn-outline px-3 py-1.5` → `border-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl`
+
+- `crm-app/src/app/dashboard/settings/page.tsx`
+  - Outer div: `max-w-[1200px] mx-auto` → `t22-page-wrap`
+  - Sticky bottom save bar: כבר קיים ב-`t22-save-bar` ✅
+
+**הערות:**
+- לא נגעו בלוגיקה, API, DB, TypeScript types
+- Build עבר ✅ (exit code 0)
+- Prisma DATABASE_URL error — pre-existing, נורמלי

@@ -1126,6 +1126,11 @@ body::after {
   --brand-teal-50:      #F0FDFA;
   --brand-lavender:     #A78BFA;   /* Lavender purple */
   --brand-lavender-50:  #F5F3FF;
+  --brand-blue:         #2563EB;   /* Sapphire — active elements */
+  --brand-cta:          #F97316;   /* Orange — primary CTA only */
+  --brand-cta-600:      #EA580C;
+  --sidebar-bg:         #0F172A;   /* Elegant dark navy sidebar */
+  --sidebar-bg-2:       #111c34;
 
   /* ===== 60% — Surfaces (רקע ניטרלי) ===== */
   --surface:            #FFFFFF;
@@ -1271,6 +1276,76 @@ body::after {
   display: flex; align-items: center; justify-content: center;
   margin-bottom: var(--space-4);
   color: var(--text-faint);
+}
+
+/* === Orange CTA button — used ONLY for primary add-actions === */
+.t22-btn-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--brand-cta);
+  color: #fff;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.28);
+  transition: all 0.18s ease;
+}
+.t22-btn-cta:hover {
+  background: var(--brand-cta-600);
+  box-shadow: 0 4px 14px rgba(249,115,22,0.38);
+  transform: translateY(-1px);
+}
+
+/* === Skeleton loader shimmer === */
+.t22-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #eef1f6;
+  border-radius: var(--radius-md);
+}
+.t22-skeleton::after {
+  content: '';
+  position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
+  animation: t22-shimmer 1.4s infinite;
+}
+@keyframes t22-shimmer { 100% { transform: translateX(100%); } }
+
+/* === Zebra table === */
+.t22-zebra tbody tr:nth-child(even) { background: var(--surface-muted); }
+.t22-zebra tbody tr { transition: background 0.15s ease; }
+.t22-zebra tbody tr:hover { background: #f1f5f9; }
+
+/* === Modern focus ring for inputs/textarea === */
+.t22-focus-ring:focus,
+.t22-focus-ring:focus-visible {
+  outline: none;
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+/* === Page wrapper max-width for wide screens === */
+.t22-page-wrap { max-width: 1200px; margin-inline: auto; }
+
+/* === Live monospace clock === */
+.t22-clock-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* === Sticky bottom save bar === */
+.t22-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  background: rgba(255,255,255,0.85);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-top: 1px solid var(--hairline-strong);
+  box-shadow: 0 -6px 20px rgba(15,23,42,0.06);
 }
 
 /* === App background — cleaner, calmer === */

@@ -1173,7 +1173,7 @@ yossi@email.com
 
 השכלה:
 - תואר ראשון בכלכלה`}
-                  className="w-full h-[450px] p-8 border-2 border-slate-200 rounded-2xl text-xl leading-relaxed resize-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all"
+                  className="w-full h-[450px] p-8 border-2 border-slate-200 rounded-2xl text-xl leading-relaxed resize-none t22-focus-ring transition-all"
                 />
 
                 <div className="flex gap-5 mt-8">

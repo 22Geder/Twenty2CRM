@@ -13,6 +13,9 @@ async function getDashboardStats() {
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
+  // Build last 6 months array for monthly chart
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+
   const [
     totalCandidates,
     totalPositions,
@@ -27,6 +30,8 @@ async function getDashboardStats() {
     startedWorkThisMonth,
     candidatesThisMonth,
     inProcessCount,
+    monthlyCandidatesRaw,
+    monthlyPositionsRaw,
   ] = await Promise.all([
     prisma.candidate.count(),
     prisma.position.count(),
@@ -71,7 +76,51 @@ async function getDashboardStats() {
         ]
       }
     }),
+    // Monthly candidates for last 6 months
+    prisma.candidate.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true }
+    }),
+    // Monthly positions for last 6 months
+    prisma.position.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true }
+    }),
   ])
+
+  // Build last 6 months labels and counts
+  const monthlyLabels: string[] = []
+  const monthlyHebrewLabels: string[] = []
+  const monthlyCandidatesCounts: number[] = []
+  const monthlyPositionsCounts: number[] = []
+  const hebrewMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+  
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    monthlyLabels.push(key)
+    monthlyHebrewLabels.push(hebrewMonths[d.getMonth()])
+    monthlyCandidatesCounts.push(0)
+    monthlyPositionsCounts.push(0)
+  }
+  
+  monthlyCandidatesRaw.forEach(c => {
+    const key = `${c.createdAt.getFullYear()}-${String(c.createdAt.getMonth() + 1).padStart(2, '0')}`
+    const idx = monthlyLabels.indexOf(key)
+    if (idx !== -1) monthlyCandidatesCounts[idx]++
+  })
+  
+  monthlyPositionsRaw.forEach(p => {
+    const key = `${p.createdAt.getFullYear()}-${String(p.createdAt.getMonth() + 1).padStart(2, '0')}`
+    const idx = monthlyLabels.indexOf(key)
+    if (idx !== -1) monthlyPositionsCounts[idx]++
+  })
+
+  const monthlyData = monthlyLabels.map((key, i) => ({
+    month: monthlyHebrewLabels[i],
+    candidates: monthlyCandidatesCounts[i],
+    positions: monthlyPositionsCounts[i],
+  }))
 
   // Get candidates by day for the last 30 days
   const candidatesByDay = await prisma.candidate.groupBy({
@@ -136,7 +185,8 @@ async function getDashboardStats() {
     candidatesThisMonth,
     inProcess,
     waitingForScreening,
-    dailyCounts: Object.entries(dailyCounts).map(([date, count]) => ({ date, count }))
+    dailyCounts: Object.entries(dailyCounts).map(([date, count]) => ({ date, count })),
+    monthlyData,
   }
 }
 
@@ -299,9 +349,6 @@ export default async function CiviDashboardPage() {
     emailSent: pct(stats.statusMap.NEW * 0.3),
     whatsappSent: pct(stats.statusMap.NEW * 0.2),
   }
-
-  // Find max for chart scaling
-  const maxDaily = Math.max(...stats.dailyCounts.map(d => d.count), 1)
 
   // Calculate source percentages
   const totalSources = candidateSources.reduce((sum, s) => sum + s._count, 0) || 1
@@ -621,51 +668,69 @@ export default async function CiviDashboardPage() {
             </Link>
           </div>
 
-          {/* Middle - Candidates This Month Chart */}
+          {/* Middle - Monthly Candidates Chart */}
           <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-6 hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
-                  <Info className="h-4 w-4 text-[#F97316]" />
+                  <TrendingUp className="h-4 w-4 text-[#F97316]" />
                 </div>
-                <span className="font-bold text-slate-800">מועמדים שנכנסו בחודש האחרון</span>
+                <span className="font-bold text-slate-800">מועמדים לפי חודש</span>
               </div>
               <span className="text-2xl font-bold text-slate-700">{stats.candidatesThisMonth}</span>
             </div>
             
-            {/* Bar Chart */}
-            {stats.candidatesThisMonth > 0 ? (
-            <div className="flex items-end gap-[2px] h-40 mt-4">
-              {stats.dailyCounts.map((day, i) => {
-                const height = maxDaily > 0 ? (day.count / maxDaily) * 100 : 0
-                const dayNum = new Date(day.date).getDate()
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center justify-end">
-                    <div 
-                      className="w-full bg-[#F97316] rounded-t hover:bg-[#EA580C] transition-colors cursor-pointer"
-                      style={{ height: `${Math.max(height, 2)}%`, minHeight: day.count > 0 ? '8px' : '2px' }}
-                      title={`${day.date}: ${day.count} מועמדים`}
-                    ></div>
+            {/* Monthly Bar Chart */}
+            {stats.monthlyData && stats.monthlyData.some(m => m.candidates > 0) ? (
+              <div>
+                {/* Bars */}
+                <div className="flex items-end gap-2 h-36">
+                  {stats.monthlyData.map((m, i) => {
+                    const maxVal = Math.max(...stats.monthlyData.map(x => x.candidates), 1)
+                    const height = (m.candidates / maxVal) * 100
+                    const isCurrentMonth = i === stats.monthlyData.length - 1
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1 justify-end">
+                        <span className="text-xs font-bold text-slate-700">{m.candidates > 0 ? m.candidates : ''}</span>
+                        <div
+                          className="w-full rounded-t-lg transition-all duration-500"
+                          style={{
+                            height: `${Math.max(height, 4)}%`,
+                            background: isCurrentMonth
+                              ? 'linear-gradient(180deg, #F97316 0%, #EA580C 100%)'
+                              : 'linear-gradient(180deg, #CBD5E1 0%, #94A3B8 100%)',
+                            minHeight: '4px',
+                          }}
+                          title={`${m.month}: ${m.candidates} מועמדים`}
+                        />
+                        <span className="text-[10px] text-slate-400 text-center leading-tight">{m.month}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                {/* Positions line */}
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#4F46E5] inline-block" />
+                      משרות חדשות לפי חודש
+                    </span>
+                    <div className="flex gap-2">
+                      {stats.monthlyData.map((m, i) => (
+                        <span key={i} className="font-semibold text-[#4F46E5]">{m.positions}</span>
+                      ))}
+                    </div>
                   </div>
-                )
-              })}
-            </div>
+                </div>
+              </div>
             ) : (
               <div className="h-40 mt-4 flex flex-col items-center justify-center text-center">
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
                   <TrendingUp className="h-6 w-6 text-slate-300" />
                 </div>
                 <p className="text-sm text-slate-400">אין מספיק נתונים להצגה</p>
-                <p className="text-xs text-slate-300 mt-0.5">מועמדים חדשים יופיעו כאן</p>
               </div>
             )}
-            
-            {/* X-axis labels - show every 5th day */}
-            <div className="flex justify-between text-xs text-slate-400 mt-2 px-1">
-              {stats.dailyCounts.filter((_, i) => i % 5 === 0 || i === stats.dailyCounts.length - 1).map((day, i) => (
-                <span key={i}>{new Date(day.date).getDate()}</span>
-              ))}
-            </div>
             
             <Link href="/dashboard/candidates" className="flex items-center gap-1 text-[#06B6D4] text-sm mt-4 hover:underline">
               <ChevronLeft className="h-4 w-4" />

@@ -425,7 +425,11 @@ export async function POST(request: NextRequest) {
       : history
 
     const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      // 🔒 מודל ייעודי לאביגדור עם ברירת מחדל בטוחה ומוכחת (gemini-2.5-flash).
+      // מכוון: לא נופלים ל-GEMINI_MODEL הגלובלי, כדי שהחלפת מודל גלובלית (למשל ל-3.x
+      // לניתוח קו"ח) לא תשבור את לולאת ה-function-calling הרב-שלבית של אביגדור -
+      // מודלי Gemini 3.x אינם תואמים ל-SDK v0.11.5 בסבב תוצאות-כלי (role לא נתמך).
+      model: process.env.AVIGDOR_MODEL || "gemini-2.5-flash",
       systemInstruction: AVIGDOR_PERSONA,
       tools: [{ functionDeclarations }],
     })

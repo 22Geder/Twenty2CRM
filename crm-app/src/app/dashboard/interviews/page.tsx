@@ -101,7 +101,7 @@ export default async function InterviewsPage() {
             </p>
           </div>
           <Link href="/dashboard/interviews/new">
-            <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 text-white border-0">
+            <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 text-white border-0">
               <Plus className="ml-2 h-4 w-4" />
               תזמן ראיון
             </Button>
@@ -146,13 +146,14 @@ export default async function InterviewsPage() {
         <h2 className="text-xl font-bold text-slate-800">ראיונות קרובים ({upcoming.length})</h2>
         {upcoming.length === 0 ? (
           <Card className="border-0 bg-white/90 backdrop-blur-md rounded-2xl shadow-md">
-            <CardContent className="text-center py-12">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-blue-400" />
+            <CardContent className="flex flex-col items-center justify-center text-center py-16">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-5 ring-1 ring-blue-200/50">
+                <Calendar className="h-10 w-10 text-blue-400" />
               </div>
-              <p className="text-slate-500 mb-4">אין ראיונות מתוכננים</p>
+              <h3 className="text-lg font-bold text-slate-700 mb-1">אין ראיונות מתוכננים</h3>
+              <p className="text-sm text-slate-400 mb-5 max-w-xs">כל הראיונות שתתאם יופיעו כאן. בוא נתחיל בתיאום הראיון הראשון.</p>
               <Link href="/dashboard/interviews/new">
-                <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-md">
+                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-md">
                   <Plus className="ml-2 h-4 w-4" />
                   תזמן ראיון ראשון
                 </Button>

@@ -153,7 +153,7 @@ export function AvigdorAiPanel() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="hidden xl:flex flex-col w-[250px] h-full flex-shrink-0 relative overflow-hidden ml-[2cm]
+      className="hidden xl:flex flex-col w-[325px] h-full flex-shrink-0 relative overflow-hidden ml-[2cm]
         border-r border-white/[0.06] shadow-[4px_0_24px_rgba(0,0,0,0.25)]"
       style={{ background: 'linear-gradient(180deg, #0F172A 0%, #111c34 45%, #0d1526 100%)' }}
     >
@@ -199,11 +199,11 @@ export function AvigdorAiPanel() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-5 space-y-4 scrollbar-none relative z-10">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-5 space-y-5 scrollbar-none relative z-10">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-[1.6] whitespace-pre-wrap break-words ${
+              className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13.5px] leading-[1.7] whitespace-pre-wrap break-words ${
                 m.role === "user"
                   ? "bg-white/[0.07] text-slate-100 border border-white/[0.08]"
                   : "text-white shadow-lg shadow-orange-900/20"

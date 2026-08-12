@@ -156,7 +156,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
   return (
     <>
       {/* Search Bar */}
-      <Card className="border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
+      <Card className="t22-card-soft border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
         <CardContent className="pt-5 pb-4 space-y-3">
           {/* Search Input */}
           <div className="relative">
@@ -318,7 +318,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
 
       {/* No Results */}
       {filtered.length === 0 && (
-        <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
+        <Card className="t22-card-soft border-0 bg-white/80 backdrop-blur-sm shadow-xl">
           <CardContent className="text-center py-12">
             <Search className="h-12 w-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500 text-lg">לא נמצאו משרות התואמות לחיפוש</p>
@@ -376,7 +376,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
 
 function ActivePositionCard({ position }: { position: PositionWithRelations }) {
   return (
-    <Card className="group hover:shadow-2xl hover:shadow-[#10B981]/15 transition-all duration-500 hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl">
+    <Card className="t22-card-elevated group hover:shadow-2xl hover:shadow-[#10B981]/15 transition-all duration-500 hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl">
       <div className="absolute inset-0 bg-gradient-to-br from-[#10B981]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#10B981] to-[#34D399] opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <CardContent className="pt-6 relative">
@@ -415,7 +415,7 @@ function ActivePositionCard({ position }: { position: PositionWithRelations }) {
             </div>
             <div className="flex gap-2">
               <Link href={`/dashboard/positions/${position.id}`}>
-                <Button variant="outline" size="sm" className="border-[#10B981]/50 text-[#10B981] hover:bg-[#10B981]/10 hover:border-[#10B981]">
+                <Button variant="outline" size="sm" className="border-[#10B981]/50 text-[#10B981] hover:bg-[#10B981]/10 hover:border-[#10B981] rounded-xl px-4 py-2">
                   צפה בפרטים
                 </Button>
               </Link>
@@ -430,7 +430,7 @@ function ActivePositionCard({ position }: { position: PositionWithRelations }) {
 
 function DraftPositionCard({ position }: { position: PositionWithRelations }) {
   return (
-    <Card className="group opacity-75 hover:opacity-100 hover:shadow-xl transition-all duration-300 border-0 bg-white/60 backdrop-blur-sm overflow-hidden relative">
+    <Card className="t22-card-soft group opacity-75 hover:opacity-100 hover:shadow-xl transition-all duration-300 border-0 bg-white/60 backdrop-blur-sm overflow-hidden relative">
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#F97316] to-[#C2410C] opacity-50"></div>
       <CardContent className="pt-6 relative">
         <div className="flex items-start justify-between">
@@ -455,7 +455,7 @@ function DraftPositionCard({ position }: { position: PositionWithRelations }) {
           <div className="flex items-center gap-2">
             <ToggleActiveButton position={position} />
             <Link href={`/dashboard/positions/${position.id}`}>
-              <Button variant="outline" size="sm" className="border-[#F97316]/50 text-[#F97316] hover:bg-[#F97316]/10 hover:border-[#F97316]">
+              <Button variant="outline" size="sm" className="border-[#F97316]/50 text-[#F97316] hover:bg-[#F97316]/10 hover:border-[#F97316] rounded-xl">
                 ערוך
               </Button>
             </Link>

@@ -194,7 +194,7 @@ export default function EmployersModernPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredEmployers.map((employer) => (
           <Link key={employer.id} href={`/dashboard/employers/${employer.id}`} className="h-full">
-            <Card className="t22-card-soft group p-6 cursor-pointer relative h-full flex flex-col">
+            <Card className="t22-card-elevated t22-card-soft group p-6 cursor-pointer relative h-full flex flex-col">
               <div className="relative flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
@@ -209,7 +209,7 @@ export default function EmployersModernPage() {
                 </div>
               </div>
 
-            <p className="text-sm text-slate-500 mb-4 line-clamp-2 relative min-h-[2.5rem]">
+            <p className="text-sm text-slate-500 mb-4 max-h-20 overflow-hidden line-clamp-2 relative min-h-[2.5rem]">
               {employer.description || ''}
             </p>
 
@@ -246,7 +246,7 @@ export default function EmployersModernPage() {
                   {employer._count?.positions || 0} משרות
                 </span>
               </div>
-              <span className="t22-btn-outline inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold group-hover:border-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-primary)]">
+              <span className="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl inline-flex items-center gap-1 text-xs font-semibold transition-colors">
                 לפרטים
                 <ChevronRight className="h-4 w-4" />
               </span>

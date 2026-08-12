@@ -236,21 +236,21 @@ export default function BulkPositionsPage() {
     return (
       <div dir="rtl" className="min-h-screen p-6 space-y-6 max-w-4xl mx-auto">
         {/* כותרת */}
-        <div className="flex items-center gap-3">
+        <div className="t22-card-soft p-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
             <Briefcase className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">העלאת משרות המונית</h1>
-            <p className="text-slate-400 text-sm">הדבק עד 50 תיאורי משרות — AI יחלץ תגיות, מיקומים ועוד</p>
+            <h1 className="t22-h1">העלאת משרות המונית</h1>
+            <p className="t22-sub">הדבק עד 50 תיאורי משרות — AI יחלץ תגיות, מיקומים ועוד</p>
           </div>
         </div>
 
         {/* בחירת מעסיק */}
-        <Card className="bg-slate-900/60 border-slate-700/50">
+        <Card className="t22-card-soft">
           <CardHeader className="pb-3">
-            <CardTitle className="text-white text-base flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-orange-400" />
+            <CardTitle className="text-slate-800 text-base flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-orange-500" />
               בחר מעסיק (חובה)
             </CardTitle>
           </CardHeader>
@@ -258,7 +258,7 @@ export default function BulkPositionsPage() {
             <select
               value={selectedEmployerId}
               onChange={e => setSelectedEmployerId(e.target.value)}
-              className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">-- בחר מעסיק --</option>
               {employers.map(e => (
@@ -266,34 +266,34 @@ export default function BulkPositionsPage() {
               ))}
             </select>
 
-            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={activeMode}
                 onChange={e => setActiveMode(e.target.checked)}
                 className="accent-orange-500 w-4 h-4"
               />
-              פרסם משרות כ<span className="text-orange-400 font-semibold">פעילות</span> מיד עם הוספה
+              פרסם משרות כ<span className="text-orange-600 font-semibold">פעילות</span> מיד עם הוספה
             </label>
           </CardContent>
         </Card>
 
         {/* הזנת טקסט */}
-        <Card className="bg-slate-900/60 border-slate-700/50">
+        <Card className="t22-card-soft">
           <CardHeader className="pb-3">
-            <CardTitle className="text-white text-base flex items-center gap-2">
-              <FileText className="w-4 h-4 text-cyan-400" />
+            <CardTitle className="text-slate-800 text-base flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-500" />
               טקסט משרות
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {/* הוראות */}
-            <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-xs text-slate-400 space-y-1">
-              <div className="text-slate-300 font-medium mb-1">איך מפרידים בין משרות:</div>
-              <div>• שורת מפריד: <code className="text-cyan-300">---</code> או <code className="text-cyan-300">===</code> או <code className="text-cyan-300">###</code></div>
-              <div>• כותרת עם מספר: <code className="text-cyan-300">משרה 1</code>, <code className="text-cyan-300">משרה 2</code>...</div>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 space-y-1">
+              <div className="text-slate-700 font-medium mb-1">איך מפרידים בין משרות:</div>
+              <div>• שורת מפריד: <code className="text-blue-600">---</code> או <code className="text-blue-600">===</code> או <code className="text-blue-600">###</code></div>
+              <div>• כותרת עם מספר: <code className="text-blue-600">משרה 1</code>, <code className="text-blue-600">משרה 2</code>...</div>
               <div>• שתי שורות ריקות רצופות</div>
-              <div className="mt-1 text-amber-400">אם יש מפריד אחד הכל יעבוד אוטומטית. ניתן להדביק עד 50 משרות.</div>
+              <div className="mt-1 text-orange-600">אם יש מפריד אחד הכל יעבוד אוטומטית. ניתן להדביק עד 50 משרות.</div>
             </div>
 
             <textarea
@@ -312,7 +312,7 @@ export default function BulkPositionsPage() {
 מיקום: תל אביב | משרה חלקית
 תיאור: מענה ללקוחות בטלפון...`}
               rows={18}
-              className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-y font-mono leading-relaxed"
+              className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-y font-mono leading-relaxed"
               dir="auto"
             />
 
@@ -321,7 +321,7 @@ export default function BulkPositionsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                className="border-slate-600 text-slate-300 hover:border-orange-500 hover:text-orange-400"
+                className="border-slate-300 text-slate-600 hover:border-orange-500 hover:text-orange-500"
               >
                 <Upload className="w-4 h-4 ml-1" />
                 העלה קובץ TXT
@@ -350,7 +350,7 @@ export default function BulkPositionsPage() {
         </Card>
 
         {parseError && (
-          <div className="flex items-center gap-2 text-red-400 bg-red-950/30 border border-red-800/50 rounded-lg px-4 py-3 text-sm">
+          <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {parseError}
           </div>
@@ -384,24 +384,24 @@ export default function BulkPositionsPage() {
     return (
       <div dir="rtl" className="min-h-screen p-6 space-y-4 max-w-4xl mx-auto">
         {/* כותרת */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="t22-card-soft p-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
               <Edit3 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">סקירה ועריכה — {jobs.length} משרות</h1>
-              <p className="text-slate-400 text-sm">ערוך לפי הצורך ואשר כל משרה לפני שמירה</p>
+              <h1 className="t22-h1">סקירה ועריכה — {jobs.length} משרות</h1>
+              <p className="t22-sub">ערוך לפי הצורך ואשר כל משרה לפני שמירה</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={confirmAll}
-              className="border-emerald-600 text-emerald-400 hover:bg-emerald-950">
+              className="border-emerald-600 text-emerald-600 hover:bg-emerald-50">
               <CheckCircle2 className="w-4 h-4 ml-1" />
               אשר הכל ({jobs.filter(j => j.status === 'pending').length})
             </Button>
             <Button size="sm" onClick={() => setStep('input')}
-              className="border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700">
+              className="border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
               <RefreshCw className="w-4 h-4 ml-1" />
               חזור
             </Button>
@@ -411,11 +411,11 @@ export default function BulkPositionsPage() {
         {/* סיכום מהיר */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'סה"כ', value: jobs.length, color: 'text-white' },
-            { label: 'מאושר', value: jobs.filter(j => j.status === 'confirmed').length, color: 'text-emerald-400' },
-            { label: 'דילוג', value: skippedCount, color: 'text-slate-400' },
+            { label: 'סה"כ', value: jobs.length, color: 'text-slate-900' },
+            { label: 'מאושר', value: jobs.filter(j => j.status === 'confirmed').length, color: 'text-emerald-600' },
+            { label: 'דילוג', value: skippedCount, color: 'text-slate-500' },
           ].map(s => (
-            <div key={s.label} className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-3 text-center">
+            <div key={s.label} className="t22-card-soft p-3 text-center">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
               <div className="text-xs text-slate-500">{s.label}</div>
             </div>
@@ -434,9 +434,9 @@ export default function BulkPositionsPage() {
               <Card
                 key={job.id}
                 className={`border transition-all duration-200 ${
-                  isConfirmed ? 'border-emerald-700/60 bg-emerald-950/20' :
-                  isSkipped   ? 'border-slate-700/30 bg-slate-900/20 opacity-50' :
-                  'border-slate-700/50 bg-slate-900/60 hover:border-orange-600/40'
+                  isConfirmed ? 'border-emerald-300 bg-emerald-50/50' :
+                  isSkipped   ? 'border-slate-200 bg-slate-50/50 opacity-50' :
+                  'border-slate-200 bg-white hover:border-orange-300'
                 }`}
               >
                 {/* שורת כותרת */}
@@ -445,16 +445,16 @@ export default function BulkPositionsPage() {
                   onClick={() => setExpandedId(isExpanded ? null : job.id)}
                 >
                   {/* מספר */}
-                  <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-400 flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-500 flex-shrink-0">
                     {idx + 1}
                   </div>
 
                   {/* תוכן */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-white font-semibold text-sm truncate">{data.title}</span>
+                      <span className="text-slate-900 font-semibold text-sm truncate">{data.title}</span>
                       {data.location && (
-                        <span className="text-slate-400 text-xs flex items-center gap-1">
+                        <span className="text-slate-500 text-xs flex items-center gap-1">
                           <MapPin className="w-3 h-3" />{data.location}
                         </span>
                       )}
@@ -466,7 +466,7 @@ export default function BulkPositionsPage() {
                     {data.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {data.tags.slice(0, 5).map(t => (
-                          <span key={t} className="text-xs bg-orange-950/40 text-orange-300 border border-orange-800/30 rounded px-1.5 py-0.5">
+                          <span key={t} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded px-1.5 py-0.5">
                             {t}
                           </span>
                         ))}
@@ -488,14 +488,14 @@ export default function BulkPositionsPage() {
                       <>
                         <button
                           onClick={() => confirmJob(job.id)}
-                          className="w-7 h-7 flex items-center justify-center rounded-full text-emerald-400 hover:bg-emerald-950/50 transition-colors"
+                          className="w-7 h-7 flex items-center justify-center rounded-full text-emerald-600 hover:bg-emerald-50 transition-colors"
                           title="אשר"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => skipJob(job.id)}
-                          className="w-7 h-7 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-700/50 transition-colors"
+                          className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 transition-colors"
                           title="דלג"
                         >
                           <SkipForward className="w-4 h-4" />
@@ -521,7 +521,7 @@ export default function BulkPositionsPage() {
                     )}
                     <button
                       onClick={() => removeJob(job.id)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                       title="מחק"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -534,76 +534,76 @@ export default function BulkPositionsPage() {
 
                 {/* פרטים מורחבים */}
                 {isExpanded && (
-                  <div className="border-t border-slate-700/50 px-4 py-4 space-y-3">
+                  <div className="border-t border-slate-200 px-4 py-4 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">שם משרה *</label>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">שם משרה *</label>
                         <Input
                           value={data.title}
                           onChange={e => updateEdit(job.id, 'title', e.target.value)}
-                          className="bg-slate-800 border-slate-600 text-white text-sm"
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">מיקום</label>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">מיקום</label>
                         <Input
                           value={data.location}
                           onChange={e => updateEdit(job.id, 'location', e.target.value)}
                           placeholder="עיר / אזור"
-                          className="bg-slate-800 border-slate-600 text-white text-sm"
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">סוג משרה</label>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">סוג משרה</label>
                         <select
                           value={data.employmentType}
                           onChange={e => updateEdit(job.id, 'employmentType', e.target.value)}
-                          className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-orange-500"
+                          className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
                         >
                           {EMPLOYMENT_TYPES.map(t => <option key={t}>{t}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">שכר</label>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">שכר</label>
                         <Input
                           value={data.salaryRange}
                           onChange={e => updateEdit(job.id, 'salaryRange', e.target.value)}
                           placeholder="לדוגמה: 8,000–12,000 ₪"
-                          className="bg-slate-800 border-slate-600 text-white text-sm"
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">תיאור התפקיד</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">תיאור התפקיד</label>
                       <textarea
                         value={data.description}
                         onChange={e => updateEdit(job.id, 'description', e.target.value)}
                         rows={3}
-                        className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-y"
+                        className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-y"
                         dir="auto"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">דרישות</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">דרישות</label>
                       <textarea
                         value={data.requirements}
                         onChange={e => updateEdit(job.id, 'requirements', e.target.value)}
                         rows={2}
-                        className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-y"
+                        className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-y"
                         dir="auto"
                       />
                     </div>
 
                     {/* תגיות */}
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">תגיות</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">תגיות</label>
                       <div className="flex flex-wrap gap-1.5">
                         {data.tags.map((tag, ti) => (
                           <span
                             key={ti}
-                            className="flex items-center gap-1 text-xs bg-orange-950/40 text-orange-300 border border-orange-800/30 rounded px-2 py-1"
+                            className="flex items-center gap-1 text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded px-2 py-1"
                           >
                             {tag}
                             <button
@@ -635,7 +635,7 @@ export default function BulkPositionsPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => skipJob(job.id)}
-                        className="border-slate-600 text-slate-400"
+                        className="border-slate-300 text-slate-500"
                       >
                         <SkipForward className="w-4 h-4 ml-1" />
                         דלג
@@ -649,9 +649,9 @@ export default function BulkPositionsPage() {
         </div>
 
         {/* כפתור שמירה */}
-        <div className="sticky bottom-4 bg-slate-950/90 border border-slate-700/50 rounded-2xl p-4 flex items-center justify-between gap-4 backdrop-blur">
-          <div className="text-sm text-slate-400">
-            <span className="text-white font-semibold">{confirmedCount}</span> משרות מוכנות לשמירה
+        <div className="t22-card-soft sticky bottom-4 p-4 flex items-center justify-between gap-4 backdrop-blur">
+          <div className="text-sm text-slate-600">
+            <span className="text-slate-900 font-semibold">{confirmedCount}</span> משרות מוכנות לשמירה
             {skippedCount > 0 && <span className="text-slate-500"> · {skippedCount} מדולגות</span>}
           </div>
           <Button
@@ -686,26 +686,26 @@ export default function BulkPositionsPage() {
           <CheckCircle2 className="w-10 h-10 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-white">הושלם!</h2>
-          <p className="text-slate-400 mt-1">
-            <span className="text-emerald-400 font-bold text-lg">{savedCount}</span> משרות נשמרו בהצלחה
+          <h2 className="text-2xl font-bold text-slate-900">הושלם!</h2>
+          <p className="text-slate-600 mt-1">
+            <span className="text-emerald-600 font-bold text-lg">{savedCount}</span> משרות נשמרו בהצלחה
             {failedCount > 0 && (
-              <span className="text-red-400"> · {failedCount} נכשלו</span>
+              <span className="text-red-500"> · {failedCount} נכשלו</span>
             )}
           </p>
         </div>
 
         {/* תוצאות */}
         {jobs.filter(j => j.status === 'saved' || j.status === 'error').length > 0 && (
-          <div className="text-right space-y-1 max-h-48 overflow-y-auto bg-slate-900/60 border border-slate-700/50 rounded-xl p-3">
+          <div className="t22-card-soft text-right space-y-1 max-h-48 overflow-y-auto p-3">
             {jobs.filter(j => j.status === 'saved').map(j => (
-              <div key={j.id} className="text-sm flex items-center gap-2 text-emerald-400">
+              <div key={j.id} className="text-sm flex items-center gap-2 text-emerald-600">
                 <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
                 {j.parsed.title}
               </div>
             ))}
             {jobs.filter(j => j.status === 'error').map(j => (
-              <div key={j.id} className="text-sm flex items-center gap-2 text-red-400">
+              <div key={j.id} className="text-sm flex items-center gap-2 text-red-500">
                 <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
                 {j.parsed.title} — {j.error}
               </div>
@@ -724,7 +724,7 @@ export default function BulkPositionsPage() {
           <Button
             onClick={() => window.location.href = '/dashboard/positions'}
             variant="outline"
-            className="border-slate-600 text-slate-300"
+            className="border-slate-300 text-slate-600"
           >
             <Briefcase className="w-4 h-4 ml-1" />
             למשרות
@@ -746,7 +746,7 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
     return (
       <button
         onClick={() => setAdding(true)}
-        className="text-xs flex items-center gap-1 text-slate-500 hover:text-orange-400 border border-dashed border-slate-600 hover:border-orange-500 rounded px-2 py-1 transition-colors"
+        className="text-xs flex items-center gap-1 text-slate-500 hover:text-orange-500 border border-dashed border-slate-300 hover:border-orange-400 rounded px-2 py-1 transition-colors"
       >
         <Plus className="w-3 h-3" /> תגית
       </button>
@@ -766,11 +766,11 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
           if (e.key === 'Escape') { setAdding(false); setVal('') }
         }}
         placeholder="שם תגית..."
-        className="text-xs bg-slate-800 border border-orange-500 rounded px-2 py-1 text-white w-24 focus:outline-none"
+        className="text-xs bg-white border border-orange-400 rounded px-2 py-1 text-slate-800 w-24 focus:outline-none"
       />
       <button
         onClick={() => { if (val.trim()) { onAdd(val.trim()); setVal('') } setAdding(false) }}
-        className="text-xs text-orange-400 hover:text-orange-300"
+        className="text-xs text-orange-500 hover:text-orange-600"
       >✓</button>
     </div>
   )

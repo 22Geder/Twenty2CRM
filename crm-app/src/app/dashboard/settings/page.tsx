@@ -210,7 +210,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="p-6 md:p-8 max-w-[1200px] mx-auto pb-24">
+    <div className="p-6 md:p-8 t22-page-wrap pb-24">
       {/* Premium Header */}
       <div className="relative overflow-hidden bg-gradient-to-l from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5 mb-8">
         <div className="absolute inset-0 opacity-10">

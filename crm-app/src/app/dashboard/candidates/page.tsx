@@ -532,7 +532,7 @@ export default function CandidatesPageModern() {
       {activeView === 'list' && <>
 
       {/* Premium Search */}
-      <Card className="border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
+      <Card className="t22-card-soft border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#06B6D4] to-[#22D3EE]"></div>
         <CardContent className="pt-6">
           <div className="relative">
@@ -824,7 +824,7 @@ export default function CandidatesPageModern() {
                       {candidate.email && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-500 col-span-2 min-w-0">
                           <Mail className="h-3.5 w-3.5 text-[#06B6D4] flex-shrink-0" />
-                          <span className="truncate min-w-0" dir="ltr" title={candidate.email}>{candidate.email}</span>
+                          <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0" dir="ltr" title={candidate.email}>{candidate.email}</span>
                         </div>
                       )}
                       {candidate.yearsOfExperience !== null && (
@@ -855,8 +855,8 @@ export default function CandidatesPageModern() {
 
                     {/* Manual summary */}
                     {candidate.manualSummary && (
-                      <div className="mb-3 px-3 py-2 rounded-xl border text-[11px] text-slate-700"
-                        style={{ background: '#FEFCE8', borderColor: '#FDE68A80' }}>
+                      <div className="mb-3 px-3 py-2 rounded-lg border text-[11px] text-slate-700 bg-[#FEFCE8] border-amber-100"
+                        style={{}}>
                         <span className="font-semibold text-amber-700">📝 </span>
                         <span className="line-clamp-2">{candidate.manualSummary}</span>
                       </div>

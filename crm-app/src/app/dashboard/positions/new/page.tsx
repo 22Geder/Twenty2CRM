@@ -183,10 +183,10 @@ function NewPositionForm() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="t22-card-soft p-6 mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">משרה חדשה</h1>
-          <p className="text-muted-foreground">הוסף משרה פתוחה חדשה</p>
+          <h1 className="t22-h1">משרה חדשה</h1>
+          <p className="t22-sub mt-1">הוסף משרה פתוחה חדשה</p>
         </div>
         <Link href="/dashboard/positions">
           <Button variant="outline">
@@ -205,14 +205,14 @@ function NewPositionForm() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle>פרטים בסיסיים</CardTitle>
             <CardDescription>מידע כללי על המשרה</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">כותרת המשרה *</Label>
+              <Label htmlFor="title" className="font-semibold text-slate-700">כותרת המשרה *</Label>
               <Input
                 id="title"
                 name="title"
@@ -220,19 +220,20 @@ function NewPositionForm() {
                 onChange={handleChange}
                 required
                 placeholder="מהנדס תוכנה בכיר"
+                className="rounded-xl border-2"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="employerId">מעסיק *</Label>
+                <Label htmlFor="employerId" className="font-semibold text-slate-700">מעסיק *</Label>
                 <select
                   id="employerId"
                   name="employerId"
                   value={formData.employerId}
                   onChange={handleChange}
                   required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-10 w-full rounded-xl border-2 border-slate-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">בחר מעסיק</option>
                   {employers.map((emp) => (
@@ -243,13 +244,13 @@ function NewPositionForm() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="departmentId">מחלקה</Label>
+                <Label htmlFor="departmentId" className="font-semibold text-slate-700">מחלקה</Label>
                 <select
                   id="departmentId"
                   name="departmentId"
                   value={formData.departmentId}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-10 w-full rounded-xl border-2 border-slate-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">ללא מחלקה</option>
                   {departments.map((dep) => (
@@ -263,23 +264,24 @@ function NewPositionForm() {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="location">מיקום</Label>
+                <Label htmlFor="location" className="font-semibold text-slate-700">מיקום</Label>
                 <Input
                   id="location"
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="תל אביב"
+                  className="rounded-xl border-2"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="employmentType">סוג תעסוקה</Label>
+                <Label htmlFor="employmentType" className="font-semibold text-slate-700">סוג תעסוקה</Label>
                 <select
                   id="employmentType"
                   name="employmentType"
                   value={formData.employmentType}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-10 w-full rounded-xl border-2 border-slate-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="Full-time">משרה מלאה</option>
                   <option value="Part-time">משרה חלקית</option>
@@ -293,7 +295,7 @@ function NewPositionForm() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="openings">מספר פתיחות</Label>
+                <Label htmlFor="openings" className="font-semibold text-slate-700">מספר פתיחות</Label>
                 <Input
                   id="openings"
                   name="openings"
@@ -302,23 +304,25 @@ function NewPositionForm() {
                   value={formData.openings}
                   onChange={handleChange}
                   placeholder="1"
+                  className="rounded-xl border-2"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="salaryRange">טווח שכר</Label>
+                <Label htmlFor="salaryRange" className="font-semibold text-slate-700">טווח שכר</Label>
                 <Input
                   id="salaryRange"
                   name="salaryRange"
                   value={formData.salaryRange}
                   onChange={handleChange}
                   placeholder="₪15,000-25,000"
+                  className="rounded-xl border-2"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="priority">עדיפות (0-10)</Label>
+                <Label htmlFor="priority" className="font-semibold text-slate-700">עדיפות (0-10)</Label>
                 <Input
                   id="priority"
                   name="priority"
@@ -328,12 +332,13 @@ function NewPositionForm() {
                   value={formData.priority}
                   onChange={handleChange}
                   placeholder="0"
+                  className="rounded-xl border-2"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">כתובת תמונה</Label>
+              <Label htmlFor="imageUrl" className="font-semibold text-slate-700">כתובת תמונה</Label>
               <Input
                 id="imageUrl"
                 name="imageUrl"
@@ -341,6 +346,7 @@ function NewPositionForm() {
                 value={formData.imageUrl}
                 onChange={handleChange}
                 placeholder="https://example.com/image.jpg"
+                className="rounded-xl border-2"
               />
             </div>
 
@@ -360,14 +366,14 @@ function NewPositionForm() {
           </CardContent>
         </Card>
 
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle>תיאור המשרה</CardTitle>
             <CardDescription>פרטים מלאים על המשרה והדרישות</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="description">תיאור (עברית)</Label>
+              <Label htmlFor="description" className="font-semibold text-slate-700">תיאור (עברית)</Label>
               <Textarea
                 id="description"
                 name="description"
@@ -379,7 +385,7 @@ function NewPositionForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="requirements">דרישות</Label>
+              <Label htmlFor="requirements" className="font-semibold text-slate-700">דרישות</Label>
               <Textarea
                 id="requirements"
                 name="requirements"
@@ -393,7 +399,7 @@ function NewPositionForm() {
         </Card>
 
         {/* Tags Section */}
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TagIcon className="h-5 w-5" />
@@ -470,7 +476,7 @@ function NewPositionForm() {
         </Card>
 
         {/* Contact Info */}
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle>פרטי איש קשר</CardTitle>
             <CardDescription>מידע על איש הקשר לשליחת מועמדים</CardDescription>
@@ -478,17 +484,18 @@ function NewPositionForm() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contactName">שם איש קשר</Label>
+                <Label htmlFor="contactName" className="font-semibold text-slate-700">שם איש קשר</Label>
                 <Input
                   id="contactName"
                   name="contactName"
                   value={formData.contactName}
                   onChange={handleChange}
                   placeholder="שם המגייס/ת"
+                  className="rounded-xl border-2"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contactEmail">מייל לשליחת מועמדים</Label>
+                <Label htmlFor="contactEmail" className="font-semibold text-slate-700">מייל לשליחת מועמדים</Label>
                 <Input
                   id="contactEmail"
                   name="contactEmail"
@@ -496,6 +503,7 @@ function NewPositionForm() {
                   value={formData.contactEmail}
                   onChange={handleChange}
                   placeholder="recruiter@company.com"
+                  className="rounded-xl border-2"
                 />
               </div>
             </div>
@@ -503,7 +511,7 @@ function NewPositionForm() {
         </Card>
 
         {/* Keywords */}
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle>מילות מפתח</CardTitle>
             <CardDescription>מילות מפתח לחיפוש והתאמת מועמדים (מופרדות בפסיקים)</CardDescription>
@@ -521,24 +529,25 @@ function NewPositionForm() {
         </Card>
 
         {/* Work Conditions */}
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle>תנאי עבודה</CardTitle>
             <CardDescription>שעות עבודה, הטבות והגעה</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="workHours">שעות עבודה</Label>
+              <Label htmlFor="workHours" className="font-semibold text-slate-700">שעות עבודה</Label>
               <Input
                 id="workHours"
                 name="workHours"
                 value={formData.workHours}
                 onChange={handleChange}
                 placeholder="8:00-17:00, א'-ה'"
+                className="rounded-xl border-2"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="benefits">הטבות</Label>
+              <Label htmlFor="benefits" className="font-semibold text-slate-700">הטבות</Label>
               <Textarea
                 id="benefits"
                 name="benefits"
@@ -549,37 +558,39 @@ function NewPositionForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="transportation">הגעה/הסעות</Label>
+              <Label htmlFor="transportation" className="font-semibold text-slate-700">הגעה/הסעות</Label>
               <Input
                 id="transportation"
                 name="transportation"
                 value={formData.transportation}
                 onChange={handleChange}
                 placeholder="הסעות מת״א / הגעה עצמאית"
+                className="rounded-xl border-2"
               />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="mb-6">
+        <Card className="t22-card-soft mb-6">
           <CardHeader>
             <CardTitle>תוכן רוסי (אופציונלי)</CardTitle>
             <CardDescription>תרגום לרוסית למועמדים דוברי רוסית</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="ruTitle">כותרת (רוסית)</Label>
+              <Label htmlFor="ruTitle" className="font-semibold text-slate-700">כותרת (רוסית)</Label>
               <Input
                 id="ruTitle"
                 name="ruTitle"
                 value={formData.ruTitle}
                 onChange={handleChange}
                 placeholder="Старший инженер-программист"
+                className="rounded-xl border-2"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ruDescription">תיאור (רוסית)</Label>
+              <Label htmlFor="ruDescription" className="font-semibold text-slate-700">תיאור (רוסית)</Label>
               <Textarea
                 id="ruDescription"
                 name="ruDescription"
@@ -594,11 +605,11 @@ function NewPositionForm() {
 
         <div className="flex justify-end gap-2">
           <Link href="/dashboard/positions">
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="rounded-xl">
               ביטול
             </Button>
           </Link>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="t22-btn-primary rounded-xl px-6 py-2.5">
             {loading ? (
               "שומר..."
             ) : (

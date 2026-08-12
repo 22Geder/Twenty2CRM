@@ -13,7 +13,7 @@ import {
 type NavItem = {
   name: string
   href: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
   exact?: boolean
   badge?: string
   color?: string

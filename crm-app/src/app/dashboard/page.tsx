@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users } from "lucide-react"
+import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users, LayoutGrid } from "lucide-react"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { UrgentCandidatesAlert } from "@/components/urgent-candidates-alert"
 
@@ -313,35 +313,25 @@ export default async function CiviDashboardPage() {
   const sourceColors = ['#06B6D4', '#10B981', '#F97316', '#A855F7', '#3B82F6']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8]" dir="rtl">
-      {/* Premium Page Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0d1535]">
-        {/* Background grid */}
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="dashGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#06B6D4" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#dashGrid)" />
-          </svg>
-        </div>
-        {/* Ambient glows */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#06B6D4]/20 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#F97316]/15 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-[1600px] mx-auto px-4 md:px-6 py-5 md:py-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#22D3EE] via-[#06B6D4] to-[#10B981] bg-clip-text text-transparent tracking-tight">
-              📊 לוח בקרה
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">שלום, <span className="text-[#22D3EE] font-semibold">{session.user?.name || 'משתמש'}</span> — הנה מה שקורה היום</p>
+    <div className="min-h-screen" style={{ background: 'var(--app-bg)' }} dir="rtl">
+      {/* Clean modern page header */}
+      <div className="bg-white border-b border-slate-200/70 sticky top-0 z-20"
+        style={{ backdropFilter: 'saturate(180%) blur(14px)', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--brand-primary-50)' }}>
+              <LayoutGrid className="h-5 w-5" style={{ color: 'var(--brand-primary)' }} />
+            </div>
+            <div>
+              <h1 className="t22-h1">לוח בקרה</h1>
+              <p className="t22-sub mt-0.5">שלום, <span className="font-semibold" style={{ color: 'var(--brand-primary)' }}>{session.user?.name || 'משתמש'}</span> — הנה מה שקורה היום</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/dashboard/activity" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 hover:border-[#06B6D4]/40 transition-all">
-              <Clock className="h-4 w-4 text-[#06B6D4]" />
-              פעילות
+            <Link href="/dashboard/activity" className="t22-btn-outline inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium">
+              <Clock className="h-4 w-4" style={{ color: 'var(--brand-primary)' }} />
+              <span className="hidden sm:inline">פעילות</span>
             </Link>
             <DashboardRefresher />
           </div>

@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useDropzone } from 'react-dropzone'
 import {
   Upload, FileText, CheckCircle2, XCircle, Loader2,
   MapPin, Briefcase, Tag, Building2, AlertCircle,
   ChevronDown, ChevronUp, Edit3, Trash2, Plus,
-  Sparkles, SkipForward, Save, RefreshCw
+  Sparkles, SkipForward, Save, RefreshCw, FileSpreadsheet,
+  FileType, FileType2
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -55,6 +57,8 @@ export default function BulkPositionsPage() {
   const [activeMode, setActiveMode] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
   const [parseError, setParseError] = useState('')
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [extractedFileName, setExtractedFileName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Step 2 state
@@ -77,15 +81,66 @@ export default function BulkPositionsPage() {
       .catch(() => {})
   }, [])
 
-  // ── העלאת קובץ טקסט ────────────────────────────────────
+  // ── חילוץ טקסט מקובץ (PDF / DOCX / XLSX / TXT) ──────────
+  const extractFromFile = useCallback(async (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+
+    // TXT / CSV — קריאה ישירה בדפדפן
+    if (['txt', 'text', 'csv'].includes(ext)) {
+      const text = await file.text()
+      setInputText(text)
+      setExtractedFileName(file.name)
+      return
+    }
+
+    // PDF / DOCX / DOC / XLSX / XLS — שלח לשרת
+    setIsExtracting(true)
+    setParseError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/positions/extract-text', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) {
+        setParseError(data.error || 'שגיאה בחילוץ טקסט')
+        return
+      }
+      setInputText(data.text || '')
+      setExtractedFileName(file.name)
+    } catch {
+      setParseError('שגיאת רשת בחילוץ הקובץ')
+    } finally {
+      setIsExtracting(false)
+    }
+  }, [])
+
+  // ── Dropzone ─────────────────────────────────────────────
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) extractFromFile(acceptedFiles[0])
+  }, [extractFromFile])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls'],
+      'text/plain': ['.txt', '.text'],
+      'text/csv': ['.csv'],
+    },
+    maxFiles: 1,
+    maxSize: 25 * 1024 * 1024,
+    noClick: true,  // מניעת click כפול עם הכפתור
+  })
+
+  // ── העלאת קובץ ממתג ────────────────────────────────────
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => {
-      setInputText(ev.target?.result as string || '')
-    }
-    reader.readAsText(file, 'UTF-8')
+    extractFromFile(file)
+    e.target.value = ''
   }
 
   // ── ניתוח המשרות ────────────────────────────────────────
@@ -296,49 +351,109 @@ export default function BulkPositionsPage() {
               <div className="mt-1 text-orange-600">אם יש מפריד אחד הכל יעבוד אוטומטית. ניתן להדביק עד 50 משרות.</div>
             </div>
 
-            <textarea
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              placeholder={`לדוגמה:
+            {/* ── אזור גרירה ─────────────────────────────── */}
+            <div
+              {...getRootProps()}
+              className={`relative border-2 border-dashed rounded-xl transition-all duration-200 ${
+                isDragActive
+                  ? 'border-orange-400 bg-orange-50 scale-[1.01]'
+                  : 'border-slate-300 bg-slate-50 hover:border-orange-300 hover:bg-orange-50/40'
+              }`}
+            >
+              <input {...getInputProps()} />
+
+              {isExtracting ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                  <span className="text-sm text-slate-600">מחלץ טקסט מהקובץ...</span>
+                </div>
+              ) : isDragActive ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  <Upload className="w-8 h-8 text-orange-500" />
+                  <span className="text-sm font-semibold text-orange-600">שחרר כאן להעלאה</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                      <FileType className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <FileType2 className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-slate-700">גרור קובץ לכאן</p>
+                    <p className="text-xs text-slate-500 mt-0.5">PDF · Word (DOCX/DOC) · Excel (XLSX/XLS) · TXT</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-slate-300 text-slate-600 hover:border-orange-500 hover:text-orange-500"
+                  >
+                    <Upload className="w-4 h-4 ml-1" />
+                    בחר קובץ
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.text,.csv"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* שם קובץ שנטען */}
+            {extractedFileName && !isExtracting && (
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                טקסט חולץ מ: <span className="font-mono font-semibold">{extractedFileName}</span>
+              </div>
+            )}
+
+            {/* ── או: הזנת טקסט ישירות ───────────────────── */}
+            <div className="relative">
+              <div className="absolute inset-x-0 top-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+                <span className="px-2 bg-white text-slate-400 text-xs flex-shrink-0">או הדבק טקסט ישירות</span>
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="pt-5">
+                <textarea
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  placeholder={`לדוגמה:
 
 ---
 מנהל מחסן
-חברה: לוגיסטיק בע"מ | מיקום: אשדוד
-תיאור: ניהול מחסן תפעולי גדול...
-דרישות: ניסיון של 3 שנים, רשיון מלגזה...
-שכר: 10,000-13,000 ₪
+מיקום: אשדוד | שכר: 10,000-13,000 ₪
+ניהול מחסן תפעולי, ניסיון 3 שנים, רשיון מלגזה
 ---
 נציגת שירות לקוחות
 מיקום: תל אביב | משרה חלקית
-תיאור: מענה ללקוחות בטלפון...`}
-              rows={18}
-              className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-y font-mono leading-relaxed"
-              dir="auto"
-            />
+מענה ללקוחות בטלפון...`}
+                  rows={10}
+                  className="w-full bg-white text-slate-800 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-y font-mono leading-relaxed"
+                  dir="auto"
+                />
+              </div>
+            </div>
 
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                className="border-slate-300 text-slate-600 hover:border-orange-500 hover:text-orange-500"
-              >
-                <Upload className="w-4 h-4 ml-1" />
-                העלה קובץ TXT
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".txt,.text"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
               <span className="text-slate-500 text-xs">{inputText.length.toLocaleString()} תווים</span>
               {inputText && (
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setInputText('')}
+                  onClick={() => { setInputText(''); setExtractedFileName('') }}
                   className="text-slate-500 hover:text-red-400"
                 >
                   <Trash2 className="w-3 h-3 ml-1" />

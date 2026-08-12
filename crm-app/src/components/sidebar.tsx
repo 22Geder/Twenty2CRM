@@ -10,7 +10,7 @@ import { StarryBg } from "@/components/starry-bg"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   Settings, FileText, Upload, Sparkles, TrendingUp, Clock,
-  ChevronLeft, ChevronRight, LogOut, Shield
+  ChevronLeft, ChevronRight, LogOut, Shield, CalendarCheck
 } from "lucide-react"
 
 type NavItem = {
@@ -42,6 +42,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { name: "סטטוס חודשי",    href: "/dashboard/monthly-status",     icon: TrendingUp,      badge: "NEW", color: "#10B981" },
       { name: "שעון נוכחות",    href: "/dashboard/attendance",         icon: Clock,           color: "#A78BFA" },
       { name: "פנקס רישום",     href: "/dashboard/system-registry",    icon: FileText,        color: "#34D399" },
+      { name: "יומן ראיונות",   href: "/dashboard/calendar-setup",     icon: CalendarCheck,   badge: "NEW",  color: "#3B82F6" },
     ]
   },
   {
@@ -55,7 +56,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
+  const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null)
   
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || 'משתמש'
@@ -145,7 +147,6 @@ export function Sidebar() {
                 return (
                   <Link key={item.href} href={item.href}>
                     <div
-                      title={collapsed ? item.name : undefined}
                       className={`flex items-center gap-3 px-2.5 py-2.5 rounded-xl transition-all duration-200 group/item relative overflow-hidden
                         ${collapsed ? 'justify-center' : ''}
                       `}
@@ -160,12 +161,17 @@ export function Sidebar() {
                           (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)'
                           ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.05)'
                         }
+                        if (collapsed) {
+                          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                          setTooltip({ text: item.name, top: rect.top + rect.height / 2 })
+                        }
                       }}
                       onMouseLeave={e => {
                         if (!isActive) {
                           (e.currentTarget as HTMLDivElement).style.background = ''
                           ;(e.currentTarget as HTMLDivElement).style.borderColor = 'transparent'
                         }
+                        setTooltip(null)
                       }}
                     >
                       {/* Active right indicator */}

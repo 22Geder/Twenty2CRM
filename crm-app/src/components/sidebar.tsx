@@ -102,9 +102,11 @@ export function Sidebar() {
             </div>
             <div className="leading-none">
               <div className="text-[20px] font-black tracking-tight">
-                <span className="text-[#22D3EE]">Twenty</span><span className="text-[#F97316]">2</span>
+                <span className="text-[#22D3EE]">22</span><span className="text-[#F97316]">JOBS</span>
               </div>
-              <div className="text-[10px] text-slate-400 font-semibold tracking-[0.15em] uppercase mt-1">CRM Platform</div>
+              <div className="text-[9px] text-slate-400 font-semibold tracking-[0.05em] mt-1 leading-tight">
+                חברת כוח אדם והשמה בישראל בע&quot;מ
+              </div>
             </div>
           </Link>
         ) : (

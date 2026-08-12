@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { redirect } from "next/navigation"
 import { TopNavbar } from "@/components/top-navbar"
 import { Sidebar } from "@/components/sidebar"
+import { AvigdorAiPanel } from "@/components/avigdor-ai-panel"
 
 export default async function DashboardLayout({
   children,
@@ -29,6 +30,9 @@ export default async function DashboardLayout({
           </div>
         </main>
       </div>
+
+      {/* פאנל AI פנימי - אביגדור, זמין מכל עמוד */}
+      <AvigdorAiPanel />
     </div>
   )
 }

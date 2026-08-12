@@ -99,7 +99,7 @@ html {
 }
 
 body {
-  font-family: var(--font-heebo), 'Heebo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-rubik), var(--font-heebo), 'Heebo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(160deg, #fafbff 0%, #f0f0fa 40%, #e8f4f8 100%);
   color: var(--t22-gray-900);
   line-height: 1.6;
@@ -107,6 +107,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+/* Hebrew typography hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-rubik), var(--font-heebo), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* RTL Support */

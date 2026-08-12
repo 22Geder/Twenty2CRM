@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Heebo } from "next/font/google";
+import { Geist, Geist_Mono, Heebo, Rubik } from "next/font/google";
 import "./globals.css";
 import MobileUploadButton from "@/components/MobileUploadButton";
 import { Providers } from "./providers";
@@ -18,6 +18,13 @@ const heebo = Heebo({
   variable: "--font-heebo",
   subsets: ["hebrew", "latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const rubik = Rubik({
+  variable: "--font-rubik",
+  subsets: ["hebrew", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -86,7 +93,7 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} ${rubik.variable} antialiased`}
       >
         <Providers>
           {children}

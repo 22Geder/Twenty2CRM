@@ -6,6 +6,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
+import { StarryBg } from "@/components/starry-bg"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   Settings, FileText, Upload, Sparkles, TrendingUp, Clock,
@@ -90,8 +91,17 @@ export function Sidebar() {
       <div className="absolute top-0 right-0 w-full h-40 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at top right, rgba(37,99,235,0.14) 0%, transparent 70%)' }} />
 
+      {/* ✨ נקודות מרחפות ומנצנצות ברקע - פלטה עדינה מגוונת */}
+      <StarryBg
+        palette={[
+          { dot: "#38BDF8", glow: "rgba(56,189,248,0.5)" },   // תכלת
+          { dot: "#818CF8", glow: "rgba(129,140,248,0.5)" },  // סגול-כחול עדין
+          { dot: "#5EEAD4", glow: "rgba(94,234,212,0.45)" },  // טורקיז רך
+        ]}
+      />
+
       {/* Logo Section */}
-      <div className={`flex items-center h-20 px-4 border-b border-white/[0.06] flex-shrink-0 relative
+      <div className={`flex items-center h-20 px-4 border-b border-white/[0.06] flex-shrink-0 relative z-10
         ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-3 group">
@@ -126,7 +136,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav Groups */}
-      <nav className="flex-1 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none">
+      <nav className="flex-1 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none relative z-10">
         {dynamicNavGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
@@ -230,7 +240,7 @@ export function Sidebar() {
       {collapsed && (
         <button
           onClick={() => setCollapsed(false)}
-          className="mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-600 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5"
+          className="mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-600 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5 relative z-10"
           title="הרחב"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -238,7 +248,7 @@ export function Sidebar() {
       )}
 
       {/* User Section */}
-      <div className="border-t border-white/[0.06] p-3 flex-shrink-0">
+      <div className="border-t border-white/[0.06] p-3 flex-shrink-0 relative z-10">
         <div
           className={`flex items-center gap-3 rounded-xl p-2.5 transition-all cursor-pointer group
             hover:bg-white/[0.04] border border-transparent hover:border-white/5

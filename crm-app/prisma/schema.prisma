@@ -28,6 +28,10 @@ model User {
   lockToken         String?         @unique
   lockTokenExpiresAt DateTime?
   
+  // 📅 Google Calendar integration
+  googleCalendarRefreshToken String?
+  googleCalendarEmail        String?
+
   // Relations
   assignedPositions Position[]      @relation("PositionRecruiter")
   interviewsScheduled Interview[]   @relation("InterviewScheduler")
@@ -240,6 +244,9 @@ model Interview {
   feedback      String?
   rating        Int?          // 1-5 stars
   status        String        @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  
+  // 📅 Google Calendar sync
+  googleCalendarEventId String?
   
   application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   applicationId String

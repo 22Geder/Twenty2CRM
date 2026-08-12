@@ -22,17 +22,17 @@ export default async function DashboardLayout({
       <Sidebar />
       
       {/* Main content — scrolls independently, never under the sidebar */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative" style={{ background: '#EEF2F7' }}>
+        {/* רקע לוגו הבוט - שקוף, פרוס על כל שטח התוכן בין הצדדים הכחולים, קבוע ומופיע בכל דף של ה-CRM */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-center bg-cover bg-no-repeat opacity-[0.06] z-0"
+          style={{ backgroundImage: "url(/logo-bot.png)" }}
+        />
         <TopNavbar />
         <main
-          className="flex-1 overflow-y-auto p-4 md:p-6 relative"
-          style={{ background: '#EEF2F7' }}
+          className="flex-1 overflow-y-auto p-4 md:p-6 relative z-10"
+          style={{ background: 'transparent' }}
         >
-          {/* רקע אריה גדול ושקוף - הלוגו המלא (עם הרקע המקורי שלו) מופיע פעם אחת בלבד, במרכז הבסיס של כל ה-CRM */}
-          <div
-            className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] max-w-[760px] aspect-square bg-center bg-contain bg-no-repeat opacity-[0.12] z-0"
-            style={{ backgroundImage: "url(/avigdor-lion.png)" }}
-          />
           <div className="max-w-[1400px] mx-auto relative z-10">
             {children}
           </div>

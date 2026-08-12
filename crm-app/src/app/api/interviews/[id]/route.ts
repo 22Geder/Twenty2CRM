@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { updateCalendarEvent, deleteCalendarEvent } from "@/lib/google-calendar"
 
 // GET /api/interviews/[id] - קבלת ראיון ספציפי
 export async function GET(
@@ -135,6 +136,31 @@ export async function PUT(
       },
     })
 
+    // 📅 Sync update to Google Calendar (non-blocking)
+    try {
+      if (existingInterview.googleCalendarEventId) {
+        const scheduler = await prisma.user.findUnique({
+          where: { id: interview.schedulerId },
+          select: { googleCalendarRefreshToken: true },
+        })
+        if (scheduler?.googleCalendarRefreshToken) {
+          await updateCalendarEvent(
+            scheduler.googleCalendarRefreshToken,
+            existingInterview.googleCalendarEventId!,
+            {
+              title: interview.title,
+              startTime: interview.scheduledAt,
+              durationMinutes: interview.duration,
+              location: interview.location ?? undefined,
+              meetingUrl: interview.meetingUrl ?? undefined,
+            }
+          )
+        }
+      }
+    } catch (calErr) {
+      console.error("Calendar update error (non-fatal):", calErr)
+    }
+
     return NextResponse.json(interview)
   } catch (error) {
     console.error("Error updating interview:", error)
@@ -168,6 +194,24 @@ export async function DELETE(
         { error: "Interview not found" },
         { status: 404 }
       )
+    }
+
+    // 📅 Delete from Google Calendar (non-blocking)
+    try {
+      if (interview.googleCalendarEventId) {
+        const scheduler = await prisma.user.findUnique({
+          where: { id: interview.schedulerId },
+          select: { googleCalendarRefreshToken: true },
+        })
+        if (scheduler?.googleCalendarRefreshToken) {
+          await deleteCalendarEvent(
+            scheduler.googleCalendarRefreshToken,
+            interview.googleCalendarEventId
+          )
+        }
+      }
+    } catch (calErr) {
+      console.error("Calendar delete error (non-fatal):", calErr)
     }
 
     // Delete interview

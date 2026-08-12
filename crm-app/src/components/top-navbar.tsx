@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { 
@@ -200,6 +201,18 @@ export function TopNavbar() {
           )}
         </div>
       </div>
+
+      {/* לוגו הבוט - גדול, בצד שמאל של הסרגל העליון */}
+      <Link href="/dashboard" className="flex-shrink-0 flex items-center mr-1" title="Twenty2Jobs">
+        <Image
+          src="/logo-bot.png"
+          alt="22JOBS"
+          width={140}
+          height={166}
+          priority
+          className="h-16 md:h-[76px] w-auto object-contain drop-shadow-[0_4px_14px_rgba(37,99,235,0.25)]"
+        />
+      </Link>
 
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (

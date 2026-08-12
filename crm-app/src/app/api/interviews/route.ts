@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { createCalendarEvent } from "@/lib/google-calendar"
+import { generateICalString } from "@/lib/ical-helper"
+import nodemailer from "nodemailer"
 
 // GET /api/interviews - קבלת כל הראיונות
 export async function GET(request: NextRequest) {
@@ -133,9 +136,26 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validation
-    if (!title || !type || !scheduledAt || !applicationId || !positionId || !candidateId || !schedulerId) {
+    if (!title || !type || !scheduledAt || !applicationId || !positionId || !candidateId) {
       return NextResponse.json(
         { error: "Required fields missing" },
+        { status: 400 }
+      )
+    }
+
+    // Resolve scheduler: use provided ID or fall back to the current session user
+    let resolvedSchedulerId = schedulerId
+    if (!resolvedSchedulerId || resolvedSchedulerId === "__current_user__") {
+      const sessionUser = await prisma.user.findUnique({
+        where: { email: session.user?.email! },
+        select: { id: true },
+      })
+      resolvedSchedulerId = sessionUser?.id
+    }
+
+    if (!resolvedSchedulerId) {
+      return NextResponse.json(
+        { error: "Scheduler user not found" },
         { status: 400 }
       )
     }
@@ -164,7 +184,7 @@ export async function POST(request: NextRequest) {
         applicationId,
         positionId,
         candidateId,
-        schedulerId,
+        schedulerId: resolvedSchedulerId,
         status: status || "SCHEDULED",
       },
       include: {
@@ -178,6 +198,90 @@ export async function POST(request: NextRequest) {
         application: true,
       },
     })
+
+    // 📅 Google Calendar event creation (non-blocking)
+    try {
+      const scheduler = await prisma.user.findUnique({
+        where: { id: resolvedSchedulerId },
+        select: { googleCalendarRefreshToken: true, email: true, name: true },
+      })
+
+      if (scheduler?.googleCalendarRefreshToken) {
+        const attendeeEmails = [
+          scheduler.email,
+          interview.candidate?.email,
+        ].filter((e): e is string => Boolean(e))
+
+        const eventId = await createCalendarEvent(scheduler.googleCalendarRefreshToken, {
+          title: interview.title,
+          description: [
+            `ראיון עם: ${interview.candidate?.name}`,
+            `תפקיד: ${interview.position?.title}`,
+            interview.notes ? `הערות: ${interview.notes}` : "",
+          ].filter(Boolean).join("\n"),
+          startTime: interview.scheduledAt,
+          durationMinutes: interview.duration,
+          location: interview.location ?? undefined,
+          meetingUrl: interview.meetingUrl ?? undefined,
+          attendeeEmails,
+          organizerEmail: scheduler.email,
+        })
+
+        // Save the Google Calendar event ID
+        await prisma.interview.update({
+          where: { id: interview.id },
+          data: { googleCalendarEventId: eventId },
+        })
+
+        // Also send .ics for Outlook compatibility if candidate has email
+        if (interview.candidate?.email && process.env.SMTP_HOST) {
+          const icsContent = generateICalString({
+            uid: interview.id,
+            title: interview.title,
+            description: `ראיון עם ${interview.candidate.name}`,
+            startTime: interview.scheduledAt,
+            durationMinutes: interview.duration,
+            location: interview.meetingUrl ?? interview.location ?? undefined,
+            organizerName: scheduler.name,
+            organizerEmail: scheduler.email,
+            attendees: [
+              { name: interview.candidate.name, email: interview.candidate.email },
+              { name: scheduler.name, email: scheduler.email },
+            ],
+          })
+
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT || "587"),
+            secure: process.env.SMTP_SECURE === "true",
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+          })
+
+          await transporter.sendMail({
+            from: `"${process.env.SMTP_FROM_NAME || "TWENTY2CRM"}" <${process.env.SMTP_USER}>`,
+            to: interview.candidate.email,
+            subject: `זימון ראיון: ${interview.title}`,
+            html: `<div dir="rtl">
+              <h2>זומנת לראיון!</h2>
+              <p><strong>תאריך:</strong> ${new Date(scheduledAt).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })}</p>
+              <p><strong>משרה:</strong> ${interview.position?.title}</p>
+              ${interview.meetingUrl ? `<p><strong>קישור:</strong> <a href="${interview.meetingUrl}">${interview.meetingUrl}</a></p>` : ""}
+              ${interview.location ? `<p><strong>מיקום:</strong> ${interview.location}</p>` : ""}
+              <p>הקובץ המצורף הוא זימון יומן (.ics) — פותח ב-Outlook וב-Google Calendar.</p>
+            </div>`,
+            attachments: [
+              {
+                filename: "interview.ics",
+                content: icsContent,
+                contentType: "text/calendar;method=REQUEST",
+              },
+            ],
+          })
+        }
+      }
+    } catch (calErr) {
+      console.error("Calendar sync error (non-fatal):", calErr)
+    }
 
     return NextResponse.json(interview, { status: 201 })
   } catch (error) {

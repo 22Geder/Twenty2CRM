@@ -115,6 +115,7 @@ import { AdvancedMatchingView } from "@/components/advanced-matching-view"
 import { SmartAIMatching } from "@/components/smart-ai-matching"
 import { ErrorBoundary } from "@/components/error-boundary"
 import CandidateManualSummary from "@/components/candidate-manual-summary"
+import ScheduleInterviewModal from "@/components/schedule-interview-modal"
 
 export default function CandidateDetailsPage() {
   const router = useRouter()
@@ -148,6 +149,9 @@ export default function CandidateDetailsPage() {
   // 📱 WhatsApp tracking
   const [whatsAppLastSent, setWhatsAppLastSent] = useState<string | null>(null)
   const [whatsAppLogs, setWhatsAppLogs] = useState<any[]>([])
+  
+  // 📅 Schedule Interview Modal
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -727,6 +731,14 @@ export default function CandidateDetailsPage() {
               <div className="flex gap-2 flex-shrink-0">
                 {!editing ? (
                   <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowScheduleModal(true)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      <Calendar className="ml-2 h-4 w-4" />
+                      קבע ראיון
+                    </Button>
                     <Button variant="outline" onClick={() => setEditing(true)}>
                       <Edit className="ml-2 h-4 w-4" />
                       ערוך
@@ -2046,6 +2058,21 @@ export default function CandidateDetailsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 📅 Schedule Interview Modal */}
+      {showScheduleModal && candidate && (
+        <ScheduleInterviewModal
+          candidate={{
+            id: candidateId,
+            name: candidate.name,
+            email: candidate.email,
+          }}
+          onClose={() => setShowScheduleModal(false)}
+          onSuccess={(interview) => {
+            fetchCandidate()
+          }}
+        />
       )}
     </div>
   )

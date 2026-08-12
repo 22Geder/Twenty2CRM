@@ -23,10 +23,15 @@ export default async function DashboardLayout({
       
       {/* Main content — scrolls independently, never under the sidebar */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative" style={{ background: '#F1F5F9' }}>
-        {/* רקע לוגו הבוט - שקוף, פרוס על כל שטח התוכן בין הצדדים הכחולים, קבוע ומופיע בכל דף של ה-CRM */}
+        {/* רקע לוגו 22JOBS - פרוס כטקסטורה עדינה ושקופה על כל שטח התוכן, מאחורי הטקסט, מופיע בכל דף של ה-CRM */}
         <div
-          className="pointer-events-none absolute inset-0 bg-center bg-cover bg-no-repeat opacity-[0.06] z-0"
-          style={{ backgroundImage: "url(/logo-bot.png)" }}
+          className="pointer-events-none absolute inset-0 opacity-[0.04] z-0"
+          style={{
+            backgroundImage: "url(/logo-22jobs-clean.png)",
+            backgroundRepeat: "repeat",
+            backgroundSize: "200px auto",
+            backgroundPosition: "center top",
+          }}
         />
         <TopNavbar />
         <main

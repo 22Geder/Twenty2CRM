@@ -965,43 +965,52 @@ export default async function CiviDashboardPage() {
           </div>
           {(() => {
             const data = stats.monthlyData
-            const maxVal = Math.max(...data.map(m => m.candidates + m.hired + m.inProcess), 1)
-            const chartH = 160
-            const barW = 100 / data.length
+            const maxVal = Math.max(...data.flatMap(m => [m.candidates, m.hired, m.inProcess]), 1)
+            const chartH = 180
+            const series = [
+              { key: 'candidates' as const, label: 'מועמדים', color: '#3B82F6', colorCur: '#1D4ED8' },
+              { key: 'hired' as const, label: 'התקבלו', color: '#10B981', colorCur: '#059669' },
+              { key: 'inProcess' as const, label: 'נכנסו לתהליך', color: '#F97316', colorCur: '#EA580C' },
+            ]
             return (
-              <div className="relative">
-                <svg width="100%" height={chartH + 40} viewBox={`0 0 100 ${chartH + 40}`} preserveAspectRatio="none" className="overflow-visible">
-                  {data.map((m, i) => {
-                    const isCurrentMonth = i === data.length - 1
-                    const hCand = ((m.candidates) / maxVal) * chartH
-                    const hHired = ((m.hired) / maxVal) * chartH
-                    const hInProc = ((m.inProcess) / maxVal) * chartH
-                    const total = m.candidates + m.hired + m.inProcess
-                    const totalH = (total / maxVal) * chartH
-                    const x = i * barW + barW * 0.1
-                    const w = barW * 0.8
-                    const baseY = chartH
-                    return (
-                      <g key={i}>
-                        {hInProc > 0 && <rect x={x} y={baseY - hInProc} width={w} height={hInProc}
-                          fill={isCurrentMonth ? '#EA580C' : '#F97316'} fillOpacity={isCurrentMonth ? 1 : 0.7} rx="0.5" />}
-                        {hHired > 0 && <rect x={x} y={baseY - hInProc - hHired} width={w} height={hHired}
-                          fill={isCurrentMonth ? '#059669' : '#10B981'} fillOpacity={isCurrentMonth ? 1 : 0.7} rx="0.5" />}
-                        {hCand > 0 && <rect x={x} y={baseY - hInProc - hHired - hCand} width={w} height={hCand}
-                          fill={isCurrentMonth ? '#1D4ED8' : '#3B82F6'} fillOpacity={isCurrentMonth ? 1 : 0.7} rx="0.5" />}
-                        <text x={x + w / 2} y={chartH + 14} textAnchor="middle" fontSize="2.8"
-                          fill={isCurrentMonth ? '#1E293B' : '#94A3B8'} fontWeight={isCurrentMonth ? '700' : '400'}>
-                          {m.month.substring(0, 3)}
-                        </text>
-                        {total > 0 && <text x={x + w / 2} y={baseY - hInProc - hHired - hCand - 1} textAnchor="middle" fontSize="2.5"
-                          fill={isCurrentMonth ? '#1E293B' : '#64748B'} fontWeight="600">
-                          {total}
-                        </text>}
-                      </g>
-                    )
-                  })}
-                  <line x1="0" y1={chartH} x2="100" y2={chartH} stroke="#E2E8F0" strokeWidth="0.3" />
-                </svg>
+              <div className="flex items-end gap-1 sm:gap-2" style={{ height: chartH + 44 }}>
+                {data.map((m, i) => {
+                  const isCurrentMonth = i === data.length - 1
+                  const total = m.candidates + m.hired + m.inProcess
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group">
+                      <div className="flex items-end justify-center gap-[2px] sm:gap-1 w-full" style={{ height: chartH }}>
+                        {series.map((s) => {
+                          const val = m[s.key]
+                          const h = (val / maxVal) * chartH
+                          return (
+                            <div key={s.key} className="relative flex-1 flex flex-col items-center justify-end h-full">
+                              {val > 0 && (
+                                <span className="text-[9px] sm:text-[10px] font-semibold mb-0.5"
+                                  style={{ color: isCurrentMonth ? s.colorCur : '#64748B' }}>
+                                  {val}
+                                </span>
+                              )}
+                              <div className="w-full rounded-t transition-all"
+                                style={{
+                                  height: Math.max(h, val > 0 ? 3 : 0),
+                                  backgroundColor: isCurrentMonth ? s.colorCur : s.color,
+                                  opacity: isCurrentMonth ? 1 : 0.85,
+                                }}
+                                title={`${m.month} · ${s.label}: ${val}`}
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className="mt-2 text-[10px] sm:text-xs text-center leading-tight"
+                        style={{ color: isCurrentMonth ? '#1E293B' : '#94A3B8', fontWeight: isCurrentMonth ? 700 : 400 }}>
+                        {m.month}
+                        {total > 0 && <span className="block text-[9px] text-slate-400 font-normal">סה"כ {total}</span>}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )
           })()}

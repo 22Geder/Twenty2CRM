@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,7 +35,15 @@ import {
   ChevronDown,
   ChevronUp,
   Send,
-  MessageCircle
+  MessageCircle,
+  Mic,
+  MicOff,
+  Moon,
+  Sun,
+  GitCompare,
+  Bell,
+  Copy,
+  Download,
 } from 'lucide-react'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 import { AICandidateSearch } from '@/components/ai-candidate-search'
@@ -116,6 +124,35 @@ export default function CandidatesPageModern() {
   const PAGE_SIZE = 50
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
+  // ── NEW FEATURES ─────────────────────────────────────────
+  // 1. Voice search
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef<any>(null)
+
+  // 2. Comparison modal
+  const [compareSet, setCompareSet] = useState<Set<string>>(new Set())
+  const [showCompare, setShowCompare] = useState(false)
+
+  // 3. Reminder modal
+  const [reminderCandidate, setReminderCandidate] = useState<Candidate | null>(null)
+  const [reminderText, setReminderText] = useState('')
+  const [reminderDate, setReminderDate] = useState('')
+  const [reminderSaving, setReminderSaving] = useState(false)
+
+  // 4. Dark mode
+  const [darkMode, setDarkMode] = useState(false)
+
+  // 5. WhatsApp preview modal
+  const [waPreviewCandidate, setWaPreviewCandidate] = useState<Candidate | null>(null)
+  const [waMessage, setWaMessage] = useState('')
+
+  // 6. Duplicate detection (phone/email set built after fetch)
+  const [duplicateIds, setDuplicateIds] = useState<Set<string>>(new Set())
+
+  // 7. Interactive star rating
+  const [ratingUpdating, setRatingUpdating] = useState<string | null>(null)
+  // ─────────────────────────────────────────────────────────
 
   // 🆕 בחירת/ביטול בחירת מועמד
   const toggleSelect = (id: string) => {
@@ -252,7 +289,19 @@ export default function CandidatesPageModern() {
       const response = await fetch('/api/candidates?limit=10000&light=1')
       if (response.ok) {
         const data = await response.json()
-        setCandidates(data.candidates || [])
+        const list: Candidate[] = data.candidates || []
+        setCandidates(list)
+        // Detect duplicates by phone/email
+        const phoneCount: Record<string, string[]> = {}
+        const emailCount: Record<string, string[]> = {}
+        list.forEach(c => {
+          if (c.phone) { phoneCount[c.phone] = [...(phoneCount[c.phone] || []), c.id] }
+          if (c.email) { emailCount[c.email] = [...(emailCount[c.email] || []), c.id] }
+        })
+        const dupIds = new Set<string>()
+        Object.values(phoneCount).forEach(ids => { if (ids.length > 1) ids.forEach(id => dupIds.add(id)) })
+        Object.values(emailCount).forEach(ids => { if (ids.length > 1) ids.forEach(id => dupIds.add(id)) })
+        setDuplicateIds(dupIds)
       }
     } catch (error) {
       console.error('Error fetching candidates:', error)
@@ -419,6 +468,99 @@ export default function CandidatesPageModern() {
     )
   }
 
+  // ── NEW FEATURE HANDLERS ──────────────────────────────────
+
+  // Dark mode toggle — adds class to html element
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [darkMode])
+
+  // Voice search
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) { alert('דפדפן זה אינו תומך בחיפוש קולי'); return }
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'he-IL'
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript
+      setSearch(transcript)
+    }
+    recognition.onend = () => setIsListening(false)
+    recognition.onerror = () => setIsListening(false)
+    recognition.start()
+    recognitionRef.current = recognition
+    setIsListening(true)
+  }
+
+  // Toggle candidate in comparison set (max 3)
+  const toggleCompare = (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCompareSet(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id) }
+      else if (next.size < 3) { next.add(id) }
+      return next
+    })
+  }
+
+  // Interactive star rating update
+  const updateRating = async (candidateId: string, rating: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setRatingUpdating(candidateId)
+    try {
+      await fetch(`/api/candidates/${candidateId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating })
+      })
+      setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, rating } : c))
+    } catch {}
+    setRatingUpdating(null)
+  }
+
+  // Save reminder
+  const saveReminder = async () => {
+    if (!reminderCandidate || !reminderText) return
+    setReminderSaving(true)
+    try {
+      await fetch('/api/interviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId: reminderCandidate.id,
+          scheduledAt: reminderDate || new Date(Date.now() + 86400000).toISOString(),
+          type: 'REMINDER',
+          notes: reminderText,
+        })
+      })
+      setReminderCandidate(null)
+      setReminderText('')
+      setReminderDate('')
+    } catch {}
+    setReminderSaving(false)
+  }
+
+  // Abandonment risk: not updated in 14+ days
+  const isAbandoned = (c: Candidate) => {
+    const last = c.updatedAt ? new Date(c.updatedAt) : null
+    if (!last) return false
+    return (Date.now() - last.getTime()) > 14 * 24 * 60 * 60 * 1000
+  }
+  // ─────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <div className="p-4 md:p-8 space-y-5">
@@ -480,6 +622,24 @@ export default function CandidatesPageModern() {
             </div>
           </div>
           <div className="flex gap-2.5">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(d => !d)}
+              className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
+              title={darkMode ? 'מצב בהיר' : 'מצב כהה'}
+            >
+              {darkMode ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-slate-500" />}
+            </button>
+            {/* Compare button */}
+            {compareSet.size >= 2 && (
+              <button
+                onClick={() => setShowCompare(true)}
+                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg shadow-violet-200 transition-all hover:-translate-y-0.5"
+              >
+                <GitCompare className="h-4 w-4" />
+                השווה ({compareSet.size})
+              </button>
+            )}
             <Button 
               onClick={loadBestMatches}
               disabled={loadingBestMatches}
@@ -542,9 +702,19 @@ export default function CandidatesPageModern() {
               placeholder="חפש מועמד לפי שם, אימייל, כישורים, עיר, תגית..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pr-12 h-14 text-lg border-2 border-slate-200 focus:border-[#06B6D4] rounded-xl bg-slate-50/50"
+              className="pr-12 pl-14 h-14 text-lg border-2 border-slate-200 focus:border-[#06B6D4] rounded-xl bg-slate-50/50"
             />
+            <button
+              onClick={startVoiceSearch}
+              className={`absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'hover:bg-slate-100 text-slate-400 hover:text-[#06B6D4]'}`}
+              title="חיפוש קולי"
+            >
+              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </button>
           </div>
+          {isListening && (
+            <p className="text-center text-sm text-red-500 mt-2 animate-pulse">🎤 מקשיב... דבר עכשיו</p>
+          )}
         </CardContent>
       </Card>
 
@@ -778,6 +948,20 @@ export default function CandidatesPageModern() {
                   }`} />
 
                   <div className="p-5">
+                    {/* Badges row: abandonment / duplicate */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {isAbandoned(candidate) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                          ⚠️ לא נוצר קשר 14+ יום
+                        </span>
+                      )}
+                      {duplicateIds.has(candidate.id) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
+                          🔁 כפילות אפשרית
+                        </span>
+                      )}
+                    </div>
+
                     {/* Header row */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       {/* Avatar + Name */}
@@ -797,14 +981,20 @@ export default function CandidatesPageModern() {
                           )}
                         </div>
                       </div>
-                      {/* Stars */}
-                      {candidate.rating && (
-                        <div className="flex gap-0.5 flex-shrink-0">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`h-3 w-3 ${i < candidate.rating! ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'}`} />
-                          ))}
-                        </div>
-                      )}
+                      {/* Interactive Stars */}
+                      <div className="flex gap-0.5 flex-shrink-0" onClick={(e) => e.preventDefault()}>
+                        {ratingUpdating === candidate.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-slate-400" />
+                        ) : (
+                          [1, 2, 3, 4, 5].map((i) => (
+                            <Star
+                              key={i}
+                              className={`h-3.5 w-3.5 cursor-pointer transition-colors ${(candidate.rating || 0) >= i ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200 hover:text-yellow-300'}`}
+                              onClick={(e) => updateRating(candidate.id, i, e)}
+                            />
+                          ))
+                        )}
+                      </div>
                     </div>
 
                     {/* Info grid */}
@@ -873,6 +1063,38 @@ export default function CandidatesPageModern() {
                         </span>
                       </div>
                       <div className="flex gap-1" onClick={(e) => e.preventDefault()}>
+                        {/* Compare toggle */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="השווה מועמדים"
+                          className={`h-8 w-8 p-0 rounded-xl ${compareSet.has(candidate.id) ? 'bg-violet-100 text-violet-600' : 'hover:bg-violet-50 text-slate-400'}`}
+                          onClick={(e) => toggleCompare(candidate.id, e)}
+                        >
+                          <GitCompare className="h-4 w-4" />
+                        </Button>
+                        {/* Reminder */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="הוסף תזכורת"
+                          className="h-8 w-8 p-0 rounded-xl hover:bg-amber-50 text-slate-400 hover:text-amber-600"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReminderCandidate(candidate); setReminderText(''); setReminderDate(''); }}
+                        >
+                          <Bell className="h-4 w-4" />
+                        </Button>
+                        {/* WhatsApp preview */}
+                        {candidate.phone && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="שלח וואטסאפ"
+                            className="h-8 w-8 p-0 rounded-xl hover:bg-green-50"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); const name = candidate.name; setWaPreviewCandidate(candidate); setWaMessage(`שלום ${name}, אני פונה אליך בנוגע להצעת עבודה מעניינת. האם ניתן לשוחח?`); }}
+                          >
+                            <MessageCircle className="h-4 w-4 text-green-600" />
+                          </Button>
+                        )}
                         <Button
                         variant="ghost" 
                         size="sm" 
@@ -962,6 +1184,168 @@ export default function CandidatesPageModern() {
         )}
         </>
       )}
+
+      {/* ── NEW MODALS ───────────────────────────────────────── */}
+
+      {/* Reminder Modal */}
+      {reminderCandidate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <Bell className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800">תזכורת</h3>
+                <p className="text-sm text-slate-500">{reminderCandidate.name}</p>
+              </div>
+              <button className="mr-auto p-1.5 hover:bg-slate-100 rounded-lg" onClick={() => setReminderCandidate(null)}>
+                <X className="h-4 w-4 text-slate-500" />
+              </button>
+            </div>
+            <textarea
+              placeholder="תוכן התזכורת..."
+              value={reminderText}
+              onChange={e => setReminderText(e.target.value)}
+              className="w-full h-24 border border-slate-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-amber-400 mb-3"
+              dir="rtl"
+            />
+            <input
+              type="datetime-local"
+              value={reminderDate}
+              onChange={e => setReminderDate(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-amber-400 mb-4"
+            />
+            <div className="flex gap-2 justify-end">
+              <button className="px-4 py-2 rounded-xl border border-slate-200 text-sm hover:bg-slate-50" onClick={() => setReminderCandidate(null)}>ביטול</button>
+              <button
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+                onClick={saveReminder}
+                disabled={reminderSaving || !reminderText}
+              >
+                {reminderSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                שמור תזכורת
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Preview Modal */}
+      {waPreviewCandidate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <MessageCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800">תצוגה מקדימה — וואטסאפ</h3>
+                <p className="text-sm text-slate-500">{waPreviewCandidate.name} · {waPreviewCandidate.phone}</p>
+              </div>
+              <button className="mr-auto p-1.5 hover:bg-slate-100 rounded-lg" onClick={() => setWaPreviewCandidate(null)}>
+                <X className="h-4 w-4 text-slate-500" />
+              </button>
+            </div>
+            {/* Preview bubble */}
+            <div className="bg-[#dcf8c6] rounded-2xl rounded-tl-none p-4 text-sm text-slate-800 mb-3 shadow-sm" dir="rtl">
+              {waMessage}
+            </div>
+            <textarea
+              value={waMessage}
+              onChange={e => setWaMessage(e.target.value)}
+              className="w-full h-28 border border-slate-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-green-400 mb-4"
+              dir="rtl"
+              placeholder="ערוך את ההודעה..."
+            />
+            <div className="flex gap-2 justify-end">
+              <button className="px-4 py-2 rounded-xl border border-slate-200 text-sm hover:bg-slate-50" onClick={() => setWaPreviewCandidate(null)}>ביטול</button>
+              <a
+                href={`https://wa.me/972${waPreviewCandidate.phone?.replace(/^0/, '').replace(/[-\s]/g, '')}?text=${encodeURIComponent(waMessage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold flex items-center gap-2"
+                onClick={() => setWaPreviewCandidate(null)}
+              >
+                <MessageCircle className="h-4 w-4" />
+                שלח וואטסאפ
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comparison Modal */}
+      {showCompare && compareSet.size >= 2 && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <GitCompare className="h-5 w-5 text-violet-600" />
+                השוואת מועמדים
+              </h3>
+              <button className="p-2 hover:bg-slate-100 rounded-xl" onClick={() => setShowCompare(false)}>
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+            <div className={`grid gap-4 ${compareSet.size === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {Array.from(compareSet).map(id => {
+                const c = candidates.find(x => x.id === id)
+                if (!c) return null
+                return (
+                  <div key={id} className="border border-slate-200 rounded-2xl p-5 space-y-3">
+                    {/* Avatar + Name */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <span className="text-white font-bold text-lg">{c.name.charAt(0)}</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{c.name}</p>
+                        {c.currentTitle && <p className="text-xs text-slate-500">{c.currentTitle}</p>}
+                      </div>
+                    </div>
+                    {/* Info */}
+                    <div className="space-y-2 text-sm">
+                      {c.city && <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5 text-slate-400"/><span>{c.city}</span></div>}
+                      {c.phone && <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-slate-400"/><span dir="ltr">{c.phone}</span></div>}
+                      {c.yearsOfExperience !== null && <div className="flex items-center gap-2"><Briefcase className="h-3.5 w-3.5 text-slate-400"/><span>{c.yearsOfExperience} שנות ניסיון</span></div>}
+                      <div className="flex items-center gap-1">
+                        {[1,2,3,4,5].map(i => <Star key={i} className={`h-3.5 w-3.5 ${(c.rating||0)>=i ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'}`}/>)}
+                      </div>
+                    </div>
+                    {/* Tags */}
+                    {c.tags && c.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {c.tags.slice(0, 6).map(tag => (
+                          <span key={tag.id} className="text-[10px] px-2 py-0.5 rounded-md font-semibold" style={{ backgroundColor: `${tag.color}18`, color: tag.color }}>
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {/* Stats */}
+                    <div className="flex gap-2 pt-2 border-t border-slate-100">
+                      <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg">📋 {c._count?.applications || 0} פניות</span>
+                      <span className="text-[11px] bg-orange-50 text-orange-700 px-2 py-1 rounded-lg">🎙 {c._count?.interviews || 0} ראיונות</span>
+                    </div>
+                    <Link href={`/dashboard/candidates/${c.id}`} className="block text-center text-xs text-indigo-600 hover:underline" onClick={() => setShowCompare(false)}>
+                      פתח פרופיל מלא ←
+                    </Link>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-6 flex justify-between items-center">
+              <button className="text-sm text-slate-500 hover:text-red-500" onClick={() => { setCompareSet(new Set()); setShowCompare(false); }}>
+                נקה השוואה
+              </button>
+              <button className="px-4 py-2 rounded-xl border border-slate-200 text-sm hover:bg-slate-50" onClick={() => setShowCompare(false)}>סגור</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────── */}
 
       {/* 🆕 מודל התאמות טובות ביותר */}
       {showBestMatches && bestMatchesData && (

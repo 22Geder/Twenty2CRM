@@ -44,10 +44,106 @@ import {
   Bell,
   Copy,
   Download,
+  Truck,
+  HardHat,
+  ChefHat,
+  Stethoscope,
+  GraduationCap,
+  Wrench,
+  Monitor,
+  ShoppingCart,
+  Warehouse,
+  Headphones,
 } from 'lucide-react'
+import Image from 'next/image'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 import { AICandidateSearch } from '@/components/ai-candidate-search'
 import CandidateManualSummary from '@/components/candidate-manual-summary'
+
+// ── CandidateAvatar ──────────────────────────────────────────────────────────
+// Shows: photo > profession icon > 22JOBS logo (circle shape always)
+function getCandidateIcon(title: string | null): React.ReactNode {
+  if (!title) return null
+  const t = title.toLowerCase()
+  if (/נהג|לוגיסטי|משלוח|delivery|driver|truck/.test(t))
+    return <Truck className="h-5 w-5 text-white" />
+  if (/מחסנ|מחסנאי|warehouse|מלגזן|מלקט/.test(t))
+    return <Warehouse className="h-5 w-5 text-white" />
+  if (/בנ|בניה|פועל|construction|harat|הרמה/.test(t))
+    return <HardHat className="h-5 w-5 text-white" />
+  if (/שף|בישול|מסעד|chef|cook|קייטר/.test(t))
+    return <ChefHat className="h-5 w-5 text-white" />
+  if (/רופא|אחות|רפואי|medical|nurse|health|בריאות/.test(t))
+    return <Stethoscope className="h-5 w-5 text-white" />
+  if (/מורה|מרצה|מחנך|teacher|lecturer|education/.test(t))
+    return <GraduationCap className="h-5 w-5 text-white" />
+  if (/טכנאי|מכונאי|mechanic|technician|חשמל|אינסטלטור/.test(t))
+    return <Wrench className="h-5 w-5 text-white" />
+  if (/מפתח|developer|software|תוכנה|frontend|backend|fullstack|קוד/.test(t))
+    return <Monitor className="h-5 w-5 text-white" />
+  if (/מכירות|sales|קמעונאי|retail|קופ|קניות/.test(t))
+    return <ShoppingCart className="h-5 w-5 text-white" />
+  if (/שירות|support|נציג|agent|תמיכה|customer/.test(t))
+    return <Headphones className="h-5 w-5 text-white" />
+  return null
+}
+
+// Deterministic gradient per name (so same person always gets same color)
+function nameToGradient(name: string): string {
+  const gradients = [
+    'from-[#06B6D4] to-[#0891B2]',   // teal
+    'from-[#6366F1] to-[#4F46E5]',   // indigo
+    'from-[#10B981] to-[#059669]',   // green
+    'from-[#F97316] to-[#EA580C]',   // orange
+    'from-[#A855F7] to-[#7C3AED]',   // purple
+    'from-[#EC4899] to-[#DB2777]',   // pink
+    'from-[#3B82F6] to-[#2563EB]',   // blue
+    'from-[#14B8A6] to-[#0D9488]',   // teal-green
+  ]
+  const idx = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % gradients.length
+  return gradients[idx]
+}
+
+function CandidateAvatar({ candidate }: { candidate: { name: string; currentTitle?: string | null; avatar?: string | null } }) {
+  const [imgError, setImgError] = useState(false)
+  const gradient = nameToGradient(candidate.name)
+  const icon = getCandidateIcon(candidate.currentTitle || null)
+  const initial = candidate.name.charAt(0)
+
+  // Case 1: has real photo and it loaded
+  if (candidate.avatar && !imgError) {
+    return (
+      <div className="relative w-12 h-12 flex-shrink-0">
+        <img
+          src={candidate.avatar}
+          alt={candidate.name}
+          onError={() => setImgError(true)}
+          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+        />
+        {/* 22JOBS mini badge bottom-right */}
+        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center overflow-hidden">
+          <Image src="/logo-22jobs.png" alt="22jobs" width={16} height={16} className="rounded-full object-cover" />
+        </div>
+      </div>
+    )
+  }
+
+  // Case 2: no photo — show profession icon OR initial, with 22JOBS mini badge
+  return (
+    <div className="relative w-12 h-12 flex-shrink-0">
+      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md ring-2 ring-white`}>
+        {icon ?? (
+          <span className="text-white font-bold text-lg leading-none">{initial}</span>
+        )}
+      </div>
+      {/* 22JOBS mini badge bottom-right */}
+      <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center overflow-hidden border border-slate-100">
+        <Image src="/logo-22jobs.png" alt="22jobs" width={16} height={16} className="rounded-full object-cover" />
+      </div>
+    </div>
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface Application {
   id: string
@@ -70,7 +166,9 @@ interface Candidate {
   noticePeriod: string | null
   city: string | null
   skills: string | null
+  avatar: string | null
   createdAt: string
+  updatedAt?: string | null
   hiredAt: string | null
   applications: Application[]
   tags: Array<{ id: string; name: string; color: string }>
@@ -966,11 +1064,7 @@ export default function CandidatesPageModern() {
                     <div className="flex items-start justify-between gap-3 mb-3">
                       {/* Avatar + Name */}
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#06B6D4] to-[#0891B2] flex items-center justify-center flex-shrink-0 shadow-md shadow-cyan-200/50">
-                          <span className="text-white font-bold text-base">
-                            {candidate.name.charAt(0)}
-                          </span>
-                        </div>
+                        <CandidateAvatar candidate={candidate} />
                         <div className="min-w-0">
                           <h3 className="font-bold text-slate-800 text-[15px] truncate group-hover:text-[#06B6D4] transition-colors">
                             {candidate.name}
@@ -1296,9 +1390,7 @@ export default function CandidatesPageModern() {
                   <div key={id} className="border border-slate-200 rounded-2xl p-5 space-y-3">
                     {/* Avatar + Name */}
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                        <span className="text-white font-bold text-lg">{c.name.charAt(0)}</span>
-                      </div>
+                      <CandidateAvatar candidate={c} />
                       <div>
                         <p className="font-bold text-slate-800">{c.name}</p>
                         {c.currentTitle && <p className="text-xs text-slate-500">{c.currentTitle}</p>}

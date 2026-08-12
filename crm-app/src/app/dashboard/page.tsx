@@ -346,17 +346,22 @@ export default async function CiviDashboardPage() {
       <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
         
         {/* Candidate Status Overview - 3 Categories */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
           {/* In Process - בתהליך */}
-          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white px-5 py-4 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-[15px]">🔄 בתהליך</span>
-                <div className="text-blue-100 text-xs mt-0.5">עדכון אחרון: היום</div>
+          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-blue-500/8 hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-blue-50 border-b border-blue-100 px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center shadow-sm shadow-blue-200">
+                  <span className="text-white text-base">🔄</span>
+                </div>
+                <div>
+                  <div className="font-bold text-slate-800 text-[15px]">בתהליך</div>
+                  <div className="text-slate-500 text-xs mt-0.5">עדכון אחרון: היום</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-black">{stats.inProcess}</div>
-                <div className="text-blue-200 text-[10px]">סה"כ</div>
+              <div className="text-center bg-white rounded-xl px-3 py-1.5 shadow-sm border border-blue-100">
+                <div className="text-2xl font-black text-blue-600">{stats.inProcess}</div>
+                <div className="text-slate-400 text-[10px]">סה"כ</div>
               </div>
             </div>
             <div className="max-h-[220px] overflow-y-auto">
@@ -385,15 +390,20 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Rejected - לא מתאים */}
-          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-gradient-to-r from-rose-500 via-red-500 to-red-600 text-white px-5 py-4 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-[15px]">❌ לא מתאים</span>
-                <div className="text-rose-100 text-xs mt-0.5">אחרונים שנדחו</div>
+          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-red-500/8 hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-red-50 border-b border-red-100 px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-red-400 rounded-xl flex items-center justify-center shadow-sm shadow-red-200">
+                  <span className="text-white text-base">❌</span>
+                </div>
+                <div>
+                  <div className="font-bold text-slate-800 text-[15px]">לא מתאים</div>
+                  <div className="text-slate-500 text-xs mt-0.5">אחרונים שנדחו</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-black">{stats.statusMap?.REJECTED || rejectedCandidates.length}</div>
-                <div className="text-rose-200 text-[10px]">סה"כ</div>
+              <div className="text-center bg-white rounded-xl px-3 py-1.5 shadow-sm border border-red-100">
+                <div className="text-2xl font-black text-red-500">{stats.statusMap?.REJECTED || rejectedCandidates.length}</div>
+                <div className="text-slate-400 text-[10px]">סה"כ</div>
               </div>
             </div>
             <div className="max-h-[220px] overflow-y-auto">
@@ -417,15 +427,20 @@ export default async function CiviDashboardPage() {
           </div>
 
           {/* Hired - התקבלו */}
-          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white px-5 py-4 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-[15px]">✅ התקבלו</span>
-                <div className="text-green-100 text-xs mt-0.5">אחרונים שהתקבלו</div>
+          <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-green-500/8 hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-sm shadow-emerald-200">
+                  <span className="text-white text-base">✅</span>
+                </div>
+                <div>
+                  <div className="font-bold text-slate-800 text-[15px]">התקבלו</div>
+                  <div className="text-slate-500 text-xs mt-0.5">אחרונים שהתקבלו</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-black">{stats.hiredThisMonth}</div>
-                <div className="text-green-200 text-[10px]">החודש</div>
+              <div className="text-center bg-white rounded-xl px-3 py-1.5 shadow-sm border border-emerald-100">
+                <div className="text-2xl font-black text-emerald-600">{stats.hiredThisMonth}</div>
+                <div className="text-slate-400 text-[10px]">החודש</div>
               </div>
             </div>
             <div className="max-h-[220px] overflow-y-auto">

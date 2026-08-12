@@ -109,7 +109,7 @@ export function AvigdorAiPanel() {
   return (
     <aside
       dir="rtl"
-      className="hidden xl:flex flex-col w-[250px] h-full flex-shrink-0 relative overflow-hidden
+      className="hidden xl:flex flex-col w-[250px] h-full flex-shrink-0 relative overflow-hidden ml-[2cm]
         border-r border-white/[0.06] shadow-[4px_0_24px_rgba(0,0,0,0.25)]"
       style={{ background: 'linear-gradient(180deg, #0F172A 0%, #111c34 45%, #0d1526 100%)' }}
     >

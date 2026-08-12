@@ -598,43 +598,43 @@ export function MatchingCandidatesSidebar({
 
   return (
     <div className="fixed left-4 top-20 bottom-4 z-10 w-96 hidden xl:flex flex-col">
-      <Card className="h-full overflow-hidden flex flex-col shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
+      <Card className="h-full overflow-hidden flex flex-col shadow-xl border border-slate-200/80 rounded-2xl">
+        <CardHeader className="border-b border-slate-100 bg-white flex-shrink-0 pb-3">
           <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <span className="text-lg">מועמדים מתאימים</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
+                <Users className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <span className="text-base font-bold text-slate-800">מועמדים מתאימים</span>
+                <div className="text-[11px] text-slate-400 font-normal">לפי אלגוריתם 50/25/25</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="font-bold text-base px-3">
+            <div className="flex items-center gap-1.5">
+              <span className="bg-indigo-100 text-indigo-700 font-bold text-sm px-2.5 py-1 rounded-full">
                 {totalCount}
-              </Badge>
+              </span>
               <Button
                 onClick={() => setIsCollapsed(true)}
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </CardTitle>
-          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <span className="text-sm">🧠</span>
-            <TrendingUp className="h-3 w-3" />
-            50% מיקום | 25% תגיות | 25% AI Gemini
-          </p>
           
-          {/* 🔄 סורטר */}
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-gray-500">מיין לפי:</span>
+          {/* 🔄 סורטר מודרני */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-slate-400">מיין:</span>
             <select 
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs border rounded px-2 py-1 bg-white"
+              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             >
-              <option value="score">⭐ אחוז התאמה גבוה</option>
-              <option value="location">📍 מיקום קודם</option>
+              <option value="score">⭐ התאמה גבוהה</option>
+              <option value="location">📍 מיקום קרוב</option>
               <option value="date">📅 חדש ביותר</option>
             </select>
           </div>
@@ -742,76 +742,83 @@ export function MatchingCandidatesSidebar({
             </p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-slate-100/80">
             {/* 🔥 מציג רק את המועמדים הממויינים והמוגבלים */}
             {displayedCandidates.map((candidate) => (
               <div 
                 key={candidate.id} 
-                className={`p-4 transition-colors ${selectedCandidates.has(candidate.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}
+                className={`p-3 transition-all duration-200 ${selectedCandidates.has(candidate.id) ? 'bg-indigo-50/80' : 'hover:bg-slate-50/80'}`}
               >
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {/* Checkbox and Header with Match Score */}
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2.5">
                     {/* Checkbox */}
                     <button 
                       onClick={() => toggleCandidateSelection(candidate.id)}
-                      className={`mt-1 flex-shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                      className={`mt-1 flex-shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
                         selectedCandidates.has(candidate.id) 
-                          ? 'bg-blue-500 border-blue-500 text-white' 
-                          : 'border-gray-300 hover:border-blue-400'
+                          ? 'bg-indigo-500 border-indigo-500 text-white' 
+                          : 'border-slate-300 hover:border-indigo-400'
                       }`}
                     >
                       {selectedCandidates.has(candidate.id) && (
-                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
                     </button>
                     
-                    <div className="flex items-start justify-between gap-2 flex-1">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+                      style={{ background: `linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)` }}>
+                      {candidate.name.charAt(0)}
+                    </div>
+                    
+                    <div className="flex items-start justify-between gap-2 flex-1 min-w-0">
                       <div className="flex-1 min-w-0">
                         <Link 
                           href={`/dashboard/candidates/${candidate.id}`}
-                          className="font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 text-base"
+                          className="font-semibold text-slate-800 hover:text-indigo-600 transition-colors flex items-center gap-1 text-sm truncate"
                         >
                           {candidate.name}
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className="h-3 w-3 flex-shrink-0 text-slate-400" />
                         </Link>
                         {candidate.currentTitle && (
-                          <p className="text-sm text-gray-600 mt-0.5 font-medium">
+                          <p className="text-xs text-slate-500 mt-0.5 truncate">
                             {candidate.currentTitle}
                           </p>
                         )}
                         {candidate.yearsOfExperience && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            ניסיון: {candidate.yearsOfExperience} שנים
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            ניסיון: {candidate.yearsOfExperience} שנ׳
                           </p>
                         )}
                       </div>
                       
-                      {/* Match Score Badge - גדול וברור */}
+                      {/* Match Score Badge - עגול מודרני */}
                       {candidate.matchScore > 0 && (
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center flex-shrink-0">
                           <div 
-                            className={`${getMatchScoreColor(candidate.matchScore)} rounded-lg px-3 py-2 text-center border-2 min-w-[70px]`}
+                            className={`rounded-full w-12 h-12 flex flex-col items-center justify-center border-2 text-center ${
+                              candidate.matchScore >= 80
+                                ? 'bg-green-50 border-green-400 text-green-700'
+                                : candidate.matchScore >= 60
+                                ? 'bg-blue-50 border-blue-400 text-blue-700'
+                                : candidate.matchScore >= 40
+                                ? 'bg-amber-50 border-amber-400 text-amber-700'
+                                : 'bg-slate-50 border-slate-300 text-slate-600'
+                            }`}
                           >
-                            <div className="text-2xl font-bold leading-none">
-                              {candidate.matchScore}%
-                            </div>
-                            <div className="text-[10px] font-medium mt-0.5">
-                              התאמה
-                            </div>
+                            <div className="text-sm font-black leading-none">{candidate.matchScore}%</div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-xs mt-1 px-1"
+                          <button
+                            className="text-[10px] text-slate-400 hover:text-indigo-500 mt-0.5"
                             onClick={() => setShowScoreDetails(
                               showScoreDetails === candidate.id ? null : candidate.id
                             )}
                           >
                             <Info className="h-3 w-3" />
-                          </Button>
+                          </button>
                         </div>
                       )}
                     </div>

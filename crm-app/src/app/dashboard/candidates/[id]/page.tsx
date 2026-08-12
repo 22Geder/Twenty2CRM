@@ -42,22 +42,21 @@ import {
   Headphones,
 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 
 // ── CandidateAvatar (profile page) ──────────────────────────────────────────
-function nameToGradient(name: string): string {
-  const gradients = [
-    'from-[#06B6D4] to-[#0891B2]',
-    'from-[#6366F1] to-[#4F46E5]',
-    'from-[#10B981] to-[#059669]',
-    'from-[#F97316] to-[#EA580C]',
-    'from-[#A855F7] to-[#7C3AED]',
-    'from-[#EC4899] to-[#DB2777]',
-    'from-[#3B82F6] to-[#2563EB]',
-    'from-[#14B8A6] to-[#0D9488]',
+function nameToGradientColor(name: string): { from: string; to: string } {
+  const palettes = [
+    { from: '#06B6D4', to: '#0891B2' },
+    { from: '#6366F1', to: '#4F46E5' },
+    { from: '#10B981', to: '#059669' },
+    { from: '#F97316', to: '#EA580C' },
+    { from: '#A855F7', to: '#7C3AED' },
+    { from: '#EC4899', to: '#DB2777' },
+    { from: '#3B82F6', to: '#2563EB' },
+    { from: '#14B8A6', to: '#0D9488' },
   ]
-  const idx = (name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % gradients.length
-  return gradients[idx]
+  const idx = (name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % palettes.length
+  return palettes[idx]
 }
 
 function getCandidateIcon(title: string | null): React.ReactNode {
@@ -78,7 +77,7 @@ function getCandidateIcon(title: string | null): React.ReactNode {
 
 function ProfileAvatar({ candidate }: { candidate: any }) {
   const [imgError, setImgError] = useState(false)
-  const gradient = nameToGradient(candidate?.name || '')
+  const { from, to } = nameToGradientColor(candidate?.name || '')
   const icon = getCandidateIcon(candidate?.currentTitle || null)
   const initial = (candidate?.name || '?').charAt(0)
 
@@ -92,13 +91,19 @@ function ProfileAvatar({ candidate }: { candidate: any }) {
           className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-xl"
         />
       ) : (
-        <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-xl ring-4 ring-white`}>
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl ring-4 ring-white"
+          style={{ background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)` }}
+        >
           {icon ?? <span className="text-white font-black text-3xl leading-none">{initial}</span>}
         </div>
       )}
-      {/* 22JOBS badge */}
-      <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-slate-100 overflow-hidden">
-        <Image src="/logo-22jobs.png" alt="22jobs" width={20} height={20} className="rounded-full object-cover" />
+      {/* 22JOBS badge — always visible */}
+      <div
+        className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white flex items-center justify-center border-2 border-slate-100 overflow-hidden"
+        style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.18)' }}
+      >
+        <img src="/logo-22jobs.png" alt="22jobs" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
       </div>
     </div>
   )

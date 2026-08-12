@@ -55,7 +55,6 @@ import {
   Warehouse,
   Headphones,
 } from 'lucide-react'
-import Image from 'next/image'
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 import { AICandidateSearch } from '@/components/ai-candidate-search'
 import CandidateManualSummary from '@/components/candidate-manual-summary'
@@ -89,56 +88,57 @@ function getCandidateIcon(title: string | null): React.ReactNode {
 }
 
 // Deterministic gradient per name (so same person always gets same color)
-function nameToGradient(name: string): string {
-  const gradients = [
-    'from-[#06B6D4] to-[#0891B2]',   // teal
-    'from-[#6366F1] to-[#4F46E5]',   // indigo
-    'from-[#10B981] to-[#059669]',   // green
-    'from-[#F97316] to-[#EA580C]',   // orange
-    'from-[#A855F7] to-[#7C3AED]',   // purple
-    'from-[#EC4899] to-[#DB2777]',   // pink
-    'from-[#3B82F6] to-[#2563EB]',   // blue
-    'from-[#14B8A6] to-[#0D9488]',   // teal-green
+// Uses INLINE STYLE (not Tailwind classes) to avoid JIT purge of dynamic values
+function nameToColor(name: string): { from: string; to: string } {
+  const palettes = [
+    { from: '#06B6D4', to: '#0891B2' },
+    { from: '#6366F1', to: '#4F46E5' },
+    { from: '#10B981', to: '#059669' },
+    { from: '#F97316', to: '#EA580C' },
+    { from: '#A855F7', to: '#7C3AED' },
+    { from: '#EC4899', to: '#DB2777' },
+    { from: '#3B82F6', to: '#2563EB' },
+    { from: '#14B8A6', to: '#0D9488' },
   ]
-  const idx = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % gradients.length
-  return gradients[idx]
+  const idx = (name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % palettes.length
+  return palettes[idx]
 }
 
 function CandidateAvatar({ candidate }: { candidate: { name: string; currentTitle?: string | null; avatar?: string | null } }) {
   const [imgError, setImgError] = useState(false)
-  const gradient = nameToGradient(candidate.name)
+  const { from, to } = nameToColor(candidate.name)
   const icon = getCandidateIcon(candidate.currentTitle || null)
   const initial = candidate.name.charAt(0)
 
-  // Case 1: has real photo and it loaded
-  if (candidate.avatar && !imgError) {
-    return (
-      <div className="relative w-12 h-12 flex-shrink-0">
+  const gradientStyle = {
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+  }
+
+  return (
+    <div className="relative w-12 h-12 flex-shrink-0">
+      {candidate.avatar && !imgError ? (
         <img
           src={candidate.avatar}
           alt={candidate.name}
           onError={() => setImgError(true)}
           className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
         />
-        {/* 22JOBS mini badge bottom-right */}
-        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center overflow-hidden">
-          <Image src="/logo-22jobs.png" alt="22jobs" width={16} height={16} className="rounded-full object-cover" />
+      ) : (
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center shadow-md ring-2 ring-white"
+          style={gradientStyle}
+        >
+          {icon ?? (
+            <span className="text-white font-bold text-lg leading-none">{initial}</span>
+          )}
         </div>
-      </div>
-    )
-  }
-
-  // Case 2: no photo — show profession icon OR initial, with 22JOBS mini badge
-  return (
-    <div className="relative w-12 h-12 flex-shrink-0">
-      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md ring-2 ring-white`}>
-        {icon ?? (
-          <span className="text-white font-bold text-lg leading-none">{initial}</span>
-        )}
-      </div>
-      {/* 22JOBS mini badge bottom-right */}
-      <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center overflow-hidden border border-slate-100">
-        <Image src="/logo-22jobs.png" alt="22jobs" width={16} height={16} className="rounded-full object-cover" />
+      )}
+      {/* 22JOBS logo badge — always visible bottom-right */}
+      <div
+        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center overflow-hidden border border-slate-200"
+        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}
+      >
+        <img src="/logo-22jobs.png" alt="22jobs" width={16} height={16} style={{ borderRadius: '50%', objectFit: 'cover', width: 16, height: 16 }} />
       </div>
     </div>
   )
@@ -1019,10 +1019,6 @@ export default function CandidatesPageModern() {
             <div
               key={candidate.id}
               className="relative"
-              onMouseEnter={() => setHoverCandidateId(candidate.id)}
-              onMouseLeave={() => {
-                if (pinnedSummaryId !== candidate.id) setHoverCandidateId(null)
-              }}
             >
               {/* Checkbox */}
               <div className="absolute top-4 left-4 z-10" onClick={(e) => e.stopPropagation()}>
@@ -1212,42 +1208,44 @@ export default function CandidatesPageModern() {
               </div>
               </Link>
 
-              {/* 🆕 Popover תקציר ידני בעת hover */}
-              {(hoverCandidateId === candidate.id || pinnedSummaryId === candidate.id) && (
+              {/* 📝 תקציר ידני — fixed panel (bottom-right of screen, always visible) */}
+              {(pinnedSummaryId === candidate.id) && (
                 <div
                   dir="rtl"
-                  className="absolute z-30 top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 animate-in fade-in slide-in-from-top-2"
-                  onClick={(e) => e.preventDefault()}
-                  onMouseEnter={() => setHoverCandidateId(candidate.id)}
-                  onMouseLeave={() => {
-                    if (pinnedSummaryId !== candidate.id) setHoverCandidateId(null)
-                  }}
+                  className="fixed z-50 bottom-6 left-6 w-96 bg-white rounded-2xl shadow-2xl border border-amber-200 p-5 animate-in fade-in slide-in-from-bottom-3"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-bold text-amber-900 flex items-center gap-1">
-                      📝 תקציר ידני
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                      📝 תקציר ידני — {candidate.name}
                     </h4>
-                    {candidate.source && (
-                      <Badge variant="outline" className="text-[10px]">
-                        {candidate.source === 'UPLOAD' ? '📂 מהמחשב' :
-                         candidate.source === 'EMAIL_AUTO' ? '📧 מייל' :
-                         candidate.source === 'EMAIL_HISTORICAL' ? '📧 מייל (היסטורי)' :
-                         candidate.source === 'WHATSAPP' ? '💬 וואטסאפ' :
-                         candidate.source === 'MANUAL' ? '✍️ ידני' :
-                         candidate.source}
-                      </Badge>
-                    )}
+                    <button
+                      className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setPinnedSummaryId(null) }}
+                    >
+                      <X className="h-4 w-4 text-slate-400" />
+                    </button>
                   </div>
+                  {candidate.source && (
+                    <Badge variant="outline" className="text-[10px] mb-3">
+                      {candidate.source === 'UPLOAD' ? '📂 מהמחשב' :
+                       candidate.source === 'EMAIL_AUTO' ? '📧 מייל' :
+                       candidate.source === 'EMAIL_HISTORICAL' ? '📧 מייל (היסטורי)' :
+                       candidate.source === 'WHATSAPP' ? '💬 וואטסאפ' :
+                       candidate.source === 'MANUAL' ? '✍️ ידני' :
+                       candidate.source}
+                    </Badge>
+                  )}
                   <CandidateManualSummary
                     candidateId={candidate.id}
                     initialSummary={candidate.manualSummary}
                     initialUpdatedAt={candidate.manualSummaryUpdatedAt}
                     variant="compact"
                     onEditingChange={(isEditing) => {
-                      setPinnedSummaryId(isEditing ? candidate.id : null)
+                      if (isEditing) setPinnedSummaryId(candidate.id)
+                      else setPinnedSummaryId(null)
                     }}
                     onSaved={(newSummary, newUpdatedAt) => {
-                      // עדכון לוקלי של הרשימה + ביטול ה-pin
                       setFilteredCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, manualSummary: newSummary, manualSummaryUpdatedAt: newUpdatedAt } : c))
                       setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, manualSummary: newSummary, manualSummaryUpdatedAt: newUpdatedAt } : c))
                       setPinnedSummaryId(null)
@@ -1259,9 +1257,6 @@ export default function CandidatesPageModern() {
                       {candidate.lastViewedBy?.name ? ` · ${candidate.lastViewedBy.name}` : ''}
                     </div>
                   )}
-                  <div className="mt-2 text-[10px] text-slate-400 text-center">
-                    💡 לחץ "ערוך"/"כתוב" כדי לנעוץ ולערוך
-                  </div>
                 </div>
               )}
             </div>

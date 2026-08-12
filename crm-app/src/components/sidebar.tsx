@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   Settings, FileText, Upload, Sparkles, TrendingUp, Clock,
-  ChevronLeft, ChevronRight, LogOut
+  ChevronLeft, ChevronRight, LogOut, Shield
 } from "lucide-react"
 
 type NavItem = {
@@ -59,6 +59,18 @@ export function Sidebar() {
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || 'משתמש'
   const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
+  const isAdmin = session?.user?.email === 'office@hr22group.com'
+
+  // בנה את קבוצות הניווט דינמית - כפתור אדמין רק לאדמין
+  const dynamicNavGroups = [
+    ...navGroups,
+    ...(isAdmin ? [{
+      label: "אדמין",
+      items: [
+        { name: "ניהול אדמין", href: "/dashboard/admin", icon: Shield, color: "#EF4444", exact: true } as NavItem,
+      ]
+    }] : [])
+  ]
 
   return (
     <motion.aside
@@ -114,7 +126,7 @@ export function Sidebar() {
 
       {/* Nav Groups */}
       <nav className="flex-1 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none">
-        {navGroups.map((group) => (
+        {dynamicNavGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
               <div className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em] px-2 mb-2 flex items-center gap-2">

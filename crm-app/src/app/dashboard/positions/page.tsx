@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Plus } from "lucide-react"
+import { Plus, Briefcase } from "lucide-react"
 import Link from "next/link"
 import { PositionsClient } from "@/components/positions-client"
 
@@ -32,66 +31,57 @@ export default async function PositionsPage() {
   const draftCount = positions.filter(p => !p.active).length
 
   return (
-    <div className="p-4 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#ECFDF5]/30 to-slate-100 min-h-screen">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="posGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#10B981" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#posGrid)" />
-          </svg>
-        </div>
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#10B981]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="relative flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#06B6D4] bg-clip-text text-transparent">
-              💼 משרות
-            </h1>
-            <p className="text-slate-300 mt-2 text-lg">נהל את כל המשרות הפתוחות בארגון</p>
+    <div className="p-4 md:p-8 space-y-6 min-h-screen" style={{ background: 'var(--app-bg)' }}>
+      {/* Clean modern header */}
+      <div className="t22-card-soft p-6 md:p-7">
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-teal-50)' }}>
+              <Briefcase className="h-7 w-7" style={{ color: 'var(--brand-teal)' }} />
+            </div>
+            <div>
+              <h1 className="t22-h1">משרות</h1>
+              <p className="t22-sub mt-1">נהל את כל המשרות הפתוחות בארגון</p>
+            </div>
           </div>
           <Link href="/dashboard/positions/new">
-            <Button className="bg-gradient-to-r from-[#10B981] to-[#34D399] hover:from-[#6BA32A] hover:to-[#10B981] shadow-lg shadow-[#10B981]/30 text-white border-0">
-              <Plus className="ml-2 h-4 w-4" />
-              הוסף משרה
+            <Button className="t22-btn-primary gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">הוסף משרה</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-0 bg-gradient-to-br from-[#10B981] to-[#34D399] text-white shadow-xl shadow-[#10B981]/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-3 relative">
-            <CardTitle className="text-sm font-medium">משרות פעילות</CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">{activeCount}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-gradient-to-br from-[#F97316] to-[#C2410C] text-white shadow-xl shadow-[#F97316]/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-3 relative">
-            <CardTitle className="text-sm font-medium">טיוטות</CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">{draftCount}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-gradient-to-br from-[#06B6D4] to-[#22D3EE] text-white shadow-xl shadow-[#06B6D4]/30 overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-          <CardHeader className="pb-3 relative">
-            <CardTitle className="text-sm font-medium">סה&quot;כ מועמדויות</CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold">{totalApplications}</div>
-          </CardContent>
-        </Card>
+      {/* Clean Stats */}
+      <div className="grid gap-4 md:gap-5 md:grid-cols-3">
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16,185,129,0.10)' }}>
+            <Briefcase className="h-6 w-6" style={{ color: '#059669' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{activeCount}</div>
+            <div className="text-sm text-slate-500 font-medium">משרות פעילות</div>
+          </div>
+        </div>
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.12)' }}>
+            <Plus className="h-6 w-6" style={{ color: '#D97706' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{draftCount}</div>
+            <div className="text-sm text-slate-500 font-medium">טיוטות</div>
+          </div>
+        </div>
+        <div className="t22-card-soft p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
+            <Briefcase className="h-6 w-6" style={{ color: 'var(--brand-primary)' }} />
+          </div>
+          <div>
+            <div className="t22-num text-3xl font-bold text-slate-900">{totalApplications}</div>
+            <div className="text-sm text-slate-500 font-medium">סה&quot;כ מועמדויות</div>
+          </div>
+        </div>
       </div>
 
       {/* Search + List (Client Component) */}

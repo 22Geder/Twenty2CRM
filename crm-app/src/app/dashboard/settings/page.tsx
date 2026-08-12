@@ -210,7 +210,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto pb-24">
       {/* Premium Header */}
       <div className="relative overflow-hidden bg-gradient-to-l from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5 mb-8">
         <div className="absolute inset-0 opacity-10">
@@ -585,6 +585,29 @@ export default function SettingsPage() {
           ))}
         </div>
       </Card>
+
+      {/* Sticky bottom save bar */}
+      <div className="t22-save-bar fixed bottom-0 inset-x-0 z-30">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+          <span className="text-sm text-slate-500 hidden sm:inline">
+            {saved ? '✅ כל השינויים נשמרו' : 'שמור את השינויים שביצעת בהגדרות'}
+          </span>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 rounded-xl mr-auto sm:mr-0"
+          >
+            {saving ? (
+              <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+            ) : saved ? (
+              <Check className="ml-2 h-4 w-4" />
+            ) : (
+              <Save className="ml-2 h-4 w-4" />
+            )}
+            {saving ? 'שומר...' : saved ? 'נשמר!' : 'שמור הגדרות'}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

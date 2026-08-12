@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { RefreshCw } from 'lucide-react'
 
 interface SystemData {
   generatedAt: string
@@ -193,13 +194,16 @@ export default function SystemRegistryPage() {
   }, {})
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto" dir="rtl">
+    <div className="p-4 md:p-6 max-w-[1200px] mx-auto" dir="rtl">
       {/* כותרת */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">📋 פנקס רישום המערכת</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            עדכון אחרון: {formatDate(data.generatedAt)} · מתרענן בעוד {countdown}ש
+          <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+            עדכון אחרון: {formatDate(data.generatedAt)}
+            <span className="text-slate-300">·</span>
+            <RefreshCw className="h-3 w-3 text-slate-400" />
+            מתרענן בעוד {countdown} שניות
           </p>
         </div>
         <button

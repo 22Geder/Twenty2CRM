@@ -170,3 +170,28 @@ export function buildSearchMatcher(query: string): ((normText: string) => boolea
   return (normText: string) =>
     wordGroups.every((terms) => terms.some((t) => normText.includes(t)))
 }
+
+/**
+ * בונה פונקציית התאמה במצב OR עבור רשימת מילים נרדפות.
+ *
+ * בשונה מ-buildSearchMatcher (שדורש שכל המילים יופיעו - AND), כאן מספיק
+ * שמונח *אחד* מהרשימה (או ההרחבה הנרדפת שלו) יופיע בטקסט. מתאים לרשימות
+ * מילים נרדפות של קטגוריה, למשל: "תוכנה מתכנת developer פיתוח" - מספיק
+ * שאחת מהן תופיע כדי לסמן משרת תוכנה.
+ *
+ * מחזיר null אם אין שאילתה משמעותית.
+ */
+export function buildSemanticMatcher(query: string): ((normText: string) => boolean) | null {
+  const q = normalizeHe(query)
+  if (!q) return null
+
+  const terms = new Set<string>()
+  for (const word of q.split(" ")) {
+    if (!word) continue
+    for (const t of expandWord(word)) terms.add(t)
+  }
+  if (terms.size === 0) return null
+
+  const list = [...terms]
+  return (normText: string) => list.some((t) => normText.includes(t))
+}

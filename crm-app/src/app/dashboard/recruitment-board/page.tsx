@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { allJobs, Job, BANKING_GENERAL_REQUIREMENTS, IMPORTANT_NOTES } from './jobs-data';
-import { buildSearchMatcher, normalizeHe } from '@/lib/job-search';
+import { buildSearchMatcher, buildSemanticMatcher, normalizeHe } from '@/lib/job-search';
 
 // ==================== TYPES ====================
 interface CandidateTag {
@@ -736,12 +736,18 @@ function matchJobs(candidate: CandidateDetails, jobs: Job[], rawCvText?: string)
         score += 35;
         reasons.push('🛒 ניסיון קמעונאות');
       }
-      // הייטק / WMS
+      // הייטק / תוכנה / WMS
       if (tagIds.includes('tech') && (
-        jobTitle.includes('WMS') || jobTitle.includes('מפעיל מערכת') || jobTitle.includes('מערכות')
+        jobTitle.includes('WMS') || jobTitle.includes('מפעיל מערכת') || jobTitle.includes('מערכות') ||
+        jobTitle.includes('תוכנה') || jobTitle.includes('מתכנת') || jobTitle.includes('מפתח') ||
+        jobTitle.includes('תכנות') || jobTitle.includes('פיתוח') || jobTitle.includes('הייטק') ||
+        jobTitle.includes('developer') || jobTitle.includes('programmer') || jobTitle.includes('software') ||
+        jobTitle.includes('qa') || jobTitle.includes('devops') || jobTitle.includes('automation') ||
+        jobTitle.includes('fullstack') || jobTitle.includes('full stack') || jobTitle.includes('frontend') ||
+        jobTitle.includes('backend') || jobTitle.includes('בודק תוכנה') || jobTitle.includes('אוטומציה')
       )) {
-        score += 40;
-        reasons.push('💻 ניסיון טכני');
+        score += 45;
+        reasons.push('💻 ניסיון טכני/תוכנה');
       }
       
       // ===== 3. בונוסים על ניסיון ותואר =====
@@ -798,7 +804,7 @@ function matchJobs(candidate: CandidateDetails, jobs: Job[], rawCvText?: string)
       if (!hasDirectMatch) {
         for (const [tagId, terms] of Object.entries(SEMANTIC_TAG_MATCHERS)) {
           if (tagIds.includes(tagId)) {
-            const m = buildSearchMatcher(terms)
+            const m = buildSemanticMatcher(terms)
             if (m && m(normJobAll)) {
               score += 15
               reasons.push('🔍 התאמת תוכן חכמה')

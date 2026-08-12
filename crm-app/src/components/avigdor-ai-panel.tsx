@@ -138,11 +138,11 @@ export function AvigdorAiPanel() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 scrollbar-none relative z-10">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-5 space-y-4 scrollbar-none relative z-10">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}>
             <div
-              className={`max-w-[92%] rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-[1.6] whitespace-pre-wrap ${
+              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-[1.6] whitespace-pre-wrap break-words ${
                 m.role === "user"
                   ? "bg-white/[0.07] text-slate-100 border border-white/[0.08]"
                   : "text-white shadow-lg shadow-orange-900/20"
@@ -155,7 +155,7 @@ export function AvigdorAiPanel() {
         ))}
         {loading && (
           <div className="flex justify-end">
-            <div className="rounded-2xl px-3.5 py-2.5 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
+            <div className="rounded-2xl px-3.5 py-2.5 text-white flex items-center gap-2 shadow-lg shadow-orange-900/20" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-[13px]">אביגדור עובד על זה...</span>
             </div>

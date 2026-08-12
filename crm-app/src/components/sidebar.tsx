@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
@@ -82,8 +83,8 @@ export function Sidebar() {
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="relative w-9 h-9 flex-shrink-0">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#22D3EE] via-[#06B6D4] to-[#0284C7] rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all">
-                <span className="text-white font-black text-base">22</span>
+              <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
+                <Image src="/logo-22jobs.png" alt="22JOBS" width={36} height={36} className="object-contain w-full h-full" />
               </div>
               <div className="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 bg-[#F97316] rounded-full border-2 border-[#0F172A] animate-pulse" />
             </div>
@@ -96,8 +97,8 @@ export function Sidebar() {
           </Link>
         ) : (
           <Link href="/dashboard">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#22D3EE] to-[#0284C7] rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all">
-              <span className="text-white font-black text-base">22</span>
+            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
+              <Image src="/logo-22jobs.png" alt="22JOBS" width={36} height={36} className="object-contain w-full h-full" />
             </div>
           </Link>
         )}

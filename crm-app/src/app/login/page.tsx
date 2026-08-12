@@ -134,12 +134,13 @@ export default function LoginPage() {
         <div className="text-center mb-10 animate-fade-in">
           {/* לוגו תמונה אמיתית */}
           <div className="relative mx-auto mb-6 flex justify-center">
+            <div className="absolute inset-0 bg-[#FF8C00]/20 rounded-full blur-3xl scale-90" />
             <Image 
-              src="/logo.jpeg" 
-              alt="Twenty22Jobs Logo" 
-              width={280}
-              height={120}
-              className="drop-shadow-2xl"
+              src="/logo-22jobs.png" 
+              alt="22JOBS Logo" 
+              width={240}
+              height={300}
+              className="relative drop-shadow-2xl object-contain"
               priority
             />
           </div>

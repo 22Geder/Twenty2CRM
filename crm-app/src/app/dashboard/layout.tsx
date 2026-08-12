@@ -26,16 +26,13 @@ export default async function DashboardLayout({
         <TopNavbar />
         <main
           className="flex-1 overflow-y-auto p-4 md:p-6 relative"
-          style={{
-            background: 'linear-gradient(180deg, #0F172A 0%, #16213e 100%)',
-            backgroundImage: 'url(/avigdor-lion.png)',
-            backgroundRepeat: 'repeat',
-            backgroundSize: '340px 340px',
-            backgroundBlendMode: 'luminosity',
-          }}
+          style={{ background: '#EEF2F7' }}
         >
-          {/* שכבת כהות מעל התבנית החוזרת של האריה, כדי לשמור על ניגודיות לתוכן */}
-          <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'rgba(13,21,38,0.94)' }} />
+          {/* רקע אריה גדול ושקוף - מיתוג 22JOBS מאחורי כל התוכן, בדיוק כמו בדוגמה */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 w-[80%] max-w-[820px] aspect-square bg-center bg-contain bg-no-repeat opacity-[0.14] z-0"
+            style={{ backgroundImage: "url(/avigdor-lion.png)" }}
+          />
           <div className="max-w-[1400px] mx-auto relative z-10">
             {children}
           </div>

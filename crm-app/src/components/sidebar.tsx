@@ -6,6 +6,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
+import { StarryBg } from "@/components/starry-bg"
 import { 
   LayoutDashboard, Users, Briefcase, Building2, Calendar, 
   Settings, FileText, Upload, Sparkles, TrendingUp, Clock,
@@ -89,19 +90,22 @@ export function Sidebar() {
       <div className="absolute top-0 right-0 w-full h-40 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at top right, rgba(37,99,235,0.14) 0%, transparent 70%)' }} />
 
-      {/* Logo Section - באדג' מלא של האריה, בדיוק כמו העיצוב המקורי */}
-      <div className={`flex items-center h-28 px-4 border-b border-white/[0.06] flex-shrink-0 relative
+      {/* ✨ נקודות תכלת מרחפות ברקע */}
+      <StarryBg />
+
+      {/* Logo Section - כותרת עם שם החברה */}
+      <div className={`flex items-center h-28 px-4 border-b border-white/[0.06] flex-shrink-0 relative z-10
         ${collapsed ? 'justify-center' : 'justify-center'}`}>
         {!collapsed ? (
-          <Link href="/dashboard" className="flex flex-col items-center group py-2">
-            <div className="relative w-20 h-20 flex-shrink-0">
-              <Image src="/logo-22jobs-clean.png" alt="22JOBS" width={80} height={80} className="object-contain w-full h-full drop-shadow-lg group-hover:scale-105 transition-transform" />
-            </div>
+          <Link href="/dashboard" className="flex flex-col items-center text-center group py-2 leading-tight">
+            <span className="text-[19px] font-black tracking-tight text-white group-hover:text-[#38BDF8] transition-colors">Twenty2Jobs</span>
+            <span className="text-[11px] font-semibold text-slate-300 mt-1">חברת כוח אדם והשמה בישראל</span>
+            <span className="text-[9.5px] text-slate-500 mt-0.5">מבית - קבוצה 2טו-גדר בע״מ</span>
           </Link>
         ) : (
           <Link href="/dashboard">
-            <div className="w-14 h-14 flex-shrink-0">
-              <Image src="/logo-22jobs-clean.png" alt="22JOBS" width={56} height={56} className="object-contain w-full h-full" />
+            <div className="w-12 h-12 flex-shrink-0">
+              <Image src="/logo-22jobs-clean.png" alt="22JOBS" width={48} height={48} className="object-contain w-full h-full" />
             </div>
           </Link>
         )}
@@ -115,8 +119,10 @@ export function Sidebar() {
         )}
       </div>
 
+      {/* אזור גלילה: ניווט + לוגו גדול בתחתית */}
+      <div className="flex-1 min-h-0 flex flex-col relative z-10">
       {/* Nav Groups */}
-      <nav className="flex-1 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none">
+      <nav className="flex-shrink min-h-0 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none">
         {dynamicNavGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
@@ -212,11 +218,25 @@ export function Sidebar() {
         ))}
       </nav>
 
+      {/* לוגו גדול ממלא את השטח הריק בתחתית - בפרופורציה נכונה */}
+      {!collapsed && (
+        <div className="flex-1 min-h-0 flex items-center justify-center px-4 py-4">
+          <Image
+            src="/logo-22jobs-clean.png"
+            alt="22JOBS"
+            width={220}
+            height={220}
+            className="object-contain max-h-full w-auto max-w-[80%] drop-shadow-[0_8px_24px_rgba(56,189,248,0.15)]"
+          />
+        </div>
+      )}
+      </div>
+
       {/* Expand button when collapsed */}
       {collapsed && (
         <button
           onClick={() => setCollapsed(false)}
-          className="mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-600 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5"
+          className="mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-600 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5 relative z-10"
           title="הרחב"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -224,7 +244,7 @@ export function Sidebar() {
       )}
 
       {/* User Section */}
-      <div className="border-t border-white/[0.06] p-3 flex-shrink-0">
+      <div className="border-t border-white/[0.06] p-3 flex-shrink-0 relative z-10">
         <div
           className={`flex items-center gap-3 rounded-xl p-2.5 transition-all cursor-pointer group
             hover:bg-white/[0.04] border border-transparent hover:border-white/5

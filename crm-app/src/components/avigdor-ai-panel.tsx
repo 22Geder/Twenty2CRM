@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { Send, Loader2, Sparkles } from "lucide-react"
+import { Send, Loader2, Sparkles, Paperclip, FileText } from "lucide-react"
+import { StarryBg } from "@/components/starry-bg"
 
 type ChatMessage = {
   role: "user" | "assistant"
@@ -10,22 +11,26 @@ type ChatMessage = {
 }
 
 // 🦁 פאנל ה-AI הפנימי "אביגדור" - עמודה קבועה בצד שמאל של המסך, תמיד פתוחה וזמינה לשיחה.
-// אותה אישיות/מוח כמו הבוט הטלפוני של החברה, כאן לשימוש הצוות הפנימי בתוך ה-CRM
-// לחיפוש מהיר של משרות פנויות או מועמדים מתאימים בשפה חופשית.
+// אותה אישיות/מוח כמו הבוט הטלפוני של החברה, כאן לשימוש הצוות הפנימי בתוך ה-CRM:
+// חיפוש משרות/מועמדים בשפה חופשית + העלאת קורות חיים לניתוח אוטומטי והמלצת משרות.
 export function AvigdorAiPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "היי, אני אביגדור 🦁 תגיד לי איזו משרה אתה צריך (ובאיזה איזור), או תבקש ממני למצוא מועמד מתאים - ואני אחפש לך במאגר.",
+      content: "היי, אני אביגדור 🦁 תגיד לי איזו משרה אתה צריך (ובאיזה איזור), תבקש ממני למצוא מועמד מתאים, או פשוט תעלה לי קובץ קורות חיים 📎 ואני אנתח אותו, אשמור אותו במערכת ואמליץ לך על המשרות הכי מתאימות.",
     },
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-  }, [messages])
+  }, [messages, loading])
+
+  const pushAssistant = (content: string) =>
+    setMessages(prev => [...prev, { role: "assistant", content }])
 
   const sendMessage = async () => {
     const text = input.trim()
@@ -43,51 +48,104 @@ export function AvigdorAiPanel() {
         body: JSON.stringify({ message: text, history: nextMessages }),
       })
       const data = await res.json()
-      setMessages(prev => [...prev, { role: "assistant", content: data.reply || "מצטער, לא הצלחתי לענות כרגע." }])
+      pushAssistant(data.reply || "מצטער, לא הצלחתי לענות כרגע.")
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "הייתה בעיה בתקשורת עם השרת, נסה שוב בבקשה." }])
+      pushAssistant("הייתה בעיה בתקשורת עם השרת, נסה שוב בבקשה.")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 📎 העלאת קורות חיים → ניתוח, שמירה במערכת והמלצת משרות (דרך /api/upload)
+  const handleFile = async (file: File) => {
+    if (!file || loading) return
+    setMessages(prev => [...prev, { role: "user", content: `📎 העליתי קובץ: ${file.name}` }])
+    setLoading(true)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      form.append("forceUpdate", "true") // עדכן מועמד קיים במקום לחסום על כפילות
+
+      const res = await fetch("/api/upload", { method: "POST", body: form })
+      const data = await res.json()
+
+      if (!res.ok || data?.success === false) {
+        pushAssistant(data?.error || data?.message || "לא הצלחתי לעבד את הקובץ. נסה קובץ PDF או תמונה ברורה.")
+        return
+      }
+
+      const cand = data.candidate || {}
+      const name = cand.name && cand.name !== "לא זוהה" ? cand.name : "המועמד"
+      const title = cand.currentTitle && cand.currentTitle !== "לא זוהה" ? cand.currentTitle : null
+      const city = cand.city && cand.city !== "לא זוהה" ? cand.city : null
+      const matches: Array<{ title: string; employer?: string; location?: string }> = data.matchingPositions || []
+
+      let reply = `סיימתי לנתח את קורות החיים ✅\nשמרתי את ${name} במערכת`
+      if (title || city) {
+        reply += ` (${[title, city].filter(Boolean).join(", ")})`
+      }
+      reply += ".\n\n"
+
+      if (matches.length > 0) {
+        reply += `מצאתי ${matches.length} משרות שיכולות להתאים לו:\n`
+        reply += matches
+          .slice(0, 5)
+          .map((m, i) => `${i + 1}. ${m.title}${m.employer ? " – " + m.employer : ""}${m.location ? " (" + m.location + ")" : ""}`)
+          .join("\n")
+        reply += "\n\nרוצה שאמצא עוד? תגיד לי תחום או עיר ואחפש."
+      } else {
+        reply += "לא מצאתי כרגע משרות פעילות שתואמות מספיק. תגיד לי תחום/עיר ואחפש ידנית."
+      }
+
+      pushAssistant(reply)
+    } catch {
+      pushAssistant("הייתה בעיה בהעלאת הקובץ, נסה שוב בבקשה.")
+    } finally {
+      setLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }
 
   return (
     <aside
       dir="rtl"
-      className="hidden xl:flex flex-col w-[300px] h-full flex-shrink-0 relative overflow-hidden
-        border-l border-white/[0.06] shadow-[-4px_0_24px_rgba(0,0,0,0.25)]"
+      className="hidden xl:flex flex-col w-[340px] h-full flex-shrink-0 relative overflow-hidden
+        border-r border-white/[0.06] shadow-[4px_0_24px_rgba(0,0,0,0.25)]"
       style={{ background: 'linear-gradient(180deg, #0F172A 0%, #111c34 45%, #0d1526 100%)' }}
     >
       {/* Decorative glow */}
-      <div className="absolute top-0 left-0 w-full h-40 pointer-events-none"
+      <div className="absolute top-0 left-0 w-full h-40 pointer-events-none z-0"
         style={{ background: 'radial-gradient(ellipse at top left, rgba(249,115,22,0.14) 0%, transparent 70%)' }} />
 
+      {/* ✨ נקודות תכלת מרחפות ברקע */}
+      <StarryBg />
+
       {/* Header */}
-      <div className="flex items-center gap-3 h-28 px-4 border-b border-white/[0.06] flex-shrink-0 relative">
-        <div className="relative w-14 h-14 flex-shrink-0">
-          <Image src="/logo-22jobs-clean.png" alt="אביגדור" width={56} height={56} className="object-contain w-full h-full drop-shadow-lg" />
+      <div className="flex items-center gap-3 h-28 px-4 border-b border-white/[0.06] flex-shrink-0 relative z-10">
+        <div className="relative w-16 h-16 flex-shrink-0">
+          <Image src="/logo-22jobs-clean.png" alt="אביגדור" width={64} height={64} className="object-contain w-full h-full drop-shadow-lg" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[15px] font-bold text-slate-100">
+          <div className="flex items-center gap-1.5 text-[20px] font-bold text-slate-100">
             אביגדור
-            <Sparkles className="h-3.5 w-3.5 text-[#F97316]" />
+            <Sparkles className="h-4 w-4 text-[#F97316]" />
           </div>
-          <div className="text-[10px] text-[#10B981] font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] inline-block" />
+          <div className="text-[12px] text-[#10B981] font-medium flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#10B981] inline-block animate-pulse" />
             זמין לשיחה
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 scrollbar-none">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3.5 py-4 space-y-3 scrollbar-none relative z-10">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[88%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap ${
                 m.role === "user"
-                  ? "bg-white/[0.06] text-slate-200 border border-white/[0.06]"
-                  : "text-white"
+                  ? "bg-white/[0.07] text-slate-100 border border-white/[0.08]"
+                  : "text-white shadow-lg shadow-orange-900/20"
               }`}
               style={m.role === "assistant" ? { background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' } : undefined}
             >
@@ -97,33 +155,56 @@ export function AvigdorAiPanel() {
         ))}
         {loading && (
           <div className="flex justify-end">
-            <div className="rounded-2xl px-3.5 py-2.5 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span className="text-[12px]">אביגדור חושב...</span>
+            <div className="rounded-2xl px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-[14px]">אביגדור עובד על זה...</span>
             </div>
           </div>
         )}
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-white/[0.06] flex-shrink-0">
-        <div className="flex items-center gap-2 bg-white/[0.05] border border-white/[0.08] rounded-xl px-2 py-1.5 focus-within:border-[#F97316]/40 transition-colors">
+      <div className="p-3 border-t border-white/[0.06] flex-shrink-0 relative z-10">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.rtf,.txt,.odt,image/*"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        />
+        <div className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] rounded-2xl px-2.5 py-2 focus-within:border-[#F97316]/50 transition-colors">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            title="העלה קורות חיים"
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-40 transition-colors"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") sendMessage() }}
             placeholder="שאל את אביגדור..."
-            className="flex-1 bg-transparent text-[12.5px] text-slate-100 placeholder:text-slate-500 outline-none px-1 py-1"
+            className="flex-1 bg-transparent text-[15px] text-slate-100 placeholder:text-slate-500 outline-none px-1 py-1.5"
           />
           <button
             onClick={sendMessage}
             disabled={loading || !input.trim()}
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white disabled:opacity-40 transition-opacity"
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white disabled:opacity-40 transition-opacity"
             style={{ background: '#F97316' }}
           >
-            <Send className="h-3.5 w-3.5" />
+            <Send className="h-5 w-5" />
           </button>
         </div>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          className="mt-2 w-full flex items-center justify-center gap-2 text-[12.5px] text-slate-400 hover:text-slate-200 disabled:opacity-40 transition-colors"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          העלה קורות חיים ואביגדור ימליץ על משרות אוטומטית
+        </button>
       </div>
     </aside>
   )

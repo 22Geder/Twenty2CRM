@@ -235,6 +235,19 @@ h1, h2, h3, h4, h5, h6 {
   50% { opacity: 0.5; }
 }
 
+/* כוכבים/נקודות תכלת מרחפות לרקע הפאנלים */
+@keyframes t22-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.85); }
+  50% { opacity: 0.9; transform: scale(1.15); }
+}
+
+@keyframes t22-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(6px, -10px, 0); }
+  66% { transform: translate3d(-6px, -18px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
 /* Animation Classes */
 .t22-animate-fade-in { animation: t22-fade-in 0.4s ease-out forwards; }
 .t22-animate-fade-in-up { animation: t22-fade-in-up 0.5s ease-out forwards; }

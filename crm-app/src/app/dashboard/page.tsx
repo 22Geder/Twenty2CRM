@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users, LayoutGrid } from "lucide-react"
+import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users, LayoutGrid, TrendingUp } from "lucide-react"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { UrgentCandidatesAlert } from "@/components/urgent-candidates-alert"
 
@@ -289,14 +289,15 @@ export default async function CiviDashboardPage() {
     getUntreatedInProcessCandidates(),
   ])
 
-  // Calculate percentages for status bars
+  // Calculate percentages for status bars — capped at 100% to prevent overflow
   const totalInProcess = stats.inProcess || 1
+  const pct = (n: number) => Math.min(100, Math.max(0, Math.round((n / totalInProcess) * 100))) || 0
   const statusPercentages = {
-    referralSent: Math.round((stats.statusMap.OFFER / totalInProcess) * 100) || 0,
-    frontInterview: Math.round((stats.statusMap.INTERVIEW / totalInProcess) * 100) || 0,
-    formsFiled: Math.round((stats.statusMap.SCREENING / totalInProcess) * 100) || 0,
-    emailSent: Math.round(((stats.statusMap.NEW * 0.3) / totalInProcess) * 100) || 0,
-    whatsappSent: Math.round(((stats.statusMap.NEW * 0.2) / totalInProcess) * 100) || 0,
+    referralSent: pct(stats.statusMap.OFFER),
+    frontInterview: pct(stats.statusMap.INTERVIEW),
+    formsFiled: pct(stats.statusMap.SCREENING),
+    emailSent: pct(stats.statusMap.NEW * 0.3),
+    whatsappSent: pct(stats.statusMap.NEW * 0.2),
   }
 
   // Find max for chart scaling
@@ -628,6 +629,7 @@ export default async function CiviDashboardPage() {
             </div>
             
             {/* Bar Chart */}
+            {stats.candidatesThisMonth > 0 ? (
             <div className="flex items-end gap-[2px] h-40 mt-4">
               {stats.dailyCounts.map((day, i) => {
                 const height = maxDaily > 0 ? (day.count / maxDaily) * 100 : 0
@@ -643,6 +645,15 @@ export default async function CiviDashboardPage() {
                 )
               })}
             </div>
+            ) : (
+              <div className="h-40 mt-4 flex flex-col items-center justify-center text-center">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                  <TrendingUp className="h-6 w-6 text-slate-300" />
+                </div>
+                <p className="text-sm text-slate-400">אין מספיק נתונים להצגה</p>
+                <p className="text-xs text-slate-300 mt-0.5">מועמדים חדשים יופיעו כאן</p>
+              </div>
+            )}
             
             {/* X-axis labels - show every 5th day */}
             <div className="flex justify-between text-xs text-slate-400 mt-2 px-1">

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Clock, CheckCircle, XCircle, RotateCw, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { AlertTriangle, Clock, CheckCircle, XCircle, RotateCw, ChevronDown, ChevronUp, Loader2, X } from 'lucide-react'
 
 interface UntreatedCandidate {
   id: string
@@ -19,6 +19,8 @@ interface UntreatedCandidate {
 export function UrgentCandidatesAlert({ candidates }: { candidates: UntreatedCandidate[] }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
+  const [showList, setShowList] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const [updating, setUpdating] = useState<string | null>(null)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
 
@@ -28,7 +30,7 @@ export function UrgentCandidatesAlert({ candidates }: { candidates: UntreatedCan
   const displayList = expanded ? visibleCandidates : visibleCandidates.slice(0, SHOW_LIMIT)
   const hasMore = visibleCandidates.length > SHOW_LIMIT
 
-  if (visibleCandidates.length === 0) return null
+  if (visibleCandidates.length === 0 || hidden) return null
 
   const updateStatus = async (candidateId: string, status: 'EMPLOYED' | 'REJECTED') => {
     setUpdating(candidateId)
@@ -81,33 +83,43 @@ export function UrgentCandidatesAlert({ candidates }: { candidates: UntreatedCan
   }
 
   return (
-    <div className="bg-amber-50 border-b-2 border-amber-400">
-      <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-3">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 bg-amber-400 text-white rounded-lg p-2 mt-0.5">
-            <AlertTriangle className="h-5 w-5" />
+    <div className="bg-amber-50/70 border-b border-amber-200/80">
+      <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2.5">
+        {/* Compact header row */}
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 bg-amber-400/90 text-white rounded-lg p-1.5">
+            <AlertTriangle className="h-4 w-4" />
           </div>
-          <div className="flex-1">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-amber-800 text-base">
-                  ⚠️ {visibleCandidates.length} מועמד{visibleCandidates.length !== 1 ? 'ים' : ''} בתהליך דורשים טיפול
-                </span>
-                <span className="text-xs bg-amber-400 text-white px-2 py-0.5 rounded-full font-bold">
-                  דורש טיפול מיידי
-                </span>
-              </div>
-              <Link 
-                href="/dashboard/monthly-status?filter=in-process"
-                className="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors font-medium"
-              >
-                📊 פתח סטטוס חודשי
-              </Link>
-            </div>
+          <button
+            onClick={() => setShowList(v => !v)}
+            className="flex items-center gap-2 flex-1 min-w-0 text-right"
+          >
+            <span className="font-semibold text-amber-800 text-sm truncate">
+              {visibleCandidates.length} מועמד{visibleCandidates.length !== 1 ? 'ים' : ''} בתהליך דורשים טיפול
+            </span>
+            <span className="hidden sm:inline text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+              דורש טיפול
+            </span>
+            {showList ? <ChevronUp className="h-4 w-4 text-amber-600" /> : <ChevronDown className="h-4 w-4 text-amber-600" />}
+          </button>
+          <Link 
+            href="/dashboard/monthly-status?filter=in-process"
+            className="hidden sm:inline-flex text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors font-medium flex-shrink-0"
+          >
+            סטטוס חודשי
+          </Link>
+          <button
+            onClick={() => setHidden(true)}
+            className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-amber-500 hover:text-amber-800 hover:bg-amber-100 transition-all"
+            title="סגור"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-            {/* Candidates list */}
-            <div className="space-y-1.5">
+        {/* Candidates list (collapsed by default) */}
+        {showList && (
+          <div className="space-y-1.5 mt-3 pr-1">
               {displayList.map((c) => {
                 const hoursAgo = Math.floor((Date.now() - new Date(c.inProcessAt).getTime()) / (60 * 60 * 1000))
                 const daysAgo = Math.floor(hoursAgo / 24)
@@ -170,29 +182,28 @@ export function UrgentCandidatesAlert({ candidates }: { candidates: UntreatedCan
                   </div>
                 )
               })}
-            </div>
 
-            {/* Show more / less */}
-            {hasMore && (
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-1 mx-auto mt-2 text-amber-700 text-sm font-medium hover:text-amber-900 transition-colors"
-              >
-                {expanded ? (
-                  <>
-                    <ChevronUp className="h-4 w-4" />
-                    הצג פחות
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4" />
-                    הצג עוד {visibleCandidates.length - SHOW_LIMIT} מועמדים
-                  </>
-                )}
-              </button>
-            )}
+              {/* Show more / less */}
+              {hasMore && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="flex items-center gap-1 mx-auto mt-2 text-amber-700 text-sm font-medium hover:text-amber-900 transition-colors"
+                >
+                  {expanded ? (
+                    <>
+                      <ChevronUp className="h-4 w-4" />
+                      הצג פחות
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      הצג עוד {visibleCandidates.length - SHOW_LIMIT} מועמדים
+                    </>
+                  )}
+                </button>
+              )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

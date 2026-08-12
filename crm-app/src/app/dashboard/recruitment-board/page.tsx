@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { allJobs, Job, BANKING_GENERAL_REQUIREMENTS, IMPORTANT_NOTES } from './jobs-data';
+import { buildSearchMatcher, normalizeHe } from '@/lib/job-search';
 
 // ==================== TYPES ====================
 interface CandidateTag {
@@ -499,11 +500,11 @@ function analyzeCV(text: string): CandidateDetails {
     ],
   };
 
-  // ========== 5. TAGS - זיהוי תגיות חכם ==========
+  // ========== 5. TAGS - זיהוי תגיות חכם עם נרמול עברית ==========
+  // normalizeHe מקפל אותיות סופיות: מחסן→מחסנ, כך שמחסנ ⊆ מחסנאי ✓
+  const normCvForTags = normalizeHe(text)
   for (const [id, words] of Object.entries(keywords)) {
-    // בדיקה חכמה יותר - תלוי במילים, לא בכל מילה
-    const matchCount = words.filter(w => text.includes(w)).length;
-    // אם יש לפחות 2 התאמות - תגית חזקה, או אם יש התאמה אחת ספציפית
+    const matchCount = words.filter(w => normCvForTags.includes(normalizeHe(w))).length;
     if (matchCount >= 1) {
       const tag = TAGS.find(t => t.id === id);
       if (tag && !result.tags.find(t => t.id === id)) result.tags.push(tag);
@@ -564,11 +565,34 @@ function analyzeCV(text: string): CandidateDetails {
   return result;
 }
 
+// ==================== SEMANTIC TAG MATCHERS - מפת התאמה סמנטית ====================
+// לכל תגית: מונחי חיפוש חכמים שמרחיבים דרך synonym groups של job-search.ts
+const SEMANTIC_TAG_MATCHERS: Record<string, string> = {
+  logistics:    'מחסן לוגיסטיקה מלקט הפצה אחסון',
+  forklift:     'מלגזה היגש reach truck',
+  banking:      'בנק טלר בנקאי משכנתא',
+  service:      'שירות לקוחות מוקד נציג',
+  sales:        'מכירות מוכר סוכן',
+  driver:       'נהג נהיגה חלוקה',
+  driver_b:     'נהג חלוקה טרנזיט דוקאטו',
+  driver_c1:    'משאית C1 בינונית',
+  driver_c:     'משאית גדולה טריילר',
+  admin:        'מזכירה קבלה אדמיניסטרציה פקידה',
+  automotive:   'רכב לקסוס טויוטה אולם תצוגה',
+  maintenance:  'אחזקה טכנאי תחזוקה',
+  import_export:'יבוא יצוא שילוח מכס',
+  finance:      'חשבונאות כספים הנהלת חשבונות',
+  tech:         'תוכנה מתכנת developer פיתוח',
+  retail:       'חנות קמעונאות מכירה פרונטלית',
+}
+
 // ==================== JOB MATCHING - אלגוריתם חכם ====================
-function matchJobs(candidate: CandidateDetails, jobs: Job[]): JobMatch[] {
+function matchJobs(candidate: CandidateDetails, jobs: Job[], rawCvText?: string): JobMatch[] {
   const tagIds = candidate.tags.map(t => t.id);
   const candidateCity = candidate.city?.trim();
   const nearbyOfCandidate = candidateCity ? (NEARBY_CITIES[candidateCity] || []) : [];
+  // קורות חיים מנורמלים לצורך התאמת דרישות והתאמה סמנטית
+  const rawCvNorm = rawCvText ? normalizeHe(rawCvText) : ''
   
   return jobs
     .map(job => {
@@ -577,6 +601,11 @@ function matchJobs(candidate: CandidateDetails, jobs: Job[]): JobMatch[] {
       const jobLocation = job.location || '';
       const jobTitle = (job.title || '').toLowerCase();
       const jobDesc = (job.description || '').toLowerCase();
+      // טקסט מלא מנורמל של המשרה - לשכבת ה-AI ולהתאמה הסמנטית
+      const normJobAll = normalizeHe(
+        [job.title, job.location, job.category, job.description, ...(job.requirements || [])]
+          .filter(Boolean).join(' ')
+      )
       
       // ===== 1. התאמת מיקום (עדיפות עליונה) =====
       // עיר מדויקת - 50 נקודות
@@ -748,6 +777,36 @@ function matchJobs(candidate: CandidateDetails, jobs: Job[]): JobMatch[] {
         score += 5;
         reasons.push('🚨 משרה דחופה!');
       }
+
+      // ===== 6. התאמת דרישות מהמשרה מול קורות חיים (Hebrew-aware) =====
+      if (rawCvNorm && job.requirements && job.requirements.length > 0) {
+        const matchedReqs = job.requirements.filter(req => {
+          const m = buildSearchMatcher(req)
+          return m ? m(rawCvNorm) : false
+        })
+        if (matchedReqs.length >= 1) {
+          score += Math.min(matchedReqs.length * 4, 20)
+          reasons.push(`📋 עומד ב-${matchedReqs.length} דרישות המשרה`)
+        }
+      }
+
+      // ===== 7. התאמה סמנטית חכמה - תגיות מול תוכן המשרה =====
+      // (נכנסת רק כשאין התאמה ישירה מסעיפים 2-4)
+      const hasDirectMatch = reasons.some(r =>
+        r.includes('ניסיון') || r.includes('רישיון') || r.includes('מתאים')
+      )
+      if (!hasDirectMatch) {
+        for (const [tagId, terms] of Object.entries(SEMANTIC_TAG_MATCHERS)) {
+          if (tagIds.includes(tagId)) {
+            const m = buildSearchMatcher(terms)
+            if (m && m(normJobAll)) {
+              score += 15
+              reasons.push('🔍 התאמת תוכן חכמה')
+              break
+            }
+          }
+        }
+      }
       
       return { job, score: Math.min(score, 100), reasons };
     })
@@ -907,9 +966,18 @@ export default function RecruitmentBoard() {
   const filteredJobs = useMemo(() => {
     let jobs = allJobs;
     if (region !== 'all') jobs = jobs.filter(j => j.jobCode === region);
-    if (search) {
-      const q = search.toLowerCase();
-      jobs = jobs.filter(j => j.title.toLowerCase().includes(q) || j.location.toLowerCase().includes(q));
+    if (search.trim()) {
+      // חיפוש חכם: נרמול עברית + מרחיב מילים נרדפות (מחסן↔מחסנאי, מלגזן...)
+      const matcher = buildSearchMatcher(search);
+      if (matcher) {
+        jobs = jobs.filter(j => {
+          const haystack = normalizeHe(
+            [j.title, j.location, j.category, j.description, ...(j.requirements || [])]
+              .filter(Boolean).join(' ')
+          );
+          return matcher(haystack);
+        });
+      }
     }
     return jobs;
   }, [region, search]);
@@ -1019,7 +1087,7 @@ export default function RecruitmentBoard() {
       }
       
       setCandidate(c);
-      setMatches(matchJobs(c, allJobs));
+      setMatches(matchJobs(c, allJobs, cvText));
       
       if (c.name) await saveToCRM(c);
     } catch (error) {
@@ -1027,7 +1095,7 @@ export default function RecruitmentBoard() {
       // Fallback - ניתוח מקומי
       const c = analyzeCV(cvText);
       setCandidate(c);
-      setMatches(matchJobs(c, allJobs));
+      setMatches(matchJobs(c, allJobs, cvText));
       if (c.name) await saveToCRM(c);
     }
     

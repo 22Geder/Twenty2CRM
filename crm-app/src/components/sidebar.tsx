@@ -90,18 +90,18 @@ export function Sidebar() {
         style={{ background: 'radial-gradient(ellipse at top right, rgba(37,99,235,0.14) 0%, transparent 70%)' }} />
 
       {/* Logo Section */}
-      <div className={`flex items-center h-20 px-4 border-b border-white/[0.06] flex-shrink-0 relative
+      <div className={`flex items-center h-24 px-4 border-b border-white/[0.06] flex-shrink-0 relative
         ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="relative w-12 h-12 flex-shrink-0">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
-                <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl shadow-cyan-500/40 group-hover:shadow-cyan-400/60 transition-all overflow-hidden p-0.5">
+                <Image src="/logo-22jobs.png" alt="22JOBS" width={64} height={64} className="object-cover w-full h-full rounded-full" />
               </div>
-              <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-[#F97316] rounded-full border-2 border-[#0F172A] animate-pulse" />
+              <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 bg-[#F97316] rounded-full border-2 border-[#0F172A] animate-pulse" />
             </div>
             <div className="leading-none">
-              <div className="text-[18px] font-black tracking-tight">
+              <div className="text-[20px] font-black tracking-tight">
                 <span className="text-[#22D3EE]">Twenty</span><span className="text-[#F97316]">2</span>
               </div>
               <div className="text-[10px] text-slate-400 font-semibold tracking-[0.15em] uppercase mt-1">CRM Platform</div>
@@ -109,8 +109,8 @@ export function Sidebar() {
           </Link>
         ) : (
           <Link href="/dashboard">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
-              <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-xl shadow-cyan-500/40 hover:shadow-cyan-400/60 transition-all overflow-hidden p-0.5">
+              <Image src="/logo-22jobs.png" alt="22JOBS" width={56} height={56} className="object-cover w-full h-full rounded-full" />
             </div>
           </Link>
         )}

@@ -152,7 +152,7 @@ export default function AdminPage() {
   const handleCreateUser = async () => {
     setActionLoading(true)
     try {
-      const data = await apiCall('POST', newUserForm)
+      await apiCall('POST', newUserForm)
       showToast(`✅ משתמש ${newUserForm.name} נוצר בהצלחה`)
       setModal(null)
       setNewUserForm({ name: '', email: '', password: '', role: 'RECRUITER', phone: '' })
@@ -175,9 +175,14 @@ export default function AdminPage() {
     }
   }
 
-  const filtered = users.filter(u =>
-    u.name.includes(search) || u.email.includes(search) || ROLE_LABELS[u.role]?.includes(search)
-  )
+  const filtered = users.filter(u => {
+    const q = search.toLowerCase()
+    return (
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (ROLE_LABELS[u.role] || u.role).toLowerCase().includes(q)
+    )
+  })
 
   if (status === 'loading' || loading) {
     return (

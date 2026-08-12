@@ -99,6 +99,28 @@
   - Outer div: `max-w-[1200px] mx-auto` → `t22-page-wrap`
   - Sticky bottom save bar: כבר קיים ב-`t22-save-bar` ✅
 
+---
+
+### 2025-07 — Premium SaaS UI Overhaul (commit: a268fe4)
+**משימה:** שדרוג UI/UX מקיף — כותרות, כרטיסים, סטטיסטיקות — CSS/className בלבד
+
+**קבצים ששונו:**
+
+- `crm-app/src/app/dashboard/candidates/page.tsx`
+  - Header: הוחלף ל-sticky white bar עם indigo-600 icon + orange CTA button
+  - Search Card: `t22-card-soft + backdrop-blur` → `bg-white rounded-2xl border border-slate-100 shadow-sm`
+  - Candidate cards: `border-slate-200/80 hover:border-[#06B6D4]/30 duration-300` → `border-slate-100 hover:border-indigo-200 shadow-sm hover:shadow-md hover:-translate-y-1 duration-200`
+  - Outer container: הוסף div פנימי עם padding (עקב sticky header שנשלף מתוך ה-padding)
+
+- `crm-app/src/app/dashboard/page.tsx`
+  - Background: `var(--app-bg)` → `linear-gradient(135deg, #F0F4FF 0%, #EEF2FF 50%, #F5F3FF 100%)`
+  - 3 כרטיסים גדולים (בתהליך/לא מתאים/התקבלו): header עם colored bg הוחלף ל-accent bar (w-2 h-10 rounded-full) + מספר גדול text-4xl מחוץ לתיבה
+  - 5 כרטיסי סטטיסטיקות: `text-3xl` → `text-4xl font-black` + progress bar decorative (h-1 rounded-full) לכל כרטיס
+
+- `crm-app/src/app/dashboard/candidates/[id]/page.tsx`
+  - Header: `p-8 + flex justify-between` → premium card עם gradient avatar (indigo→violet) + שם גדול font-black text-2xl + כפתורים בתוך הכרטיס
+  - Detail cards (פרטים אישיים, פרטי תעסוקה, קליטה לעבודה, הערות, תקציר): הוסף `rounded-2xl shadow-sm border border-slate-100 bg-white`
+
 **הערות:**
 - לא נגעו בלוגיקה, API, DB, TypeScript types
 - Build עבר ✅ (exit code 0)

@@ -78,27 +78,27 @@ export function Sidebar() {
         style={{ background: 'radial-gradient(ellipse at top right, rgba(37,99,235,0.14) 0%, transparent 70%)' }} />
 
       {/* Logo Section */}
-      <div className={`flex items-center h-16 px-4 border-b border-white/[0.06] flex-shrink-0 relative
+      <div className={`flex items-center h-20 px-4 border-b border-white/[0.06] flex-shrink-0 relative
         ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="relative w-9 h-9 flex-shrink-0">
-              <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
-                <Image src="/logo-22jobs.png" alt="22JOBS" width={36} height={36} className="object-cover w-full h-full rounded-full" />
+            <div className="relative w-12 h-12 flex-shrink-0">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
+                <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
               </div>
-              <div className="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 bg-[#F97316] rounded-full border-2 border-[#0F172A] animate-pulse" />
+              <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-[#F97316] rounded-full border-2 border-[#0F172A] animate-pulse" />
             </div>
             <div className="leading-none">
-              <div className="text-[16px] font-black tracking-tight">
+              <div className="text-[18px] font-black tracking-tight">
                 <span className="text-[#22D3EE]">Twenty</span><span className="text-[#F97316]">2</span>
               </div>
-              <div className="text-[9px] text-slate-500 font-semibold tracking-[0.15em] uppercase mt-0.5">CRM Platform</div>
+              <div className="text-[10px] text-slate-400 font-semibold tracking-[0.15em] uppercase mt-1">CRM Platform</div>
             </div>
           </Link>
         ) : (
           <Link href="/dashboard">
-            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
-              <Image src="/logo-22jobs.png" alt="22JOBS" width={36} height={36} className="object-cover w-full h-full rounded-full" />
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
+              <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
             </div>
           </Link>
         )}

@@ -29,9 +29,81 @@ import {
   Star,
   Target,
   ChevronDown,
-  Search
+  Search,
+  Truck,
+  HardHat,
+  ChefHat,
+  Stethoscope,
+  GraduationCap,
+  Wrench,
+  Monitor,
+  ShoppingCart,
+  Warehouse,
+  Headphones,
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
+
+// ── CandidateAvatar (profile page) ──────────────────────────────────────────
+function nameToGradient(name: string): string {
+  const gradients = [
+    'from-[#06B6D4] to-[#0891B2]',
+    'from-[#6366F1] to-[#4F46E5]',
+    'from-[#10B981] to-[#059669]',
+    'from-[#F97316] to-[#EA580C]',
+    'from-[#A855F7] to-[#7C3AED]',
+    'from-[#EC4899] to-[#DB2777]',
+    'from-[#3B82F6] to-[#2563EB]',
+    'from-[#14B8A6] to-[#0D9488]',
+  ]
+  const idx = (name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % gradients.length
+  return gradients[idx]
+}
+
+function getCandidateIcon(title: string | null): React.ReactNode {
+  if (!title) return null
+  const t = title.toLowerCase()
+  if (/נהג|לוגיסטי|משלוח|delivery|driver|truck/.test(t)) return <Truck className="h-8 w-8 text-white" />
+  if (/מחסנ|מחסנאי|warehouse|מלגזן|מלקט/.test(t)) return <Warehouse className="h-8 w-8 text-white" />
+  if (/בנ|בניה|פועל|construction|הרמה/.test(t)) return <HardHat className="h-8 w-8 text-white" />
+  if (/שף|בישול|מסעד|chef|cook|קייטר/.test(t)) return <ChefHat className="h-8 w-8 text-white" />
+  if (/רופא|אחות|רפואי|medical|nurse|health|בריאות/.test(t)) return <Stethoscope className="h-8 w-8 text-white" />
+  if (/מורה|מרצה|מחנך|teacher|lecturer|education/.test(t)) return <GraduationCap className="h-8 w-8 text-white" />
+  if (/טכנאי|מכונאי|mechanic|technician|חשמל|אינסטלטור/.test(t)) return <Wrench className="h-8 w-8 text-white" />
+  if (/מפתח|developer|software|תוכנה|frontend|backend|fullstack|קוד/.test(t)) return <Monitor className="h-8 w-8 text-white" />
+  if (/מכירות|sales|קמעונאי|retail|קופ/.test(t)) return <ShoppingCart className="h-8 w-8 text-white" />
+  if (/שירות|support|נציג|agent|תמיכה|customer/.test(t)) return <Headphones className="h-8 w-8 text-white" />
+  return null
+}
+
+function ProfileAvatar({ candidate }: { candidate: any }) {
+  const [imgError, setImgError] = useState(false)
+  const gradient = nameToGradient(candidate?.name || '')
+  const icon = getCandidateIcon(candidate?.currentTitle || null)
+  const initial = (candidate?.name || '?').charAt(0)
+
+  return (
+    <div className="relative flex-shrink-0">
+      {candidate?.avatar && !imgError ? (
+        <img
+          src={candidate.avatar}
+          alt={candidate.name}
+          onError={() => setImgError(true)}
+          className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-xl"
+        />
+      ) : (
+        <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-xl ring-4 ring-white`}>
+          {icon ?? <span className="text-white font-black text-3xl leading-none">{initial}</span>}
+        </div>
+      )}
+      {/* 22JOBS badge */}
+      <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-slate-100 overflow-hidden">
+        <Image src="/logo-22jobs.png" alt="22jobs" width={20} height={20} className="rounded-full object-cover" />
+      </div>
+    </div>
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
 import { MatchingPositionsList } from "@/components/matching-positions-list"
 import { DualMatchingView } from "@/components/dual-matching-view"
 import { AdvancedMatchingView } from "@/components/advanced-matching-view"
@@ -627,10 +699,8 @@ export default function CandidateDetailsPage() {
       {/* Premium Profile Header */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-5">
         <div className="flex items-start gap-5">
-          {/* Avatar */}
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
-            <span className="text-white font-black text-2xl">{candidate.name?.[0]}</span>
-          </div>
+        {/* Avatar */}
+          <ProfileAvatar candidate={candidate} />
           {/* Details */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4 flex-wrap">

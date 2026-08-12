@@ -314,7 +314,7 @@ export default async function CiviDashboardPage() {
   const sourceColors = ['#06B6D4', '#10B981', '#F97316', '#A855F7', '#3B82F6']
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--app-bg)' }} dir="rtl">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #F0F4FF 0%, #EEF2FF 50%, #F5F3FF 100%)' }} dir="rtl">
       {/* Clean modern page header */}
       <div className="bg-white border-b border-slate-200/70 sticky top-0 z-20"
         style={{ backdropFilter: 'saturate(180%) blur(14px)', backgroundColor: 'rgba(255,255,255,0.85)' }}>
@@ -349,20 +349,15 @@ export default async function CiviDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
           {/* In Process - בתהליך */}
           <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-blue-500/8 hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-blue-50 border-b border-blue-100 px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center shadow-sm shadow-blue-200">
-                  <span className="text-white text-base">🔄</span>
-                </div>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-10 bg-blue-500 rounded-full" />
                 <div>
-                  <div className="font-bold text-slate-800 text-[15px]">בתהליך</div>
-                  <div className="text-slate-500 text-xs mt-0.5">עדכון אחרון: היום</div>
+                  <div className="font-bold text-slate-800 text-base">בתהליך</div>
+                  <div className="text-slate-400 text-xs">עדכון: היום</div>
                 </div>
               </div>
-              <div className="text-center bg-white rounded-xl px-3 py-1.5 shadow-sm border border-blue-100">
-                <div className="text-2xl font-black text-blue-600">{stats.inProcess}</div>
-                <div className="text-slate-400 text-[10px]">סה"כ</div>
-              </div>
+              <div className="text-4xl font-black text-blue-600 tabular-nums">{stats.inProcess}</div>
             </div>
             <div className="max-h-[220px] overflow-y-auto">
               {inProcessCandidates.length > 0 ? (
@@ -391,20 +386,15 @@ export default async function CiviDashboardPage() {
 
           {/* Rejected - לא מתאים */}
           <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-red-500/8 hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-red-50 border-b border-red-100 px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-red-400 rounded-xl flex items-center justify-center shadow-sm shadow-red-200">
-                  <span className="text-white text-base">❌</span>
-                </div>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-10 bg-red-500 rounded-full" />
                 <div>
-                  <div className="font-bold text-slate-800 text-[15px]">לא מתאים</div>
-                  <div className="text-slate-500 text-xs mt-0.5">אחרונים שנדחו</div>
+                  <div className="font-bold text-slate-800 text-base">לא מתאים</div>
+                  <div className="text-slate-400 text-xs">אחרונים שנדחו</div>
                 </div>
               </div>
-              <div className="text-center bg-white rounded-xl px-3 py-1.5 shadow-sm border border-red-100">
-                <div className="text-2xl font-black text-red-500">{stats.statusMap?.REJECTED || rejectedCandidates.length}</div>
-                <div className="text-slate-400 text-[10px]">סה"כ</div>
-              </div>
+              <div className="text-4xl font-black text-red-600 tabular-nums">{stats.statusMap?.REJECTED || rejectedCandidates.length}</div>
             </div>
             <div className="max-h-[220px] overflow-y-auto">
               {rejectedCandidates.length > 0 ? (
@@ -428,20 +418,15 @@ export default async function CiviDashboardPage() {
 
           {/* Hired - התקבלו */}
           <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-green-500/8 hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-sm shadow-emerald-200">
-                  <span className="text-white text-base">✅</span>
-                </div>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-10 bg-emerald-500 rounded-full" />
                 <div>
-                  <div className="font-bold text-slate-800 text-[15px]">התקבלו</div>
-                  <div className="text-slate-500 text-xs mt-0.5">אחרונים שהתקבלו</div>
+                  <div className="font-bold text-slate-800 text-base">התקבלו</div>
+                  <div className="text-slate-400 text-xs">החודש</div>
                 </div>
               </div>
-              <div className="text-center bg-white rounded-xl px-3 py-1.5 shadow-sm border border-emerald-100">
-                <div className="text-2xl font-black text-emerald-600">{stats.hiredThisMonth}</div>
-                <div className="text-slate-400 text-[10px]">החודש</div>
-              </div>
+              <div className="text-4xl font-black text-emerald-600 tabular-nums">{stats.hiredThisMonth}</div>
             </div>
             <div className="max-h-[220px] overflow-y-auto">
               {hiredCandidates.length > 0 ? (
@@ -479,7 +464,8 @@ export default async function CiviDashboardPage() {
               <div className="w-11 h-11 bg-gradient-to-br from-[#06B6D4] to-[#0891B2] rounded-xl flex items-center justify-center shadow-lg shadow-teal-400/30">
                 <UserCheck className="h-5 w-5 text-white" />
               </div>
-              <div className="text-3xl font-black text-[#06B6D4]">{stats.startedWorkThisMonth}</div>
+              <div className="text-4xl font-black text-[#06B6D4]">{stats.startedWorkThisMonth}</div>
+              <div className="mt-2 h-1 bg-slate-100 rounded-full"><div className="h-1 bg-[#06B6D4] rounded-full w-3/4" /></div>
               <div className="text-xs font-medium text-slate-500 leading-tight">התחילו לעבוד החודש</div>
             </div>
           </Link>
@@ -492,7 +478,8 @@ export default async function CiviDashboardPage() {
               <div className="w-11 h-11 bg-gradient-to-br from-[#F97316] to-[#EA580C] rounded-xl flex items-center justify-center shadow-lg shadow-orange-400/30">
                 <Bell className="h-5 w-5 text-white" />
               </div>
-              <div className="text-3xl font-black text-[#F97316]">{stats.upcomingInterviews}</div>
+              <div className="text-4xl font-black text-[#F97316]">{stats.upcomingInterviews}</div>
+              <div className="mt-2 h-1 bg-slate-100 rounded-full"><div className="h-1 bg-[#F97316] rounded-full w-2/3" /></div>
               <div className="text-xs font-medium text-slate-500 leading-tight">ראיונות קרובים</div>
             </div>
           </Link>
@@ -505,7 +492,8 @@ export default async function CiviDashboardPage() {
               <div className="w-11 h-11 bg-gradient-to-br from-[#10B981] to-[#059669] rounded-xl flex items-center justify-center shadow-lg shadow-green-400/30">
                 <CheckCircle className="h-5 w-5 text-white" />
               </div>
-              <div className="text-3xl font-black text-[#10B981]">{stats.hiredThisMonth}</div>
+              <div className="text-4xl font-black text-[#10B981]">{stats.hiredThisMonth}</div>
+              <div className="mt-2 h-1 bg-slate-100 rounded-full"><div className="h-1 bg-[#10B981] rounded-full w-3/5" /></div>
               <div className="text-xs font-medium text-slate-500 leading-tight">התקבלו לעבודה החודש</div>
             </div>
           </Link>
@@ -518,7 +506,8 @@ export default async function CiviDashboardPage() {
               <div className="w-11 h-11 bg-gradient-to-br from-[#A855F7] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-lg shadow-purple-400/30">
                 <Send className="h-5 w-5 text-white" />
               </div>
-              <div className="text-3xl font-black text-[#A855F7]">{stats.applicationsThisMonth}</div>
+              <div className="text-4xl font-black text-[#A855F7]">{stats.applicationsThisMonth}</div>
+              <div className="mt-2 h-1 bg-slate-100 rounded-full"><div className="h-1 bg-[#A855F7] rounded-full w-4/5" /></div>
               <div className="text-xs font-medium text-slate-500 leading-tight">הפניות החודש</div>
             </div>
           </Link>
@@ -531,7 +520,8 @@ export default async function CiviDashboardPage() {
               <div className="w-11 h-11 bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] rounded-xl flex items-center justify-center shadow-lg shadow-blue-400/30">
                 <Users className="h-5 w-5 text-white" />
               </div>
-              <div className="text-3xl font-black text-[#3B82F6]">{stats.inProcess}</div>
+              <div className="text-4xl font-black text-[#3B82F6]">{stats.inProcess}</div>
+              <div className="mt-2 h-1 bg-slate-100 rounded-full"><div className="h-1 bg-[#3B82F6] rounded-full w-3/4" /></div>
               <div className="text-xs font-medium text-slate-500 leading-tight">מועמדים בתהליך</div>
             </div>
           </Link>

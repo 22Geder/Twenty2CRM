@@ -464,18 +464,18 @@ export default function CandidatesPageModern() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-5 min-h-screen" style={{ background: 'var(--app-bg)' }}>
-      {/* Clean modern header */}
-      <div className="t22-card-soft p-6 md:p-7">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
-              <Users className="h-7 w-7" style={{ color: 'var(--brand-primary)' }} />
+    <div className="min-h-screen" style={{ background: 'var(--app-bg)' }}>
+      {/* Premium sticky header */}
+      <div className="bg-white border-b border-slate-100 px-6 py-5 sticky top-0 z-20 shadow-sm">
+        <div className="flex items-center justify-between max-w-[1400px] mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+              <Users className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="t22-h1">מועמדים</h1>
-              <p className="t22-sub mt-1">
-                <span className="font-semibold t22-num" style={{ color: 'var(--brand-primary)' }}>{filteredCandidates.length}</span> מתוך <span className="font-semibold t22-num text-slate-700">{candidates.length}</span> מועמדים
+              <h1 className="text-xl font-bold text-slate-900">מועמדים</h1>
+              <p className="text-sm text-slate-500">
+                <span className="font-semibold text-indigo-600">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-slate-700">{candidates.length}</span> מועמדים
               </p>
             </div>
           </div>
@@ -493,14 +493,15 @@ export default function CandidatesPageModern() {
               <span className="hidden sm:inline">התאמות טובות ביותר</span>
             </Button>
             <Link href="/dashboard/candidates/new">
-              <Button className="t22-btn-primary gap-2">
+              <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">הוסף מועמד חדש</span>
-              </Button>
+                הוסף מועמד
+              </button>
             </Link>
           </div>
         </div>
       </div>
+      <div className="p-4 md:p-8 space-y-5">
 
       {/* Tab switcher: רשימה / חיפוש AI */}
       <div className="flex gap-2 bg-white rounded-2xl p-2 shadow-md border border-slate-100">
@@ -532,9 +533,8 @@ export default function CandidatesPageModern() {
       {activeView === 'list' && <>
 
       {/* Premium Search */}
-      <Card className="t22-card-soft border-0 shadow-md bg-white/90 backdrop-blur-md overflow-hidden rounded-2xl">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#06B6D4] to-[#22D3EE]"></div>
-        <CardContent className="pt-6">
+      <Card className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <CardContent className="p-4">
           <div className="relative">
             <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#06B6D4] h-5 w-5" />
             <Input
@@ -766,8 +766,8 @@ export default function CandidatesPageModern() {
               </div>
 
               <Link href={`/dashboard/candidates/${candidate.id}`}>
-                <div className={`candidate-card group relative bg-white rounded-2xl border transition-all duration-300 overflow-hidden cursor-pointer
-                  ${selectedCandidates.has(candidate.id) ? 'border-[#06B6D4] ring-2 ring-[#06B6D4]/20' : 'border-slate-200/80 hover:border-[#06B6D4]/30'}`}>
+                <div className={`candidate-card group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-1
+                  ${selectedCandidates.has(candidate.id) ? 'border-[#06B6D4] ring-2 ring-[#06B6D4]/20' : 'border-slate-100 hover:border-indigo-200'}`}>
 
                   {/* Top color strip by status */}
                   <div className={`h-1 w-full ${
@@ -1176,6 +1176,7 @@ export default function CandidatesPageModern() {
       )}
       </>
       }
+      </div>
     </div>
   )
 }

@@ -623,54 +623,66 @@ export default function CandidateDetailsPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{candidate.name}</h1>
-          <p className="text-muted-foreground">
-            {candidate.currentTitle && candidate.currentCompany 
-              ? `${candidate.currentTitle} ב-${candidate.currentCompany}`
-              : "פרטי מועמד"}
-          </p>
-          {whatsAppLastSent && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2.5 py-0.5">
-                📤 וואטסאפ אחרון: {formatLastSent(whatsAppLastSent)}
-              </span>
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      {/* Premium Profile Header */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-5">
+        <div className="flex items-start gap-5">
+          {/* Avatar */}
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
+            <span className="text-white font-black text-2xl">{candidate.name?.[0]}</span>
+          </div>
+          {/* Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-2xl font-black text-slate-900">{candidate.name}</h1>
+                <p className="text-slate-500 mt-0.5">
+                  {candidate.currentTitle && candidate.currentCompany 
+                    ? `${candidate.currentTitle} ב-${candidate.currentCompany}`
+                    : candidate.currentTitle || "פרטי מועמד"}
+                </p>
+                {whatsAppLastSent && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2.5 py-0.5">
+                      📤 וואטסאפ אחרון: {formatLastSent(whatsAppLastSent)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                {!editing ? (
+                  <>
+                    <Button variant="outline" onClick={() => setEditing(true)}>
+                      <Edit className="ml-2 h-4 w-4" />
+                      ערוך
+                    </Button>
+                    <Button variant="secondary" onClick={handleEndEmployment}>
+                      <Briefcase className="ml-2 h-4 w-4" />
+                      סיום עבודה
+                    </Button>
+                    <Button variant="destructive" onClick={handleDelete}>
+                      <Trash2 className="ml-2 h-4 w-4" />
+                      מחק
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={() => {
+                      setEditing(false)
+                      fetchCandidate()
+                    }}>
+                      <X className="ml-2 h-4 w-4" />
+                      ביטול
+                    </Button>
+                    <Button onClick={handleSave} disabled={saving}>
+                      <Save className="ml-2 h-4 w-4" />
+                      {saving ? "שומר..." : "שמור"}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-        <div className="flex gap-2">
-          {!editing ? (
-            <>
-              <Button variant="outline" onClick={() => setEditing(true)}>
-                <Edit className="ml-2 h-4 w-4" />
-                ערוך
-              </Button>
-              <Button variant="secondary" onClick={handleEndEmployment}>
-                <Briefcase className="ml-2 h-4 w-4" />
-                סיום עבודה
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                <Trash2 className="ml-2 h-4 w-4" />
-                מחק
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => {
-                setEditing(false)
-                fetchCandidate()
-              }}>
-                <X className="ml-2 h-4 w-4" />
-                ביטול
-              </Button>
-              <Button onClick={handleSave} disabled={saving}>
-                <Save className="ml-2 h-4 w-4" />
-                {saving ? "שומר..." : "שמור"}
-              </Button>
-            </>
-          )}
+          </div>
         </div>
       </div>
 
@@ -901,7 +913,7 @@ export default function CandidateDetailsPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="rounded-2xl shadow-sm border border-slate-100 bg-white">
             <CardHeader>
               <CardTitle>פרטים אישיים</CardTitle>
             </CardHeader>
@@ -1025,7 +1037,7 @@ export default function CandidateDetailsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl shadow-sm border border-slate-100 bg-white">
             <CardHeader>
               <CardTitle>פרטי תעסוקה</CardTitle>
             </CardHeader>
@@ -1128,7 +1140,7 @@ export default function CandidateDetailsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl shadow-sm border border-slate-100 bg-white">
             <CardHeader>
               <CardTitle>קליטה לעבודה</CardTitle>
             </CardHeader>
@@ -1210,7 +1222,7 @@ export default function CandidateDetailsPage() {
           </Card>
 
           {(editing || candidate.notes) && (
-            <Card>
+            <Card className="rounded-2xl shadow-sm border border-slate-100 bg-white">
               <CardHeader>
                 <CardTitle>הערות</CardTitle>
               </CardHeader>
@@ -1235,7 +1247,7 @@ export default function CandidateDetailsPage() {
 
           {/* 🆕 תקציר ידני + מקור הגעה + נצפה לאחרונה */}
           {candidateId && candidate && (
-            <Card>
+            <Card className="rounded-2xl shadow-sm border border-slate-100 bg-white">
               <CardContent className="pt-6 space-y-4">
                 <CandidateManualSummary
                   candidateId={candidateId}

@@ -60,8 +60,8 @@ export function Sidebar() {
   return (
     <aside
       dir="rtl"
-      className={`fixed right-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out
-        border-l border-white/[0.07] shadow-[−8px_0_40px_rgba(0,0,0,0.5)]
+      className={`flex-shrink-0 h-full flex flex-col z-40 transition-all duration-300 ease-in-out
+        border-l border-white/[0.07] shadow-[-4px_0_24px_rgba(0,0,0,0.3)]
         ${collapsed ? 'w-[70px]' : 'w-[250px]'}
         hidden lg:flex`}
       style={{

@@ -16,14 +16,14 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
-      {/* Right sidebar - hidden on mobile */}
+    <div className="flex h-screen overflow-hidden bg-slate-50" dir="rtl">
+      {/* Sidebar — part of flex flow, not fixed/overlay */}
       <Sidebar />
       
-      {/* Main content area - shifts left to make room for right sidebar on desktop */}
-      <div className="lg:mr-[250px] flex flex-col min-h-screen transition-all duration-300">
+      {/* Main content — scrolls independently, never under the sidebar */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopNavbar />
-        <main className="flex-1">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

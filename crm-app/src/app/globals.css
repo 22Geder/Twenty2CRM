@@ -859,9 +859,9 @@ main > * {
   animation: t22-fade-in 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* === 5. Glass effect on all white rounded cards === */
-.bg-white.rounded-2xl,
-.bg-white.rounded-xl {
+/* === 5. Glass effect on all white rounded cards — skip gradient cards === */
+.bg-white.rounded-2xl:not([class*="from-"]):not([class*="bg-gradient"]),
+.bg-white.rounded-xl:not([class*="from-"]):not([class*="bg-gradient"]) {
   background: rgba(255, 255, 255, 0.90) !important;
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   backdrop-filter: blur(12px) saturate(180%);
@@ -874,8 +874,8 @@ main > * {
 }
 
 /* === 6. Card hover — float + teal glow === */
-.bg-white.rounded-2xl:hover,
-.bg-white.rounded-xl:hover {
+.bg-white.rounded-2xl:not([class*="from-"]):hover,
+.bg-white.rounded-xl:not([class*="from-"]):hover {
   background: rgba(255, 255, 255, 0.97) !important;
   box-shadow:
     0 4px 12px rgba(0,0,0,0.06),
@@ -885,9 +885,14 @@ main > * {
   transform: translateY(-2px);
 }
 
-/* === 7. Shadcn Card component glass treatment === */
-[class*="rounded-2xl"][class*="bg-card"],
-[class*="rounded-2xl"][class*="border-slate"] {
+/* === 5b. Protect gradient cards from white override === */
+[class*="from-"][class*="rounded"],[class*="bg-gradient"][class*="rounded"] {
+  background: revert !important;
+}
+
+/* === 7. Shadcn Card component glass treatment — skip gradient cards === */
+[class*="rounded-2xl"][class*="bg-card"]:not([class*="from-"]):not([class*="bg-gradient"]),
+[class*="rounded-2xl"][class*="border-slate"]:not([class*="from-"]):not([class*="bg-gradient"]) {
   background: rgba(255, 255, 255, 0.88) !important;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -896,7 +901,7 @@ main > * {
   transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease !important;
 }
 
-[class*="rounded-2xl"][class*="bg-card"]:hover {
+[class*="rounded-2xl"][class*="bg-card"]:not([class*="from-"]):hover {
   border-color: rgba(6, 182, 212, 0.20) !important;
   box-shadow: 0 6px 28px rgba(6,182,212,0.11), 0 2px 8px rgba(0,0,0,0.05) !important;
   transform: translateY(-1px);

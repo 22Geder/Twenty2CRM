@@ -140,7 +140,7 @@ export function Sidebar() {
         {dynamicNavGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
-              <div className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em] px-2 mb-2 flex items-center gap-2">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-2 mb-2 flex items-center gap-2">
                 <div className="h-px flex-1 bg-white/5" />
                 <span>{group.label}</span>
                 <div className="h-px flex-1 bg-white/5" />
@@ -194,29 +194,29 @@ export function Sidebar() {
 
                       {/* Icon box */}
                       <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200"
                         style={isActive
                           ? { background: `${color}22`, boxShadow: `0 4px 12px ${color}25` }
                           : { background: 'rgba(255,255,255,0.04)' }
                         }
                       >
                         <Icon
-                          className="h-[15px] w-[15px] transition-colors"
-                          style={{ color: isActive ? color : '#6B7280' }}
+                          className="h-[17px] w-[17px] transition-colors"
+                          style={{ color: isActive ? color : '#7B879B' }}
                         />
                       </div>
 
                       {!collapsed && (
                         <>
                           <span
-                            className="text-[13px] font-medium truncate flex-1 transition-colors"
-                            style={{ color: isActive ? '#F1F5F9' : '#94A3B8' }}
+                            className="text-[15px] font-semibold truncate flex-1 transition-colors"
+                            style={{ color: isActive ? '#F1F5F9' : '#B4C0D3' }}
                           >
                             {item.name}
                           </span>
                           {item.badge && (
                             <span
-                              className="text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-wide"
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-wide"
                               style={item.badge === 'AI'
                                 ? { background: '#F97316', color: 'white' }
                                 : { background: '#10B981', color: 'white' }
@@ -291,7 +291,7 @@ export function Sidebar() {
         <div
           dir="rtl"
           className="fixed z-[60] pointer-events-none -translate-y-1/2 px-3 py-1.5 rounded-lg
-            text-[12px] font-semibold text-white whitespace-nowrap
+            text-[13.5px] font-semibold text-white whitespace-nowrap
             shadow-[0_8px_24px_rgba(0,0,0,0.45)] border border-white/10"
           style={{
             top: tooltip.top,

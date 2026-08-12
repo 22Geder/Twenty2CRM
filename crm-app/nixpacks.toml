@@ -7,7 +7,6 @@ cmds = ["npm install --legacy-peer-deps"]
 [phases.build]
 cmds = [
   "npx prisma generate",
-  "rm -rf .next",
   "npm run build"
 ]
 

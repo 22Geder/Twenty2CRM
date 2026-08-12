@@ -421,14 +421,43 @@ export default function CandidatesPageModern() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded"></div>
-            ))}
+      <div className="p-4 md:p-8 space-y-5">
+        {/* Header skeleton */}
+        <div className="t22-card-soft p-6 md:p-7">
+          <div className="flex items-center gap-4">
+            <div className="t22-skeleton w-14 h-14 rounded-2xl" />
+            <div className="space-y-2">
+              <div className="t22-skeleton h-6 w-40 rounded-lg" />
+              <div className="t22-skeleton h-4 w-56 rounded-lg" />
+            </div>
           </div>
+        </div>
+        {/* Cards skeleton — matches candidate card layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="t22-skeleton w-11 h-11 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <div className="t22-skeleton h-4 w-3/4 rounded" />
+                  <div className="t22-skeleton h-3 w-1/2 rounded" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="t22-skeleton h-3 w-full rounded" />
+                <div className="t22-skeleton h-3 w-full rounded" />
+                <div className="t22-skeleton h-3 w-full col-span-2 rounded" />
+              </div>
+              <div className="flex gap-1.5">
+                <div className="t22-skeleton h-5 w-14 rounded-md" />
+                <div className="t22-skeleton h-5 w-14 rounded-md" />
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <div className="t22-skeleton h-6 w-20 rounded-lg" />
+                <div className="t22-skeleton h-8 w-16 rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -793,9 +822,9 @@ export default function CandidatesPageModern() {
                         </div>
                       )}
                       {candidate.email && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500 col-span-2">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 col-span-2 min-w-0">
                           <Mail className="h-3.5 w-3.5 text-[#06B6D4] flex-shrink-0" />
-                          <span className="truncate">{candidate.email}</span>
+                          <span className="truncate min-w-0" dir="ltr" title={candidate.email}>{candidate.email}</span>
                         </div>
                       )}
                       {candidate.yearsOfExperience !== null && (
@@ -826,7 +855,8 @@ export default function CandidatesPageModern() {
 
                     {/* Manual summary */}
                     {candidate.manualSummary && (
-                      <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50/80 border border-amber-200/60 text-[11px] text-slate-700">
+                      <div className="mb-3 px-3 py-2 rounded-xl border text-[11px] text-slate-700"
+                        style={{ background: '#FEFCE8', borderColor: '#FDE68A80' }}>
                         <span className="font-semibold text-amber-700">📝 </span>
                         <span className="line-clamp-2">{candidate.manualSummary}</span>
                       </div>
@@ -835,10 +865,10 @@ export default function CandidatesPageModern() {
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div className="flex gap-1.5">
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-[#06B6D4]/10 text-[#0891B2] px-2.5 py-1 rounded-lg font-semibold">
+                        <span title="מספר הפניות" className="inline-flex items-center gap-1 text-[10px] bg-[#06B6D4]/10 text-[#0891B2] px-2.5 py-1 rounded-lg font-semibold cursor-help">
                           📋 {candidate._count?.applications || 0}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-[#F97316]/10 text-[#EA580C] px-2.5 py-1 rounded-lg font-semibold">
+                        <span title="מספר ראיונות" className="inline-flex items-center gap-1 text-[10px] bg-[#F97316]/10 text-[#EA580C] px-2.5 py-1 rounded-lg font-semibold cursor-help">
                           🎙 {candidate._count?.interviews || 0}
                         </span>
                       </div>
@@ -846,6 +876,7 @@ export default function CandidatesPageModern() {
                         <Button
                         variant="ghost" 
                         size="sm" 
+                        title="התאמה אוטומטית עם AI"
                         className="h-8 w-8 p-0 rounded-xl hover:bg-[#06B6D4]/10"
                         onClick={(e) => handleAutoMatch(candidate.id, candidate.name, e)}
                         disabled={matchingCandidate === candidate.id}
@@ -856,7 +887,7 @@ export default function CandidatesPageModern() {
                           <Bot className="h-4 w-4 text-[#06B6D4]" />
                         )}
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-xl hover:bg-[#10B981]/10">
+                      <Button variant="ghost" size="sm" title="צפייה בפרטי המועמד" className="h-8 w-8 p-0 rounded-xl hover:bg-[#10B981]/10">
                         <Eye className="h-4 w-4 text-[#10B981]" />
                       </Button>
                     </div>

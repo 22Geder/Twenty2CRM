@@ -193,8 +193,8 @@ export default function EmployersModernPage() {
       {/* Clean Employers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredEmployers.map((employer) => (
-          <Link key={employer.id} href={`/dashboard/employers/${employer.id}`}>
-            <Card className="t22-card-soft group p-6 cursor-pointer relative">
+          <Link key={employer.id} href={`/dashboard/employers/${employer.id}`} className="h-full">
+            <Card className="t22-card-soft group p-6 cursor-pointer relative h-full flex flex-col">
               <div className="relative flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
@@ -209,16 +209,14 @@ export default function EmployersModernPage() {
                 </div>
               </div>
 
-            {employer.description && (
-              <p className="text-sm text-slate-500 mb-4 line-clamp-2 relative">
-                {employer.description}
-              </p>
-            )}
+            <p className="text-sm text-slate-500 mb-4 line-clamp-2 relative min-h-[2.5rem]">
+              {employer.description || ''}
+            </p>
 
             <div className="space-y-2 mb-4 relative">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4" style={{ color: 'var(--brand-primary)' }} />
-                <span className="text-slate-600">{employer.email}</span>
+              <div className="flex items-center gap-2 text-sm min-w-0">
+                <Mail className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--brand-primary)' }} />
+                <span className="text-slate-600 truncate min-w-0" dir="ltr" title={employer.email}>{employer.email}</span>
               </div>
               {employer.phone && (
                 <div className="flex items-center gap-2 text-sm">
@@ -227,13 +225,13 @@ export default function EmployersModernPage() {
                 </div>
               )}
               {employer.website && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Globe className="h-4 w-4" style={{ color: 'var(--brand-lavender)' }} />
+                <div className="flex items-center gap-2 text-sm min-w-0">
+                  <Globe className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--brand-lavender)' }} />
                   <a 
                     href={employer.website} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="hover:underline"
+                    className="hover:underline truncate min-w-0"
                     style={{ color: 'var(--brand-primary)' }}
                   >
                     {employer.website}
@@ -242,13 +240,13 @@ export default function EmployersModernPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 relative">
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100 relative mt-auto">
               <div className="flex items-center gap-2">
                 <span className="t22-pill t22-pill--primary">
                   {employer._count?.positions || 0} משרות
                 </span>
               </div>
-              <span className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--brand-primary)' }}>
+              <span className="t22-btn-outline inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold group-hover:border-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-primary)]">
                 לפרטים
                 <ChevronRight className="h-4 w-4" />
               </span>

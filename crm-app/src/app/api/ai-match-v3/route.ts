@@ -13,6 +13,20 @@ import {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
+// ⏱️ הגבלת זמן לכל קריאת Gemini - מונע תקיעת הסריקה כולה (502)
+// אם קריאה חורגת מהזמן, נזרקת שגיאה ונופלים ל-smartFallbackMatch
+const GEMINI_CALL_TIMEOUT_MS = 12000
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Gemini timeout")), ms)
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value) },
+      (err) => { clearTimeout(timer); reject(err) }
+    )
+  })
+}
+
 /**
  * 🧠 AI Match V3 - סריקה אנושית חכמה מהירה במיוחד!
  * שלב 1: סינון מהיר בלי AI לכל המשרות (אלפיות שניה!)
@@ -334,7 +348,7 @@ JSON בלבד:`
 
   try {
     const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
-    const result = await model.generateContent(prompt)
+    const result = await withTimeout(model.generateContent(prompt), GEMINI_CALL_TIMEOUT_MS)
     const text = result.response.text()
     
     const jsonMatch = text.match(/\{[\s\S]*\}/)

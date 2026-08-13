@@ -222,19 +222,25 @@ export function AvigdorAiPanel() {
           return (
             <div
               key={i}
-              className={`flex ${isUser ? "justify-start" : "justify-end"} ${sameSender ? "mt-1" : "mt-3.5"}`}
+              className={`flex ${isUser ? "justify-start" : "justify-end"} ${sameSender ? "mt-1.5" : "mt-4"}`}
             >
               <div
-                className={`max-w-[85%] px-3 py-2 text-[13.5px] leading-[1.6] whitespace-pre-wrap break-words shadow-md ${
+                className={`flex flex-col max-w-[80%] overflow-hidden px-3.5 py-2.5 shadow-md ${
                   isUser
-                    ? "bg-white/[0.07] text-slate-100 border border-white/[0.08] rounded-2xl rounded-tr-md"
-                    : "text-white shadow-orange-900/20 rounded-2xl rounded-tl-md"
+                    ? "bg-white/[0.07] border border-white/[0.08] rounded-2xl rounded-tr-md"
+                    : "shadow-orange-900/20 rounded-2xl rounded-tl-md"
                 }`}
                 style={!isUser ? { background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' } : undefined}
               >
-                {m.content}
+                <span
+                  className={`text-[13.5px] leading-[1.65] whitespace-pre-wrap break-words text-right ${
+                    isUser ? "text-slate-100" : "text-white"
+                  }`}
+                >
+                  {m.content}
+                </span>
                 {m.time && (
-                  <span className={`block text-[10px] mt-1 leading-none ${isUser ? "text-slate-400 text-left" : "text-orange-100/80 text-left"}`}>
+                  <span className={`self-start text-[10px] mt-1 leading-none ${isUser ? "text-slate-400" : "text-orange-50/80"}`}>
                     {m.time}
                   </span>
                 )}
@@ -243,7 +249,7 @@ export function AvigdorAiPanel() {
           )
         })}
         {loading && (
-          <div className="flex justify-end mt-3.5">
+          <div className="flex justify-end mt-4">
             <div className="rounded-2xl rounded-tl-md px-3.5 py-2.5 text-white flex items-center gap-2 shadow-md shadow-orange-900/20" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-[13px]">אביגדור עובד על זה...</span>

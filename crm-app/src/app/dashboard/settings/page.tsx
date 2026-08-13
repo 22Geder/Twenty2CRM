@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useTheme } from "@/lib/use-theme"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +47,7 @@ const DEFAULT_SETTINGS = {
 
 export default function SettingsPage() {
   const { data: session } = useSession()
+  const { isDark, setTheme } = useTheme()
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -538,6 +540,32 @@ export default function SettingsPage() {
             checked={settings.aiSuggestPositions}
             onChange={(val) => updateSetting('aiSuggestPositions', val)}
             label="הצעות משרות אוטומטיות"
+          />
+        </div>
+      </Card>
+
+      {/* מראה וצבעים — מצב יום/לילה */}
+      <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-slate-500/20">
+            <Palette className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">מראה וצבעים</h2>
+            <p className="text-sm text-muted-foreground">
+              התאמה אישית של הממשק — מצב יום או לילה
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Toggle
+            checked={isDark}
+            onChange={(val) => {
+              setTheme(val ? 'dark' : 'light')
+              updateSetting('darkMode', val)
+            }}
+            label="מצב כהה (Dark Mode)"
           />
         </div>
       </Card>

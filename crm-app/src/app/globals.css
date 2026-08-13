@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* מאפשר וריאנט dark מבוסס class (Tailwind v4) — html.dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ========================================================================
    Twenty2Jobs - Premium Design System v2.0
    המרכז לעובדים ולמעסיקים בישראל
@@ -81,6 +84,9 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 187 92% 43%;
   --radius: 0.75rem;
+
+  /* רקע ראשי של אזור הדשבורד — ניתן להחלפה במצב כהה */
+  --app-bg: #F1F5F9;
 }
 
 /* ========================================================================
@@ -108,6 +114,92 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
 }
+
+/* ========================================================================
+   🌙 מצב כהה (Dark Mode) — שכבת overrides גלובלית
+   מופעל כאשר ל-<html> יש class="dark". משנה את כל המשטחים הנפוצים
+   (רקע, כרטיסים, טקסט, גבולות, טבלאות, שדות קלט) כדי שמצב לילה
+   יעבוד בכל המערכת ללא צורך לערוך כל רכיב בנפרד.
+   ======================================================================== */
+.dark {
+  color-scheme: dark;
+
+  /* רקע הדשבורד */
+  --app-bg: #0b1220;
+
+  /* משתני עיצוב legacy */
+  --background: 222 47% 8%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 12%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 12%;
+  --popover-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 22%;
+  --input: 217 33% 22%;
+}
+
+.dark body {
+  background: linear-gradient(160deg, #0b1220 0%, #0f172a 45%, #0b1a24 100%);
+  color: #e2e8f0;
+}
+
+/* משטחים לבנים → כהים */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-slate-50,
+.dark .bg-gray-50 { background-color: #1e293b !important; }
+.dark .bg-slate-100,
+.dark .bg-gray-100 { background-color: #273449 !important; }
+.dark .bg-slate-200,
+.dark .bg-gray-200 { background-color: #334155 !important; }
+
+/* טקסט כהה → בהיר */
+.dark .text-slate-900,
+.dark .text-gray-900,
+.dark .text-black,
+.dark .text-slate-800,
+.dark .text-gray-800 { color: #f1f5f9 !important; }
+.dark .text-slate-700,
+.dark .text-gray-700,
+.dark .text-slate-600,
+.dark .text-gray-600 { color: #cbd5e1 !important; }
+.dark .text-slate-500,
+.dark .text-gray-500,
+.dark .text-slate-400,
+.dark .text-gray-400 { color: #94a3b8 !important; }
+
+/* גבולות */
+.dark .border-slate-100,
+.dark .border-gray-100,
+.dark .border-slate-200,
+.dark .border-gray-200,
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/60 { border-color: #334155 !important; }
+
+/* hover על משטחים בהירים */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+
+/* רכיבי עיצוב פנימיים */
+.dark .t22-glass { background: rgba(30, 41, 59, 0.85); border-color: rgba(148, 163, 184, 0.12); }
+.dark .t22-card,
+.dark .t22-card-elevated,
+.dark .t22-stat-card { background: #1e293b; border-color: rgba(148, 163, 184, 0.14); }
+.dark .t22-table thead tr { background: linear-gradient(135deg, #1e293b 0%, #273449 100%); }
+.dark .t22-table thead th { color: #94a3b8; border-bottom-color: #334155; }
+.dark .t22-table tbody tr:hover { background: rgba(6, 182, 212, 0.08); }
+.dark .t22-table tbody td { border-bottom-color: rgba(148, 163, 184, 0.14); }
+.dark .t22-input { background: rgba(30, 41, 59, 0.9); border-color: #334155; color: #e2e8f0; }
+
+/* קלט טופסים כללי */
+.dark input,
+.dark textarea,
+.dark select { color-scheme: dark; }
+.dark input::placeholder,
+.dark textarea::placeholder { color: #64748b; }
 
 /* Hebrew typography hierarchy */
 h1, h2, h3, h4, h5, h6 {

@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CommandPaletteButton } from "@/components/command-palette"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const navigationItems = [
   { name: "לוח בקרה", href: "/dashboard", icon: LayoutDashboard },
@@ -130,6 +131,7 @@ export function TopNavbar() {
       {/* Right: command palette + notifications + user profile */}
       <div className="flex items-center gap-2">
         <CommandPaletteButton />
+        <ThemeToggle />
         <button
           className="relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
           title="התראות"

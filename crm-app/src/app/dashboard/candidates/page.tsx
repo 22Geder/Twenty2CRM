@@ -58,6 +58,8 @@ import {
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 import { AICandidateSearch } from '@/components/ai-candidate-search'
 import CandidateManualSummary from '@/components/candidate-manual-summary'
+import { getCandidateCanonicalStatus } from '@/lib/candidate-status'
+import { useTheme } from '@/lib/use-theme'
 
 // ── CandidateAvatar ──────────────────────────────────────────────────────────
 // Shows: photo > profession icon > 22JOBS logo (circle shape always)
@@ -170,6 +172,8 @@ interface Candidate {
   createdAt: string
   updatedAt?: string | null
   hiredAt: string | null
+  employmentStatus?: string | null
+  inProcessPositionId?: string | null
   applications: Application[]
   tags: Array<{ id: string; name: string; color: string }>
   uploadedBy?: {  // 🆕 מי העלה את המועמד
@@ -238,8 +242,8 @@ export default function CandidatesPageModern() {
   const [reminderDate, setReminderDate] = useState('')
   const [reminderSaving, setReminderSaving] = useState(false)
 
-  // 4. Dark mode
-  const [darkMode, setDarkMode] = useState(false)
+  // 4. Dark mode — מצב גלובלי משותף (נשמר ב-localStorage)
+  const { isDark: darkMode, toggleTheme } = useTheme()
 
   // 5. WhatsApp preview modal
   const [waPreviewCandidate, setWaPreviewCandidate] = useState<Candidate | null>(null)
@@ -304,17 +308,9 @@ export default function CandidatesPageModern() {
     }
   }
 
-  // Helper function to determine candidate status
+  // Helper function to determine candidate status (מקור אמת יחיד — משותף עם לוח הבקרה)
   const getCandidateStatus = (candidate: Candidate): 'hired' | 'rejected' | 'in-process' | 'new' => {
-    if (candidate.hiredAt) return 'hired'
-    if (candidate.applications && candidate.applications.length > 0) {
-      const hasHired = candidate.applications.some(app => app.status === 'HIRED')
-      if (hasHired) return 'hired'
-      const allRejected = candidate.applications.every(app => app.status === 'REJECTED')
-      if (allRejected) return 'rejected'
-      return 'in-process'
-    }
-    return 'new'
+    return getCandidateCanonicalStatus(candidate)
   }
 
   useEffect(() => {
@@ -568,15 +564,6 @@ export default function CandidatesPageModern() {
 
   // ── NEW FEATURE HANDLERS ──────────────────────────────────
 
-  // Dark mode toggle — adds class to html element
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [darkMode])
-
   // Voice search
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -722,7 +709,7 @@ export default function CandidatesPageModern() {
           <div className="flex gap-2.5">
             {/* Dark Mode Toggle */}
             <button
-              onClick={() => setDarkMode(d => !d)}
+              onClick={toggleTheme}
               className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
               title={darkMode ? 'מצב בהיר' : 'מצב כהה'}
             >

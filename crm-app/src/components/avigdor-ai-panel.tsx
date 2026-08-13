@@ -82,9 +82,19 @@ export function AvigdorAiPanel() {
       const city = cand.city && cand.city !== "לא זוהה" ? cand.city : null
       const matches: Array<{ title: string; employer?: string; location?: string }> = data.matchingPositions || []
 
-      let reply = `סיימתי לנתח את קורות החיים ✅\nשמרתי את ${name} במערכת`
-      if (title || city) {
-        reply += ` (${[title, city].filter(Boolean).join(", ")})`
+      // 🆕 זיהוי כפילות זהה למערכת ההעלאה ההמונית:
+      // createdCandidate=false → המועמד כבר קיים ועודכן הכרטיס הקיים (בלי ליצור כפילות)
+      const isExisting = data.createdCandidate === false
+      const details = [title, city].filter(Boolean).join(", ")
+
+      let reply: string
+      if (isExisting) {
+        reply = `סיימתי לנתח את קורות החיים ✅\n${name} כבר קיים/ת אצלנו במערכת — עדכנתי את הכרטיס הקיים בקובץ החדש (לא נוצרה כפילות)`
+      } else {
+        reply = `סיימתי לנתח את קורות החיים ✅\nהוספתי את ${name} כמועמד/ת חדש/ה במערכת`
+      }
+      if (details) {
+        reply += ` (${details})`
       }
       reply += ".\n\n"
 

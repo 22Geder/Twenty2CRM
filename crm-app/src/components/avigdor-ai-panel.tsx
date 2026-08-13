@@ -8,7 +8,11 @@ import { StarryBg } from "@/components/starry-bg"
 type ChatMessage = {
   role: "user" | "assistant"
   content: string
+  time?: string
 }
+
+const nowTime = () =>
+  new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
 
 // 🦁 פאנל ה-AI הפנימי "אביגדור" - עמודה קבועה בצד שמאל של המסך, תמיד פתוחה וזמינה לשיחה.
 // אותה אישיות/מוח כמו הבוט הטלפוני של החברה, כאן לשימוש הצוות הפנימי בתוך ה-CRM:
@@ -18,6 +22,7 @@ export function AvigdorAiPanel() {
     {
       role: "assistant",
       content: "היי, אני אביגדור 🦁 תגיד לי איזו משרה אתה צריך (ובאיזה איזור), תבקש ממני למצוא מועמד מתאים, או פשוט תעלה לי קובץ קורות חיים 📎 ואני אנתח אותו, אשמור אותו במערכת ואמליץ לך על המשרות הכי מתאימות.",
+      time: nowTime(),
     },
   ])
   const [input, setInput] = useState("")
@@ -32,13 +37,13 @@ export function AvigdorAiPanel() {
   }, [messages, loading])
 
   const pushAssistant = (content: string) =>
-    setMessages(prev => [...prev, { role: "assistant", content }])
+    setMessages(prev => [...prev, { role: "assistant", content, time: nowTime() }])
 
   const sendMessage = async () => {
     const text = input.trim()
     if (!text || loading) return
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text }]
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text, time: nowTime() }]
     setMessages(nextMessages)
     setInput("")
     setLoading(true)
@@ -61,7 +66,7 @@ export function AvigdorAiPanel() {
   // 📎 העלאת קורות חיים → ניתוח, שמירה במערכת והמלצת משרות (דרך /api/upload)
   const handleFile = async (file: File) => {
     if (!file || loading) return
-    setMessages(prev => [...prev, { role: "user", content: `📎 העליתי קובץ: ${file.name}` }])
+    setMessages(prev => [...prev, { role: "user", content: `📎 העליתי קובץ: ${file.name}`, time: nowTime() }])
     setLoading(true)
     try {
       const form = new FormData()
@@ -208,25 +213,38 @@ export function AvigdorAiPanel() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-5 space-y-5 scrollbar-none relative z-10">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}>
+      {/* Messages - סגנון וואטסאפ: בועות עם "זנב", חותמת זמן וקיבוץ לפי שולח */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 scrollbar-none relative z-10">
+        {messages.map((m, i) => {
+          const isUser = m.role === "user"
+          const prev = messages[i - 1]
+          const sameSender = prev && prev.role === m.role
+          return (
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13.5px] leading-[1.7] whitespace-pre-wrap break-words ${
-                m.role === "user"
-                  ? "bg-white/[0.07] text-slate-100 border border-white/[0.08]"
-                  : "text-white shadow-lg shadow-orange-900/20"
-              }`}
-              style={m.role === "assistant" ? { background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' } : undefined}
+              key={i}
+              className={`flex ${isUser ? "justify-start" : "justify-end"} ${sameSender ? "mt-1" : "mt-3.5"}`}
             >
-              {m.content}
+              <div
+                className={`max-w-[85%] px-3 py-2 text-[13.5px] leading-[1.6] whitespace-pre-wrap break-words shadow-md ${
+                  isUser
+                    ? "bg-white/[0.07] text-slate-100 border border-white/[0.08] rounded-2xl rounded-tr-md"
+                    : "text-white shadow-orange-900/20 rounded-2xl rounded-tl-md"
+                }`}
+                style={!isUser ? { background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' } : undefined}
+              >
+                {m.content}
+                {m.time && (
+                  <span className={`block text-[10px] mt-1 leading-none ${isUser ? "text-slate-400 text-left" : "text-orange-100/80 text-left"}`}>
+                    {m.time}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
         {loading && (
-          <div className="flex justify-end">
-            <div className="rounded-2xl px-3.5 py-2.5 text-white flex items-center gap-2 shadow-lg shadow-orange-900/20" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
+          <div className="flex justify-end mt-3.5">
+            <div className="rounded-2xl rounded-tl-md px-3.5 py-2.5 text-white flex items-center gap-2 shadow-md shadow-orange-900/20" style={{ background: 'linear-gradient(135deg, #F97316 0%, #ea6a0e 100%)' }}>
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-[13px]">אביגדור עובד על זה...</span>
             </div>

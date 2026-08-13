@@ -17,20 +17,20 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#F1F5F9' }} dir="rtl">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--app-bg)' }} dir="rtl">
       {/* Sidebar — part of flex flow, not fixed/overlay */}
       <Sidebar />
       
       {/* Main content — scrolls independently, never under the sidebar */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative" style={{ background: '#F1F5F9' }}>
-        {/* רקע לוגו 22JOBS - פרוס כטקסטורה עדינה ושקופה על כל שטח התוכן, מאחורי הטקסט, מופיע בכל דף של ה-CRM */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative" style={{ background: 'var(--app-bg)' }}>
+        {/* רקע לוגו 22JOBS - לוגו יחיד גדול פרוס על כל שטח התוכן, שקוף ועדין, מאחורי הטקסט, מופיע בכל דף של ה-CRM */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04] z-0"
+          className="pointer-events-none fixed inset-0 opacity-[0.05] z-0"
           style={{
             backgroundImage: "url(/logo-22jobs-clean.png)",
-            backgroundRepeat: "repeat",
-            backgroundSize: "200px auto",
-            backgroundPosition: "center top",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "contain",
+            backgroundPosition: "center",
           }}
         />
         <TopNavbar />

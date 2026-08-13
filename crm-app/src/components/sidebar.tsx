@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -57,6 +57,19 @@ export function Sidebar() {
   const { data: session } = useSession()
   const [collapsed, setCollapsed] = useState(false)
   const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null)
+  // רוחב הסרגל כשפתוח: נשאר 250px במסכים תקניים (רוחב ≥1500),
+  // ומתכווץ אוטומטית במסכים/טלוויזיות ברזולוציה נמוכה כדי לא לבלוע את התוכן
+  const [expandedWidth, setExpandedWidth] = useState(250)
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      setExpandedWidth(w >= 1500 ? 250 : Math.max(200, Math.round(w * 0.17)))
+    }
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [])
   
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || 'משתמש'
@@ -78,7 +91,7 @@ export function Sidebar() {
     <motion.aside
       dir="rtl"
       initial={false}
-      animate={{ width: collapsed ? 70 : 250 }}
+      animate={{ width: collapsed ? 70 : expandedWidth }}
       transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
       className="flex-shrink-0 h-full flex flex-col z-40 relative
         border-l border-white/[0.06] shadow-[-4px_0_24px_rgba(0,0,0,0.25)]

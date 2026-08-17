@@ -99,14 +99,15 @@ export interface ParsedJob {
   requirements: string
   employmentType: string      // "משרה מלאה" | "משרה חלקית" | "חוזה" | "זמני"
   salaryRange: string
-  tags: string[]              // עד 10 תגיות
+  tags: string[]              // עד 15 תגיות נבחרות (הכי מתאימות)
+  suggestedTags: string[]     // עד 15 תגיות נוספות מוצעות שלא נבחרו אוטומטית
   openings: number
   originalText: string        // הטקסט המקורי
   confidence: number          // 0-100
 }
 
 async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+  const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
 
   const prompt = `אתה מומחה ניתוח משרות. נתח את המשרות הבאות והחזר JSON בלבד.
 
@@ -117,7 +118,8 @@ async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
 - requirements: דרישות (עד 500 תווים, אם לא קיים - מחרוזת ריקה)
 - employmentType: "משרה מלאה" / "משרה חלקית" / "חוזה" / "זמני" / "לא צוין"
 - salaryRange: טווח שכר כמחרוזת (אם קיים, אחרת "")
-- tags: מערך עד 10 תגיות קצרות ורלוונטיות (כישורים, תחום, מאפיינים)
+- tags: מערך של עד 15 תגיות קצרות ורלוונטיות ביותר (כישורים, תחום, מאפיינים) - התגיות הכי מתאימות למשרה
+- suggestedTags: מערך של עד 15 תגיות נוספות שגם מתאימות למשרה אך פחות מרכזיות מה-tags הראשיות (לא לחזור על תגיות שכבר ב-tags)
 - openings: מספר משרות פנויות (ברירת מחדל 1)
 - confidence: ציון בטחון 0-100 לאיכות החילוץ
 
@@ -125,13 +127,13 @@ async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
 1. החזר JSON בלבד - ללא markdown, ללא הסברים
 2. המערך יכיל בדיוק ${blocks.length} אובייקטים (אחד לכל משרה)
 3. אם משרה לא ברורה, תן confidence נמוך אבל נסה בכל זאת
-4. tags: קצרות (1-3 מילים), ממוקדות בתחום וכישורים
+4. tags / suggestedTags: קצרות (1-3 מילים), ממוקדות בתחום וכישורים, ללא כפילויות בין שתי הרשימות
 
 משרות לניתוח (ממוספרות):
 ${blocks.map((b, i) => `[משרה ${i + 1}]:\n${b}`).join("\n\n")}
 
 החזר מערך JSON בפורמט:
-[{"title":"...","location":"...","description":"...","requirements":"...","employmentType":"...","salaryRange":"...","tags":["..."],"openings":1,"confidence":85}, ...]`
+[{"title":"...","location":"...","description":"...","requirements":"...","employmentType":"...","salaryRange":"...","tags":["..."],"suggestedTags":["..."],"openings":1,"confidence":85}, ...]`
 
   const result = await model.generateContent(prompt)
   const responseText = result.response.text().trim()
@@ -168,7 +170,14 @@ ${blocks.map((b, i) => `[משרה ${i + 1}]:\n${b}`).join("\n\n")}
       employmentType: sanitize(item.employmentType) || "לא צוין",
       salaryRange: sanitize(item.salaryRange) || "",
       tags: Array.isArray(item.tags)
-        ? item.tags.slice(0, 10).map((t: any) => sanitize(String(t))).filter(Boolean)
+        ? item.tags.slice(0, 15).map((t: any) => sanitize(String(t))).filter(Boolean)
+        : [],
+      suggestedTags: Array.isArray(item.suggestedTags)
+        ? item.suggestedTags
+            .slice(0, 15)
+            .map((t: any) => sanitize(String(t)))
+            .filter(Boolean)
+            .filter((t: string) => !(Array.isArray(item.tags) ? item.tags : []).includes(t))
         : [],
       openings: typeof item.openings === "number" && item.openings > 0 ? item.openings : 1,
       originalText: block,
@@ -188,6 +197,7 @@ function createFallbackJob(text: string, index: number): ParsedJob {
     employmentType: "לא צוין",
     salaryRange: "",
     tags: [],
+    suggestedTags: [],
     openings: 1,
     originalText: text,
     confidence: 20,

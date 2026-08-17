@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         // מצא או צור תגיות
         const tagConnects: { id: string }[] = []
         if (job.tags && job.tags.length > 0) {
-          for (const tagName of job.tags.slice(0, 10)) {
+          for (const tagName of job.tags.slice(0, 15)) {
             const cleanTag = tagName.trim().slice(0, 50)
             if (!cleanTag) continue
             try {

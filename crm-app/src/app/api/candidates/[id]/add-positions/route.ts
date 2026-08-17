@@ -127,6 +127,7 @@ export async function POST(
         positionTitle: firstPos?.title || null,
         employerName: (firstPos as any)?.employer?.name || null,
         phone: candidate.phone,
+        recruiterName: session.user?.name || session.user?.email || null,
       }).catch(() => {})
     }
 

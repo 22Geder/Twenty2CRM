@@ -36,36 +36,67 @@ const LOCATION_KEYWORDS = {
   'מבקיעים': ['מבקיעים', 'דרום', 'נגב']
 }
 
+// בודק אם מילה מופיעה כטוקן שלם (או עם סיומת נטייה) בטקסט, ולא כתת-מחרוזת
+// בתוך מילה אחרת (למשל "פקיד" בתוך "תפקיד") - מונע התאמות שגויות.
+function hasWordMatch(text, word) {
+  if (!text) return false
+  const tokens = text.split(/[^\u05D0-\u05EA\u0041-\u005A\u0061-\u007A0-9]+/).filter(Boolean)
+  return tokens.some(t => t === word || t.startsWith(word))
+}
+
 function generateKeywordsForPosition(title, description, location) {
-  const allKeywords = new Set(LOGISTICS_BASE_KEYWORDS)
   const titleLower = title.toLowerCase()
   const descLower = (description || '').toLowerCase()
 
-  // הוסף תגיות ספציפיות לסוג המשרה
-  for (const [type, keywords] of Object.entries(SPECIFIC_KEYWORDS)) {
-    if (titleLower.includes(type) || descLower.includes(type)) {
-      keywords.forEach(k => allKeywords.add(k))
+  // בונים רשימה מסודרת לפי עדיפות: קודם תגיות ייחודיות לתפקיד/מיקום,
+  // ורק בסוף (אם חסר) ממלאים ממאגר הבסיס הכללי. כך כל משרה מקבלת
+  // 15 תגיות שונות ורלוונטיות אליה, במקום 15 התגיות הראשונות במאגר הכללי.
+  const priorityKeywords = []
+  const seen = new Set()
+  const addKeyword = (k) => {
+    if (!seen.has(k)) {
+      seen.add(k)
+      priorityKeywords.push(k)
     }
   }
 
-  // הוסף תגיות מיקום
+  // 1. תגיות ספציפיות לסוג התפקיד (הכי רלוונטיות) - התאמת מילה שלמה בלבד
+  for (const [type, keywords] of Object.entries(SPECIFIC_KEYWORDS)) {
+    if (hasWordMatch(titleLower, type) || hasWordMatch(descLower, type)) {
+      keywords.forEach(addKeyword)
+    }
+  }
+
+  // 2. תגיות מיקום
   if (location) {
-    allKeywords.add(location)
+    addKeyword(location)
     for (const [loc, keywords] of Object.entries(LOCATION_KEYWORDS)) {
       if (location.includes(loc)) {
-        keywords.forEach(k => allKeywords.add(k))
+        keywords.forEach(addKeyword)
       }
     }
   }
 
-  // הוסף תנאים כלליים
-  const extraKeywords = ['משמרות', 'בוקר', 'לילה', 'ערב', 'משמרת', 'שעתי', 'גלובלי', 'שכר שעתי',
-    'הסעה', 'הסעות', 'ארוחות', 'ארוחה חמה', 'תנאים סוציאליים', 'רישיון נהיגה', 'ניידות',
-    'עבודה פיזית', 'כושר גופני', 'אחריות', 'סדר וארגון', 'עבודת צוות', 'לחץ', 'עבודה תחת לחץ',
-    'דיוק', 'תשומת לב', 'זהירות', 'בטיחות', 'אזור תעשייה', 'industrial', 'מפעל', 'factory']
-  extraKeywords.forEach(k => allKeywords.add(k))
+  // 3. מילות המפתח מהכותרת עצמה (למשל "מלגזן", "פקיד", "בקר")
+  LOGISTICS_BASE_KEYWORDS.forEach(k => {
+    if (titleLower.includes(k.toLowerCase())) {
+      addKeyword(k)
+    }
+  })
 
-  return Array.from(allKeywords).slice(0, 60)
+  // 4. השלמה ממאגר הבסיס הכללי + תנאים כלליים - רק אם עדיין חסר עד 15
+  const extraKeywords = ['משמרות', 'בוקר', 'לילה', 'ערב', 'משמרת', 'שעתי', 'שכר שעתי',
+    'הסעה', 'הסעות', 'ארוחות', 'ארוחה חמה', 'תנאים סוציאליים', 'רישיון נהיגה', 'ניידות',
+    'עבודה פיזית', 'כושר גופני', 'אחריות', 'סדר וארגון', 'עבודת צוות', 'עבודה תחת לחץ',
+    'דיוק', 'תשומת לב', 'בטיחות', 'אזור תעשייה', 'industrial', 'מפעל', 'factory']
+  const fillerKeywords = [...LOGISTICS_BASE_KEYWORDS, ...extraKeywords]
+
+  for (const k of fillerKeywords) {
+    if (priorityKeywords.length >= 15) break
+    addKeyword(k)
+  }
+
+  return priorityKeywords.slice(0, 15)
 }
 
 // 📋 משרות סלע לוגיסטיקה - פנינית רויטמן
@@ -329,7 +360,7 @@ async function main() {
   }
 
   // עדכון/יצירת משרות סלע
-  console.log('\n📦 מעדכן משרות סלע לוגיסטיקה (פנינית) עם 60 תגיות:')
+  console.log('\n📦 מעדכן משרות סלע לוגיסטיקה (פנינית) עם 15 תגיות לכל משרה:')
   for (const pos of SELA_POSITIONS) {
     const keywords = generateKeywordsForPosition(pos.title, pos.description, pos.location)
     
@@ -384,7 +415,7 @@ async function main() {
   }
 
   // עדכון/יצירת משרות לוגיסטים
-  console.log('\n🚚 מעדכן משרות לוגיסטים (דנה) עם 60 תגיות:')
+  console.log('\n🚚 מעדכן משרות לוגיסטים (דנה) עם 15 תגיות לכל משרה:')
   for (const pos of LOGISTIM_POSITIONS) {
     const keywords = generateKeywordsForPosition(pos.title, pos.description, pos.location)
     

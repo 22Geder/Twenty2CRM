@@ -55,11 +55,13 @@ export async function sendProcessEntryEmail({
   positionTitle,
   employerName,
   phone,
+  recruiterName,
 }: {
   candidateName: string
   positionTitle?: string | null
   employerName?: string | null
   phone?: string | null
+  recruiterName?: string | null
 }) {
   try {
     const toEmail = process.env.CRM_NOTIFY_EMAIL || process.env.SMTP_USER
@@ -96,10 +98,18 @@ export async function sendProcessEntryEmail({
               </tr>`
                   : ''
               }
-              <tr>
+              <tr${recruiterName ? ' style="border-bottom: 1px solid #e5e7eb;"' : ''}>
                 <td style="padding: 12px 0; color: #6b7280;">משרה / מעסיק:</td>
                 <td style="padding: 12px 0; color: #111;">${positionInfo}</td>
               </tr>
+              ${
+                recruiterName
+                  ? `<tr>
+                <td style="padding: 12px 0; color: #6b7280;">מגייס/ת:</td>
+                <td style="padding: 12px 0; color: #111; font-weight: bold;">${recruiterName}</td>
+              </tr>`
+                  : ''
+              }
             </table>
             <div style="margin-top: 24px;">
               <a href="${baseUrl}/dashboard/monthly-status?filter=in-process"

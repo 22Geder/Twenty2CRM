@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { BarChart2, Zap, Clock3, BrainCircuit } from "lucide-react"
+import { BarChart2, Zap, Clock3, BrainCircuit, Target } from "lucide-react"
 
 const TABS = [
   { id: "overview", label: "מבט על", icon: BarChart2 },
+  { id: "recruiters", label: "מגייסים", icon: Target },
   { id: "actions", label: "מרכז פעולה", icon: Zap, badge: (alertCount: number) => alertCount > 0 ? alertCount : null },
   { id: "activity", label: "פעילות אחרונה", icon: Clock3 },
   { id: "ai", label: "תובנות AI", icon: BrainCircuit },
@@ -13,6 +14,7 @@ const TABS = [
 interface DashboardTabsProps {
   alertCount: number
   overviewContent: React.ReactNode
+  recruitersContent: React.ReactNode
   actionsContent: React.ReactNode
   activityContent: React.ReactNode
   aiContent: React.ReactNode
@@ -21,6 +23,7 @@ interface DashboardTabsProps {
 export function DashboardTabs({
   alertCount,
   overviewContent,
+  recruitersContent,
   actionsContent,
   activityContent,
   aiContent,
@@ -29,6 +32,7 @@ export function DashboardTabs({
 
   const contentMap: Record<string, React.ReactNode> = {
     overview: overviewContent,
+    recruiters: recruitersContent,
     actions: actionsContent,
     activity: activityContent,
     ai: aiContent,

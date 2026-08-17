@@ -272,6 +272,7 @@ export async function PUT(
         positionTitle: posTitle,
         employerName: empName,
         phone: candidate.phone,
+        recruiterName: session.user?.name || session.user?.email || null,
       }).catch(() => {})
     }
 

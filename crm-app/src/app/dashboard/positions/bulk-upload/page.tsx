@@ -23,6 +23,7 @@ interface ParsedJob {
   employmentType: string
   salaryRange: string
   tags: string[]
+  suggestedTags: string[]
   openings: number
   originalText: string
   confidence: number
@@ -713,7 +714,9 @@ export default function BulkPositionsPage() {
 
                     {/* תגיות */}
                     <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">תגיות</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        תגיות נבחרות ({data.tags.length}/15)
+                      </label>
                       <div className="flex flex-wrap gap-1.5">
                         {data.tags.map((tag, ti) => (
                           <span
@@ -730,11 +733,39 @@ export default function BulkPositionsPage() {
                             >×</button>
                           </span>
                         ))}
-                        <AddTagButton
-                          onAdd={tag => updateEdit(job.id, 'tags', [...data.tags, tag])}
-                        />
+                        {data.tags.length < 15 && (
+                          <AddTagButton
+                            onAdd={tag => updateEdit(job.id, 'tags', [...data.tags, tag].slice(0, 15))}
+                          />
+                        )}
                       </div>
                     </div>
+
+                    {/* תגיות מוצעות נוספות - צד */}
+                    {data.suggestedTags && data.suggestedTags.length > 0 && (
+                      <div>
+                        <label className="text-xs font-semibold text-slate-500 block mb-1">
+                          תגיות מוצעות נוספות ({data.suggestedTags.length}) — לחץ להוסיף
+                        </label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.suggestedTags.map((tag, si) => (
+                            <button
+                              key={si}
+                              type="button"
+                              disabled={data.tags.length >= 15}
+                              onClick={() => {
+                                if (data.tags.includes(tag) || data.tags.length >= 15) return
+                                updateEdit(job.id, 'tags', [...data.tags, tag])
+                                updateEdit(job.id, 'suggestedTags', data.suggestedTags.filter((_, i) => i !== si))
+                              }}
+                              className="flex items-center gap-1 text-xs bg-slate-50 text-slate-500 border border-dashed border-slate-300 rounded px-2 py-1 hover:border-orange-400 hover:text-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />{tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* כפתורי תחתית */}
                     <div className="flex gap-2 pt-1">

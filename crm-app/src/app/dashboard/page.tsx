@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users, LayoutGrid, TrendingUp, Sparkles } from "lucide-react"
+import { Info, ChevronLeft, Bell, Send, AlertTriangle, Clock, UserCheck, CheckCircle, Users, LayoutGrid, TrendingUp, Sparkles, Target, Upload, Loader2 } from "lucide-react"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { UrgentCandidatesAlert } from "@/components/urgent-candidates-alert"
 import { DashboardTabs } from "@/components/dashboard-tabs"
+import { CANDIDATE_HIRED_WHERE, CANDIDATE_REJECTED_WHERE, CANDIDATE_IN_PROCESS_WHERE } from "@/lib/candidate-status"
 
 async function getDashboardStats() {
   const now = new Date()
@@ -28,6 +29,8 @@ async function getDashboardStats() {
     startedWorkThisMonth,
     candidatesThisMonth,
     inProcessCount,
+    totalHired,
+    totalRejected,
     monthlyCandidatesRaw,
     monthlyPositionsRaw,
     monthlyHiredRaw,
@@ -55,6 +58,8 @@ async function getDashboardStats() {
         ]
       }
     }),
+    prisma.candidate.count({ where: CANDIDATE_HIRED_WHERE }),
+    prisma.candidate.count({ where: CANDIDATE_REJECTED_WHERE }),
     prisma.candidate.findMany({ where: { createdAt: { gte: twelveMonthsAgo } }, select: { createdAt: true } }),
     prisma.position.findMany({ where: { createdAt: { gte: twelveMonthsAgo } }, select: { createdAt: true } }),
     prisma.candidate.findMany({ where: { hiredAt: { gte: twelveMonthsAgo, not: null } }, select: { hiredAt: true } }),
@@ -154,7 +159,7 @@ async function getDashboardStats() {
     totalCandidates, totalPositions, activePositions, totalApplications,
     totalInterviews, upcomingInterviews, totalEmployers, applicationsThisMonth,
     statusMap, hiredThisMonth, startedWorkThisMonth, candidatesThisMonth,
-    inProcess, waitingForScreening,
+    inProcess, waitingForScreening, totalHired, totalRejected,
     dailyCounts: Object.entries(dailyCounts).map(([date, count]) => ({ date, count })),
     monthlyData,
   }
@@ -162,12 +167,7 @@ async function getDashboardStats() {
 
 async function getCandidatesInProcess() {
   return await prisma.candidate.findMany({
-    where: {
-      OR: [
-        { employmentStatus: 'IN_PROCESS' },
-        { inProcessPositionId: { not: null }, employmentStatus: { notIn: ['EMPLOYED', 'REJECTED'] } },
-      ]
-    },
+    where: CANDIDATE_IN_PROCESS_WHERE,
     orderBy: { updatedAt: 'desc' },
     take: 10,
     select: {
@@ -179,7 +179,7 @@ async function getCandidatesInProcess() {
 
 async function getRejectedCandidates() {
   return await prisma.candidate.findMany({
-    where: { employmentStatus: 'REJECTED' },
+    where: CANDIDATE_REJECTED_WHERE,
     orderBy: { updatedAt: 'desc' },
     take: 10,
     select: {
@@ -194,7 +194,7 @@ async function getRejectedCandidates() {
 
 async function getHiredCandidates() {
   return await prisma.candidate.findMany({
-    where: { employmentStatus: 'EMPLOYED' },
+    where: CANDIDATE_HIRED_WHERE,
     orderBy: { hiredAt: 'desc' },
     take: 10,
     select: {
@@ -241,16 +241,67 @@ async function getUntreatedInProcessCandidates() {
   })
 }
 
+// 🎯 סטטיסטיקת מגייסים — לכל מגייס: כמה העלה, כמה בתהליך, כמה התקבלו.
+// שיוך לפי uploadedById (מי שהעלה את המועמד). כל משתמש רואה רק את עצמו; אדמין רואה את כולם.
+async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
+  const [users, uploadedGroups, inProcessGroups, hiredGroups] = await Promise.all([
+    prisma.user.findMany({
+      where: isAdmin ? { active: true } : { id: currentUserId },
+      select: { id: true, name: true, avatar: true, role: true },
+    }),
+    prisma.candidate.groupBy({
+      by: ['uploadedById'], _count: true,
+      where: { uploadedById: { not: null } },
+    }),
+    prisma.candidate.groupBy({
+      by: ['uploadedById'], _count: true,
+      where: { uploadedById: { not: null }, ...CANDIDATE_IN_PROCESS_WHERE },
+    }),
+    prisma.candidate.groupBy({
+      by: ['uploadedById'], _count: true,
+      where: { uploadedById: { not: null }, ...CANDIDATE_HIRED_WHERE },
+    }),
+  ])
+
+  const toMap = (groups: Array<{ uploadedById: string | null; _count: number }>) => {
+    const m: Record<string, number> = {}
+    groups.forEach(g => { if (g.uploadedById) m[g.uploadedById] = g._count })
+    return m
+  }
+  const uploadedMap = toMap(uploadedGroups as any)
+  const inProcessMap = toMap(inProcessGroups as any)
+  const hiredMap = toMap(hiredGroups as any)
+
+  return users
+    .map(u => ({
+      id: u.id,
+      name: u.name,
+      avatar: u.avatar,
+      role: u.role,
+      isMe: u.id === currentUserId,
+      uploaded: uploadedMap[u.id] || 0,
+      inProcess: inProcessMap[u.id] || 0,
+      hired: hiredMap[u.id] || 0,
+    }))
+    // אדמין: מציגים את כל המגייסים הפעילים, כשמי שהעלה הכי הרבה למעלה, והמשתמש הנוכחי תמיד ראשון
+    .sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0) || b.uploaded - a.uploaded)
+}
+
 export default async function CiviDashboardPage() {
   const session = await getServerSession(authOptions)
   if (!session) { redirect("/login") }
 
+  const currentUserId = (session.user as any)?.id as string
+  const isAdmin = (session.user as any)?.role === 'ADMIN'
+
   const [
     stats, recentPositions, upcomingTasks, candidateSources,
     inProcessCandidates, rejectedCandidates, hiredCandidates, untreatedInProcess,
+    recruiterStats,
   ] = await Promise.all([
     getDashboardStats(), getRecentPositions(), getUpcomingTasks(), getCandidateSources(),
     getCandidatesInProcess(), getRejectedCandidates(), getHiredCandidates(), getUntreatedInProcessCandidates(),
+    getRecruiterStats(currentUserId, isAdmin),
   ])
 
   const totalInProcess = stats.inProcess || 1
@@ -538,6 +589,106 @@ export default async function CiviDashboardPage() {
             </div>
           }
 
+          recruitersContent={
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
+                    <Target className="h-4 w-4 text-indigo-500" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-800">{isAdmin ? 'ביצועי מגייסים' : 'הביצועים שלי'}</div>
+                    <div className="text-xs text-slate-400">
+                      {isAdmin ? 'תמונת מצב לכל מגייס — העלאות, תהליכים וקבלות' : 'כאן אתה רואה איפה אתה עומד'}
+                    </div>
+                  </div>
+                </div>
+                {isAdmin && (
+                  <span className="text-[11px] bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium">
+                    תצוגת אדמין — כל המגייסים
+                  </span>
+                )}
+              </div>
+
+              {recruiterStats.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200/80 py-12 text-center text-slate-400 text-sm">
+                  אין עדיין נתוני מגייסים
+                </div>
+              ) : (
+                <div className={`grid gap-4 ${recruiterStats.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+                  {recruiterStats.map((r) => {
+                    const R = 52
+                    const C = 2 * Math.PI * R
+                    const denom = r.uploaded || 1
+                    const hiredDash = Math.min(C, (r.hired / denom) * C)
+                    const inProcessDash = Math.min(C - hiredDash, (r.inProcess / denom) * C)
+                    const conversion = r.uploaded > 0 ? Math.round((r.hired / r.uploaded) * 100) : 0
+                    const initials = r.name?.trim()?.split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?'
+                    return (
+                      <div key={r.id} className={`group bg-white rounded-2xl border p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${r.isMe ? 'border-indigo-300 ring-1 ring-indigo-200 shadow-md' : 'border-slate-200/80'}`}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
+                            {r.avatar ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" />
+                            ) : initials}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-slate-800 text-sm truncate flex items-center gap-1.5">
+                              {r.name}
+                              {r.isMe && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">אני</span>}
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {r.role === 'ADMIN' ? 'מנהל מערכת' : r.role === 'MANAGER' ? 'מנהל' : 'מגייס'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-center my-2">
+                          <div className="relative w-[128px] h-[128px]">
+                            <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90">
+                              <circle cx="64" cy="64" r={R} fill="none" stroke="#F1F5F9" strokeWidth="12" />
+                              {inProcessDash > 0 && (
+                                <circle cx="64" cy="64" r={R} fill="none" stroke="#3B82F6" strokeWidth="12" strokeLinecap="round"
+                                  strokeDasharray={`${inProcessDash} ${C - inProcessDash}`} strokeDashoffset={-hiredDash} />
+                              )}
+                              {hiredDash > 0 && (
+                                <circle cx="64" cy="64" r={R} fill="none" stroke="#10B981" strokeWidth="12" strokeLinecap="round"
+                                  strokeDasharray={`${hiredDash} ${C - hiredDash}`} strokeDashoffset={0} />
+                              )}
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <div className="text-3xl font-black text-slate-800 tabular-nums">{conversion}%</div>
+                              <div className="text-[10px] font-medium text-slate-400">יחס קבלה</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mt-3">
+                          <div className="rounded-xl bg-slate-50 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1 text-slate-400 mb-0.5"><Upload className="h-3 w-3" /></div>
+                            <div className="text-lg font-black text-slate-700 tabular-nums">{r.uploaded}</div>
+                            <div className="text-[10px] text-slate-400 font-medium">העלה</div>
+                          </div>
+                          <div className="rounded-xl bg-blue-50 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1 text-blue-400 mb-0.5"><Loader2 className="h-3 w-3" /></div>
+                            <div className="text-lg font-black text-blue-600 tabular-nums">{r.inProcess}</div>
+                            <div className="text-[10px] text-blue-400 font-medium">בתהליך</div>
+                          </div>
+                          <div className="rounded-xl bg-emerald-50 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1 text-emerald-400 mb-0.5"><CheckCircle className="h-3 w-3" /></div>
+                            <div className="text-lg font-black text-emerald-600 tabular-nums">{r.hired}</div>
+                            <div className="text-[10px] text-emerald-500 font-medium">התקבלו</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          }
+
           actionsContent={
             <div className="space-y-4">
               <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
@@ -697,7 +848,7 @@ export default async function CiviDashboardPage() {
                         <div className="text-slate-400 text-xs">אחרונים שנדחו</div>
                       </div>
                     </div>
-                    <div className="text-4xl font-black text-red-600 tabular-nums">{stats.statusMap?.REJECTED || rejectedCandidates.length}</div>
+                    <div className="text-4xl font-black text-red-600 tabular-nums">{stats.totalRejected}</div>
                   </div>
                   <div className="max-h-[220px] overflow-y-auto">
                     {rejectedCandidates.length > 0 ? (
@@ -717,6 +868,11 @@ export default async function CiviDashboardPage() {
                       <div className="py-8 text-center text-slate-400 text-sm">אין מועמדים שנדחו</div>
                     )}
                   </div>
+                  {stats.totalRejected > rejectedCandidates.length && (
+                    <Link href="/dashboard/candidates?status=rejected" className="flex items-center justify-center gap-1 py-2.5 text-xs text-red-500 font-medium bg-red-50/50 hover:bg-red-100/60 border-t border-red-100 transition-colors">
+                      + עוד {stats.totalRejected - rejectedCandidates.length} מועמדים →
+                    </Link>
+                  )}
                 </div>
 
                 <div className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-green-500/8 hover:-translate-y-1 transition-all duration-300">
@@ -728,7 +884,7 @@ export default async function CiviDashboardPage() {
                         <div className="text-slate-400 text-xs">אחרונים שהתקבלו</div>
                       </div>
                     </div>
-                    <div className="text-4xl font-black text-emerald-600 tabular-nums">{hiredCandidates.length}</div>
+                    <div className="text-4xl font-black text-emerald-600 tabular-nums">{stats.totalHired}</div>
                   </div>
                   <div className="max-h-[220px] overflow-y-auto">
                     {hiredCandidates.length > 0 ? (
@@ -748,6 +904,11 @@ export default async function CiviDashboardPage() {
                       <div className="py-8 text-center text-slate-400 text-sm">אין מועמדים שהתקבלו</div>
                     )}
                   </div>
+                  {stats.totalHired > hiredCandidates.length && (
+                    <Link href="/dashboard/candidates?status=hired" className="flex items-center justify-center gap-1 py-2.5 text-xs text-emerald-600 font-medium bg-emerald-50/50 hover:bg-emerald-100/60 border-t border-emerald-100 transition-colors">
+                      + עוד {stats.totalHired - hiredCandidates.length} מועמדים →
+                    </Link>
+                  )}
                 </div>
               </div>
 
@@ -785,9 +946,9 @@ export default async function CiviDashboardPage() {
                 {(() => {
                   const statusItems = [
                     { label: 'בתהליך', count: stats.inProcess, color: '#3B82F6' },
-                    { label: 'התקבלו (החודש)', count: stats.hiredThisMonth, color: '#10B981' },
-                    { label: 'נדחו', count: stats.statusMap.REJECTED || 0, color: '#EF4444' },
-                    { label: 'חדשים (החודש)', count: stats.candidatesThisMonth, color: '#F97316' },
+                    { label: 'התקבלו', count: stats.totalHired, color: '#10B981' },
+                    { label: 'נדחו', count: stats.totalRejected, color: '#EF4444' },
+                    { label: 'חדשים', count: Math.max(0, stats.totalCandidates - stats.inProcess - stats.totalHired - stats.totalRejected), color: '#F97316' },
                   ].filter(s => s.count > 0)
                   const total = statusItems.reduce((a, b) => a + b.count, 0) || 1
                   const R = 54, cx = 64, cy = 64, strokeW = 18
@@ -909,7 +1070,7 @@ export default async function CiviDashboardPage() {
                     { label: 'סה"כ מועמדים', val: stats.totalCandidates, color: '#6366F1', icon: '👥' },
                     { label: 'הפניות', val: stats.totalApplications, color: '#3B82F6', icon: '📤' },
                     { label: 'ראיונות', val: stats.totalInterviews, color: '#F97316', icon: '🎤' },
-                    { label: 'התקבלו', val: stats.hiredThisMonth, color: '#10B981', icon: '✅' },
+                    { label: 'התקבלו', val: stats.totalHired, color: '#10B981', icon: '✅' },
                   ].map((item, i) => (
                     <div key={i} className="text-center p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <div className="text-2xl mb-1">{item.icon}</div>

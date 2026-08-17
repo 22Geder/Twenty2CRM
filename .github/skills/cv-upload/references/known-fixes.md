@@ -254,6 +254,23 @@ const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "ge
 
 ---
 
+## Fix #10 — Gibberish on Direct File Upload (No Gibberish Check in PDF Path) (August 2026)
+
+**Symptom**: Uploading a PDF CV directly (not paste) via `/api/upload` produces a candidate with fully garbled/gibberish text, even though the paste flow (`analyze-cv`) correctly detects and rejects gibberish.
+
+**Root cause**: `extractTextFromPDF()` in `crm-app/src/app/api/upload/route.ts` returned `pdfParseText` as soon as it was ≥100 characters, with NO gibberish/CID-PUA check. Fix #2's `detectGibberish()` logic existed only in `analyze-cv/route.ts` and `analyze-cv-dual/route.ts` (paste flow), never in the direct upload path. A Hebrew PDF with an embedded CID font produces >100 chars of Private Use Area (U+E000–U+F8FF) garbage that `pdf-parse` happily extracts — this was returned immediately, skipping the Gemini Vision OCR fallback that would have produced real text, and sent straight to Gemini for parsing → garbled candidate.
+
+**Also found**: All 4 `getGenerativeModel()` calls in `upload/route.ts` still defaulted to the deprecated `gemini-1.5-flash` model (never updated per Fix #9's rule) instead of `gemini-2.5-flash`.
+
+**Fix**:
+1. Added local `detectGibberish()` (same logic as `analyze-cv/route.ts`) to `upload/route.ts`.
+2. `extractTextFromPDF()` now only returns `pdfParseText` early if `!detectGibberish(pdfParseText).isGibberish`; otherwise falls through to Gemini Vision OCR, which itself is also gibberish-checked before being accepted.
+3. Changed all 4 `process.env.GEMINI_MODEL || "gemini-1.5-flash"` → `"gemini-2.5-flash"` in `upload/route.ts`.
+
+**Status**: ✅ Fixed August 2026
+
+---
+
 ## Patterns to Watch For
 
 When a new upload bug is reported, check these in order:

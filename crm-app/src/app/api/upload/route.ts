@@ -39,7 +39,7 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
@@ -92,6 +92,44 @@ async function extractTextFromPDFWithGemini(buffer: Buffer): Promise<string> {
   }
 }
 
+// 🆕 זיהוי טקסט ג'יבריש - קורה כש-PDF מכיל פונטים מוטבעים (CID/PUA)
+function detectGibberish(text: string): { isGibberish: boolean; readableRatio: number } {
+  if (!text || text.length < 50) {
+    return { isGibberish: false, readableRatio: 1 };
+  }
+
+  let readable = 0;
+  let total = 0;
+
+  for (const ch of text) {
+    const code = ch.codePointAt(0) || 0;
+
+    // רווחים ותווי שליטה - דלג
+    if (code <= 32) continue;
+    total++;
+
+    // עברית: U+0590-U+05FF
+    if (code >= 0x0590 && code <= 0x05FF) { readable++; continue; }
+    // אנגלית בסיסית: A-Z, a-z
+    if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A)) { readable++; continue; }
+    // ספרות: 0-9
+    if (code >= 0x30 && code <= 0x39) { readable++; continue; }
+    // סימני פיסוק רגילים
+    if ('.,;:!?"\'()[]{}@#$%&*+-=/\\|_~`<>'.includes(ch)) { readable++; continue; }
+    // ערבית (לפעמים מופיע בקו"ח)
+    if (code >= 0x0600 && code <= 0x06FF) { readable++; continue; }
+    // Latin Extended
+    if (code >= 0x00C0 && code <= 0x024F) { readable++; continue; }
+    // אמוג'י נפוצים
+    if (code >= 0x1F300 && code <= 0x1F9FF) { readable++; continue; }
+
+    // אחרת - תווים לא קריאים (CID, PUA U+E000-U+F8FF, symbols נדירים)
+  }
+
+  const readableRatio = total > 0 ? readable / total : 0;
+  return { isGibberish: readableRatio < 0.4, readableRatio };
+}
+
 // Helper to extract text from PDF - נסה כמה שיטות
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   let pdfParseText = '';
@@ -107,20 +145,25 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     ]);
     pdfParseText = data.text || '';
     console.log('📄 pdf-parse extracted:', pdfParseText.length, 'chars');
-    
-    // אם יש טקסט מספיק - תחזיר אותו
+
+    // אם יש טקסט מספיק וגם קריא (לא ג'יבריש CID/PUA) - תחזיר אותו
     if (pdfParseText.trim().length >= 100) {
-      return pdfParseText;
+      const gibberishCheck = detectGibberish(pdfParseText);
+      if (!gibberishCheck.isGibberish) {
+        return pdfParseText;
+      }
+      console.log('⚠️ pdf-parse text is gibberish (CID/PUA font), readableRatio:', gibberishCheck.readableRatio.toFixed(2), '- falling back to OCR');
     }
   } catch (error: any) {
     console.log('⚠️ pdf-parse failed:', error.message);
   }
   
-  // 2. אם pdf-parse נכשל או הטקסט קצר - נסה Gemini Vision
+  // 2. אם pdf-parse נכשל, הטקסט קצר, או ג'יבריש - נסה Gemini Vision
   try {
     console.log('📄 Trying Gemini Vision OCR for PDF...');
     const geminiText = await extractTextFromPDFWithGemini(buffer);
-    if (geminiText.length > pdfParseText.length && geminiText.length > 50) {
+    const geminiGibberish = detectGibberish(geminiText);
+    if (geminiText.length > 50 && !geminiGibberish.isGibberish) {
       console.log('✅ Gemini Vision extracted:', geminiText.length, 'chars');
       return geminiText;
     }
@@ -128,7 +171,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     console.log('⚠️ Gemini Vision failed:', error.message);
   }
   
-  // 3. אם הכל נכשל - החזר מה שיש מ-pdf-parse או טקסט ריק
+  // 3. אם הכל נכשל - החזר מה שיש מ-pdf-parse (גם אם חשוד כג'יבריש, עדיף מכלום) או טקסט ריק
   return pdfParseText || '';
 }
 
@@ -308,7 +351,7 @@ async function extractTextFromRTF(buffer: Buffer): Promise<string> {
 // 🆕 Universal fallback: try to extract text with Gemini from any document
 async function extractTextWithGeminiFallback(buffer: Buffer, fileName: string, mimeType: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     const base64Data = buffer.toString('base64');
     
     const prompt = `קרא את המסמך הזה וחלץ את כל הטקסט שיש בו.
@@ -346,7 +389,7 @@ async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<s
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
@@ -406,7 +449,7 @@ async function extractCVWithAI(text: string): Promise<any> {
   );
   
   try {
-    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-1.5-flash") });
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") });
     
     const prompt = `אתה מגייס מקצועי עם 15 שנות ניסיון. קרא את קורות החיים האלו ונתח אותם כמו שמגייס אנושי היה עושה.
 

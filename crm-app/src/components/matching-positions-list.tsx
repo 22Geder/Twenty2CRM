@@ -228,98 +228,57 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   // יצירת הודעת וואטסאפ מותאמת אישית למשרה - מלאה ומפורטת
   const generateWhatsAppMessage = (position: MatchingPosition): string => {
     const lines: string[] = []
-    
-    // פתיחה אישית עם שם המועמד
-    lines.push(`היי ${candidateName || ''}! 👋`)
+
+    lines.push(`שלום ${candidateName || ''},`)
     lines.push('')
-    lines.push(`יש לי הצעת עבודה שיכולה להתאים לך מצוין:`)
+    lines.push(`מצורפת משרה שיכולה להתאים לך:`)
     lines.push('')
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
-    
-    // כותרת המשרה
-    lines.push(`🎯 *${position.title}*`)
-    lines.push(`🏢 *${position.employer.name}*`)
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+    lines.push(`*${position.title}*`)
+    lines.push(`*${position.employer.name}*`)
     lines.push('')
-    
-    // פרטים בסיסיים
-    lines.push(`📌 *פרטי המשרה:*`)
+
+    lines.push(`*פרטי המשרה:*`)
     if (position.location) {
-      lines.push(`📍 מיקום: ${position.location}`)
+      lines.push(`מיקום: ${position.location}`)
     }
     if (position.employmentType) {
-      lines.push(`📝 היקף: ${position.employmentType}`)
+      lines.push(`היקף: ${position.employmentType}`)
     }
     if (position.workHours) {
-      lines.push(`🕐 שעות עבודה: ${position.workHours}`)
+      lines.push(`שעות עבודה: ${position.workHours}`)
     }
     if (position.salaryRange) {
-      lines.push(`💰 שכר: ${position.salaryRange}`)
-    }
-    if (position.openings && position.openings > 1) {
-      lines.push(`👥 משרות פתוחות: ${position.openings}`)
+      lines.push(`שכר: ${position.salaryRange}`)
     }
     lines.push('')
-    
-    // תיאור המשרה - מלא!
+
     if (position.description) {
-      lines.push(`📋 *תיאור התפקיד:*`)
+      lines.push(`*תיאור התפקיד:*`)
       lines.push(position.description)
       lines.push('')
     }
-    
-    // דרישות המשרה - מלא!
+
     if (position.requirements) {
-      lines.push(`✅ *דרישות התפקיד:*`)
+      lines.push(`*דרישות:*`)
       lines.push(position.requirements)
       lines.push('')
     }
-    
-    // תנאים והטבות
+
     const hasConditions = position.benefits || position.transportation
     if (hasConditions) {
-      lines.push(`🎁 *תנאים והטבות:*`)
+      lines.push(`*תנאים:*`)
       if (position.benefits) {
-        lines.push(`• ${position.benefits}`)
+        lines.push(position.benefits)
       }
       if (position.transportation) {
-        lines.push(`🚗 הגעה: ${position.transportation}`)
+        lines.push(`הגעה: ${position.transportation}`)
       }
       lines.push('')
     }
-    
-    // מילות מפתח (אם יש)
-    if (position.keywords) {
-      try {
-        const keywordsArr = JSON.parse(position.keywords)
-        if (Array.isArray(keywordsArr) && keywordsArr.length > 0) {
-          lines.push(`🔑 *מילות מפתח:* ${keywordsArr.slice(0, 10).join(' | ')}`)
-          lines.push('')
-        }
-      } catch (e) {
-        // אם זה לא JSON, לתפוס כטקסט
-        if (position.keywords.length > 0) {
-          lines.push(`🔑 *מילות מפתח:* ${position.keywords}`)
-          lines.push('')
-        }
-      }
-    }
-    
-    // תגיות רלוונטיות
-    if (position.matchingTags && position.matchingTags.length > 0) {
-      const tagNames = position.matchingTags.slice(0, 8).map(t => t.name).join(' | ')
-      lines.push(`🏷️ *מתאים ל:* ${tagNames}`)
-      lines.push('')
-    }
-    
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
-    lines.push('')
-    lines.push(`💬 *מעניין אותך?*`)
-    lines.push(`אשמח לשמוע ממך ולתאם ראיון!`)
-    lines.push('')
-    lines.push(`בהצלחה! 🍀`)
-    lines.push(`*טוונטי טו ג'ובס* 🚀`)
-    
+
+    lines.push(`אם רלוונטי לך, אשמח לתאם ראיון.`)
+    lines.push(`טוונטי טו ג'ובס`)
+
     return lines.join('\n')
   }
 

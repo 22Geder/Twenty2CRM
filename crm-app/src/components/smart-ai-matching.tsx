@@ -138,90 +138,57 @@ export function SmartAIMatching({ candidateId, candidateName, candidatePhone, on
 
   const generateWhatsAppMessage = (match: MatchResult): string => {
     const lines: string[] = []
-    
-    // פתיחה אישית עם שם המועמד
-    lines.push(`היי ${candidateName || ''}! 👋`)
+
+    lines.push(`שלום ${candidateName || ''},`)
     lines.push('')
-    lines.push(`יש לי הצעת עבודה שיכולה להתאים לך מצוין:`)
+    lines.push(`מצורפת משרה שיכולה להתאים לך:`)
     lines.push('')
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
-    
-    // כותרת המשרה
-    lines.push(`🎯 *${match.positionTitle}*`)
-    lines.push(`🏢 *${match.employerName}*`)
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+    lines.push(`*${match.positionTitle}*`)
+    lines.push(`*${match.employerName}*`)
     lines.push('')
-    
-    // פרטים בסיסיים
-    lines.push(`📌 *פרטי המשרה:*`)
+
+    lines.push(`*פרטי המשרה:*`)
     if (match.location) {
-      lines.push(`📍 מיקום: ${match.location}`)
+      lines.push(`מיקום: ${match.location}`)
     }
     if (match.employmentType) {
-      lines.push(`📝 היקף: ${match.employmentType}`)
+      lines.push(`היקף: ${match.employmentType}`)
     }
     if (match.workHours) {
-      lines.push(`🕐 שעות עבודה: ${match.workHours}`)
+      lines.push(`שעות עבודה: ${match.workHours}`)
     }
     if (match.salaryRange) {
-      lines.push(`💰 שכר: ${match.salaryRange}`)
-    }
-    if (match.openings && match.openings > 1) {
-      lines.push(`👥 משרות פתוחות: ${match.openings}`)
+      lines.push(`שכר: ${match.salaryRange}`)
     }
     lines.push('')
-    
-    // תיאור המשרה - מלא!
+
     if (match.description) {
-      lines.push(`📋 *תיאור התפקיד:*`)
+      lines.push(`*תיאור התפקיד:*`)
       lines.push(match.description)
       lines.push('')
     }
-    
-    // דרישות המשרה - מלא!
+
     if (match.requirements) {
-      lines.push(`✅ *דרישות התפקיד:*`)
+      lines.push(`*דרישות:*`)
       lines.push(match.requirements)
       lines.push('')
     }
-    
-    // תנאים והטבות
+
     const hasConditions = match.benefits || match.transportation
     if (hasConditions) {
-      lines.push(`🎁 *תנאים והטבות:*`)
+      lines.push(`*תנאים:*`)
       if (match.benefits) {
-        lines.push(`• ${match.benefits}`)
+        lines.push(match.benefits)
       }
       if (match.transportation) {
-        lines.push(`🚗 הגעה: ${match.transportation}`)
+        lines.push(`הגעה: ${match.transportation}`)
       }
       lines.push('')
     }
-    
-    // מילות מפתח (אם יש)
-    if (match.keywords) {
-      try {
-        const keywordsArr = JSON.parse(match.keywords)
-        if (Array.isArray(keywordsArr) && keywordsArr.length > 0) {
-          lines.push(`🔑 *מילות מפתח:* ${keywordsArr.slice(0, 10).join(' | ')}`)
-          lines.push('')
-        }
-      } catch (e) {
-        if (match.keywords.length > 0) {
-          lines.push(`🔑 *מילות מפתח:* ${match.keywords}`)
-          lines.push('')
-        }
-      }
-    }
-    
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`)
-    lines.push('')
-    lines.push(`💬 *מעניין אותך?*`)
-    lines.push(`אשמח לשמוע ממך ולתאם ראיון!`)
-    lines.push('')
-    lines.push(`בהצלחה! 🍀`)
-    lines.push(`*טוונטי טו ג'ובס* 🚀`)
-    
+
+    lines.push(`אם רלוונטי לך, אשמח לתאם ראיון.`)
+    lines.push(`טוונטי טו ג'ובס`)
+
     return lines.join('\n')
   }
 

@@ -53,6 +53,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── שלב שני: בדיקה מקיפה - כל תגית עוברת "מבחן" מול טקסט המשרה בפועל ──
+    // כל תגית (tags + suggestedTags) נבדקת בנפרד מול התיאור/הדרישות המקוריים.
+    // תגית שלא מוכחת כמתאימה - נפסלת ומוסרת לגמרי (לא זזה בין הרשימות).
+    for (let i = 0; i < allJobs.length; i += BATCH_SIZE) {
+      const batch = allJobs.slice(i, i + BATCH_SIZE)
+      await validateTagsBatch(batch) // מעדכן tags/suggestedTags in-place
+
+      if (i + BATCH_SIZE < allJobs.length) {
+        await new Promise(r => setTimeout(r, 800))
+      }
+    }
+
     return NextResponse.json({
       success: true,
       total: allJobs.length,
@@ -104,6 +116,7 @@ export interface ParsedJob {
   openings: number
   originalText: string        // הטקסט המקורי
   confidence: number          // 0-100
+  rejectedTags?: string[]     // תגיות שנפסלו בבדיקת האימות (למעקב/שקיפות בלבד)
 }
 
 async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
@@ -114,8 +127,8 @@ async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
 עבור כל משרה חלץ:
 - title: שם המשרה (קצר וברור)
 - location: מיקום (עיר/אזור בלבד, ללא כתובת מלאה)
-- description: תיאור התפקיד (עד 500 תווים)
-- requirements: דרישות (עד 500 תווים, אם לא קיים - מחרוזת ריקה)
+- description: תיאור התפקיד המלא - העתק/שמר את כל הפרטים וההסברים כפי שמופיעים בטקסט המקורי (תוכן חופשי, בלי לתמצת ובלי הגבלת אורך)
+- requirements: כל הדרישות המלאות כפי שמופיעות בטקסט המקורי (תוכן חופשי, בלי לתמצת ובלי הגבלת אורך, אם לא קיים - מחרוזת ריקה)
 - employmentType: "משרה מלאה" / "משרה חלקית" / "חוזה" / "זמני" / "לא צוין"
 - salaryRange: טווח שכר כמחרוזת (אם קיים, אחרת "")
 - tags: מערך של עד 15 תגיות קצרות ורלוונטיות ביותר (כישורים, תחום, מאפיינים) - התגיות הכי מתאימות למשרה
@@ -128,6 +141,7 @@ async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
 2. המערך יכיל בדיוק ${blocks.length} אובייקטים (אחד לכל משרה)
 3. אם משרה לא ברורה, תן confidence נמוך אבל נסה בכל זאת
 4. tags / suggestedTags: קצרות (1-3 מילים), ממוקדות בתחום וכישורים, ללא כפילויות בין שתי הרשימות
+5. אסור לקצר, לתמצת או להשמיט מידע מ-description ו-requirements - שמור על כל הפרטים המקוריים (תיאור תפקיד, דרישות, תנאים, הטבות וכו')
 
 משרות לניתוח (ממוספרות):
 ${blocks.map((b, i) => `[משרה ${i + 1}]:\n${b}`).join("\n\n")}
@@ -186,13 +200,100 @@ ${blocks.map((b, i) => `[משרה ${i + 1}]:\n${b}`).join("\n\n")}
   })
 }
 
+// ─────────────────────────────────────────────────────────
+//  שלב אימות: כל תגית עוברת "מבחן" נפרד מול תיאור/דרישות המשרה בפועל.
+//  Gemini מקבל את הטקסט המקורי + רשימת התגיות ומחזיר, לכל תגית,
+//  האם היא באמת ומוכחת מתאימה למשרה - ללא ניחושים. תגית שנכשלת נמחקת לגמרי.
+// ─────────────────────────────────────────────────────────
+async function validateTagsBatch(jobs: ParsedJob[]): Promise<void> {
+  const candidates = jobs
+    .map((job, idx) => ({ idx, job, allTags: Array.from(new Set([...job.tags, ...job.suggestedTags])) }))
+    .filter(c => c.allTags.length > 0)
+
+  if (candidates.length === 0) return
+
+  const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
+
+  const prompt = `אתה בודק QA קפדני. תפקידך: לבדוק כל תגית בנפרד מול תיאור/דרישות המשרה בפועל, ולקבוע אם היא **מוכחת ומתאימה** למשרה - לא ניחוש, לא "אולי מתאים", אלא רק אם יש עדות ברורה בטקסט (מיומנות/תחום/מאפיין שמוזכר או משתמע ישירות).
+
+עבור כל משרה, קיבלת רשימת תגיות מועמדות. עבור כל תגית החזר true (עברה את המבחן) או false (נכשלה - אין עדות מספקת בטקסט).
+
+כללי בדיקה:
+1. תגית עוברת רק אם ניתן להצביע על התאמה ישירה לטקסט המשרה (תיאור/דרישות/כותרת)
+2. תגית כללית מדי או לא קשורה - נכשלת
+3. אם לא בטוח - תגית נכשלת (עדיף לפסול תגית ספק מאשר לאשר תגית לא נכונה)
+4. אין להוסיף תגיות חדשות - רק לבדוק את הרשימה שניתנה
+
+משרות לבדיקה:
+${candidates.map((c, i) => `[משרה ${i + 1}]
+כותרת: ${c.job.title}
+תיאור: ${c.job.description}
+דרישות: ${c.job.requirements}
+תגיות לבדיקה: ${JSON.stringify(c.allTags)}`).join("\n\n")}
+
+החזר JSON בלבד בפורמט (מערך אחד לכל משרה, בסדר תואם):
+[{"results":[{"tag":"...","valid":true}, {"tag":"...","valid":false}]}, ...]`
+
+  try {
+    const result = await model.generateContent(prompt)
+    const responseText = result.response.text().trim()
+    const cleaned = responseText
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim()
+
+    let parsed: any[]
+    try {
+      parsed = JSON.parse(cleaned)
+    } catch {
+      const match = cleaned.match(/\[[\s\S]*\]/)
+      if (!match) {
+        console.error("validateTagsBatch: Gemini returned non-JSON, skipping validation for this batch")
+        return
+      }
+      parsed = JSON.parse(match[0])
+    }
+
+    candidates.forEach((c, i) => {
+      const entry = parsed[i]
+      const results: { tag: string; valid: boolean }[] = Array.isArray(entry?.results) ? entry.results : []
+      if (results.length === 0) return // אם אין תוצאה - השאר ללא שינוי (בטוח יותר מאשר לפסול הכל)
+
+      const validSet = new Set(
+        results.filter(r => r && r.valid === true).map(r => sanitize(String(r.tag)))
+      )
+
+      const job = c.job
+      const originalTags = job.tags
+      const originalSuggested = job.suggestedTags
+      const rejected: string[] = []
+
+      job.tags = originalTags.filter(t => {
+        const ok = validSet.has(t)
+        if (!ok) rejected.push(t)
+        return ok
+      })
+      job.suggestedTags = originalSuggested.filter(t => {
+        const ok = validSet.has(t)
+        if (!ok) rejected.push(t)
+        return ok
+      })
+      job.rejectedTags = rejected
+    })
+  } catch (err) {
+    console.error("validateTagsBatch error:", err)
+    // בכשלון - לא נוגעים בתגיות המקוריות (fail-open לגבי הצגה, אך ללא אימות)
+  }
+}
+
 function createFallbackJob(text: string, index: number): ParsedJob {
   // חילוץ בסיסי ללא AI
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean)
   return {
     title: lines[0]?.slice(0, 80) || `משרה ${index + 1}`,
     location: "",
-    description: text.slice(0, 500),
+    description: text.slice(0, 5000),
     requirements: "",
     employmentType: "לא צוין",
     salaryRange: "",
@@ -207,5 +308,5 @@ function createFallbackJob(text: string, index: number): ParsedJob {
 function sanitize(value: string): string {
   if (!value || typeof value !== "string") return ""
   // מניעת XSS בסיסי - הסרת תגי HTML
-  return value.replace(/<[^>]*>/g, "").trim().slice(0, 2000)
+  return value.replace(/<[^>]*>/g, "").trim().slice(0, 5000)
 }

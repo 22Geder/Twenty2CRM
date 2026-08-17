@@ -27,6 +27,7 @@ interface ParsedJob {
   openings: number
   originalText: string
   confidence: number
+  rejectedTags?: string[]
 }
 
 interface JobCard {
@@ -764,6 +765,16 @@ export default function BulkPositionsPage() {
                             </button>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* שקיפות: תגיות שנפסלו במבחן האימות מול המשרה */}
+                    {data.rejectedTags && data.rejectedTags.length > 0 && (
+                      <div className="text-xs text-slate-400 flex items-start gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                        <span>
+                          נפסלו במבחן ההתאמה למשרה: {data.rejectedTags.join(', ')}
+                        </span>
                       </div>
                     )}
 

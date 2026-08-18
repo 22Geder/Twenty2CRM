@@ -37,7 +37,14 @@ const BANKER_SALARY_SPLIT = {
 const LIVE_SALARY = {
   monthly: 9700,
   yearly: 11100,
-  details: 'עבודה במשמרות 07:00-20:00, 2 משמרות ערב בשבוע, שישי אחת ל-3 שבועות'
+  details: 'עבודה במשמרות של 8 שעות (בוקר 08:00-16:00 / ערב 10:00-18:00), סניפי הלייב פועלים א-ה 08:00-20:00, ובימי ו״ 08:00-13:00. 2 משמרות ערב בשבוע, תורנות יום שישי אחת לחודש (מקבל ש״נ במקום יום חופשי), ומדי יום נציג אחד מכל המרחב עובד משמרת מאוחרת 12:00-20:00 (אחת לכמה חודשים לכל עובד)'
+};
+
+// משרה 12% לטלר/ית יום ו״ בלבד (סביונים יהוד - מתאים לסטודנטים)
+const TELLER_SALARY_12PERCENT = {
+  monthly: 1000,
+  yearly: 1150,
+  details: '12% משרה (יום ו״ בלבד), כולל נסיעות - מתאים מאוד לסטודנטים עם מערכת לימודים עמוסה'
 };
 
 // מענקי התמדה
@@ -132,73 +139,25 @@ function buildDescription(
   desc += `📧 שליחת מועמדים:\n`;
   desc += `• יש לשלוח קו"ח למייל: orpazsm@gmail.com\n`;
   desc += `• העתק למערכת הגיוס: umtb-hr@cvwebmail.com\n`;
-  desc += `• לציין בכותרת: שם + ת.ז + מספר משרה\n`;
-  desc += `• לציין אילוצים אם יש (חופשות, לימודים וכו')\n`;
-  
+  desc += `• לציין בכותרת: שם + שם משפחה + ת.ז + מספר משרה (${regionCode})\n`;
+  desc += `• חשוב: השם בכותרת חייב להיות זהה לשם בקו"ח - אחרת לא ניתן לאתר את המועמד\n`;
+  desc += `• לציין אילוצים אם יש (חופשה צפויה, ימי/שעות לימודים לסטודנטים וכו')\n\n`;
+
+  desc += `⚠️ דגשים חשובים לגיוס:\n`;
+  desc += `• יש לשלוח מועמדים למשרה הספציפית הזו בלבד - לא לתקן כללי באזור\n`;
+  desc += `• השכר לעיל תואם בדיוק לסוג הסניף (רצוף/מפוצל) של משרה זו - אין להציג שכר של סוג סניף אחר\n`;
+  desc += `• יש לשלוח מועמדים מהאזור הגיאוגרפי הקרוב למיקום המשרה בלבד\n`;
+  desc += `• לא לשלוח כמות גדולה של קו"ח - רק מועמדים מתאימים, בעלי מכוונות לתחום הבנקאות ומתאימים לעבודה שירותית ומכירתית\n`;
+  desc += `• ברוב המשרות (אף אם מוגדרות כהחלפת חל"ד/זמני) ניתן לקלוט את המועמד בתקן קבוע לבנק - למעט אזורים מרוחקים (כגון אילת, קרית שמונה) בהם הקליטה תהיה בתקן זמני\n`;
+
   return desc;
 }
 
-// כל המשרות - פברואר 2026
+// כל המשרות - עדכון אוגוסט 2026
 const ALL_POSITIONS = [
   // ==================== מרחב מרכז JB-107 ====================
   {
-    title: 'טלר בסניף חצרות יפו - בנק מזרחי',
-    location: 'תל אביב - יפו',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'רצוף',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_TLV,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף קרית עתידים רמת החייל - בנק מזרחי (דחוף!!!)',
-    location: 'תל אביב - רמת החייל',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'רצוף',
-    employmentType: 'קבוע',
-    additionalInfo: '🚨 דחוף! טלר יחיד בסניף - צריך מועמד זמין ללא אילוצים, יכולות גבוהות',
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_TLV,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר במרכז עסקים תל אביב - בנק מזרחי',
-    location: 'תל אביב',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'רצוף',
-    employmentType: 'קבוע',
-    additionalInfo: 'כולל תורנות בימי שישי',
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_TLV,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר 50% במרכז עסקים תל אביב - בנק מזרחי (לסטודנטים)',
-    location: 'תל אביב',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'רצוף',
-    employmentType: 'קבוע',
-    additionalInfo: 'משרה 50% - זמינות ל-2.5-3 ימים בשבוע, מתאים לסטודנטים',
-    salary: { monthly: 4100, yearly: 4750, details: '50% משרה, כולל נסיעות' },
-    bonus: null,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '4,100-4,750 ₪',
-    employmentTypeField: 'חלקית'
-  },
-  {
-    title: 'טלר בסניף סקיי טאוור תל אביב - בנק מזרחי',
+    title: 'טלר בסניף סקיי טאוור בת"א - בנק מזרחי',
     location: 'תל אביב - סקיי טאוור',
     region: 'מרכז',
     regionCode: 'JB-107',
@@ -212,45 +171,31 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר במרכז עסקים המגדל בבורסה רמת גן - בנק מזרחי',
-    location: 'רמת גן - הבורסה',
+    title: 'טלר בסניף קרית עתידים ברמת החייל בת"א - בנק מזרחי',
+    location: 'תל אביב - רמת החייל',
     region: 'מרכז',
     regionCode: 'JB-107',
     branchType: 'רצוף',
     employmentType: 'קבוע',
     additionalInfo: null,
     salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_REGULAR,
+    bonus: TELLER_BONUS_TLV,
     keywords: TELLER_KEYWORDS,
     salaryRange: '8,200-9,500 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר בסניף לב דיזנגוף תל אביב - בנק מזרחי',
-    location: 'תל אביב - דיזנגוף',
+    title: 'טלר בסניף פארק הים בבת ים - בנק מזרחי',
+    location: 'בת ים - פארק הים',
     region: 'מרכז',
     regionCode: 'JB-107',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: null,
+    branchType: "מפוצל ב'-ו'",
+    employmentType: 'חל"ד',
+    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
     salary: TELLER_SALARY_SPLIT,
     bonus: TELLER_BONUS_TLV,
     keywords: TELLER_KEYWORDS,
     salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר במרכז עסקים יהלומים בבורסה רמת גן - בנק מזרחי',
-    location: 'רמת גן - הבורסה',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'רצוף',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
@@ -260,7 +205,21 @@ const ALL_POSITIONS = [
     regionCode: 'JB-107',
     branchType: 'מעורב',
     employmentType: 'קבוע',
-    additionalInfo: 'התניידות בין הסניפים בת"א, ר"ג ובת ים. מתאים גם למועמדים שיכולים לעבוד לפחות 3 ימים מלאים בשבוע',
+    additionalInfo: 'התניידות בין הסניפים בת"א, ר"ג ובת ים. ניתן להפנות גם מועמדים שלא זמינים למשרה מלאה ויכולים לעבוד לפחות 3 ימים מלאים בשבוע',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_TLV,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+  {
+    title: 'טלר בסניף אילת - בנק מזרחי',
+    location: 'אילת',
+    region: 'מרכז',
+    regionCode: 'JB-107',
+    branchType: 'מפוצל',
+    employmentType: 'קבוע',
+    additionalInfo: '⚠️ אזור מרוחק - קליטה בתקן זמני בלבד (לא בטוח שניתן יהיה להציע בהמשך משרה קבועה באזור)',
     salary: TELLER_SALARY_SPLIT,
     bonus: TELLER_BONUS_REGULAR,
     keywords: TELLER_KEYWORDS,
@@ -269,92 +228,22 @@ const ALL_POSITIONS = [
   },
   // בנקאים מרחב מרכז
   {
-    title: 'בנקאי מתנייד מרחב מרכז - בנק מזרחי',
-    location: 'תל אביב, רמת גן, בת ים',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'עבודה כבנקאי בסניפים רצופים או מפוצלים לפי הצורך. התניידות בין הסניפים בת"א, ר"ג, בת ים',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי עסקי במרכז עסקים המגדל בבורסה רמת גן - בנק מזרחי',
-    location: 'רמת גן - הבורסה',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'רצוף',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: BANKER_SALARY_CONTINUOUS,
-    bonus: null,
-    keywords: BUSINESS_BANKER_KEYWORDS,
-    salaryRange: '8,400-9,800 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי עסקי בסניף גן העיר תל אביב - בנק מזרחי',
+    title: 'בנקאי משכנתאות בסניף גן העיר בת"א - בנק מזרחי',
     location: 'תל אביב - גן העיר',
     region: 'מרכז',
     regionCode: 'JB-107',
     branchType: 'רצוף',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
+    employmentType: 'קבוע',
+    additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
     salary: BANKER_SALARY_CONTINUOUS,
     bonus: null,
-    keywords: BUSINESS_BANKER_KEYWORDS,
+    keywords: MORTGAGE_KEYWORDS,
     salaryRange: '8,400-9,800 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי משכנתאות מתנייד מרחב מרכז - בנק מזרחי',
-    location: 'תל אביב, רמת גן, בת ים',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'התניידות בין הסניפים בת"א, ר"ג, בת ים. עבודה בסניפים רצופים או מפוצלים לפי הצורך. נדרש תואר פיננסי, יכולת מכירתית, סדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות בסניף חשמונאים תל אביב - בנק מזרחי',
-    location: 'תל אביב - חשמונאים',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות בסניף בת ים - בנק מזרחי',
-    location: 'בת ים',
-    region: 'מרכז',
-    regionCode: 'JB-107',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד - נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי לקוחות במרכז עסקים תל אביב - בנק מזרחי',
-    location: 'תל אביב',
+    title: 'בנקאי עסקי בסניף סקיי טאוור - בנק מזרחי',
+    location: 'תל אביב - סקיי טאוור',
     region: 'מרכז',
     regionCode: 'JB-107',
     branchType: 'רצוף',
@@ -362,7 +251,7 @@ const ALL_POSITIONS = [
     additionalInfo: null,
     salary: BANKER_SALARY_CONTINUOUS,
     bonus: null,
-    keywords: BANKER_KEYWORDS,
+    keywords: BUSINESS_BANKER_KEYWORDS,
     salaryRange: '8,400-9,800 ₪',
     employmentTypeField: 'משרה מלאה'
   },
@@ -374,8 +263,8 @@ const ALL_POSITIONS = [
     region: 'דן',
     regionCode: 'JB-110',
     branchType: 'רצוף',
-    employmentType: 'זמני',
-    additionalInfo: 'תקן זמני',
+    employmentType: 'חל"ד',
+    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
     salary: TELLER_SALARY_CONTINUOUS,
     bonus: TELLER_BONUS_REGULAR,
     keywords: TELLER_KEYWORDS,
@@ -383,167 +272,42 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר בסניף כפר קאסם - בנק מזרחי',
-    location: 'כפר קאסם',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף אלעד - בנק מזרחי (דחוף!!!)',
-    location: 'אלעד',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: "מפוצל ב'-ו'",
-    employmentType: 'קבוע',
-    additionalInfo: '🚨 דחוף! טלר יחיד בסניף - צריך מועמד זמין לעבודה ללא אילוצים, יכולות גבוהות',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר מתנייד מרחב דן - בנק מזרחי',
-    location: 'חולון, גבעתיים, בני ברק, פתח תקווה, קרית אונו, ראש העין',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'התניידות בין הסניפים בחולון, גבעתיים, בני ברק, פ"ת, בר אילן, קרית אונו, ראש העין והסביבה',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי לקוחות בסניף קרית אילון חולון - בנק מזרחי',
-    location: 'חולון - קרית אילון',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: "מפוצל ב'-ו'",
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי לקוחות בסניף קרית אונו - בנק מזרחי',
-    location: 'קרית אונו',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: "מפוצל ב'-ו'",
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי לקוחות בסניף גלובל טאוורס פתח תקווה - בנק מזרחי',
-    location: 'פתח תקווה - גלובל טאוורס',
-    region: 'דן',
-    regionCode: 'JB-110',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי עסקי בסניף בר אילן - בנק מזרחי',
+    title: 'טלר בסניף בר אילן - בנק מזרחי',
     location: 'רמת גן - בר אילן',
     region: 'דן',
     regionCode: 'JB-110',
     branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BUSINESS_BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
+    employmentType: 'חל"ד',
+    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי לקוחות במרכז עסקים פתח תקווה - בנק מזרחי',
-    location: 'פתח תקווה',
+    title: 'טלר מתנייד במרחב דן - בנק מזרחי (דחוף מאוד!!!)',
+    location: 'חולון, גבעתיים, בני ברק, פתח תקווה, בר אילן, קרית אונו, ראש העין והסביבה',
     region: 'דן',
     regionCode: 'JB-110',
-    branchType: 'מפוצל',
+    branchType: 'מעורב',
     employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
+    additionalInfo: '🚨 דחוף מאוד!!! עבודה בסניפים רצופים או מפוצלים לפי הצורך. התניידות בין הסניפים בחולון, גבעתיים, בני ברק, פ"ת, בר אילן, קרית אונו, ראש העין והסביבה',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
     employmentTypeField: 'משרה מלאה'
   },
 
   // ==================== מרחב יהודה JB-109 ====================
+  // אזור ירושלים
   {
-    title: 'טלר מתנייד מרחב ירושלים - בנק מזרחי',
-    location: 'ירושלים והסביבה',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'נדרשת גמישות לעבודה בסניפים רצופים ומפוצלים. אפשר גם סטודנטים זמינים ל-2-3 ימים בשבוע. תוך מקסימום שנה עוברים לסניף קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר 40-50% מתנייד ירושלים - בנק מזרחי (לסטודנטים)',
-    location: 'ירושלים',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'משרה 40-50% לסטודנטים - זמינות ל-2-3 ימים בשבוע. בהמשך ישתבצו בסניף קבוע',
-    salary: { monthly: 4000, yearly: 4600, details: '40-50% משרה, כולל נסיעות' },
-    bonus: null,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '4,000-4,600 ₪',
-    employmentTypeField: 'חלקית'
-  },
-  {
-    title: 'טלר בסניף קרית עסקים ירושלים - בנק מזרחי',
-    location: 'ירושלים - קרית עסקים',
+    title: 'טלר במ"ע ירושלים - בנק מזרחי',
+    location: 'ירושלים - מרכז עסקים',
     region: 'יהודה',
     regionCode: 'JB-109',
     branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף רוממה ירושלים - בנק מזרחי',
-    location: 'ירושלים - רוממה',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: "מפוצל ב'-ו'",
     employmentType: 'חל"ד',
     additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
     salary: TELLER_SALARY_SPLIT,
@@ -553,53 +317,128 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי משכנתאות מרחבי ירושלים - בנק מזרחי',
-    location: 'ירושלים - התניידות',
+    title: 'טלר בסניף גבעת שאול - בנק מזרחי',
+    location: 'ירושלים - גבעת שאול',
     region: 'יהודה',
     regionCode: 'JB-109',
     branchType: 'מפוצל',
     employmentType: 'חל"ד',
-    additionalInfo: 'עבודה בעיקר בסניפים מפוצלים, החלפת חל"ד עם אפשרות לקליטה',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
+    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי לקוחות בסניף מלכי ישראל ירושלים - בנק מזרחי',
+    title: 'טלר בסניף מלכי ישראל - בנק מזרחי',
     location: 'ירושלים - מלכי ישראל',
     region: 'יהודה',
     regionCode: 'JB-109',
     branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: BANKER_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי עסקי בסניף קש"ת אירפורט סיטי - בנק מזרחי',
-    location: 'אירפורט סיטי - קרית שדה התעופה',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: 'רצוף',
     employmentType: 'קבוע',
     additionalInfo: null,
-    salary: BANKER_SALARY_CONTINUOUS,
-    bonus: null,
-    keywords: BUSINESS_BANKER_KEYWORDS,
-    salaryRange: '8,400-9,800 ₪',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+  // אזור שפלת יהודה
+  {
+    title: 'טלר בסניף יהוד - בנק מזרחי',
+    location: 'יהוד',
+    region: 'יהודה',
+    regionCode: 'JB-109',
+    branchType: 'מפוצל',
+    employmentType: 'חל"ד',
+    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'בנקאי משכנתאות בסניף מודיעין - בנק מזרחי',
-    location: 'מודיעין',
+    title: 'טלר יום ו\' בסניף קניון סביונים ביהוד - בנק מזרחי',
+    location: 'יהוד - קניון סביונים',
     region: 'יהודה',
     regionCode: 'JB-109',
     branchType: "מפוצל ב'-ו'",
+    employmentType: 'קבוע',
+    additionalInfo: 'משרה 12% (יום ו\' בלבד) - מתאים מאוד לסטודנטים עם מערכת לימודים עמוסה שרוצים להתחיל ולהתנסות בעבודה בבנק',
+    salary: TELLER_SALARY_12PERCENT,
+    bonus: null,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '1,000-1,150 ₪ (12% משרה)',
+    employmentTypeField: 'חלקית'
+  },
+
+  // ==================== מרחב דרום JB-111 ====================
+  {
+    title: 'טלר בסניף נס ציונה - בנק מזרחי',
+    location: 'נס ציונה',
+    region: 'דרום',
+    regionCode: 'JB-111',
+    branchType: 'מפוצל',
+    employmentType: 'קבוע',
+    additionalInfo: '🚨 טלר יחיד בסניף - צריך מועמד/ת זמין/ה למשרה מלאה ללא אילוצים של לימודים וכדומה',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+  {
+    title: 'טלר בסניף ראשון לציון - בנק מזרחי',
+    location: 'ראשון לציון',
+    region: 'דרום',
+    regionCode: 'JB-111',
+    branchType: 'מפוצל',
+    employmentType: 'קבוע',
+    additionalInfo: null,
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+  {
+    title: 'טלר מתנייד באזור אשדוד, אשקלון, קרית גת וקרית מלאכי - בנק מזרחי',
+    location: 'אשדוד, אשקלון, קרית גת, קרית מלאכי',
+    region: 'דרום',
+    regionCode: 'JB-111',
+    branchType: 'מעורב',
+    employmentType: 'קבוע',
+    additionalInfo: 'התניידות בין הסניפים באשדוד, אשקלון, קרית גת וקרית מלאכי - רובם סניפים מפוצלים',
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+
+  // ==================== מרחב שרון JB-108 ====================
+  {
+    title: 'טלר בסניף הוד השרון - בנק מזרחי',
+    location: 'הוד השרון',
+    region: 'שרון',
+    regionCode: 'JB-108',
+    branchType: 'מפוצל',
+    employmentType: 'קבוע',
+    additionalInfo: null,
+    salary: TELLER_SALARY_SPLIT,
+    bonus: TELLER_BONUS_REGULAR,
+    keywords: TELLER_KEYWORDS,
+    salaryRange: '9,300-10,700 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+  {
+    title: 'בנקאי משכנתאות בסניף קניון השרון בנתניה - בנק מזרחי',
+    location: 'נתניה - קניון השרון',
+    region: 'שרון',
+    regionCode: 'JB-108',
+    branchType: 'מפוצל',
     employmentType: 'חל"ד',
     additionalInfo: 'החלפת חל"ד - נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
     salary: BANKER_SALARY_SPLIT,
@@ -609,27 +448,43 @@ const ALL_POSITIONS = [
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר בסניף מט"ל לוד - בנק מזרחי',
-    location: 'לוד - אזור התעשיה הצפוני',
-    region: 'יהודה',
-    regionCode: 'JB-109',
+    title: 'בנקאי משכנתאות בסניף פרדס חנה - בנק מזרחי',
+    location: 'פרדס חנה',
+    region: 'שרון',
+    regionCode: 'JB-108',
     branchType: 'מפוצל',
     employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
+    additionalInfo: 'החלפת חל"ד - נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
+    salary: BANKER_SALARY_SPLIT,
+    bonus: null,
+    keywords: MORTGAGE_KEYWORDS,
+    salaryRange: '9,600-10,900 ₪',
     employmentTypeField: 'משרה מלאה'
   },
   {
-    title: 'טלר בסניף בית שמש - בנק מזרחי',
-    location: 'בית שמש',
-    region: 'יהודה',
-    regionCode: 'JB-109',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
+    title: 'בנקאי משכנתאות בסניף שטמפפר בנתניה - בנק מזרחי',
+    location: 'נתניה - שטמפפר',
+    region: 'שרון',
+    regionCode: 'JB-108',
+    branchType: "מפוצל ב'-ו'",
+    employmentType: 'קבוע',
+    additionalInfo: '🇫🇷 עדיפות משמעותית לדוברי צרפתית! נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
+    salary: BANKER_SALARY_SPLIT,
+    bonus: null,
+    keywords: MORTGAGE_KEYWORDS,
+    salaryRange: '9,600-10,900 ₪',
+    employmentTypeField: 'משרה מלאה'
+  },
+
+  // ==================== מרחב צפון JB-113 ====================
+  {
+    title: 'טלר מתנייד לאזור הקריות וחיפה - בנק מזרחי',
+    location: 'קריות וחיפה',
+    region: 'צפון',
+    regionCode: 'JB-113',
+    branchType: 'מעורב',
+    employmentType: 'קבוע',
+    additionalInfo: 'ההתניידות היא לסניפים במרחק של עד 40 ק"מ מהבית. עדיפות למועמדים ניידים עם רכב',
     salary: TELLER_SALARY_SPLIT,
     bonus: TELLER_BONUS_REGULAR,
     keywords: TELLER_KEYWORDS,
@@ -644,258 +499,31 @@ const ALL_POSITIONS = [
     region: 'LIVE',
     regionCode: 'JB-4100',
     branchType: 'דיגיטלי',
-    employmentType: 'קבוע',
-    additionalInfo: `עבודה בסניפים הוירטואליים - מענה ללקוחות באמצעים דיגיטליים.
+    employmentType: 'חל"ד',
+    additionalInfo: `כל המשרות הן להחלפת חל"ד אבל ייקלטו בתקן קבוע לבנק!
+עבודה בסניפים הוירטואליים - מענה ללקוחות באמצעים דיגיטליים.
 מיקום: בניין הבנק במט"ל (אזור התעשיה הצפוני בלוד) - בניין עם חדר אוכל וחדר כושר.
-מתאים למועמדים מאזור: רמלה, לוד, מודיעין, שוהם, ראשל"צ, רחובות, נס ציונה, אשדוד והסביבה.
+מתאים למועמדים מאזור: רמלה, לוד, מודיעין, שוהם והסביבה. גם מועמדים מאזור ראשל"צ, רחובות, נס ציונה, אשדוד והסביבה יתאימו מאוד!
 
-שעות עבודה:
-• משמרות 8 שעות בין 07:00-20:00
-• 2 משמרות ערב בשבוע
-• שישי אחת ל-3 שבועות
+שעות פעילות סניפי הלייב: א'-ה' 08:00-20:00, ו' 08:00-13:00
+עבודה במשמרות של 8 שעות במשרה מלאה:
+• משמרת בוקר: 8:00-16:00
+• משמרת ערב: 10:00-18:00
+• נדרשות 2 משמרות ערב בשבוע
+• תורנות ימי שישי בתוך הצוות - יוצא בממוצע אחת לחודש (מקבלים שעות נוספות על יום שישי, לא יום חופשי כמו בשאר הסניפים)
+• מדי יום נציג אחד מכל המרחב עובד משמרת מאוחרת 12:00-20:00 - יוצא לכל אחד אחת לכמה חודשים
 
-מהות התפקיד: כמו בנקאי לקוחות בסניף פרונטלי - רק טלפוני ודיגיטלי.
-דגש על מועמדים עם ניסיון בשירות ו/או מכירות!`,
+מהות התפקיד: כמו בנקאי לקוחות בסניף פרונטלי - רק טלפוני. בלייב עושים שימוש במעטפת דיגיטלית ובכלים מתקדמים כדי להיות בקשר שוטף מול הלקוחות ולתת להם מענה מרחוק.
+דגש חשוב על מועמדים בעלי ניסיון בשירות ו/או מכירות!`,
     salary: LIVE_SALARY,
     bonus: null,
     keywords: LIVE_KEYWORDS,
     salaryRange: '9,700-11,100 ₪',
     employmentTypeField: 'משרה מלאה'
-  },
-
-  // ==================== מרחב דרום JB-111 ====================
-  {
-    title: 'טלר בסניף ערד - בנק מזרחי',
-    location: 'ערד',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף דימונה - בנק מזרחי',
-    location: 'דימונה',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף א.ת ראשון לציון - בנק מזרחי',
-    location: 'ראשון לציון - אזור תעשיה',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'רצוף',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף רחובות - בנק מזרחי',
-    location: 'רחובות',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר מתנייד שפלה - בנק מזרחי',
-    location: 'ראשון לציון, רחובות, נס ציונה, יבנה',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'מעורב',
-    employmentType: 'זמני',
-    additionalInfo: 'תקן זמני - התניידות בין הסניפים בראשל"צ, רחובות, נס ציונה ויבנה - רובם סניפים מפוצלים',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר מתנייד נגב - בנק מזרחי',
-    location: 'באר שבע, ערד, דימונה, אופקים, נתיבות',
-    region: 'דרום',
-    regionCode: 'JB-111',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'התניידות בין הסניפים בבאר שבע, ערד ודימונה. צריכה להיות נכונות במידת הצורך להגיע גם לאופקים ונתיבות',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-
-  // ==================== מרחב צפון JB-113 ====================
-  {
-    title: 'טלר 50% בסניף הדר חיפה - בנק מזרחי (לסטודנטים)',
-    location: 'חיפה - הדר',
-    region: 'צפון',
-    regionCode: 'JB-113',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: 'משרה 50% (ימי שני + פיצול) - מתאים מאוד לסטודנטים/יות',
-    salary: { monthly: 4650, yearly: 5350, details: '50% משרה כולל פיצולים ונסיעות' },
-    bonus: null,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '4,650-5,350 ₪',
-    employmentTypeField: 'חלקית'
-  },
-  {
-    title: 'טלר מתנייד קריות - בנק מזרחי',
-    location: 'קריות',
-    region: 'צפון',
-    regionCode: 'JB-113',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד - התניידות לסניפים במרחק של עד 40 ק"מ מהבית. עדיפות למועמדים ניידים עם רכב',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר מתנייד כרמיאל - בנק מזרחי',
-    location: 'כרמיאל והסביבה',
-    region: 'צפון',
-    regionCode: 'JB-113',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד - התניידות לסניפים במרחק של עד 40 ק"מ מהבית. עדיפות למועמדים ניידים עם רכב',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות מתנייד גליל - בנק מזרחי',
-    location: 'נוף הגליל, נצרת, עפולה, יוקנעם, מגדל העמק, שפרעם, סכנין',
-    region: 'צפון',
-    regionCode: 'JB-113',
-    branchType: 'מפוצל',
-    employmentType: 'קבוע',
-    additionalInfo: 'עדיפות למועמדים מאזור נוף הגליל או נצרת. נדרש מועמד מתנייד עם רכב ותואר בכלכלה/מנה"ס',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-
-  // ==================== מרחב שרון JB-108 ====================
-  {
-    title: 'טלר בסניף א.ת כפר סבא - בנק מזרחי',
-    location: 'כפר סבא - אזור תעשיה',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'רצוף',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף ויצמן כפר סבא - בנק מזרחי',
-    location: 'כפר סבא - ויצמן',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'מפוצל',
-    employmentType: 'חל"ד',
-    additionalInfo: 'החלפת חל"ד עם אפשרות לקליטה בתקן קבוע',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'בנקאי משכנתאות באחוזה מערב רעננה - בנק מזרחי',
-    location: 'רעננה - אחוזה מערב',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: "מפוצל ב'-ו'",
-    employmentType: 'קבוע',
-    additionalInfo: 'נדרש ניסיון מכירתי, תואר פיננסי, יכולת ניהול מו"מ וסדר וארגון',
-    salary: BANKER_SALARY_SPLIT,
-    bonus: null,
-    keywords: MORTGAGE_KEYWORDS,
-    salaryRange: '9,600-10,900 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף כיכר המושבה הוד השרון - בנק מזרחי',
-    location: 'הוד השרון - כיכר המושבה',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'מפוצל',
-    employmentType: 'זמני',
-    additionalInfo: 'תקן זמני',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר בסניף הרצליה פיתוח - בנק מזרחי',
-    location: 'הרצליה פיתוח',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'רצוף',
-    employmentType: 'קבוע',
-    additionalInfo: null,
-    salary: TELLER_SALARY_CONTINUOUS,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '8,200-9,500 ₪',
-    employmentTypeField: 'משרה מלאה'
-  },
-  {
-    title: 'טלר מתנייד מרחב שרון דרום - בנק מזרחי',
-    location: 'נתניה, רעננה, הרצליה, כפר סבא, רמת השרון, הוד השרון',
-    region: 'שרון',
-    regionCode: 'JB-108',
-    branchType: 'מעורב',
-    employmentType: 'קבוע',
-    additionalInfo: 'התניידות בין הסניפים בנתניה, רעננה, הרצליה, כפ"ס, רמת השרון, הוד השרון',
-    salary: TELLER_SALARY_SPLIT,
-    bonus: TELLER_BONUS_REGULAR,
-    keywords: TELLER_KEYWORDS,
-    salaryRange: '9,300-10,700 ₪',
-    employmentTypeField: 'משרה מלאה'
   }
 ];
-
 export async function POST(request: NextRequest) {
-  console.log('🏦 מעדכן משרות בנק מזרחי טפחות - פברואר 2026\n');
+  console.log('🏦 מעדכן משרות בנק מזרחי טפחות - אוגוסט 2026\n');
 
   try {
     // מציאת מעסיק בנק מזרחי
@@ -925,6 +553,9 @@ export async function POST(request: NextRequest) {
 
     let created = 0;
     let updated = 0;
+    let deactivated = 0;
+
+    const newTitles = new Set(ALL_POSITIONS.map(p => p.title));
 
     // עדכון או יצירת משרות
     for (const pos of ALL_POSITIONS) {
@@ -978,12 +609,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // השבתת משרות ישנות שלא מופיעות יותר במודעה החדשה
+    for (const existingPosition of existingPositions) {
+      if (!newTitles.has(existingPosition.title) && existingPosition.active) {
+        const stillMatched = ALL_POSITIONS.some(pos =>
+          existingPosition.title.includes(pos.location.split(' - ')[0]) && existingPosition.title.includes(pos.title.split(' ')[0])
+        );
+        if (!stillMatched) {
+          await prisma.position.update({
+            where: { id: existingPosition.id },
+            data: { active: false }
+          });
+          deactivated++;
+          console.log(`🛑 הושבת (לא קיים במודעה החדשה): ${existingPosition.title}`);
+        }
+      }
+    }
+
     const result = {
       success: true,
       message: `עדכון משרות בנק מזרחי הושלם בהצלחה!`,
       stats: {
         created,
         updated,
+        deactivated,
         total: ALL_POSITIONS.length
       }
     };
@@ -1004,6 +653,6 @@ export async function GET() {
   return NextResponse.json({
     message: 'Use POST to sync Mizrahi positions',
     positionsCount: ALL_POSITIONS.length,
-    regions: ['מרכז (JB-107)', 'דן (JB-110)', 'יהודה (JB-109)', 'LIVE (JB-4100)', 'דרום (JB-111)', 'צפון (JB-113)', 'שרון (JB-108)']
+    regions: ['מרכז (JB-107)', 'דן (JB-110)', 'יהודה (JB-109)', 'LIVE (JB-4100)', 'דרום (JB-111)', 'שרון (JB-108)', 'צפון (JB-113)']
   });
 }

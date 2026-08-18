@@ -1015,12 +1015,12 @@ export default function EmployerDetailPage({ params }: PageProps) {
                   <table className="w-full">
                     <thead className="bg-slate-50 border-b">
                       <tr>
-                        <th className="text-right p-4 font-semibold text-slate-600">מועמד</th>
-                        <th className="text-right p-4 font-semibold text-slate-600">משרה</th>
-                        <th className="text-right p-4 font-semibold text-slate-600">סטטוס</th>
-                        <th className="text-right p-4 font-semibold text-slate-600">התאמה</th>
-                        <th className="text-right p-4 font-semibold text-slate-600">תאריך</th>
-                        <th className="text-right p-4 font-semibold text-slate-600">פעולות</th>
+                        <th className="text-right p-4 font-semibold text-slate-700">מועמד</th>
+                        <th className="text-right p-4 font-semibold text-slate-700">משרה</th>
+                        <th className="text-right p-4 font-semibold text-slate-700">סטטוס</th>
+                        <th className="text-right p-4 font-semibold text-slate-700">התאמה</th>
+                        <th className="text-right p-4 font-semibold text-slate-700">תאריך</th>
+                        <th className="text-right p-4 font-semibold text-slate-700">פעולות</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -1034,7 +1034,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                               <div>
                                 <p className="font-medium text-slate-800">{app.candidate.name}</p>
                                 {app.candidate.currentTitle && (
-                                  <p className="text-sm text-muted-foreground">{app.candidate.currentTitle}</p>
+                                  <p className="text-sm font-medium text-[#FF8C00]">{app.candidate.currentTitle}</p>
                                 )}
                               </div>
                             </div>
@@ -1062,15 +1062,15 @@ export default function EmployerDetailPage({ params }: PageProps) {
                                     style={{ width: `${Math.min(app.matchScore, 100)}%` }}
                                   />
                                 </div>
-                                <span className="text-sm font-medium text-slate-600">{app.matchScore}%</span>
+                                <span className="text-sm font-semibold text-slate-700">{app.matchScore}%</span>
                               </div>
                             ) : (
-                              <span className="text-sm text-muted-foreground">-</span>
+                              <span className="text-sm text-slate-500">-</span>
                             )}
                           </td>
                           <td className="p-4">
-                            <span className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
+                            <span className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-[#FF8C00]" />
                               {new Date(app.appliedAt).toLocaleDateString('he-IL')}
                             </span>
                           </td>

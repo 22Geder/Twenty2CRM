@@ -34,6 +34,10 @@ interface JobToSave {
   requirements?: string
   employmentType?: string
   salaryRange?: string
+  workHours?: string
+  benefits?: string
+  transportation?: string
+  contactName?: string
   tags?: string[]
   openings?: number
   employerId: string
@@ -113,6 +117,10 @@ export async function POST(request: NextRequest) {
             location: job.location?.trim() || null,
             salaryRange: job.salaryRange?.trim() || null,
             employmentType: job.employmentType || null,
+            workHours: job.workHours?.trim() || null,
+            benefits: job.benefits?.trim() || null,
+            transportation: job.transportation?.trim() || null,
+            contactName: job.contactName?.trim() || null,
             keywords: keywords.length ? JSON.stringify(keywords) : null,
             employerId,
             recruiterId: recruiterId || null,

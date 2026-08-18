@@ -111,6 +111,10 @@ export interface ParsedJob {
   requirements: string
   employmentType: string      // "משרה מלאה" | "משרה חלקית" | "חוזה" | "זמני"
   salaryRange: string
+  workHours: string           // שעות/משמרת עבודה (אם צוין)
+  benefits: string            // תנאים נלווים - ארוחות, בונוסים, קרן השתלמות וכו'
+  transportation: string      // אופן הגעה - הסעה / עצמאית / נסיעות
+  contactName: string         // שם איש קשר / מגייס (אם צוין בטקסט)
   tags: string[]              // עד 15 תגיות נבחרות (הכי מתאימות)
   suggestedTags: string[]     // עד 15 תגיות נוספות מוצעות שלא נבחרו אוטומטית
   openings: number
@@ -130,7 +134,11 @@ async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
 - description: תיאור התפקיד המלא - העתק/שמר את כל הפרטים וההסברים כפי שמופיעים בטקסט המקורי (תוכן חופשי, בלי לתמצת ובלי הגבלת אורך)
 - requirements: כל הדרישות המלאות כפי שמופיעות בטקסט המקורי (תוכן חופשי, בלי לתמצת ובלי הגבלת אורך, אם לא קיים - מחרוזת ריקה)
 - employmentType: "משרה מלאה" / "משרה חלקית" / "חוזה" / "זמני" / "לא צוין"
-- salaryRange: טווח שכר כמחרוזת (אם קיים, אחרת "")
+- salaryRange: טווח שכר / שכר שעתי כמחרוזת (אם קיים, אחרת "")
+- workHours: שעות עבודה / משמרת (לדוגמה "08:00-17:00" או "משמרת לילה"), אם לא צוין - מחרוזת ריקה
+- benefits: תנאים נלווים - ארוחות, הסעות, בונוסים, קרן השתלמות, נסיעות וכו' (אם לא צוין - מחרוזת ריקה)
+- transportation: אופן ההגעה למקום העבודה - "הסעה" / "עצמאית" / תיאור חופשי אחר (אם לא צוין - מחרוזת ריקה)
+- contactName: שם איש/אשת הקשר או המגייס/ת האחראי/ת על המשרה, אם מופיע בטקסט (אחרת מחרוזת ריקה)
 - tags: מערך של עד 15 תגיות קצרות ורלוונטיות ביותר (כישורים, תחום, מאפיינים) - התגיות הכי מתאימות למשרה
 - suggestedTags: מערך של עד 15 תגיות נוספות שגם מתאימות למשרה אך פחות מרכזיות מה-tags הראשיות (לא לחזור על תגיות שכבר ב-tags)
 - openings: מספר משרות פנויות (ברירת מחדל 1)
@@ -142,12 +150,13 @@ async function parseBatchWithGemini(blocks: string[]): Promise<ParsedJob[]> {
 3. אם משרה לא ברורה, תן confidence נמוך אבל נסה בכל זאת
 4. tags / suggestedTags: קצרות (1-3 מילים), ממוקדות בתחום וכישורים, ללא כפילויות בין שתי הרשימות
 5. אסור לקצר, לתמצת או להשמיט מידע מ-description ו-requirements - שמור על כל הפרטים המקוריים (תיאור תפקיד, דרישות, תנאים, הטבות וכו')
+6. workHours / benefits / transportation / contactName - חלץ רק אם מופיע בפירוש בטקסט, אל תמציא מידע
 
 משרות לניתוח (ממוספרות):
 ${blocks.map((b, i) => `[משרה ${i + 1}]:\n${b}`).join("\n\n")}
 
 החזר מערך JSON בפורמט:
-[{"title":"...","location":"...","description":"...","requirements":"...","employmentType":"...","salaryRange":"...","tags":["..."],"suggestedTags":["..."],"openings":1,"confidence":85}, ...]`
+[{"title":"...","location":"...","description":"...","requirements":"...","employmentType":"...","salaryRange":"...","workHours":"...","benefits":"...","transportation":"...","contactName":"...","tags":["..."],"suggestedTags":["..."],"openings":1,"confidence":85}, ...]`
 
   const result = await model.generateContent(prompt)
   const responseText = result.response.text().trim()
@@ -183,6 +192,10 @@ ${blocks.map((b, i) => `[משרה ${i + 1}]:\n${b}`).join("\n\n")}
       requirements: sanitize(item.requirements) || "",
       employmentType: sanitize(item.employmentType) || "לא צוין",
       salaryRange: sanitize(item.salaryRange) || "",
+      workHours: sanitize(item.workHours) || "",
+      benefits: sanitize(item.benefits) || "",
+      transportation: sanitize(item.transportation) || "",
+      contactName: sanitize(item.contactName) || "",
       tags: Array.isArray(item.tags)
         ? item.tags.slice(0, 15).map((t: any) => sanitize(String(t))).filter(Boolean)
         : [],
@@ -297,6 +310,10 @@ function createFallbackJob(text: string, index: number): ParsedJob {
     requirements: "",
     employmentType: "לא צוין",
     salaryRange: "",
+    workHours: "",
+    benefits: "",
+    transportation: "",
+    contactName: "",
     tags: [],
     suggestedTags: [],
     openings: 1,

@@ -22,6 +22,10 @@ interface ParsedJob {
   requirements: string
   employmentType: string
   salaryRange: string
+  workHours: string
+  benefits: string
+  transportation: string
+  contactName: string
   tags: string[]
   suggestedTags: string[]
   openings: number
@@ -686,6 +690,42 @@ export default function BulkPositionsPage() {
                           value={data.salaryRange}
                           onChange={e => updateEdit(job.id, 'salaryRange', e.target.value)}
                           placeholder="לדוגמה: 8,000–12,000 ₪"
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">שעות עבודה</label>
+                        <Input
+                          value={data.workHours}
+                          onChange={e => updateEdit(job.id, 'workHours', e.target.value)}
+                          placeholder="לדוגמה: 08:00-17:00"
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">תנאים נלווים</label>
+                        <Input
+                          value={data.benefits}
+                          onChange={e => updateEdit(job.id, 'benefits', e.target.value)}
+                          placeholder="ארוחות, הסעות, בונוסים..."
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">אופן הגעה</label>
+                        <Input
+                          value={data.transportation}
+                          onChange={e => updateEdit(job.id, 'transportation', e.target.value)}
+                          placeholder="עצמאית / הסעה"
+                          className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">איש קשר / מגייס</label>
+                        <Input
+                          value={data.contactName}
+                          onChange={e => updateEdit(job.id, 'contactName', e.target.value)}
+                          placeholder="שם איש הקשר"
                           className="bg-white border-slate-200 text-slate-800 text-sm rounded-xl border-2"
                         />
                       </div>

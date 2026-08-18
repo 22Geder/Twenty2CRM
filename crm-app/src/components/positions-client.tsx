@@ -23,6 +23,7 @@ type PositionWithRelations = {
   description: string | null
   keywords?: string | null
   createdAt?: string | Date
+  updatedAt?: string | Date
   employer: { id: string; name: string } | null
   department: { id: string; name: string } | null
   _count: { applications: number }
@@ -407,6 +408,11 @@ function ActivePositionCard({ position }: { position: PositionWithRelations }) {
             {position.description && (
               <p className="text-sm text-slate-500 line-clamp-2">{position.description}</p>
             )}
+            {position.updatedAt && (
+              <p className="text-xs text-slate-400 mt-2">
+                עודכן {new Date(position.updatedAt).toLocaleDateString('he-IL')}
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-3 mr-4 items-end">
             <div className="flex items-center gap-2 text-sm bg-[#06B6D4]/10 text-[#06B6D4] px-3 py-1 rounded-full">
@@ -449,6 +455,11 @@ function DraftPositionCard({ position }: { position: PositionWithRelations }) {
                   <MapPin className="h-4 w-4 text-slate-400" />
                   <span>{position.location}</span>
                 </div>
+              )}
+              {position.updatedAt && (
+                <p className="text-xs text-slate-400">
+                  עודכן {new Date(position.updatedAt).toLocaleDateString('he-IL')}
+                </p>
               )}
             </div>
           </div>

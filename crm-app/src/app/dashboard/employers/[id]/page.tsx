@@ -41,6 +41,7 @@ interface Position {
   location?: string
   active: boolean
   createdAt: string
+  updatedAt?: string
   applications: Application[]
 }
 
@@ -675,7 +676,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                           {position.applications.length} מועמדים
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(position.createdAt).toLocaleDateString('he-IL')}
+                          עודכן {new Date(position.updatedAt || position.createdAt).toLocaleDateString('he-IL')}
                         </span>
                       </div>
                     </div>

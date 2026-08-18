@@ -17,6 +17,7 @@ async function getPositions() {
       description: true,
       keywords: true,
       createdAt: true,
+      updatedAt: true,
       employer: { select: { id: true, name: true } },
       department: { select: { id: true, name: true } },
       _count: { select: { applications: true } },

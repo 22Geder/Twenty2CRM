@@ -22,6 +22,7 @@ interface Employer {
   logo?: string
   description?: string
   createdAt: string
+  lastPositionUpdate?: string | null
   _count?: {
     positions: number
   }
@@ -205,6 +206,11 @@ export default function EmployersModernPage() {
                     <p className="text-xs text-slate-400">
                       נוצר {new Date(employer.createdAt).toLocaleDateString('he-IL')}
                     </p>
+                    {employer.lastPositionUpdate && (
+                      <p className="text-xs font-medium" style={{ color: 'var(--brand-primary)' }}>
+                        משרות עודכנו {new Date(employer.lastPositionUpdate).toLocaleDateString('he-IL')}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

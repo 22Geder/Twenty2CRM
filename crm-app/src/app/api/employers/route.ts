@@ -17,11 +17,21 @@ export async function GET(request: NextRequest) {
           select: {
             positions: true
           }
+        },
+        positions: {
+          select: { updatedAt: true }
         }
       }
     })
 
-    return NextResponse.json(employers)
+    const result = employers.map(({ positions, ...emp }) => {
+      const lastPositionUpdate = positions.length > 0
+        ? positions.reduce((latest, p) => p.updatedAt > latest ? p.updatedAt : latest, positions[0].updatedAt)
+        : null
+      return { ...emp, lastPositionUpdate }
+    })
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error("Error fetching employers:", error)
     return NextResponse.json(

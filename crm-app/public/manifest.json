@@ -1,7 +1,7 @@
 {
-  "name": "Twenty2Jobs",
-  "short_name": "Twenty2",
-  "description": "אפליקציה להעלאת קורות חיים - שתף מוואטסאפ ישירות למערכת",
+  "name": "22JOBS - פתרון תעסוקה",
+  "short_name": "22JOBS",
+  "description": "מערכת ניהול משרות ומועמדים - 22JOBS פתרון תעסוקה",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

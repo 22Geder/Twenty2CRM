@@ -38,13 +38,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Twenty2Jobs CRM - מערכת ניהול משאבי אנוש",
-  description: "מערכת CRM מתקדמת לניהול משרות ומועמדים בישראל | Twenty2Jobs",
+  title: "22JOBS - פתרון תעסוקה",
+  description: "מערכת CRM מתקדמת לניהול משרות ומועמדים בישראל | 22JOBS",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Twenty2Jobs',
+    title: '22JOBS - פתרון תעסוקה',
     startupImage: [
       {
         url: '/icons/splash-640x1136.png',
@@ -66,12 +66,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/avigdor-lion.png', type: 'image/png' },
+      { url: '/avigdor-lion.png', sizes: '192x192', type: 'image/png' },
+      { url: '/avigdor-lion.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icons/apple-touch-icon.png', sizes: '180x180' },
+      { url: '/avigdor-lion.png', sizes: '180x180' },
     ],
   },
   other: {

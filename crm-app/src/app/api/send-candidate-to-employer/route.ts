@@ -6,6 +6,7 @@ import nodemailer from "nodemailer"
 import { Resend } from "resend"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { getResendApiKey, getResendFromEmail } from "@/lib/env"
+import { sendProcessEntryEmail } from "@/lib/process-notifications"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -1022,6 +1023,7 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
     // 🔄 העברת המועמד לסטטוס "בתהליך" אוטומטית אחרי שליחת מייל מוצלחת
     if (successCount > 0) {
       try {
+        const wasAlreadyInProcess = candidate.employmentStatus === 'IN_PROCESS'
         // עדכון המועמד - קישור למשרה כ"בתהליך"
         await prisma.candidate.update({
           where: { id: candidateId },
@@ -1031,6 +1033,16 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
             employmentStatus: 'IN_PROCESS', // 🔄 סנכרון סטטוס עם סטטוס חודשי ודף הבית
           }
         })
+
+        if (!wasAlreadyInProcess) {
+          sendProcessEntryEmail({
+            candidateName: candidate.name,
+            positionTitle: position.title,
+            employerName: position.employer?.name || null,
+            phone: candidate.phone,
+            recruiterName: session.user?.name || session.user?.email || null,
+          }).catch(() => {})
+        }
 
         // יצירת/עדכון Application - אם לא קיים כבר
         const existingApplication = await prisma.application.findUnique({

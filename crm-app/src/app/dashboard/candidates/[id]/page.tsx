@@ -42,6 +42,7 @@ import {
   Headphones,
 } from "lucide-react"
 import Link from "next/link"
+import { matchesPosition, scoreSearch } from "@/lib/job-search"
 
 // ── CandidateAvatar (profile page) ──────────────────────────────────────────
 function nameToGradientColor(name: string): { from: string; to: string } {
@@ -1898,15 +1899,17 @@ export default function CandidateDetailsPage() {
                 <div className="space-y-2">
                   {/* קיבוץ לפי מעסיק - אקורדיון */}
                   {(() => {
-                    const searchLower = positionSearch.toLowerCase()
-                    
-                    // סינון לפי חיפוש
                     const filteredPositions = positionSearch
-                      ? matchingPositions.filter(pos => 
-                          pos.title?.toLowerCase().includes(searchLower) ||
-                          pos.employer?.name?.toLowerCase().includes(searchLower) ||
-                          pos.location?.toLowerCase().includes(searchLower)
-                        )
+                      ? matchingPositions
+                          .filter(pos => matchesPosition(positionSearch, {
+                            title: pos.title,
+                            location: pos.location,
+                            employerName: pos.employer?.name,
+                          }))
+                          .sort((a: any, b: any) =>
+                            scoreSearch(positionSearch, { title: b.title, location: b.location, employerName: b.employer?.name }) -
+                            scoreSearch(positionSearch, { title: a.title, location: a.location, employerName: a.employer?.name })
+                          )
                       : matchingPositions
                     
                     const grouped = filteredPositions.reduce((acc: any, pos: any) => {

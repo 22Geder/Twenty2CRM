@@ -196,7 +196,15 @@ export default function EmployerDetailPage({ params }: PageProps) {
         setEmployer({ ...employer, ...updatedEmployer })
         setEditDialogOpen(false)
       } else {
-        alert("שגיאה בשמירת הפרטים")
+        const data = await response.json().catch(() => ({}))
+        const apiError = typeof data.error === "string" ? data.error : ""
+        if (response.status === 409 || apiError.includes("already exists")) {
+          alert("האימייל כבר בשימוש אצל מעסיק אחר")
+        } else if (apiError.includes("Invalid email")) {
+          alert("כתובת האימייל אינה תקינה")
+        } else {
+          alert(apiError || "שגיאה בשמירת הפרטים")
+        }
       }
     } catch (err) {
       console.error("Error saving employer:", err)

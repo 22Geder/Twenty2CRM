@@ -12,6 +12,7 @@ import {
   SlidersHorizontal, Building2, ClipboardList, CheckCircle2
 } from 'lucide-react'
 import Link from 'next/link'
+import { matchesPosition, scoreSearch } from '@/lib/job-search'
 
 interface Tag {
   id: string
@@ -126,12 +127,18 @@ export function AICandidateSearch() {
     !tagSearch || t.name.toLowerCase().includes(tagSearch.toLowerCase())
   )
 
-  const filteredPositions = positions.filter(p =>
-    !positionSearch ||
-    p.title.toLowerCase().includes(positionSearch.toLowerCase()) ||
-    (p.employer?.name || '').toLowerCase().includes(positionSearch.toLowerCase()) ||
-    (p.location || '').toLowerCase().includes(positionSearch.toLowerCase())
-  )
+  const filteredPositions = positions
+    .filter(p => !positionSearch || matchesPosition(positionSearch, {
+      title: p.title,
+      location: p.location,
+      employerName: p.employer?.name,
+    }))
+    .sort((a, b) =>
+      positionSearch
+        ? scoreSearch(positionSearch, { title: b.title, location: b.location, employerName: b.employer?.name }) -
+          scoreSearch(positionSearch, { title: a.title, location: a.location, employerName: a.employer?.name })
+        : 0
+    )
 
   const hasAdvancedFilters = !!(minExperience || maxExperience || employmentType || skillsFilter)
   const canSearch = searchMode === 'free' ? !!query.trim() : !!selectedPosition

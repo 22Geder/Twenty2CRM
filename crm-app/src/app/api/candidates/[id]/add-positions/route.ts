@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
-import { sendProcessEntryEmail } from "@/lib/process-notifications"
+import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
 
 // POST /api/candidates/[id]/add-positions - הוספת מועמד למספר משרות בתהליך
 export async function POST(
@@ -253,6 +253,16 @@ export async function DELETE(
           }),
         },
       })
+
+      if (!nextApplication && candidate.employmentStatus === 'IN_PROCESS') {
+        sendCandidateStatusChangeEmail({
+          candidateName: candidate.name,
+          phone: candidate.phone,
+          newStatus: 'WITHDRAWN',
+          oldStatus: 'IN_PROCESS',
+          candidateId: candidate.id,
+        }).catch(() => {})
+      }
     }
 
     return NextResponse.json({ success: true })

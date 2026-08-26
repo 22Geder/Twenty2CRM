@@ -250,10 +250,20 @@ export function MatchingCandidatesSidebar({
   }
 
   const downloadResume = (resumeUrl: string, candidateName: string) => {
+    if (!resumeUrl) return
+    const isExternal = /^https?:\/\//i.test(resumeUrl) && !resumeUrl.startsWith(window.location.origin)
+
+    if (isExternal) {
+      // קישור חיצוני (למשל Google Drive) - ה-download attribute לא עובד בין דומיינים
+      // ומוביל לפתיחת טאב ריק. פותחים טאב יחיד ישירות לקובץ במקום.
+      window.open(resumeUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    // קובץ מקומי - מוריד ישירות בלי לפתוח טאב חדש (מונע "דפים ריקים" מיותרים)
     const link = document.createElement('a')
     link.href = resumeUrl
     link.download = `${candidateName}_CV.pdf`
-    link.target = '_blank'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

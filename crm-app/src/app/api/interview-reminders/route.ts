@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 import { Resend } from "resend"
 import { getResendApiKey, getResendFromEmail } from '@/lib/env'
-import { sendWeeklyProcessCheckEmail } from '@/lib/process-notifications'
+import { sendWeeklyProcessCheckEmail, getNotifyEmails } from '@/lib/process-notifications'
 
 // פונקציית שליחת מייל - Resend (HTTP) או SMTP
-async function sendEmail(options: { from: string, to: string, subject: string, html: string }) {
+async function sendEmail(options: { from: string, to: string | string[], subject: string, html: string }) {
+  const recipients = Array.isArray(options.to) ? options.to : [options.to]
   if (getResendApiKey()) {
     const resend = new Resend(getResendApiKey()!)
     const fromEmail = getResendFromEmail()
@@ -14,7 +15,7 @@ async function sendEmail(options: { from: string, to: string, subject: string, h
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
       replyTo: '22geder@gmail.com',
-      to: [options.to],
+      to: recipients,
       subject: options.subject,
       html: options.html,
     })
@@ -36,7 +37,7 @@ async function sendEmail(options: { from: string, to: string, subject: string, h
     },
   })
   
-  await transporter.sendMail(options)
+  await transporter.sendMail({ ...options, to: recipients.join(', ') })
 }
 
 // API לשליחת תזכורות ראיונות ומועמדים בתהליך
@@ -112,8 +113,8 @@ export async function GET(request: NextRequest) {
         `
 
         await sendEmail({
-          from: `"תזכורות Twenty2CRM" <${process.env.SMTP_USER}>`,
-          to: process.env.SMTP_USER!, // שולח למייל שלך
+          from: `"תזכורות Twenty2CRM" <${process.env.SMTP_USER || getNotifyEmails()[0]}>`,
+          to: getNotifyEmails(),
           subject: `📅 ${interviewsToday.length} ראיונות היום - ${today.toLocaleDateString('he-IL')}`,
           html: emailHtml,
         })
@@ -183,8 +184,8 @@ export async function GET(request: NextRequest) {
         `
 
         await sendEmail({
-          from: `"מעקב Twenty2CRM" <${process.env.SMTP_USER}>`,
-          to: process.env.SMTP_USER!,
+          from: `"מעקב Twenty2CRM" <${process.env.SMTP_USER || getNotifyEmails()[0]}>`,
+          to: getNotifyEmails(),
           subject: `🔄 ${inProcessCandidates.length} מועמדים בתהליך - עדכון`,
           html: emailHtml,
         })

@@ -21,6 +21,7 @@ async function getPositions() {
       employer: { select: { id: true, name: true } },
       department: { select: { id: true, name: true } },
       _count: { select: { applications: true } },
+      tags: { select: { id: true, name: true } },
     },
   })
 }

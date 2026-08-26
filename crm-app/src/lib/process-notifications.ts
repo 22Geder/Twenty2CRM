@@ -5,15 +5,43 @@ import nodemailer from 'nodemailer'
 import { Resend } from 'resend'
 import { getResendApiKey, getResendFromEmail } from './env'
 
+export const CRM_NOTIFY_DEFAULT_EMAIL = '22geder@gmail.com'
+
+const EMAIL_RE = /^[\w.-]+@[\w.-]+\.\w+$/
+
+export function escapeHtml(value: string | null | undefined): string {
+  if (!value) return ''
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export function getNotifyEmails(): string[] {
+  const extras = (process.env.CRM_NOTIFY_EMAIL || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => EMAIL_RE.test(s))
+
+  return [...new Set([CRM_NOTIFY_DEFAULT_EMAIL, ...extras])]
+}
+
+function getNotifyEmail(): string {
+  return getNotifyEmails()[0]
+}
+
 // -----------------------------------------------------------
 // פונקציית שליחת מייל פנימית - Resend או SMTP
 // -----------------------------------------------------------
 async function sendEmail(options: {
   from: string
-  to: string
+  to: string | string[]
   subject: string
   html: string
 }) {
+  const recipients = Array.isArray(options.to) ? options.to : [options.to]
   const resendKey = getResendApiKey()
   if (resendKey) {
     const resend = new Resend(resendKey)
@@ -22,7 +50,7 @@ async function sendEmail(options: {
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
       replyTo: '22geder@gmail.com',
-      to: [options.to],
+      to: recipients,
       subject: options.subject,
       html: options.html,
     })
@@ -44,7 +72,7 @@ async function sendEmail(options: {
     },
   })
 
-  await transporter.sendMail(options)
+  await transporter.sendMail({ ...options, to: recipients.join(', ') })
 }
 
 // -----------------------------------------------------------
@@ -64,13 +92,16 @@ export async function sendProcessEntryEmail({
   recruiterName?: string | null
 }) {
   try {
-    const toEmail = process.env.CRM_NOTIFY_EMAIL || process.env.SMTP_USER
-    if (!toEmail) return
+    const toEmails = getNotifyEmails()
 
     const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
-    const positionInfo =
+    const safeName = escapeHtml(candidateName)
+    const safePhone = escapeHtml(phone)
+    const safeRecruiter = escapeHtml(recruiterName)
+    const positionInfo = escapeHtml(
       [positionTitle, employerName ? `(${employerName})` : null].filter(Boolean).join(' ') ||
-      'משרה לא ידועה'
+        'משרה לא ידועה'
+    )
     const baseUrl =
       process.env.NEXTAUTH_URL || 'https://twenty2crm-production-7997.up.railway.app'
 
@@ -88,25 +119,25 @@ export async function sendProcessEntryEmail({
             <table style="width: 100%; border-collapse: collapse;">
               <tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px 0; color: #6b7280; width: 40%;">שם מועמד:</td>
-                <td style="padding: 12px 0; font-weight: bold; color: #111;">${candidateName}</td>
+                <td style="padding: 12px 0; font-weight: bold; color: #111;">${safeName}</td>
               </tr>
               ${
-                phone
+                safePhone
                   ? `<tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px 0; color: #6b7280;">טלפון:</td>
-                <td style="padding: 12px 0; color: #111;">${phone}</td>
+                <td style="padding: 12px 0; color: #111;">${safePhone}</td>
               </tr>`
                   : ''
               }
-              <tr${recruiterName ? ' style="border-bottom: 1px solid #e5e7eb;"' : ''}>
+              <tr${safeRecruiter ? ' style="border-bottom: 1px solid #e5e7eb;"' : ''}>
                 <td style="padding: 12px 0; color: #6b7280;">משרה / מעסיק:</td>
                 <td style="padding: 12px 0; color: #111;">${positionInfo}</td>
               </tr>
               ${
-                recruiterName
+                safeRecruiter
                   ? `<tr>
                 <td style="padding: 12px 0; color: #6b7280;">מגייס/ת:</td>
-                <td style="padding: 12px 0; color: #111; font-weight: bold;">${recruiterName}</td>
+                <td style="padding: 12px 0; color: #111; font-weight: bold;">${safeRecruiter}</td>
               </tr>`
                   : ''
               }
@@ -124,8 +155,8 @@ export async function sendProcessEntryEmail({
     `
 
     await sendEmail({
-      from: `"כניסה לתהליך - Twenty2CRM" <${process.env.SMTP_USER || toEmail}>`,
-      to: toEmail,
+      from: `"כניסה לתהליך - Twenty2CRM" <${process.env.SMTP_USER || getNotifyEmail()}>`,
+      to: toEmails,
       subject: `✅ ${candidateName} נכנס/ה לתהליך - ${positionTitle || 'משרה'}`,
       html,
     })
@@ -148,8 +179,7 @@ export async function sendWeeklyProcessCheckEmail(
   }>
 ) {
   try {
-    // מייל מעקב שבועי תמיד יגיע לoffice@hr22group.com
-    const toEmail = process.env.OFFICE_NOTIFY_EMAIL || 'office@hr22group.com'
+    const toEmails = getNotifyEmails()
     if (candidates.length === 0) return
 
     const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
@@ -161,12 +191,12 @@ export async function sendWeeklyProcessCheckEmail(
         const days = c.inProcessAt
           ? Math.floor((Date.now() - new Date(c.inProcessAt).getTime()) / 86_400_000)
           : '?'
-        const position = c.inProcessPosition?.title || 'משרה לא ידועה'
-        const employer = c.inProcessPosition?.employer?.name || ''
+        const position = escapeHtml(c.inProcessPosition?.title || 'משרה לא ידועה')
+        const employer = escapeHtml(c.inProcessPosition?.employer?.name || '')
         return `
           <tr style="border-bottom: 1px solid #e5e7eb;">
-            <td style="padding: 10px 12px; font-weight: bold;">${c.name}</td>
-            <td style="padding: 10px 12px; color: #555;">${c.phone || '-'}</td>
+            <td style="padding: 10px 12px; font-weight: bold;">${escapeHtml(c.name)}</td>
+            <td style="padding: 10px 12px; color: #555;">${escapeHtml(c.phone) || '-'}</td>
             <td style="padding: 10px 12px;">${position}${employer ? ` <span style="color:#6b7280;">(${employer})</span>` : ''}</td>
             <td style="padding: 10px 12px; text-align: center;">
               <span style="background: #fef3c7; color: #92400e; padding: 2px 10px; border-radius: 20px; font-size: 13px;">
@@ -217,8 +247,8 @@ export async function sendWeeklyProcessCheckEmail(
     `
 
     await sendEmail({
-      from: `"מעקב שבועי - Twenty2CRM" <${process.env.SMTP_USER || toEmail}>`,
-      to: toEmail,
+      from: `"מעקב שבועי - Twenty2CRM" <${process.env.SMTP_USER || getNotifyEmail()}>`,
+      to: toEmails,
       subject: `⏰ ${candidates.length} מועמדים בתהליך שבוע+ - מעקב שבועי`,
       html,
     })
@@ -268,8 +298,7 @@ export async function sendCandidateStatusChangeEmail({
   candidateId?: string | null
 }) {
   try {
-    const toEmail = process.env.CRM_NOTIFY_EMAIL || process.env.SMTP_USER
-    if (!toEmail) return
+    const toEmails = getNotifyEmails()
 
     const meta = STATUS_META[newStatus] || {
       emoji: '🔔',
@@ -282,8 +311,12 @@ export async function sendCandidateStatusChangeEmail({
     const candidateLink = candidateId
       ? `${baseUrl}/dashboard/candidates/${candidateId}`
       : `${baseUrl}/dashboard/candidates`
-    const positionInfo =
-      [positionTitle, employerName ? `(${employerName})` : null].filter(Boolean).join(' ') || null
+    const safeName = escapeHtml(candidateName)
+    const safePhone = escapeHtml(phone)
+    const safeRejection = escapeHtml(rejectionReason)
+    const positionInfo = escapeHtml(
+      [positionTitle, employerName ? `(${employerName})` : null].filter(Boolean).join(' ') || ''
+    ) || null
 
     const html = `
       <!DOCTYPE html>
@@ -299,11 +332,11 @@ export async function sendCandidateStatusChangeEmail({
             <table style="width: 100%; border-collapse: collapse;">
               <tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px 0; color: #6b7280; width: 40%;">שם מועמד:</td>
-                <td style="padding: 12px 0; font-weight: bold; color: #111;">${candidateName}</td>
+                <td style="padding: 12px 0; font-weight: bold; color: #111;">${safeName}</td>
               </tr>
-              ${phone ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+              ${safePhone ? `<tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px 0; color: #6b7280;">טלפון:</td>
-                <td style="padding: 12px 0; color: #111;">${phone}</td>
+                <td style="padding: 12px 0; color: #111;">${safePhone}</td>
               </tr>` : ''}
               ${positionInfo ? `<tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px 0; color: #6b7280;">משרה / מעסיק:</td>
@@ -313,13 +346,13 @@ export async function sendCandidateStatusChangeEmail({
                 <td style="padding: 12px 0; color: #6b7280;">שלב קודם:</td>
                 <td style="padding: 12px 0; color: #6b7280;">${oldMeta.emoji} ${oldMeta.label}</td>
               </tr>` : ''}
-              <tr${rejectionReason ? ' style="border-bottom: 1px solid #e5e7eb;"' : ''}>
+              <tr${safeRejection ? ' style="border-bottom: 1px solid #e5e7eb;"' : ''}>
                 <td style="padding: 12px 0; color: #6b7280;">שלב נוכחי:</td>
                 <td style="padding: 12px 0; font-weight: bold; color: #111;">${meta.emoji} ${meta.label}</td>
               </tr>
-              ${rejectionReason ? `<tr>
+              ${safeRejection ? `<tr>
                 <td style="padding: 12px 0; color: #6b7280; vertical-align: top;">סיבת דחייה:</td>
-                <td style="padding: 12px 0; color: #ef4444;">${rejectionReason}</td>
+                <td style="padding: 12px 0; color: #ef4444;">${safeRejection}</td>
               </tr>` : ''}
             </table>
             <div style="margin-top: 24px;">
@@ -337,13 +370,111 @@ export async function sendCandidateStatusChangeEmail({
     const subject = `${meta.emoji} ${candidateName} - ${meta.label}${positionTitle ? ` | ${positionTitle}` : ''}`
 
     await sendEmail({
-      from: `"עדכון מועמד - Twenty2CRM" <${process.env.SMTP_USER || toEmail}>`,
-      to: toEmail,
+      from: `"עדכון מועמד - Twenty2CRM" <${process.env.SMTP_USER || getNotifyEmail()}>`,
+      to: toEmails,
       subject,
       html,
     })
     console.log(`📧 Status-change email sent: ${candidateName} → ${newStatus}`)
   } catch (err) {
     console.error('❌ Failed to send status-change email:', err)
+  }
+}
+
+// -----------------------------------------------------------
+// 4️⃣  מייל על כל העלאת קורות חיים (מכל משתמש)
+// -----------------------------------------------------------
+export async function sendCandidateUploadEmail({
+  candidateName,
+  phone,
+  email,
+  city,
+  currentTitle,
+  createdCandidate,
+  uploadedByName,
+  candidateId,
+}: {
+  candidateName: string
+  phone?: string | null
+  email?: string | null
+  city?: string | null
+  currentTitle?: string | null
+  createdCandidate?: boolean
+  uploadedByName?: string | null
+  candidateId?: string | null
+}) {
+  try {
+    const toEmails = getNotifyEmails()
+    const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://twenty2crm-production-7997.up.railway.app'
+    const candidateLink = candidateId
+      ? `${baseUrl}/dashboard/candidates/${candidateId}`
+      : `${baseUrl}/dashboard/candidates`
+    const actionLabel = createdCandidate ? 'מועמד חדש הועלה' : 'קורות חיים עודכנו'
+    const safeName = escapeHtml(candidateName)
+    const safePhone = escapeHtml(phone)
+    const safeEmail = escapeHtml(email)
+    const safeCity = escapeHtml(city)
+    const safeTitle = escapeHtml(currentTitle)
+    const safeUploader = escapeHtml(uploadedByName)
+
+    const html = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="he">
+      <head><meta charset="UTF-8"></head>
+      <body style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 26px;">📄 ${actionLabel}</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">${now}</p>
+          </div>
+          <div style="padding: 30px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280; width: 40%;">שם מועמד:</td>
+                <td style="padding: 12px 0; font-weight: bold; color: #111;">${safeName}</td>
+              </tr>
+              ${safePhone ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">טלפון:</td>
+                <td style="padding: 12px 0; color: #111;">${safePhone}</td>
+              </tr>` : ''}
+              ${safeEmail ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">אימייל מועמד:</td>
+                <td style="padding: 12px 0; color: #111;">${safeEmail}</td>
+              </tr>` : ''}
+              ${safeTitle ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">תפקיד:</td>
+                <td style="padding: 12px 0; color: #111;">${safeTitle}</td>
+              </tr>` : ''}
+              ${safeCity ? `<tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; color: #6b7280;">עיר:</td>
+                <td style="padding: 12px 0; color: #111;">${safeCity}</td>
+              </tr>` : ''}
+              ${safeUploader ? `<tr>
+                <td style="padding: 12px 0; color: #6b7280;">הועלה ע״י:</td>
+                <td style="padding: 12px 0; font-weight: bold; color: #111;">${safeUploader}</td>
+              </tr>` : ''}
+            </table>
+            <div style="margin-top: 24px;">
+              <a href="${candidateLink}"
+                 style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px;">
+                צפה במועמד
+              </a>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    await sendEmail({
+      from: `"העלאת קורות חיים - Twenty2CRM" <${process.env.SMTP_USER || getNotifyEmail()}>`,
+      to: toEmails,
+      subject: `📄 ${actionLabel}: ${candidateName}${uploadedByName ? ` | ע״י ${uploadedByName}` : ''}`,
+      html,
+    })
+    console.log(`📧 Upload email sent for: ${candidateName}`)
+  } catch (err) {
+    console.error('❌ Failed to send upload email:', err)
   }
 }

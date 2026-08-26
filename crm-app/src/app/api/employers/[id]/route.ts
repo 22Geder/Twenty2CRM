@@ -67,20 +67,50 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const body = await request.json()
     const { name, email, phone, website, logo, description } = body
 
+    const trimmedName = typeof name === "string" ? name.trim() : ""
+    const trimmedEmail = typeof email === "string" ? email.trim() : ""
+    const emailOk = /^[\w.-]+@[\w.-]+\.\w+$/.test(trimmedEmail)
+
+    if (!trimmedName || !trimmedEmail) {
+      return NextResponse.json(
+        { error: "Name and email are required" },
+        { status: 400 }
+      )
+    }
+
+    if (!emailOk) {
+      return NextResponse.json(
+        { error: "Invalid email" },
+        { status: 400 }
+      )
+    }
+
+    const existing = await prisma.employer.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: "Employer not found" }, { status: 404 })
+    }
+
     const employer = await prisma.employer.update({
       where: { id },
       data: {
-        name,
-        email,
-        phone,
-        website,
+        name: trimmedName,
+        email: trimmedEmail,
+        phone: typeof phone === "string" ? phone.trim() || null : phone,
+        website: typeof website === "string" ? website.trim() || null : website,
         logo,
-        description
+        description: typeof description === "string" ? description.trim() || null : description
       }
     })
 
     return NextResponse.json(employer)
-  } catch (error) {
+  } catch (error: unknown) {
+    const prismaError = error as { code?: string }
+    if (prismaError?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Email already exists" },
+        { status: 409 }
+      )
+    }
     console.error("Error updating employer:", error)
     return NextResponse.json(
       { error: "Failed to update employer" },

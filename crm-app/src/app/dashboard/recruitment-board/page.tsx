@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { allJobs, Job, BANKING_GENERAL_REQUIREMENTS, IMPORTANT_NOTES } from './jobs-data';
-import { buildSearchMatcher, buildSemanticMatcher, normalizeHe } from '@/lib/job-search';
+import { buildSearchMatcher, buildSemanticMatcher, matchesJob, normalizeHe } from '@/lib/job-search';
 
 // ==================== TYPES ====================
 interface CandidateTag {
@@ -973,17 +973,7 @@ export default function RecruitmentBoard() {
     let jobs = allJobs;
     if (region !== 'all') jobs = jobs.filter(j => j.jobCode === region);
     if (search.trim()) {
-      // חיפוש חכם: נרמול עברית + מרחיב מילים נרדפות (מחסן↔מחסנאי, מלגזן...)
-      const matcher = buildSearchMatcher(search);
-      if (matcher) {
-        jobs = jobs.filter(j => {
-          const haystack = normalizeHe(
-            [j.title, j.location, j.category, j.description, ...(j.requirements || [])]
-              .filter(Boolean).join(' ')
-          );
-          return matcher(haystack);
-        });
-      }
+      jobs = jobs.filter(j => matchesJob(search, j));
     }
     return jobs;
   }, [region, search]);

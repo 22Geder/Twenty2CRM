@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { sendCandidateUploadEmail } from "@/lib/process-notifications"
 
 // חילוץ מהיר מקורות חיים - ללא AI (במקום analyzeResumeDeep האיטי)
 function fastExtractFromCV(text: string) {
@@ -353,6 +354,17 @@ export async function POST(request: NextRequest) {
         tags: true  // כלול תגיות בתשובה
       }
     })
+
+    sendCandidateUploadEmail({
+      candidateName: candidate.name,
+      phone: candidate.phone,
+      email: candidate.email,
+      city: candidate.city,
+      currentTitle: candidate.currentTitle,
+      createdCandidate: true,
+      uploadedByName: session.user?.name || session.user?.email || null,
+      candidateId: candidate.id,
+    }).catch(() => {})
 
     return NextResponse.json(candidate, { status: 201 })
   } catch (error) {

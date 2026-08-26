@@ -244,7 +244,7 @@ async function getUntreatedInProcessCandidates() {
 // 🎯 סטטיסטיקת מגייסים — לכל מגייס: כמה העלה, כמה בתהליך, כמה התקבלו.
 // שיוך לפי uploadedById (מי שהעלה את המועמד). כל משתמש רואה רק את עצמו; אדמין רואה את כולם.
 async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
-  const [users, uploadedGroups, inProcessGroups, hiredGroups] = await Promise.all([
+  const [users, uploadedGroups, inProcessGroups, hiredGroups, rejectedGroups] = await Promise.all([
     prisma.user.findMany({
       where: isAdmin ? { active: true } : { id: currentUserId },
       select: { id: true, name: true, avatar: true, role: true },
@@ -261,6 +261,10 @@ async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
       by: ['uploadedById'], _count: true,
       where: { uploadedById: { not: null }, ...CANDIDATE_HIRED_WHERE },
     }),
+    prisma.candidate.groupBy({
+      by: ['uploadedById'], _count: true,
+      where: { uploadedById: { not: null }, ...CANDIDATE_REJECTED_WHERE },
+    }),
   ])
 
   const toMap = (groups: Array<{ uploadedById: string | null; _count: number }>) => {
@@ -271,6 +275,7 @@ async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
   const uploadedMap = toMap(uploadedGroups as any)
   const inProcessMap = toMap(inProcessGroups as any)
   const hiredMap = toMap(hiredGroups as any)
+  const rejectedMap = toMap(rejectedGroups as any)
 
   return users
     .map(u => ({
@@ -282,6 +287,7 @@ async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
       uploaded: uploadedMap[u.id] || 0,
       inProcess: inProcessMap[u.id] || 0,
       hired: hiredMap[u.id] || 0,
+      rejected: rejectedMap[u.id] || 0,
     }))
     // אדמין: מציגים את כל המגייסים הפעילים, כשמי שהעלה הכי הרבה למעלה, והמשתמש הנוכחי תמיד ראשון
     .sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0) || b.uploaded - a.uploaded)
@@ -664,7 +670,7 @@ export default async function CiviDashboardPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 mt-3">
+                        <div className="grid grid-cols-4 gap-2 mt-3">
                           <div className="rounded-xl bg-slate-50 py-2.5 text-center">
                             <div className="flex items-center justify-center gap-1 text-slate-400 mb-0.5"><Upload className="h-3 w-3" /></div>
                             <div className="text-lg font-black text-slate-700 tabular-nums">{r.uploaded}</div>
@@ -679,6 +685,11 @@ export default async function CiviDashboardPage() {
                             <div className="flex items-center justify-center gap-1 text-emerald-400 mb-0.5"><CheckCircle className="h-3 w-3" /></div>
                             <div className="text-lg font-black text-emerald-600 tabular-nums">{r.hired}</div>
                             <div className="text-[10px] text-emerald-500 font-medium">התקבלו</div>
+                          </div>
+                          <div className="rounded-xl bg-red-50 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1 text-red-400 mb-0.5"><AlertTriangle className="h-3 w-3" /></div>
+                            <div className="text-lg font-black text-red-600 tabular-nums">{r.rejected}</div>
+                            <div className="text-[10px] text-red-400 font-medium">לא גויסו</div>
                           </div>
                         </div>
                       </div>

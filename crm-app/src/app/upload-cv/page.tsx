@@ -311,15 +311,15 @@ export default function MobileUploadPage() {
       <header className="mobile-header">
         <div className="logo-section">
           <img 
-            src="/logo.jpeg" 
-            alt="Twenty2Jobs" 
+            src="/avigdor-lion.png" 
+            alt="22JOBS" 
             className="mobile-logo"
             onError={(e) => {
               e.currentTarget.style.display = 'none'
             }}
           />
           <div className="logo-text">
-            <h1>Twenty2Jobs</h1>
+            <h1>22JOBS</h1>
             <p>המרכז לעובדים ולמעסיקים</p>
           </div>
         </div>
@@ -389,7 +389,7 @@ export default function MobileUploadPage() {
                     </svg>
                   </div>
                   <p className="upload-text">לחצו כאן או גררו קובץ</p>
-                  <p className="upload-hint">PDF, Word או TXT (עד 10MB)</p>
+                  <p className="upload-hint">PDF, Word או TXT (עד 25MB)</p>
                 </div>
               )}
             </div>
@@ -604,7 +604,9 @@ export default function MobileUploadPage() {
           width: 48px;
           height: 48px;
           border-radius: 12px;
-          object-fit: cover;
+          object-fit: contain;
+          background: #fff;
+          padding: 2px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 

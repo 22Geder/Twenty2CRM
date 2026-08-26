@@ -7,6 +7,7 @@ import { join } from 'path';
 import mammoth from 'mammoth';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTag } from '@/lib/recruitment-tags';
+import { sendCandidateUploadEmail } from '@/lib/process-notifications';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -1655,6 +1656,17 @@ export async function POST(request: NextRequest) {
       id: candidateId
     };
     
+    sendCandidateUploadEmail({
+      candidateName: name,
+      phone,
+      email: normalizedEmail,
+      city,
+      currentTitle,
+      createdCandidate,
+      uploadedByName: session.user?.name || session.user?.email || null,
+      candidateId,
+    }).catch(() => {})
+
     return NextResponse.json({
       success: true,
       fileName: fileName,

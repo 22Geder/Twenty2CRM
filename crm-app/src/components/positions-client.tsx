@@ -11,7 +11,8 @@ import { MapPin, Building2, Search, Users, X, ChevronDown, ArrowUpDown, SlidersH
 import Link from "next/link"
 import { PositionActions, DeletePositionButton, ToggleActiveButton } from "@/components/position-actions"
 import { extractCities, sortCitiesHe } from "@/lib/israeli-cities"
-import { buildSearchMatcher, normalizeHe } from "@/lib/job-search"
+import { matchesPosition, scoreSearch } from "@/lib/job-search"
+import { useCallback } from "react"
 
 type PositionWithRelations = {
   id: string
@@ -27,12 +28,14 @@ type PositionWithRelations = {
   employer: { id: string; name: string } | null
   department: { id: string; name: string } | null
   _count: { applications: number }
+  tags: { id: string; name: string }[]
 }
 
 const PAGE_SIZE = 30
 
 const QUICK_SEARCHES = [
-  "מחסן", "מכירות", "נהג", "שירות לקוחות", "בנק", "ניהול", "הנהלת חשבונות", "מלצר", "טבח", "אבטחה"
+  "מחסן", "מכירות", "נהג", "שירות לקוחות", "בנק", "ניהול", "הנהלת חשבונות",
+  "מלצר", "טבח", "אבטחה", "ניקיון", "מזכירה", "גיוס", "שיווק", "IT"
 ]
 
 export function PositionsClient({ positions }: { positions: PositionWithRelations[] }) {
@@ -45,6 +48,8 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
   const [showCount, setShowCount] = useState(PAGE_SIZE)
   const [showFilters, setShowFilters] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
 
   // קיצור מקלדת: / מפנה לחיפוש
   useEffect(() => {
@@ -56,6 +61,18 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
+  }, [])
+
+  // סגירת ה-dropdown בלחיצה מחוץ
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)
+          && searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
   }, [])
 
   // איפוס pagination בכל שינוי סינון
@@ -85,16 +102,36 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
     return [...new Set(types)].sort()
   }, [positions])
 
-  const searchMatcher = useMemo(() => buildSearchMatcher(searchQuery), [searchQuery])
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 280)
+    return () => clearTimeout(t)
+  }, [searchQuery])
+
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) return []
+    return positions
+      .filter(p => p.active && matchesPosition(searchQuery, {
+        ...p,
+        employerName: p.employer?.name,
+        tagText: (p.tags ?? []).map(t => t.name).join(" "),
+      }))
+      .sort((a, b) =>
+        scoreSearch(searchQuery, { ...b, tagText: (b.tags ?? []).map(t => t.name).join(" ") }) -
+        scoreSearch(searchQuery, { ...a, tagText: (a.tags ?? []).map(t => t.name).join(" ") })
+      )
+      .slice(0, 6)
+      .map(p => p.title)
+      .filter((v, i, a) => a.indexOf(v) === i)
+  }, [searchQuery, positions])
 
   const filtered = useMemo(() => {
     let result = positions.filter(p => {
-      if (searchMatcher) {
-        const haystack = normalizeHe(
-          [p.title, p.description, p.location, p.employer?.name, p.employmentType, p.keywords, extractCities(p.location).join(" ")]
-            .filter(Boolean).join(" ")
-        )
-        if (!searchMatcher(haystack)) return false
+      if (debouncedQuery.trim()) {
+        const tagText = (p.tags ?? []).map(t => t.name).join(" ")
+        if (!matchesPosition(debouncedQuery, { ...p, employerName: p.employer?.name, tagText })) {
+          return false
+        }
       }
       if (filterStatus === "active" && !p.active) return false
       if (filterStatus === "draft" && p.active) return false
@@ -104,8 +141,13 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
       return true
     })
 
-    // מיון
+    // מיון: כשיש חיפוש → לפי רלוונטיות; אחרת לפי בחירת המשתמש
     result = [...result].sort((a, b) => {
+      if (debouncedQuery.trim()) {
+        const scoreA = scoreSearch(debouncedQuery, { ...a, tagText: (a.tags ?? []).map(t => t.name).join(" ") })
+        const scoreB = scoreSearch(debouncedQuery, { ...b, tagText: (b.tags ?? []).map(t => t.name).join(" ") })
+        if (scoreB !== scoreA) return scoreB - scoreA
+      }
       if (sortBy === "newest") return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
       if (sortBy === "oldest") return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
       if (sortBy === "applications") return b._count.applications - a._count.applications
@@ -114,7 +156,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
     })
 
     return result
-  }, [positions, searchMatcher, filterStatus, filterCity, filterEmployer, filterType, sortBy])
+  }, [positions, debouncedQuery, filterStatus, filterCity, filterEmployer, filterType, sortBy])
 
   const activeFiltered = filtered.filter(p => p.active)
   const draftFiltered = filtered.filter(p => !p.active)
@@ -165,16 +207,37 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
             <Input
               ref={searchRef}
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="חפש משרה — תפקיד, עיר, מעסיק... (לחץ / לפתיחה מהירה)"
+              onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true) }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={e => { if (e.key === "Escape") setShowSuggestions(false) }}
+              placeholder="חפש משרה — למשל: נהג תל אביב, מנהל מכירות, מחסנאי אשדוד..."
               className="pr-12 pl-10 h-13 text-base border-2 border-slate-200 focus:border-[#10B981] rounded-xl bg-slate-50/50"
+              autoComplete="off"
             />
             {searchQuery ? (
-              <button onClick={() => setSearchQuery("")} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button onClick={() => { setSearchQuery(""); setShowSuggestions(false) }} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             ) : (
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-slate-300 font-mono">/</span>
+            )}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute top-full right-0 left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden"
+              >
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => { setSearchQuery(s); setShowSuggestions(false); searchRef.current?.blur() }}
+                    className="w-full text-right px-4 py-2.5 text-sm hover:bg-[#10B981]/10 hover:text-[#10B981] flex items-center gap-2 transition-colors border-b border-slate-50 last:border-0"
+                  >
+                    <Search className="h-3.5 w-3.5 text-slate-300 flex-shrink-0" />
+                    {s}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -407,6 +470,15 @@ function ActivePositionCard({ position }: { position: PositionWithRelations }) {
             </div>
             {position.description && (
               <p className="text-sm text-slate-500 line-clamp-2">{position.description}</p>
+            )}
+            {position.tags && position.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {position.tags.slice(0, 6).map(tag => (
+                  <span key={tag.id} className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
             )}
             {position.updatedAt && (
               <p className="text-xs text-slate-400 mt-2">

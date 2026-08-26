@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Plus, Search, Building2, Phone, Mail, Globe, Briefcase,
-  X, Save, Tag, ChevronRight
+  X, Save, Tag, ChevronRight, Pencil, Loader2
 } from "lucide-react"
 
 interface Employer {
@@ -32,14 +32,18 @@ export default function EmployersModernPage() {
   const [employers, setEmployers] = useState<Employer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     name: "",
     email: "",
     phone: "",
     website: "",
     description: ""
-  })
+  }
+  const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [formData, setFormData] = useState(emptyForm)
 
   useEffect(() => {
     fetchEmployers()
@@ -59,22 +63,80 @@ export default function EmployersModernPage() {
     }
   }
 
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingId(null)
+    setFormData(emptyForm)
+    setFormError("")
+  }
+
+  const openCreate = () => {
+    setEditingId(null)
+    setFormData(emptyForm)
+    setFormError("")
+    setShowModal(true)
+  }
+
+  const openEdit = (e: React.MouseEvent, emp: Employer) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setEditingId(emp.id)
+    setFormData({
+      name: emp.name || "",
+      email: emp.email || "",
+      phone: emp.phone || "",
+      website: emp.website || "",
+      description: emp.description || ""
+    })
+    setFormError("")
+    setShowModal(true)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFormError("")
+
+    if (!formData.name.trim() || !formData.email.trim()) {
+      setFormError("שם החברה ואימייל הם שדות חובה")
+      return
+    }
+
+    setSaving(true)
     try {
-      const response = await fetch("/api/employers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-      })
+      const response = await fetch(
+        editingId ? `/api/employers/${editingId}` : "/api/employers",
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name.trim(),
+            email: formData.email.trim(),
+            phone: formData.phone.trim(),
+            website: formData.website.trim(),
+            description: formData.description.trim()
+          })
+        }
+      )
 
       if (response.ok) {
-        setShowModal(false)
-        setFormData({ name: "", email: "", phone: "", website: "", description: "" })
+        closeModal()
         fetchEmployers()
+      } else {
+        const data = await response.json().catch(() => ({}))
+        const apiError = typeof data.error === "string" ? data.error : ""
+        if (response.status === 409 || apiError.includes("already exists")) {
+          setFormError("האימייל כבר בשימוש אצל מעסיק אחר")
+        } else if (apiError.includes("Invalid email")) {
+          setFormError("כתובת האימייל אינה תקינה")
+        } else {
+          setFormError(apiError || "שגיאה בשמירת המעסיק")
+        }
       }
     } catch (error) {
-      console.error("Error creating employer:", error)
+      console.error("Error saving employer:", error)
+      setFormError("שגיאה בשמירת המעסיק")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -110,7 +172,7 @@ export default function EmployersModernPage() {
           </div>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreate}
           className="t22-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold"
         >
           <Plus className="h-5 w-5" />
@@ -213,6 +275,17 @@ export default function EmployersModernPage() {
                     )}
                   </div>
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => openEdit(e, employer)}
+                  className="hover:bg-orange-50 hover:text-[#E65100]"
+                  title="עריכת מעסיק"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">עריכה</span>
+                </Button>
               </div>
 
             <p className="text-sm text-slate-500 mb-4 max-h-20 overflow-hidden line-clamp-2 relative min-h-[2.5rem]">
@@ -271,7 +344,7 @@ export default function EmployersModernPage() {
               התחל בהוספת לקוח ראשון כדי לנהל משרות
             </p>
             <Button 
-              onClick={() => setShowModal(true)}
+              onClick={openCreate}
               className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600"
               size="lg"
             >
@@ -288,12 +361,12 @@ export default function EmployersModernPage() {
           <Card className="p-8 max-w-2xl w-full mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                הוסף לקוח חדש
+                {editingId ? "עריכת מעסיק" : "הוסף לקוח חדש"}
               </h2>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="hover:bg-red-50 hover:text-red-600"
               >
                 <X className="h-5 w-5" />
@@ -301,6 +374,11 @@ export default function EmployersModernPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {formError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {formError}
+                </div>
+              )}
               <div>
                 <Label htmlFor="name" className="text-lg font-semibold">שם החברה *</Label>
                 <Input
@@ -365,15 +443,20 @@ export default function EmployersModernPage() {
               <div className="flex gap-4 pt-4">
                 <Button
                   type="submit"
+                  disabled={saving}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-14 text-lg"
                 >
-                  <Save className="ml-2 h-5 w-5" />
-                  שמור לקוח
+                  {saving ? (
+                    <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Save className="ml-2 h-5 w-5" />
+                  )}
+                  {saving ? "שומר..." : editingId ? "שמור שינויים" : "שמור לקוח"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeModal}
                   className="flex-1 h-14 text-lg hover:bg-gray-100"
                 >
                   ביטול

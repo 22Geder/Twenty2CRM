@@ -2,6 +2,7 @@ import "dotenv/config"
 import express from "express"
 import { WebSocketServer, WebSocket } from "ws"
 import { createServer } from "http"
+import nodemailer from "nodemailer"
 
 // ────────────────────────────────────────────────────────────────
 // TWENTY2CRM – OpenAI Realtime Voice Bot bridged to Twilio
@@ -21,6 +22,9 @@ const {
   TWILIO_AUTH_TOKEN,
   TWILIO_WHATSAPP_FROM = "whatsapp:+97233822232",
   OWNER_WHATSAPP_TO = "whatsapp:+972545478667",
+  SMTP_USER,
+  SMTP_PASS,
+  OWNER_EMAIL = "22geder@gmail.com",
 } = process.env
 
 if (!OPENAI_API_KEY) {
@@ -389,6 +393,22 @@ async function runWhatsAppTurn(history, fromNumber) {
   return { reply: "מצטערים, קרתה תקלה זמנית. נסה שוב בעוד רגע.", messages }
 }
 
+// שולח מייל עם סיכום שיחה לבעל המערכת
+async function sendSummaryEmail(fromNumber, summary) {
+  if (!SMTP_USER || !SMTP_PASS) return
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  })
+  await transporter.sendMail({
+    from: `"Twenty2 Bot" <${SMTP_USER}>`,
+    to: OWNER_EMAIL,
+    subject: `📱 סיכום שיחת וואטסאפ מ-${fromNumber}`,
+    text: summary,
+  })
+  console.log(`📧 סיכום נשלח במייל ל-${OWNER_EMAIL}`)
+}
+
 // שולח לבעל המערכת סיכום שיחת וואטסאפ אחרי X דקות ללא הודעה חדשה מהמשתמש
 const WA_SUMMARY_DEBOUNCE_MS = 5 * 60 * 1000 // 5 דקות
 const waSummaryTimers = new Map()
@@ -410,6 +430,9 @@ function scheduleWhatsAppSummary(fromNumber) {
       await sendWhatsAppMessage(
         OWNER_WHATSAPP_TO,
         `📱 סיכום שיחת וואטסאפ מ-${fromNumber}:\n\n${summary}`
+      )
+      await sendSummaryEmail(fromNumber, summary).catch((err) =>
+        console.error(`📧 שגיאה בשליחת מייל: ${err.message}`)
       )
     }
   }, WA_SUMMARY_DEBOUNCE_MS)

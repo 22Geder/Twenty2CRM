@@ -1,0 +1,38 @@
+import { describe, it, expect, afterEach } from 'vitest'
+import { escapeHtml, getNotifyEmails, CRM_NOTIFY_DEFAULT_EMAIL } from '../process-notifications'
+
+const ORIGINAL_NOTIFY = process.env.CRM_NOTIFY_EMAIL
+
+describe('getNotifyEmails', () => {
+  afterEach(() => {
+    if (ORIGINAL_NOTIFY === undefined) {
+      delete process.env.CRM_NOTIFY_EMAIL
+    } else {
+      process.env.CRM_NOTIFY_EMAIL = ORIGINAL_NOTIFY
+    }
+  })
+
+  it('תמיד כולל את 22geder@gmail.com', () => {
+    delete process.env.CRM_NOTIFY_EMAIL
+    expect(getNotifyEmails()).toEqual([CRM_NOTIFY_DEFAULT_EMAIL])
+    expect(getNotifyEmails()[0]).toBe('22geder@gmail.com')
+  })
+
+  it('מוסיף כתובות נוספות מ-CRM_NOTIFY_EMAIL בלי לשכפל', () => {
+    process.env.CRM_NOTIFY_EMAIL = '22geder@gmail.com, office@hr22group.com, not-an-email'
+    expect(getNotifyEmails()).toEqual(['22geder@gmail.com', 'office@hr22group.com'])
+  })
+})
+
+describe('escapeHtml', () => {
+  it('בורח תווים מסוכנים', () => {
+    expect(escapeHtml('<script>alert("x")</script>')).toBe(
+      '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+    )
+  })
+
+  it('מחזיר מחרוזת ריקה לערך ריק', () => {
+    expect(escapeHtml(null)).toBe('')
+    expect(escapeHtml(undefined)).toBe('')
+  })
+})

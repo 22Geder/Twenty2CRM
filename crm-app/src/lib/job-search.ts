@@ -414,7 +414,7 @@ export type PositionSearchFields = {
   employer?: { name: string } | null
   keywords?: string | null
   tagText?: string | null
-  tags?: string[]
+  tags?: Array<string | { name?: string | null }>
   employmentType?: string | null
   category?: string | null
   requirements?: string | string[] | null
@@ -426,7 +426,12 @@ function employerOf(pos: PositionSearchFields): string {
 
 function tagTextOf(pos: PositionSearchFields): string {
   if (pos.tagText) return pos.tagText
-  if (pos.tags?.length) return pos.tags.join(" ")
+  if (pos.tags?.length) {
+    return pos.tags
+      .map((tag) => (typeof tag === "string" ? tag : tag?.name || ""))
+      .filter(Boolean)
+      .join(" ")
+  }
   return ""
 }
 

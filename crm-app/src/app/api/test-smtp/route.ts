@@ -43,29 +43,19 @@ export async function GET() {
         })
 
         if (error) {
+          console.error('❌ Resend test failed, falling back to SMTP:', error.message || error.name)
+        } else {
           return NextResponse.json({
-            success: false,
+            success: true,
             method: 'Resend HTTP API',
-            error: error.message || error.name || JSON.stringify(error),
+            message: '✅ Resend works! Test email sent successfully',
             envCheck,
-          }, { status: 500 })
+            resendId: data?.id,
+          })
         }
 
-        return NextResponse.json({
-          success: true,
-          method: 'Resend HTTP API',
-          message: '✅ Resend works! Test email sent successfully',
-          envCheck,
-          resendId: data?.id,
-        })
       } catch (resendErr: any) {
-        return NextResponse.json({
-          success: false,
-          method: 'Resend HTTP API',
-          error: resendErr.message,
-          envCheck,
-          fix: 'Check RESEND_API_KEY value. Make sure your domain is verified in Resend dashboard.'
-        }, { status: 500 })
+        console.error('❌ Resend test threw, falling back to SMTP:', resendErr.message)
       }
     }
 

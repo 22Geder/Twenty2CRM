@@ -1,9 +1,7 @@
 // 📧 שליחת מיילים עבור תהליך מועמדים
 // מייל כניסה לתהליך (מיידי) ומייל מעקב שבועי (אחרי 7 ימים)
 
-import nodemailer from 'nodemailer'
-import { Resend } from 'resend'
-import { getResendApiKey, getResendFromEmail } from './env'
+import { sendCrmEmail } from './email-sender'
 
 export const CRM_NOTIFY_DEFAULT_EMAIL = '22geder@gmail.com'
 
@@ -41,38 +39,7 @@ async function sendEmail(options: {
   subject: string
   html: string
 }) {
-  const recipients = Array.isArray(options.to) ? options.to : [options.to]
-  const resendKey = getResendApiKey()
-  if (resendKey) {
-    const resend = new Resend(resendKey)
-    const fromEmail = getResendFromEmail()
-    const fromName = options.from.match(/"([^"]+)"/)?.[1] || 'Twenty2CRM'
-    await resend.emails.send({
-      from: `${fromName} <${fromEmail}>`,
-      replyTo: '22geder@gmail.com',
-      to: recipients,
-      subject: options.subject,
-      html: options.html,
-    })
-    return
-  }
-
-  const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
-  if (!process.env.SMTP_USER || !smtpPassword) {
-    throw new Error('Email not configured - set RESEND_API_KEY or SMTP_USER + SMTP_PASSWORD')
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_SECURE === 'true' || parseInt(process.env.SMTP_PORT || '465') === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: smtpPassword,
-    },
-  })
-
-  await transporter.sendMail({ ...options, to: recipients.join(', ') })
+  await sendCrmEmail(options)
 }
 
 // -----------------------------------------------------------

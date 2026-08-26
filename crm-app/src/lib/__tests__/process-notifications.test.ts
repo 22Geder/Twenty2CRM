@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { escapeHtml, getNotifyEmails, CRM_NOTIFY_DEFAULT_EMAIL } from '../process-notifications'
+import { sendCrmEmail } from '../email-sender'
 
 const ORIGINAL_NOTIFY = process.env.CRM_NOTIFY_EMAIL
 
@@ -34,5 +35,13 @@ describe('escapeHtml', () => {
   it('מחזיר מחרוזת ריקה לערך ריק', () => {
     expect(escapeHtml(null)).toBe('')
     expect(escapeHtml(undefined)).toBe('')
+  })
+})
+
+describe('sendCrmEmail', () => {
+  it('נכשל בלי נמענים', async () => {
+    await expect(
+      sendCrmEmail({ from: 'Twenty2CRM', to: [], subject: 'x', html: '<p>x</p>' })
+    ).rejects.toThrow('No email recipients')
   })
 })

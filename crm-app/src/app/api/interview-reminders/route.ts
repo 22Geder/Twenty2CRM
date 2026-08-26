@@ -1,43 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import nodemailer from "nodemailer"
-import { Resend } from "resend"
-import { getResendApiKey, getResendFromEmail } from '@/lib/env'
+import { getResendApiKey } from '@/lib/env'
+import { sendCrmEmail } from '@/lib/email-sender'
 import { sendWeeklyProcessCheckEmail, getNotifyEmails } from '@/lib/process-notifications'
 
-// פונקציית שליחת מייל - Resend (HTTP) או SMTP
 async function sendEmail(options: { from: string, to: string | string[], subject: string, html: string }) {
-  const recipients = Array.isArray(options.to) ? options.to : [options.to]
-  if (getResendApiKey()) {
-    const resend = new Resend(getResendApiKey()!)
-    const fromEmail = getResendFromEmail()
-    const fromName = options.from.match(/"([^"]+)"/)?.[1] || 'Twenty2CRM'
-    await resend.emails.send({
-      from: `${fromName} <${fromEmail}>`,
-      replyTo: '22geder@gmail.com',
-      to: recipients,
-      subject: options.subject,
-      html: options.html,
-    })
-    return
-  }
-  
-  const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS
-  if (!process.env.SMTP_USER || !smtpPassword) {
-    throw new Error("Email not configured - set RESEND_API_KEY or SMTP_USER + SMTP_PASSWORD")
-  }
-  
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_SECURE === 'true' || parseInt(process.env.SMTP_PORT || '465') === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: smtpPassword,
-    },
-  })
-  
-  await transporter.sendMail({ ...options, to: recipients.join(', ') })
+  await sendCrmEmail(options)
 }
 
 // API לשליחת תזכורות ראיונות ומועמדים בתהליך

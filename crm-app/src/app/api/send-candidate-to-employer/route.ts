@@ -506,14 +506,16 @@ export async function POST(request: NextRequest) {
       ? customMatchingPoints
       : analyzeAndGenerateMatchingPoints(candidate, position, candidate.tags)
 
-    // הגדרת שליחת מייל - Resend (HTTP API) או SMTP
+    // הגדרת שליחת מייל - Resend (HTTP API) עם נפילה ל-SMTP
     let transporter: any = null
     let resendClient: Resend | null = null
     
     if (useResend) {
       resendClient = new Resend(getResendApiKey()!)
       console.log('📧 Using Resend HTTP API for email delivery')
-    } else {
+    }
+
+    if (process.env.SMTP_USER && smtpPassword) {
       const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
       const smtpPort = parseInt(process.env.SMTP_PORT || '465')
       const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
@@ -533,7 +535,14 @@ export async function POST(request: NextRequest) {
         maxConnections: 10,
         maxMessages: 100,
       })
-      console.log(`📧 Using SMTP: ${smtpHost}:${smtpPort} (secure: ${smtpSecure})`)
+      console.log(`📧 SMTP fallback ready: ${smtpHost}:${smtpPort} (secure: ${smtpSecure})`)
+    }
+
+    if (!resendClient && !transporter) {
+      return NextResponse.json(
+        { error: "Email not configured - set RESEND_API_KEY or SMTP_USER + SMTP_PASSWORD" },
+        { status: 500 }
+      )
     }
 
     // בניית המייל - עם נושא מותאם או אוטומטי
@@ -961,12 +970,14 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
               throw new Error(`Resend API error: ${resendError.message || resendError.name || JSON.stringify(resendError)}`)
             }
             console.log(`✅ Resend sent email ID: ${resendData?.id}`)
-          } else {
+          } else if (transporter) {
             // 📧 שליחה דרך SMTP
             await transporter.sendMail({
               ...mailOptions,
               to: recipient.email,
             })
+          } else {
+            throw new Error('Email not configured')
           }
           
           console.log(`✅ Email sent to ${recipient.email}`)
@@ -995,6 +1006,19 @@ ${candidate.phone ? `טלפון: ${candidate.phone}` : ''}
         } catch (error: any) {
           const errMsg = error?.message || error?.name || (typeof error === 'string' ? error : JSON.stringify(error))
           console.error(`❌ Attempt ${attempts} to ${recipient.email} failed:`, errMsg)
+          if (resendClient && transporter && /Resend/i.test(errMsg)) {
+            try {
+              await transporter.sendMail({
+                ...mailOptions,
+                to: recipient.email,
+              })
+              console.log(`✅ SMTP fallback sent email to ${recipient.email}`)
+              sendResults.push({ email: recipient.email, success: true })
+              return
+            } catch (smtpErr: any) {
+              console.error('❌ SMTP fallback failed:', smtpErr?.message || smtpErr)
+            }
+          }
           if (attempts >= maxAttempts) {
             sendResults.push({ email: recipient.email, success: false, error: errMsg })
           } else {

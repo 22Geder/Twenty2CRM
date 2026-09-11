@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
+import { resolveHiredAtForUpdate } from "@/lib/candidate-hired-dates"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -159,6 +160,14 @@ export async function PUT(
       }
     }
 
+    const resolvedHiredAt = resolveHiredAtForUpdate({
+      existingHiredAt: existingCandidate.hiredAt,
+      requestedHiredAt: hiredAt,
+      hiredAtProvided: 'hiredAt' in body,
+      employmentStatus,
+      employmentStatusProvided: 'employmentStatus' in body,
+    })
+
     const candidate = await prisma.candidate.update({
       where: { id },
       data: {
@@ -182,8 +191,8 @@ export async function PUT(
         ...(notes !== undefined && { notes }),
         ...(rating !== undefined && { rating: rating ? parseInt(rating) : null }),
         ...(source !== undefined && { source }),
-        // 🆕 שדות סטטוס - תומך גם ב-null מפורש
-        ...('hiredAt' in body && { hiredAt: hiredAt ? new Date(hiredAt) : null }),
+        // תאריך קבלה: נשמר בפעם הראשונה, לא נדרס בלחיצה חוזרת על "התקבל"
+        ...(resolvedHiredAt !== undefined && { hiredAt: resolvedHiredAt }),
         ...('employmentType' in body && { employmentType: employmentType || null }),
         ...('employmentStatus' in body && { employmentStatus: employmentStatus || null }),
         // 🔄 סנכרון אוטומטי: כשמועמד התקבל/נדחה - מנקה את שדות "בתהליך"

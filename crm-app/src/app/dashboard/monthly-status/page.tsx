@@ -12,6 +12,7 @@ import {
   TrendingUp, Users, Target, Search
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatDateHe, isMonthlyStatusCandidate } from '@/lib/candidate-hired-dates';
 
 interface Application {
   id: string;
@@ -35,6 +36,8 @@ interface Candidate {
   hiredAt: string | null;
   hiredToEmployerId: string | null;
   inProcessPositionId: string | null;
+  inProcessPositionTitle?: string | null;
+  inProcessEmployerName?: string | null;
   inProcessAt: string | null;
   interviewDate: string | null;
   createdAt: string;
@@ -81,8 +84,11 @@ export default function MonthlyStatusPage() {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
         
-        // הצג את כל המועמדים - סטטוס חודשי מציג תמונה מלאה של כולם
-        setCandidates(allCandidates);
+        // סינון לחודש שנבחר: הועלה / התקבל / נכנס לתהליך בחודש זה
+        const monthCandidates = allCandidates.filter((c: Candidate) =>
+          isMonthlyStatusCandidate(c, selectedMonth)
+        );
+        setCandidates(monthCandidates);
       }
 
       // Fetch employers
@@ -115,6 +121,7 @@ export default function MonthlyStatusPage() {
         city: candidate.city,
         employmentStatus: candidate.employmentStatus,
         hiredToEmployerId: candidate.hiredToEmployerId,
+        hiredAt: candidate.hiredAt ? candidate.hiredAt.split('T')[0] : '',
         interviewDate: candidate.interviewDate ? candidate.interviewDate.split('T')[0] : '',
       }
     });
@@ -134,7 +141,9 @@ export default function MonthlyStatusPage() {
 
       // If status is EMPLOYED, set hiredAt and hiredToEmployerId
       if (data.employmentStatus === 'EMPLOYED') {
-        updatePayload.hiredAt = new Date().toISOString();
+        if (data.hiredAt) {
+          updatePayload.hiredAt = data.hiredAt;
+        }
         if (data.hiredToEmployerId) {
           updatePayload.hiredToEmployerId = data.hiredToEmployerId;
         }
@@ -183,7 +192,10 @@ export default function MonthlyStatusPage() {
       const updatePayload: any = { employmentStatus: newStatus };
       
       if (newStatus === 'EMPLOYED') {
-        updatePayload.hiredAt = new Date().toISOString();
+        const current = candidates.find(c => c.id === candidateId);
+        if (!current?.hiredAt) {
+          updatePayload.hiredAt = new Date().toISOString();
+        }
         // 🔄 מנקה שדות "בתהליך" כי המועמד התקבל
         updatePayload.inProcessPositionId = null;
         updatePayload.inProcessAt = null;
@@ -255,7 +267,7 @@ export default function MonthlyStatusPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">📊 סטטוס חודשי</h1>
-          <p className="text-gray-600">מעקב אחר מועמדים לפי סטטוס - התקבלו, בתהליך, נדחו</p>
+          <p className="text-gray-600">מעקב חודשי לפי תאריך העלאה ותאריך התקבל</p>
         </div>
         <div className="flex items-center gap-3">
           <Input
@@ -368,7 +380,7 @@ export default function MonthlyStatusPage() {
             מועמדים ({filteredCandidates.length})
           </CardTitle>
           <CardDescription>
-            {filter === 'all' ? 'כל המועמדים' : statusLabels[filter]}
+            {filter === 'all' ? `מועמדים לחודש ${selectedMonth}` : statusLabels[filter]}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -471,6 +483,20 @@ export default function MonthlyStatusPage() {
                               className="h-9"
                             />
                           </div>
+                          {editData[candidate.id]?.employmentStatus === 'EMPLOYED' && (
+                            <div>
+                              <label className="text-xs text-gray-500">📅 תאריך התקבל</label>
+                              <Input
+                                type="date"
+                                value={editData[candidate.id]?.hiredAt || ''}
+                                onChange={(e) => setEditData({
+                                  ...editData,
+                                  [candidate.id]: { ...editData[candidate.id], hiredAt: e.target.value }
+                                })}
+                                className="h-9"
+                              />
+                            </div>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -564,6 +590,17 @@ export default function MonthlyStatusPage() {
                                         )}
                                       </span>
                                     );
+                                  } else if ((candidate as any).inProcessPositionTitle) {
+                                    // המשרה נמחקה - מציג snapshot
+                                    return (
+                                      <span className="flex items-center gap-1 text-yellow-700 font-medium bg-yellow-50 px-2 py-0.5 rounded border border-yellow-200">
+                                        <Target className="h-3 w-3" />
+                                        נשלח ל: {(candidate as any).inProcessPositionTitle}
+                                        {(candidate as any).inProcessEmployerName && (
+                                          <span className="text-yellow-600">(נמחקה מהמערכת)</span>
+                                        )}
+                                      </span>
+                                    );
                                   }
                                   return null;
                                 })()}
@@ -618,17 +655,23 @@ export default function MonthlyStatusPage() {
                         <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2 mt-1">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            הגיע: {new Date(candidate.createdAt).toLocaleDateString('he-IL')}
+                            עלה: {formatDateHe(candidate.createdAt)}
                           </span>
+                          {candidate.hiredAt && (
+                            <span className="flex items-center gap-1 text-green-700 font-medium bg-green-50 px-2 py-0.5 rounded">
+                              <CheckCircle className="h-3 w-3" />
+                              התקבל: {formatDateHe(candidate.hiredAt)}
+                            </span>
+                          )}
                           {candidate.inProcessAt && (
                             <span className="flex items-center gap-1 text-blue-600">
                               <Clock className="h-3 w-3" />
-                              נכנס לתהליך: {new Date(candidate.inProcessAt).toLocaleDateString('he-IL')}
+                              נכנס לתהליך: {formatDateHe(candidate.inProcessAt)}
                             </span>
                           )}
                           {candidate.interviewDate && (
                             <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
-                              📅 ראיון: {new Date(candidate.interviewDate).toLocaleDateString('he-IL')}
+                              📅 ראיון: {formatDateHe(candidate.interviewDate)}
                             </span>
                           )}
                           {status === 'in-process' && !candidate.interviewDate && (

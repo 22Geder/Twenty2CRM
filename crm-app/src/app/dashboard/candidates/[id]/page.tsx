@@ -43,6 +43,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { matchesPosition, scoreSearch } from "@/lib/job-search"
+import { formatDateHe } from "@/lib/candidate-hired-dates"
 
 // ── CandidateAvatar (profile page) ──────────────────────────────────────────
 function nameToGradientColor(name: string): { from: string; to: string } {
@@ -465,7 +466,9 @@ export default function CandidateDetailsPage() {
       const updateData: any = {}
       
       if (newStatus === 'hired') {
-        updateData.hiredAt = new Date().toISOString()
+        if (!candidate?.hiredAt) {
+          updateData.hiredAt = new Date().toISOString()
+        }
         updateData.employmentStatus = 'EMPLOYED'
         if (employerId) {
           updateData.hiredToEmployerId = employerId
@@ -868,9 +871,24 @@ export default function CandidateDetailsPage() {
               </Badge>
             )}
           </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+            {candidate.createdAt && (
+              <Badge variant="outline" className="bg-white text-slate-700 border-slate-200">
+                <Calendar className="h-3 w-3 ml-1" />
+                עלה: {formatDateHe(candidate.createdAt)}
+              </Badge>
+            )}
+            {candidateStatus === 'hired' && candidate.hiredAt && (
+              <Badge variant="secondary" className="bg-green-100 text-green-700 border border-green-300">
+                <CheckCircle className="h-3 w-3 ml-1" />
+                התקבל: {formatDateHe(candidate.hiredAt)}
+              </Badge>
+            )}
+          </div>
           
           {/* 🆕 הצגת כל המשרות בתהליך */}
-          {(inProcessPositions.length > 0 || inProcessPosition) && (
+          {(inProcessPositions.length > 0 || inProcessPosition || candidate?.inProcessPositionTitle) && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -900,6 +918,8 @@ export default function CandidateDetailsPage() {
                         <Briefcase className="h-4 w-4 text-blue-500" />
                         <Link 
                           href={`/dashboard/positions/${pos.id}`}
+                          target="_blank"
+                          rel="noopener"
                           className="text-blue-600 hover:underline font-medium"
                         >
                           {pos.title}
@@ -926,13 +946,15 @@ export default function CandidateDetailsPage() {
                       </Button>
                     </div>
                   ))
-                ) : inProcessPosition && (
+                ) : inProcessPosition ? (
                   // תצוגת משרה יחידה (תאימות לאחור)
                   <div className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
                     <div className="flex items-center gap-2 flex-1">
                       <Briefcase className="h-4 w-4 text-blue-500" />
                       <Link 
                         href={`/dashboard/positions/${inProcessPosition.id}`}
+                        target="_blank"
+                        rel="noopener"
                         className="text-blue-600 hover:underline font-medium"
                       >
                         {inProcessPosition.title}
@@ -949,7 +971,19 @@ export default function CandidateDetailsPage() {
                       )}
                     </div>
                   </div>
-                )}
+                ) : candidate?.inProcessPositionTitle ? (
+                  // תצוגת snapshot - המשרה נמחקה מהמערכת אבל שומרים את ההיסטוריה
+                  <div className="flex items-center gap-2 bg-white p-2 rounded border border-yellow-200">
+                    <Briefcase className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                    <span className="text-yellow-700 font-medium">{candidate.inProcessPositionTitle}</span>
+                    {candidate.inProcessEmployerName && (
+                      <span className="text-gray-500 text-sm">({candidate.inProcessEmployerName})</span>
+                    )}
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-600 text-xs border-yellow-300">
+                      משרה הוסרה מהמערכת
+                    </Badge>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
@@ -1237,7 +1271,7 @@ export default function CandidateDetailsPage() {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="hiredAt">תאריך גיוס</Label>
+                      <Label htmlFor="hiredAt">תאריך התקבל</Label>
                       <Input
                         id="hiredAt"
                         name="hiredAt"
@@ -1292,7 +1326,7 @@ export default function CandidateDetailsPage() {
               ) : (
                 <div className="grid gap-3 text-sm">
                   {candidate.hiredAt && (
-                    <p><strong>תאריך גיוס:</strong> {new Date(candidate.hiredAt).toLocaleDateString("he-IL")}</p>
+                    <p><strong>תאריך התקבל:</strong> {formatDateHe(candidate.hiredAt)}</p>
                   )}
                   {candidate.employmentType && (
                     <p><strong>סוג העסקה:</strong> {candidate.employmentType === "PERMANENT" ? "קבוע" : candidate.employmentType === "TEMP" ? "זמני" : "השמה"}</p>
@@ -1303,7 +1337,7 @@ export default function CandidateDetailsPage() {
                   {candidate.employmentEndAt && (
                     <p><strong>סיום עבודה:</strong> {new Date(candidate.employmentEndAt).toLocaleDateString("he-IL")}</p>
                   )}
-                  {!candidate.hiredAt && <p className="text-muted-foreground">לא הוגדר תאריך גיוס</p>}
+                  {!candidate.hiredAt && <p className="text-muted-foreground">לא הוגדר תאריך התקבל</p>}
                 </div>
               )}
             </CardContent>
@@ -1814,7 +1848,7 @@ export default function CandidateDetailsPage() {
               <CardContent className="space-y-3">
                 {candidate.applications.map((app: any) => (
                   <div key={app.id} className="text-sm">
-                    <Link href={`/dashboard/positions/${app.position.id}`} className="font-medium hover:underline">
+                    <Link href={`/dashboard/positions/${app.position.id}`} target="_blank" rel="noopener" className="font-medium hover:underline">
                       {app.position.title}
                     </Link>
                     <p className="text-muted-foreground text-xs">{app.status}</p>

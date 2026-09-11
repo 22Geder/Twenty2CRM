@@ -36,9 +36,7 @@ export function UrgentCandidatesAlert({ candidates }: { candidates: UntreatedCan
     setUpdating(candidateId)
     try {
       const payload: any = { employmentStatus: status }
-      if (status === 'EMPLOYED') {
-        payload.hiredAt = new Date().toISOString()
-      } else {
+      if (status !== 'EMPLOYED') {
         payload.hiredAt = null
         payload.hiredToEmployerId = null
       }

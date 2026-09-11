@@ -58,12 +58,36 @@ export function isInYearMonth(
   return Boolean(yearMonth) && toYearMonth(value) === yearMonth
 }
 
+export function toYear(
+  value: Date | string | null | undefined,
+  timeZone = ISRAEL_TZ
+): string | null {
+  const date = asValidDate(value)
+  if (!date) return null
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    year: 'numeric',
+  }).formatToParts(date)
+
+  return parts.find((part) => part.type === 'year')?.value || null
+}
+
+export function isInYear(
+  value: Date | string | null | undefined,
+  year: string
+): boolean {
+  return Boolean(year) && toYear(value) === year
+}
+
+type StatusPeriodCandidate = {
+  createdAt?: Date | string | null
+  hiredAt?: Date | string | null
+  inProcessAt?: Date | string | null
+}
+
 export function isMonthlyStatusCandidate(
-  candidate: {
-    createdAt?: Date | string | null
-    hiredAt?: Date | string | null
-    inProcessAt?: Date | string | null
-  },
+  candidate: StatusPeriodCandidate,
   yearMonth: string
 ): boolean {
   return (
@@ -71,6 +95,28 @@ export function isMonthlyStatusCandidate(
     isInYearMonth(candidate.hiredAt, yearMonth) ||
     isInYearMonth(candidate.inProcessAt, yearMonth)
   )
+}
+
+const YEAR_MONTH_PERIOD_RE = /^\d{4}-\d{2}$/
+const YEAR_PERIOD_RE = /^\d{4}$/
+
+export function isStatusPeriodCandidate(
+  candidate: StatusPeriodCandidate,
+  period: string
+): boolean {
+  if (!period || typeof period !== 'string') return false
+  const trimmed = period.trim()
+  if (YEAR_MONTH_PERIOD_RE.test(trimmed)) {
+    return isMonthlyStatusCandidate(candidate, trimmed)
+  }
+  if (YEAR_PERIOD_RE.test(trimmed)) {
+    return (
+      isInYear(candidate.createdAt, trimmed) ||
+      isInYear(candidate.hiredAt, trimmed) ||
+      isInYear(candidate.inProcessAt, trimmed)
+    )
+  }
+  return false
 }
 
 export function formatDateHe(value: Date | string | null | undefined): string {

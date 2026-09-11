@@ -12,7 +12,7 @@ import {
   TrendingUp, Users, Target, Search
 } from 'lucide-react';
 import Link from 'next/link';
-import { formatDateHe, isMonthlyStatusCandidate } from '@/lib/candidate-hired-dates';
+import { formatDateHe, isStatusPeriodCandidate } from '@/lib/candidate-hired-dates';
 
 interface Application {
   id: string;
@@ -67,14 +67,17 @@ export default function MonthlyStatusPage() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<'all' | 'hired' | 'in-process' | 'rejected' | 'new'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [periodMode, setPeriodMode] = useState<'month' | 'year'>('month');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
+  const selectedPeriod = periodMode === 'year' ? selectedYear : selectedMonth;
 
   useEffect(() => {
     fetchData();
-  }, [selectedMonth]);
+  }, [selectedPeriod]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -84,11 +87,11 @@ export default function MonthlyStatusPage() {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
         
-        // סינון לחודש שנבחר: הועלה / התקבל / נכנס לתהליך בחודש זה
-        const monthCandidates = allCandidates.filter((c: Candidate) =>
-          isMonthlyStatusCandidate(c, selectedMonth)
+        // סינון לחודש או לשנה שנבחרו: הועלה / התקבל / נכנס לתהליך בתקופה זו
+        const periodCandidates = allCandidates.filter((c: Candidate) =>
+          isStatusPeriodCandidate(c, selectedPeriod)
         );
-        setCandidates(monthCandidates);
+        setCandidates(periodCandidates);
       }
 
       // Fetch employers
@@ -267,15 +270,48 @@ export default function MonthlyStatusPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">📊 סטטוס חודשי</h1>
-          <p className="text-gray-600">מעקב חודשי לפי תאריך העלאה ותאריך התקבל</p>
+          <p className="text-gray-600">
+            {periodMode === 'year'
+              ? `מעקב שנתי לפי תאריך העלאה ותאריך התקבל — שנת ${selectedYear}`
+              : 'מעקב חודשי לפי תאריך העלאה ותאריך התקבל'}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <Input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-40"
-          />
+          <div className="flex rounded-md border overflow-hidden">
+            <Button
+              type="button"
+              variant={periodMode === 'month' ? 'default' : 'ghost'}
+              className="rounded-none h-9 px-3"
+              onClick={() => setPeriodMode('month')}
+            >
+              חודש
+            </Button>
+            <Button
+              type="button"
+              variant={periodMode === 'year' ? 'default' : 'ghost'}
+              className="rounded-none h-9 px-3"
+              onClick={() => setPeriodMode('year')}
+            >
+              שנה
+            </Button>
+          </div>
+          {periodMode === 'year' ? (
+            <Input
+              type="number"
+              min="2000"
+              max="2100"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-28"
+            />
+          ) : (
+            <Input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-40"
+            />
+          )}
           <Button variant="outline" onClick={fetchData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
             רענון
@@ -380,7 +416,9 @@ export default function MonthlyStatusPage() {
             מועמדים ({filteredCandidates.length})
           </CardTitle>
           <CardDescription>
-            {filter === 'all' ? `מועמדים לחודש ${selectedMonth}` : statusLabels[filter]}
+            {filter === 'all'
+              ? (periodMode === 'year' ? `מועמדים לשנת ${selectedYear}` : `מועמדים לחודש ${selectedMonth}`)
+              : statusLabels[filter]}
           </CardDescription>
         </CardHeader>
         <CardContent>

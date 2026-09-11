@@ -241,12 +241,12 @@ async function getUntreatedInProcessCandidates() {
   })
 }
 
-// 🎯 סטטיסטיקת מגייסים — לכל מגייס: כמה העלה, כמה בתהליך, כמה התקבלו.
-// שיוך לפי uploadedById (מי שהעלה את המועמד). כל משתמש רואה רק את עצמו; אדמין רואה את כולם.
-async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
+// 🎯 סטטיסטיקת מגייסים — כמה העלה, כמה בתהליך, כמה התקבלו.
+// שיוך לפי uploadedById (מי שהעלה את המועמד). תמיד רק המשתמש המחובר, גם לאדמין.
+async function getRecruiterStats(currentUserId: string) {
   const [users, uploadedGroups, inProcessGroups, hiredGroups, rejectedGroups] = await Promise.all([
     prisma.user.findMany({
-      where: isAdmin ? { active: true } : { id: currentUserId },
+      where: { id: currentUserId },
       select: { id: true, name: true, avatar: true, role: true },
     }),
     prisma.candidate.groupBy({
@@ -289,7 +289,6 @@ async function getRecruiterStats(currentUserId: string, isAdmin: boolean) {
       hired: hiredMap[u.id] || 0,
       rejected: rejectedMap[u.id] || 0,
     }))
-    // אדמין: מציגים את כל המגייסים הפעילים, כשמי שהעלה הכי הרבה למעלה, והמשתמש הנוכחי תמיד ראשון
     .sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0) || b.uploaded - a.uploaded)
 }
 
@@ -298,7 +297,6 @@ export default async function CiviDashboardPage() {
   if (!session) { redirect("/login") }
 
   const currentUserId = (session.user as any)?.id as string
-  const isAdmin = (session.user as any)?.role === 'ADMIN'
 
   const [
     stats, recentPositions, upcomingTasks, candidateSources,
@@ -307,7 +305,7 @@ export default async function CiviDashboardPage() {
   ] = await Promise.all([
     getDashboardStats(), getRecentPositions(), getUpcomingTasks(), getCandidateSources(),
     getCandidatesInProcess(), getRejectedCandidates(), getHiredCandidates(), getUntreatedInProcessCandidates(),
-    getRecruiterStats(currentUserId, isAdmin),
+    getRecruiterStats(currentUserId),
   ])
 
   const totalInProcess = stats.inProcess || 1
@@ -603,17 +601,12 @@ export default async function CiviDashboardPage() {
                     <Target className="h-4 w-4 text-indigo-500" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800">{isAdmin ? 'ביצועי מגייסים' : 'הביצועים שלי'}</div>
+                    <div className="font-bold text-slate-800">הביצועים שלי</div>
                     <div className="text-xs text-slate-400">
-                      {isAdmin ? 'תמונת מצב לכל מגייס — העלאות, תהליכים וקבלות' : 'כאן אתה רואה איפה אתה עומד'}
+                      כאן אתה רואה איפה אתה עומד
                     </div>
                   </div>
                 </div>
-                {isAdmin && (
-                  <span className="text-[11px] bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium">
-                    תצוגת אדמין — כל המגייסים
-                  </span>
-                )}
               </div>
 
               {recruiterStats.length === 0 ? (

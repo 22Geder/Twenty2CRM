@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   formatDateHe,
   isDateOnlyString,
+  isInYear,
   isInYearMonth,
   isMonthlyStatusCandidate,
+  isStatusPeriodCandidate,
   parseHiredAtInput,
   resolveHiredAtForUpdate,
+  toYear,
   toYearMonth,
 } from '../candidate-hired-dates'
 
@@ -48,6 +51,49 @@ describe('monthly year-month helpers', () => {
       createdAt: '2026-08-20T10:00:00.000Z',
       hiredAt: null,
     }, '2026-09')).toBe(false)
+  })
+})
+
+describe('year and status-period helpers', () => {
+  it('משייך תאריך לשנה לפי ישראל', () => {
+    expect(toYear('2026-01-01T00:00:00.000Z')).toBe('2026')
+    expect(isInYear('2026-01-15T10:00:00.000Z', '2026')).toBe(true)
+  })
+
+  it('hired ב-2026-01 נכלל בשנת 2026 ולא בחודש 2026-09', () => {
+    const hiredInJanuary = {
+      createdAt: '2025-12-20T10:00:00.000Z',
+      hiredAt: '2026-01-15T08:00:00.000Z',
+    }
+
+    expect(isStatusPeriodCandidate(hiredInJanuary, '2026')).toBe(true)
+    expect(isStatusPeriodCandidate(hiredInJanuary, '2026-01')).toBe(true)
+    expect(isStatusPeriodCandidate(hiredInJanuary, '2026-09')).toBe(false)
+    expect(isMonthlyStatusCandidate(hiredInJanuary, '2026-09')).toBe(false)
+  })
+
+  it('createdAt ב-2026-09 נכלל גם בחודש וגם בשנה', () => {
+    const uploadedInSeptember = {
+      createdAt: '2026-09-05T08:00:00.000Z',
+      hiredAt: null,
+    }
+
+    expect(isStatusPeriodCandidate(uploadedInSeptember, '2026-09')).toBe(true)
+    expect(isStatusPeriodCandidate(uploadedInSeptember, '2026')).toBe(true)
+    expect(isMonthlyStatusCandidate(uploadedInSeptember, '2026-09')).toBe(true)
+  })
+
+  it('דוחה מחזור לא תקין', () => {
+    const candidate = {
+      createdAt: '2026-09-05T08:00:00.000Z',
+      hiredAt: '2026-01-15T08:00:00.000Z',
+    }
+
+    expect(isStatusPeriodCandidate(candidate, '')).toBe(false)
+    expect(isStatusPeriodCandidate(candidate, '2026-9')).toBe(false)
+    expect(isStatusPeriodCandidate(candidate, '2026-09-01')).toBe(false)
+    expect(isStatusPeriodCandidate(candidate, 'abcd')).toBe(false)
+    expect(isStatusPeriodCandidate(candidate, '26')).toBe(false)
   })
 })
 

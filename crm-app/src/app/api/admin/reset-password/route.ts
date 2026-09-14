@@ -1,23 +1,53 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { z } from "zod"
+import { requireApiUser } from '@/lib/api-authorization'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-// 🔒 איפוס סיסמה ושחרור נעילה ע"י אדמין
-// GET - בדיקת סטטוס כל המשתמשים
-// POST - איפוס סיסמה לאימייל ספציפי
+const headers = { 'Cache-Control': 'private, no-store' }
+const targetFields = {
+  email: z.string().trim().max(254).email().toLowerCase().optional(),
+  userId: z.string().min(1).max(128).refine(id => !/[^a-zA-Z0-9_-]/.test(id)).optional(),
+}
+const requestSchema = z.discriminatedUnion('action', [
+  z.object({ ...targetFields, action: z.literal('unlock') }).strict(),
+  z.object({
+    ...targetFields,
+    // resetPassword הוא שם הפעולה בממשק; reset נשמר ככינוי מפורש לאיפוס.
+    action: z.enum(['resetPassword', 'reset']),
+    newPassword: z.string().min(12).max(128).refine(password => password.trim().length >= 12),
+  }).strict(),
+]).refine(input => (input.email !== undefined) !== (input.userId !== undefined))
 
-const ADMIN_SECRET = process.env.ADMIN_RESET_SECRET || 't22-admin-reset-2026'
+function hasTrustedOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get('Origin')
+  const fetchSite = request.headers.get('Sec-Fetch-Site')
+  if (fetchSite === 'cross-site') return false
+  // לקוח ניהולי שאינו דפדפן רשאי להשמיט Origin, אך עדיין חייב session מנהל תקף.
+  if (origin === null) return fetchSite === null
+  if (origin === request.nextUrl.origin) return true
 
-export async function GET(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get('secret')
-
-  if (secret !== ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+  // כתובת מוגדרת תומכת ב-proxy בלי לסמוך על כותרות Host/Forwarded שמגיעות מהלקוח.
   try {
+    const configuredUrl = process.env.NEXTAUTH_URL
+    if (!configuredUrl) return false
+    const url = new URL(configuredUrl)
+    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && origin === url.origin
+  } catch {
+    return false
+  }
+}
+
+// פעולות ניהול חשבונות מחייבות session והרשאת ADMIN עדכנית; סוד משותף אינו משמש לאימות.
+
+export async function GET() {
+  try {
+    const authorization = await requireApiUser('ADMIN')
+    if ('response' in authorization) return authorization.response
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -39,35 +69,46 @@ export async function GET(request: NextRequest) {
       withFailedAttempts: users.filter(u => u.failedLoginAttempts > 0).length,
     }
 
-    return NextResponse.json({ summary, users })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ summary, users }, { headers })
+  } catch {
+    console.error('[admin/reset-password] Failed to list users')
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { secret, email, newPassword, action } = body
+    const authorization = await requireApiUser('ADMIN')
+    if ('response' in authorization) return authorization.response
 
-    if (secret !== ADMIN_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!hasTrustedOrigin(request)) {
+      return NextResponse.json({ error: 'Forbidden', code: 'UNTRUSTED_ORIGIN' }, { status: 403, headers })
+    }
+    if (request.headers.get('Content-Type')?.split(';', 1)[0].trim().toLowerCase() !== 'application/json') {
+      return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415, headers })
     }
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400, headers })
     }
-
+    const parsed = requestSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', code: 'INVALID_INPUT' }, { status: 400, headers })
+    }
+    const input = parsed.data
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() }
+      where: input.userId ? { id: input.userId } : { email: input.email },
+      select: { id: true, name: true, email: true },
     })
-
     if (!user) {
-      return NextResponse.json({ error: `User not found: ${email}` }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404, headers })
     }
 
-    // פעולה: שחרור נעילה בלבד
-    if (action === 'unlock') {
+    // פעולה: שחרור נעילה בלבד, ללא גיבוב או שינוי סיסמה.
+    if (input.action === 'unlock') {
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -76,20 +117,17 @@ export async function POST(request: NextRequest) {
           lockTokenExpiresAt: null,
           failedLoginAttempts: 0,
           active: true,
-        }
+        },
       })
-
-      console.log(`🔓 Admin unlocked account: ${email}`)
+      console.log('[admin/reset-password] Account unlocked')
       return NextResponse.json({
         success: true,
-        message: `✅ החשבון של ${user.name} (${email}) שוחרר מנעילה!`
-      })
+        message: `✅ החשבון של ${user.name} (${user.email}) שוחרר מנעילה!`,
+      }, { headers })
     }
 
-    // פעולה: איפוס סיסמה (+ שחרור נעילה)
-    const password = newPassword || 'avigdor22'
-    const hashedPassword = await bcrypt.hash(password, 12)
-
+    // סיסמה נמסרת במפורש ועוברת בדיקה לפני גיבוב; אין סיסמת ברירת מחדל.
+    const hashedPassword = await bcrypt.hash(input.newPassword, 12)
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -99,19 +137,15 @@ export async function POST(request: NextRequest) {
         lockToken: null,
         lockTokenExpiresAt: null,
         active: true,
-      }
+      },
     })
-
-    console.log(`🔑 Admin reset password for: ${email}`)
-
+    console.log('[admin/reset-password] Password reset completed')
     return NextResponse.json({
       success: true,
-      message: `✅ הסיסמה של ${user.name} (${email}) אופסה בהצלחה!`,
-      newPassword: password,
-    })
-
-  } catch (error: any) {
-    console.error("❌ Admin reset error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+      message: `✅ הסיסמה של ${user.name} (${user.email}) אופסה בהצלחה!`,
+    }, { headers })
+  } catch {
+    console.error('[admin/reset-password] Password reset failed')
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers })
   }
 }

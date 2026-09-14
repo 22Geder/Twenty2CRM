@@ -57,6 +57,32 @@ interface Employer {
   name: string;
 }
 
+function toIsraelDateTimeInput(value: string | null): string {
+  if (!value) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jerusalem',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(value));
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}`;
+}
+
+function formatInterviewDate(value: string): string {
+  return new Date(value).toLocaleString('he-IL', {
+    timeZone: 'Asia/Jerusalem',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function MonthlyStatusPage() {
   const router = useRouter();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -126,7 +152,7 @@ export default function MonthlyStatusPage() {
         employmentStatus: candidate.employmentStatus,
         hiredToEmployerId: candidate.hiredToEmployerId,
         hiredAt: candidate.hiredAt ? candidate.hiredAt.split('T')[0] : '',
-        interviewDate: candidate.interviewDate ? candidate.interviewDate.split('T')[0] : '',
+        interviewDate: toIsraelDateTimeInput(candidate.interviewDate),
       }
     });
   };
@@ -513,9 +539,9 @@ export default function MonthlyStatusPage() {
                             </select>
                           </div>
                           <div>
-                            <label className="text-xs text-gray-500">📅 תאריך ראיון</label>
+                            <label className="text-xs text-gray-500">📅 תאריך ושעת ראיון</label>
                             <Input
-                              type="date"
+                              type="datetime-local"
                               value={editData[candidate.id]?.interviewDate || ''}
                               onChange={(e) => setEditData({
                                 ...editData,
@@ -712,7 +738,7 @@ export default function MonthlyStatusPage() {
                           )}
                           {candidate.interviewDate && (
                             <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
-                              📅 ראיון: {formatDateHe(candidate.interviewDate)}
+                              📅 ראיון: {formatInterviewDate(candidate.interviewDate)}
                             </span>
                           )}
                           {status === 'in-process' && !candidate.interviewDate && (
@@ -722,7 +748,7 @@ export default function MonthlyStatusPage() {
                               className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50"
                               onClick={() => startEdit(candidate)}
                             >
-                              + קבע תאריך ראיון
+                              + קבע תאריך ושעת ראיון
                             </Button>
                           )}
                         </div>

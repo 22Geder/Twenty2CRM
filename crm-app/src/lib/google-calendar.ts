@@ -102,6 +102,10 @@ export interface CalendarListEvent {
   allDay: boolean
 }
 
+export interface TaggedCalendarEventInput extends CalendarEventInput {
+  privateKey: string
+}
+
 function toCalendarDate(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jerusalem",
@@ -214,6 +218,74 @@ export async function createCalendarEvent(
   })
 
   return event.data.id!
+}
+
+/** Create, update, or remove one CRM-owned event without creating duplicates. */
+export async function syncTaggedCalendarEvent(
+  refreshToken: string,
+  privateKey: string,
+  input: CalendarEventInput | null
+): Promise<void> {
+  const auth = createOAuth2Client(refreshToken)
+  const calendar = google.calendar({ version: "v3", auth })
+  const response = await calendar.events.list({
+    calendarId: "primary",
+    privateExtendedProperty: [`twenty2crmKey=${privateKey}`],
+    showDeleted: false,
+    maxResults: 10,
+  })
+  const existingEvents = (response.data.items || []).filter(event => event.id)
+
+  if (!input) {
+    await Promise.all(existingEvents.map(event => calendar.events.delete({
+      calendarId: "primary",
+      eventId: event.id!,
+      sendUpdates: "all",
+    })))
+    return
+  }
+
+  const endTime = new Date(input.startTime.getTime() + input.durationMinutes * 60 * 1000)
+  const requestBody = {
+    summary: input.title,
+    description: input.description,
+    location: input.meetingUrl || input.location,
+    start: { dateTime: input.startTime.toISOString(), timeZone: "Asia/Jerusalem" },
+    end: { dateTime: endTime.toISOString(), timeZone: "Asia/Jerusalem" },
+    attendees: input.attendeeEmails.map(email => ({ email })),
+    extendedProperties: {
+      private: { twenty2crmKey: privateKey },
+    },
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: "email", minutes: 60 },
+        { method: "popup", minutes: 15 },
+      ],
+    },
+  }
+
+  const primaryEvent = existingEvents[0]
+  if (primaryEvent?.id) {
+    await calendar.events.update({
+      calendarId: "primary",
+      eventId: primaryEvent.id,
+      sendUpdates: "all",
+      requestBody,
+    })
+    await Promise.all(existingEvents.slice(1).map(event => calendar.events.delete({
+      calendarId: "primary",
+      eventId: event.id!,
+      sendUpdates: "all",
+    })))
+    return
+  }
+
+  await calendar.events.insert({
+    calendarId: "primary",
+    sendUpdates: "all",
+    requestBody,
+  })
 }
 
 /** Update an existing Google Calendar event */

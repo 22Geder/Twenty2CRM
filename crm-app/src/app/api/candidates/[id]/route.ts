@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
 import { resolveHiredAtForUpdate } from "@/lib/candidate-hired-dates"
 import { addHiredCandidateToTeamCalendars } from "@/lib/hired-candidate-calendar"
+import { syncCandidateInterviewToTeamCalendars } from "@/lib/candidate-interview-calendar"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -169,6 +170,11 @@ export async function PUT(
       employmentStatusProvided: 'employmentStatus' in body,
     })
 
+    const resolvedInterviewDate = interviewDate ? new Date(interviewDate) : null
+    if ('interviewDate' in body && interviewDate && !Number.isFinite(resolvedInterviewDate.getTime())) {
+      return NextResponse.json({ error: "Invalid interview date" }, { status: 400 })
+    }
+
     const candidate = await prisma.candidate.update({
       where: { id },
       data: {
@@ -207,7 +213,7 @@ export async function PUT(
         ...('hiredToEmployerId' in body && { hiredToEmployerId: hiredToEmployerId || null }),
         ...('inProcessPositionId' in body && { inProcessPositionId: inProcessPositionId || null }),
         ...('inProcessAt' in body && { inProcessAt: inProcessAt ? new Date(inProcessAt) : null }),
-        ...('interviewDate' in body && { interviewDate: interviewDate ? new Date(interviewDate) : null }),
+        ...('interviewDate' in body && { interviewDate: resolvedInterviewDate }),
         ...('interviewDate' in body && interviewDate && { interviewReminderSent: false }),  // איפוס תזכורת כשמעדכנים תאריך
         // 🆕 תקציר ידני - מעדכן גם את timestamp העריכה רק כשהתוכן באמת משתנה
         ...('manualSummary' in body && {
@@ -226,6 +232,28 @@ export async function PUT(
         interviews: true,
       },
     })
+
+    if ('interviewDate' in body) {
+      try {
+        const positionId = candidate.inProcessPositionId || existingCandidate.inProcessPositionId
+        const position = positionId
+          ? await prisma.position.findUnique({
+              where: { id: positionId },
+              select: { title: true, employer: { select: { name: true } } },
+            })
+          : null
+
+        await syncCandidateInterviewToTeamCalendars({
+          candidateId: candidate.id,
+          candidateName: candidate.name,
+          interviewDate: candidate.interviewDate,
+          positionTitle: position?.title,
+          employerName: position?.employer?.name,
+        })
+      } catch (calendarError) {
+        console.error("Candidate interview calendar sync failed:", calendarError)
+      }
+    }
 
     // 🔄 סנכרון בין employmentStatus לבין Application.status (לעקביות נתונים)
     if ('employmentStatus' in body) {

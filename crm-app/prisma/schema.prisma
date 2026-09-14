@@ -22,13 +22,13 @@ model User {
   lastLoginAt       DateTime?
   active            Boolean         @default(true)
   
-  // 🔒 Security - Login lockout
+  // ≡ƒפע Security - Login lockout
   failedLoginAttempts Int           @default(0)
   lockedAt          DateTime?
   lockToken         String?         @unique
   lockTokenExpiresAt DateTime?
   
-  // 📅 Google Calendar integration
+  // ≡ƒףו Google Calendar integration
   googleCalendarRefreshToken String?
   googleCalendarEmail        String?
 
@@ -38,25 +38,29 @@ model User {
   communications    Communication[]
   notifications     Notification[]
   activityLogs      ActivityLog[]
-  uploadedCandidates Candidate[]    @relation("CandidateUploader") // מועמדים שהמשתמש העלה
-  viewedCandidates  Candidate[]    @relation("CandidateLastViewer") // 🆕 מועמדים שהמשתמש צפה בהם לאחרונה
+  uploadedCandidates Candidate[]    @relation("CandidateUploader") // ╫₧╫ץ╫ó╫₧╫ף╫ש╫¥ ╫⌐╫פ╫₧╫⌐╫¬╫₧╫⌐ ╫פ╫ó╫£╫פ
+  viewedCandidates  Candidate[]    @relation("CandidateLastViewer") // ≡ƒזץ ╫₧╫ץ╫ó╫₧╫ף╫ש╫¥ ╫⌐╫פ╫₧╫⌐╫¬╫₧╫⌐ ╫ª╫ñ╫פ ╫ס╫פ╫¥ ╫£╫נ╫ק╫¿╫ץ╫á╫פ
   loginAttempts     LoginAttempt[]
-  attendances       Attendance[]    // 🆕 רישומי שעון נוכחות
+  attendances       Attendance[]    // ≡ƒזץ ╫¿╫ש╫⌐╫ץ╫₧╫ש ╫⌐╫ó╫ץ╫ƒ ╫á╫ץ╫¢╫ק╫ץ╫¬
+  gmailMailboxes    GmailMailbox[]  @relation("GmailMailboxConnector")
+  updatesAsUploader CandidateUpdate[] @relation("CandidateUpdateUploader")
+  updatesAsRecruiter CandidateUpdate[] @relation("CandidateUpdateRecruiter")
+  updatesAsReviewer CandidateUpdate[] @relation("CandidateUpdateReviewer")
 }
 
-// 🆕 שעון נוכחות - רישום יומי
+// ≡ƒזץ ╫⌐╫ó╫ץ╫ƒ ╫á╫ץ╫¢╫ק╫ץ╫¬ - ╫¿╫ש╫⌐╫ץ╫¥ ╫ש╫ץ╫₧╫ש
 model Attendance {
   id            String    @id @default(uuid())
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // תאריך יום העבודה (ללא שעה) - מאוחסן כ-DateTime ב-UTC חצות
+  // ╫¬╫נ╫¿╫ש╫ת ╫ש╫ץ╫¥ ╫פ╫ó╫ס╫ץ╫ף╫פ (╫£╫£╫נ ╫⌐╫ó╫פ) - ╫₧╫נ╫ץ╫ק╫í╫ƒ ╫¢-DateTime ╫ס-UTC ╫ק╫ª╫ץ╫¬
   date          DateTime  @db.Date
-  clockIn       DateTime? // שעת כניסה
-  clockOut      DateTime? // שעת יציאה
-  breakMinutes  Int       @default(30) // דקות הפסקה (ברירת מחדל 30 דק' לפי חוק)
+  clockIn       DateTime? // ╫⌐╫ó╫¬ ╫¢╫á╫ש╫í╫פ
+  clockOut      DateTime? // ╫⌐╫ó╫¬ ╫ש╫ª╫ש╫נ╫פ
+  breakMinutes  Int       @default(30) // ╫ף╫º╫ץ╫¬ ╫פ╫ñ╫í╫º╫פ (╫ס╫¿╫ש╫¿╫¬ ╫₧╫ק╫ף╫£ 30 ╫ף╫º' ╫£╫ñ╫ש ╫ק╫ץ╫º)
   status        String    @default("PRESENT") // PRESENT, ABSENT, SICK, VACATION, HOLIDAY, RESERVE_DUTY, REMOTE
   notes         String?
-  isManualEdit  Boolean   @default(false) // האם נערך ידנית ע"י המשתמש/מנהל
+  isManualEdit  Boolean   @default(false) // ╫פ╫נ╫¥ ╫á╫ó╫¿╫ת ╫ש╫ף╫á╫ש╫¬ ╫ó"╫ש ╫פ╫₧╫⌐╫¬╫₧╫⌐/╫₧╫á╫פ╫£
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -65,7 +69,7 @@ model Attendance {
   @@index([date])
 }
 
-// 🔒 מעקב ניסיונות התחברות
+// ≡ƒפע ╫₧╫ó╫º╫ס ╫á╫ש╫í╫ש╫ץ╫á╫ץ╫¬ ╫פ╫¬╫ק╫ס╫¿╫ץ╫¬
 model LoginAttempt {
   id          String   @id @default(uuid())
   email       String
@@ -105,7 +109,7 @@ model Employer {
   updatedAt   DateTime   @updatedAt
   
   positions   Position[]
-  hiredCandidates Candidate[] @relation("HiredCandidates") // 🆕 מועמדים שהתקבלו למעסיק
+  hiredCandidates Candidate[] @relation("HiredCandidates") // ≡ƒזץ ╫₧╫ץ╫ó╫₧╫ף╫ש╫¥ ╫⌐╫פ╫¬╫º╫ס╫£╫ץ ╫£╫₧╫ó╫í╫ש╫º
 }
 
 model Position {
@@ -131,13 +135,13 @@ model Position {
   priority        Int               @default(0)
   aiProfile       String?           // JSON profile from Gemini analysis
   
-  // 🆕 שדות מגייס ותנאים
-  contactEmail    String?           // מייל לשליחת מועמדים
-  contactName     String?           // שם איש קשר/מגייס
-  contactEmails   String?           // 🆕 JSON array של מיילים נוספים [{"email":"...", "name":"..."}]
-  workHours       String?           // שעות עבודה
-  benefits        String?           // תנאים נלווים (ארוחות, הסעות וכו')
-  transportation  String?           // אופן ההגעה (עצמאית/הסעה)
+  // ≡ƒזץ ╫⌐╫ף╫ץ╫¬ ╫₧╫ע╫ש╫ש╫í ╫ץ╫¬╫á╫נ╫ש╫¥
+  contactEmail    String?           // ╫₧╫ש╫ש╫£ ╫£╫⌐╫£╫ש╫ק╫¬ ╫₧╫ץ╫ó╫₧╫ף╫ש╫¥
+  contactName     String?           // ╫⌐╫¥ ╫נ╫ש╫⌐ ╫º╫⌐╫¿/╫₧╫ע╫ש╫ש╫í
+  contactEmails   String?           // ≡ƒזץ JSON array ╫⌐╫£ ╫₧╫ש╫ש╫£╫ש╫¥ ╫á╫ץ╫í╫ñ╫ש╫¥ [{"email":"...", "name":"..."}]
+  workHours       String?           // ╫⌐╫ó╫ץ╫¬ ╫ó╫ס╫ץ╫ף╫פ
+  benefits        String?           // ╫¬╫á╫נ╫ש╫¥ ╫á╫£╫ץ╫ץ╫ש╫¥ (╫נ╫¿╫ץ╫ק╫ץ╫¬, ╫פ╫í╫ó╫ץ╫¬ ╫ץ╫¢╫ץ')
+  transportation  String?           // ╫נ╫ץ╫ñ╫ƒ ╫פ╫פ╫ע╫ó╫פ (╫ó╫ª╫₧╫נ╫ש╫¬/╫פ╫í╫ó╫פ)
   
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -146,7 +150,8 @@ model Position {
   applications    Application[]
   tags            Tag[]
   interviews      Interview[]
-  inProcessCandidates Candidate[] @relation("InProcessCandidates") // 🆕 מועמדים בתהליך למשרה זו
+  inProcessCandidates Candidate[] @relation("InProcessCandidates") // ≡ƒזץ ╫₧╫ץ╫ó╫₧╫ף╫ש╫¥ ╫ס╫¬╫פ╫£╫ש╫ת ╫£╫₧╫⌐╫¿╫פ ╫צ╫ץ
+  candidateUpdates CandidateUpdate[]
 }
 
 model Candidate {
@@ -178,27 +183,27 @@ model Candidate {
   isSelfEmployed Boolean        @default(false)
   resume        String?
   aiProfile     String?         // JSON profile from Gemini analysis
-  unsubscribed  Boolean         @default(false)  // האם ביקש הסרה מרשימות התפוצה
-  unsubscribedAt DateTime?      // מתי ביקש הסרה
-  hiredToEmployerId String?     // 🆕 לאיזה מעסיק התקבל
+  unsubscribed  Boolean         @default(false)  // ╫פ╫נ╫¥ ╫ס╫ש╫º╫⌐ ╫פ╫í╫¿╫פ ╫₧╫¿╫⌐╫ש╫₧╫ץ╫¬ ╫פ╫¬╫ñ╫ץ╫ª╫פ
+  unsubscribedAt DateTime?      // ╫₧╫¬╫ש ╫ס╫ש╫º╫⌐ ╫פ╫í╫¿╫פ
+  hiredToEmployerId String?     // ≡ƒזץ ╫£╫נ╫ש╫צ╫פ ╫₧╫ó╫í╫ש╫º ╫פ╫¬╫º╫ס╫£
   hiredToEmployer   Employer?   @relation("HiredCandidates", fields: [hiredToEmployerId], references: [id])
-  inProcessPositionId String?   // 🆕 המשרה שהמועמד בתהליך בה (סטטוס "בתהליך")
-  inProcessAt     DateTime?     // 🆕 מתי נכנס לתהליך
+  inProcessPositionId String?   // ≡ƒזץ ╫פ╫₧╫⌐╫¿╫פ ╫⌐╫פ╫₧╫ץ╫ó╫₧╫ף ╫ס╫¬╫פ╫£╫ש╫ת ╫ס╫פ (╫í╫ר╫ר╫ץ╫í "╫ס╫¬╫פ╫£╫ש╫ת")
+  inProcessAt     DateTime?     // ≡ƒזץ ╫₧╫¬╫ש ╫á╫¢╫á╫í ╫£╫¬╫פ╫£╫ש╫ת
   inProcessPosition   Position? @relation("InProcessCandidates", fields: [inProcessPositionId], references: [id])
-  interviewDate   DateTime?     // 🆕 תאריך ראיון מתוכנן
-  interviewReminderSent Boolean @default(false) // 🆕 האם נשלחה תזכורת לראיון
-  uploadedById  String?         // 🆕 מי העלה את המועמד
+  interviewDate   DateTime?     // ≡ƒזץ ╫¬╫נ╫¿╫ש╫ת ╫¿╫נ╫ש╫ץ╫ƒ ╫₧╫¬╫ץ╫¢╫á╫ƒ
+  interviewReminderSent Boolean @default(false) // ≡ƒזץ ╫פ╫נ╫¥ ╫á╫⌐╫£╫ק╫פ ╫¬╫צ╫¢╫ץ╫¿╫¬ ╫£╫¿╫נ╫ש╫ץ╫ƒ
+  uploadedById  String?         // ≡ƒזץ ╫₧╫ש ╫פ╫ó╫£╫פ ╫נ╫¬ ╫פ╫₧╫ץ╫ó╫₧╫ף
   uploadedBy    User?           @relation("CandidateUploader", fields: [uploadedById], references: [id])
-  // 🆕 תקציר ידני שהמשתמש כתב (דעה אישית, נפרד מ-notes/aiProfile)
+  // ≡ƒזץ ╫¬╫º╫ª╫ש╫¿ ╫ש╫ף╫á╫ש ╫⌐╫פ╫₧╫⌐╫¬╫₧╫⌐ ╫¢╫¬╫ס (╫ף╫ó╫פ ╫נ╫ש╫⌐╫ש╫¬, ╫á╫ñ╫¿╫ף ╫₧-notes/aiProfile)
   manualSummary String?
-  manualSummaryUpdatedAt DateTime?  // 🆕 מתי התקציר הידני עודכן לאחרונה
-  // 🆕 מעקב צפייה אחרונה - מי נכנס לכרטיס המועמד ומתי
+  manualSummaryUpdatedAt DateTime?  // ≡ƒזץ ╫₧╫¬╫ש ╫פ╫¬╫º╫ª╫ש╫¿ ╫פ╫ש╫ף╫á╫ש ╫ó╫ץ╫ף╫¢╫ƒ ╫£╫נ╫ק╫¿╫ץ╫á╫פ
+  // ≡ƒזץ ╫₧╫ó╫º╫ס ╫ª╫ñ╫ש╫ש╫פ ╫נ╫ק╫¿╫ץ╫á╫פ - ╫₧╫ש ╫á╫¢╫á╫í ╫£╫¢╫¿╫ר╫ש╫í ╫פ╫₧╫ץ╫ó╫₧╫ף ╫ץ╫₧╫¬╫ש
   lastViewedAt  DateTime?
   lastViewedById String?
   lastViewedBy  User?           @relation("CandidateLastViewer", fields: [lastViewedById], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  lastWhatsAppSentAt DateTime?  // 🆕 מתי נשלח וואטסאפ אחרון
+  lastWhatsAppSentAt DateTime?  // ≡ƒזץ ╫₧╫¬╫ש ╫á╫⌐╫£╫ק ╫ץ╫ץ╫נ╫ר╫í╫נ╫ñ ╫נ╫ק╫¿╫ץ╫ƒ
   
   applications  Application[]
   tags          Tag[]
@@ -207,6 +212,7 @@ model Candidate {
   interviews    Interview[]
   candidateNotes Note[]
   whatsAppLogs  WhatsAppLog[]
+  candidateUpdates CandidateUpdate[]
 }
 
 model Application {
@@ -245,7 +251,7 @@ model Interview {
   rating        Int?          // 1-5 stars
   status        String        @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
   
-  // 📅 Google Calendar sync
+  // ≡ƒףו Google Calendar sync
   googleCalendarEventId String?
   
   application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -304,6 +310,65 @@ model Notification {
   userId        String
   
   createdAt     DateTime          @default(now())
+}
+
+model GmailMailbox {
+  id            String            @id @default(uuid())
+  email         String            @unique
+  refreshToken  String
+  active        Boolean           @default(true)
+  lastScannedAt DateTime?
+  connectedById String?
+  connectedBy   User?             @relation("GmailMailboxConnector", fields: [connectedById], references: [id], onDelete: SetNull)
+  updates       CandidateUpdate[]
+  scanLogs      GmailScanLog[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model GmailScanLog {
+  id                String       @id @default(uuid())
+  mailboxId         String
+  mailbox           GmailMailbox @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  emailsChecked     Int          @default(0)
+  proposalsCreated  Int          @default(0)
+  errorCount        Int          @default(0)
+  durationMs        Int
+  status            String
+  createdAt         DateTime     @default(now())
+
+  @@index([mailboxId, createdAt])
+}
+
+model CandidateUpdate {
+  id               String         @id @default(uuid())
+  type             String
+  status           String         @default("PENDING")
+  source           String
+  title            String
+  summary          String?
+  proposedStatus   String?
+  sourceMessageId  String?
+  sourceSender     String?
+  candidateId      String?
+  candidate        Candidate?     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  positionId       String?
+  position         Position?      @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  mailboxId        String?
+  mailbox          GmailMailbox?  @relation(fields: [mailboxId], references: [id], onDelete: SetNull)
+  uploaderId       String?
+  uploader         User?          @relation("CandidateUpdateUploader", fields: [uploaderId], references: [id], onDelete: SetNull)
+  recruiterId      String?
+  recruiter        User?          @relation("CandidateUpdateRecruiter", fields: [recruiterId], references: [id], onDelete: SetNull)
+  reviewedById     String?
+  reviewedBy       User?          @relation("CandidateUpdateReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([mailboxId, sourceMessageId, type])
+  @@index([status, createdAt])
+  @@index([candidateId])
 }
 
 model ActivityLog {
@@ -402,11 +467,11 @@ model Note {
   updatedAt     DateTime    @updatedAt
 }
 
-// � היסטוריית וואטסאפ שנשלחו למועמדים
+// ∩┐╜ ╫פ╫ש╫í╫ר╫ץ╫¿╫ש╫ש╫¬ ╫ץ╫ץ╫נ╫ר╫í╫נ╫ñ ╫⌐╫á╫⌐╫£╫ק╫ץ ╫£╫₧╫ץ╫ó╫₧╫ף╫ש╫¥
 model WhatsAppLog {
   id              String      @id @default(uuid())
   candidateId     String
-  candidateName   String      // שמור בנפרד
+  candidateName   String      // ╫⌐╫₧╫ץ╫¿ ╫ס╫á╫ñ╫¿╫ף
   candidatePhone  String
   positionId      String?
   positionTitle   String?
@@ -419,15 +484,15 @@ model WhatsAppLog {
   @@index([positionId])
 }
 
-// �📧 היסטוריית מיילים שנשלחו למעסיקים
+// ∩┐╜≡ƒףº ╫פ╫ש╫í╫ר╫ץ╫¿╫ש╫ש╫¬ ╫₧╫ש╫ש╫£╫ש╫¥ ╫⌐╫á╫⌐╫£╫ק╫ץ ╫£╫₧╫ó╫í╫ש╫º╫ש╫¥
 model EmployerEmailHistory {
   id              String      @id @default(uuid())
-  candidateId     String?     // אופציונלי - במקרה שהמועמד נמחק
-  candidateName   String      // שמור בנפרד למקרה שהמועמד נמחק
+  candidateId     String?     // ╫נ╫ץ╫ñ╫ª╫ש╫ץ╫á╫£╫ש - ╫ס╫₧╫º╫¿╫פ ╫⌐╫פ╫₧╫ץ╫ó╫₧╫ף ╫á╫₧╫ק╫º
+  candidateName   String      // ╫⌐╫₧╫ץ╫¿ ╫ס╫á╫ñ╫¿╫ף ╫£╫₧╫º╫¿╫פ ╫⌐╫פ╫₧╫ץ╫ó╫₧╫ף ╫á╫₧╫ק╫º
   positionId      String
-  positionTitle   String      // שמור בנפרד
+  positionTitle   String      // ╫⌐╫₧╫ץ╫¿ ╫ס╫á╫ñ╫¿╫ף
   employerId      String
-  employerName    String      // שמור בנפרד
+  employerName    String      // ╫⌐╫₧╫ץ╫¿ ╫ס╫á╫ñ╫¿╫ף
   employerEmail   String
   subject         String
   matchingPoints  String      // JSON array of 5 matching points

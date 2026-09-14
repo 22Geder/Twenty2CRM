@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { sendCandidateUploadEmail } from "@/lib/process-notifications"
+import { createCandidateUpdate } from "@/lib/candidate-updates"
 
 // חילוץ מהיר מקורות חיים - ללא AI (במקום analyzeResumeDeep האיטי)
 function fastExtractFromCV(text: string) {
@@ -364,6 +365,16 @@ export async function POST(request: NextRequest) {
       createdCandidate: true,
       uploadedByName: session.user?.name || session.user?.email || null,
       candidateId: candidate.id,
+    })
+
+    await createCandidateUpdate({
+      type: "CV_UPLOADED",
+      source: "CRM",
+      title: `מועמד חדש: ${candidate.name}`,
+      summary: "המועמד נוסף למערכת",
+      candidateId: candidate.id,
+      uploaderId: uploadedById,
+      resolved: true,
     })
 
     return NextResponse.json(candidate, { status: 201 })

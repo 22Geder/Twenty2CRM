@@ -8,6 +8,7 @@ import mammoth from 'mammoth';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTag } from '@/lib/recruitment-tags';
 import { sendCandidateUploadEmail } from '@/lib/process-notifications';
+import { createCandidateUpdate } from '@/lib/candidate-updates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -1665,6 +1666,16 @@ export async function POST(request: NextRequest) {
       createdCandidate,
       uploadedByName: session.user?.name || session.user?.email || null,
       candidateId,
+    })
+
+    await createCandidateUpdate({
+      type: "CV_UPLOADED",
+      source: "CRM",
+      title: createdCandidate ? `קורות חיים חדשים: ${name}` : `קורות חיים עודכנו: ${name}`,
+      summary: createdCandidate ? "המועמד נוסף מהעלאת קובץ" : "קורות החיים של מועמד קיים עודכנו",
+      candidateId,
+      uploaderId: uploadedById,
+      resolved: true,
     })
 
     return NextResponse.json({

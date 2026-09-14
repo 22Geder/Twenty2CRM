@@ -50,6 +50,7 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
   {
     label: "מייל ויומן",
     items: [
+      { name: "עדכונים לבדיקה", href: "/dashboard/candidate-updates", icon: Inbox, badge: "NEW", color: "#0891B2", commandGroup: "ניווט" },
       { name: "סורק מיילים", href: "/dashboard/email-auto-scanner", icon: RefreshCw, color: "#0EA5E9", commandGroup: "ניווט" },
       { name: "קליטת Gmail", href: "/dashboard/gmail-auto", icon: Inbox, color: "#2563EB", commandGroup: "ניווט" },
       { name: "הגדרת Gmail", href: "/dashboard/gmail-setup", icon: Settings, color: "#64748B", commandGroup: "ניווט" },

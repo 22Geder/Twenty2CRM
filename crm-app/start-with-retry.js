@@ -31,7 +31,10 @@ async function waitForDB() {
   for (let i = 1; i <= MAX_RETRIES; i++) {
     try {
       console.log(`🔄 Checking database connection... (attempt ${i}/${MAX_RETRIES})`);
-      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+      execSync('npx prisma db execute --stdin', {
+        input: 'SELECT 1;',
+        stdio: ['pipe', 'inherit', 'inherit'],
+      });
       console.log('✅ Database is ready!');
       return true;
     } catch (err) {
@@ -50,7 +53,11 @@ async function main() {
   // Step 1: Wait for database
   await waitForDB();
 
-  // Step 2: Run seed/update script (non-critical - don't crash if it fails)
+  // Step 2: Apply reviewed migrations only. Never infer or force schema changes at startup.
+  console.log('📦 Applying database migrations...');
+  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+
+  // Step 3: Run seed/update script (non-critical - don't crash if it fails)
   try {
     console.log('📦 Running update-sela-positions...');
     execSync('node prisma/update-sela-positions.js', { stdio: 'inherit' });

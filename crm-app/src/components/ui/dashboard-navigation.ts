@@ -59,6 +59,7 @@ const segmentLabels: Record<string, string> = {
   activity: "היסטוריית פעילות",
   "facebook-import": "העלאה מפייסבוק",
   "job-posting-bot": "בוט פרסום קבוצות",
+  "candidate-updates": "עדכונים לבדיקה",
   "email-auto-scanner": "סורק מיילים",
   "gmail-auto": "קליטת Gmail",
   "gmail-setup": "הגדרת Gmail",

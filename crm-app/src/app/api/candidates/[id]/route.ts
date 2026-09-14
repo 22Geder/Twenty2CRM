@@ -6,6 +6,7 @@ import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/pro
 import { resolveHiredAtForUpdate } from "@/lib/candidate-hired-dates"
 import { addHiredCandidateToTeamCalendars } from "@/lib/hired-candidate-calendar"
 import { syncCandidateInterviewToTeamCalendars } from "@/lib/candidate-interview-calendar"
+import { createCandidateUpdate } from "@/lib/candidate-updates"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -171,7 +172,7 @@ export async function PUT(
     })
 
     const resolvedInterviewDate = interviewDate ? new Date(interviewDate) : null
-    if ('interviewDate' in body && interviewDate && !Number.isFinite(resolvedInterviewDate.getTime())) {
+    if ('interviewDate' in body && interviewDate && resolvedInterviewDate && !Number.isFinite(resolvedInterviewDate.getTime())) {
       return NextResponse.json({ error: "Invalid interview date" }, { status: 400 })
     }
 
@@ -383,6 +384,32 @@ export async function PUT(
         newStatus: 'WITHDRAWN',
         oldStatus: 'IN_PROCESS',
         candidateId: candidate.id,
+      })
+    }
+
+    if (
+      'employmentStatus' in body &&
+      employmentStatus !== existingCandidate.employmentStatus
+    ) {
+      const positionId = existingCandidate.inProcessPositionId || candidate.inProcessPositionId
+      const position = positionId
+        ? await prisma.position.findUnique({ where: { id: positionId }, select: { recruiterId: true } })
+        : null
+      const statusLabels: Record<string, string> = {
+        EMPLOYED: "התקבל",
+        REJECTED: "נדחה",
+        IN_PROCESS: "בתהליך",
+      }
+      await createCandidateUpdate({
+        type: "STATUS_CHANGED",
+        source: "CRM",
+        title: `${candidate.name}: ${statusLabels[employmentStatus] || "חדש"}`,
+        summary: `הסטטוס עודכן על ידי ${session.user?.name || session.user?.email || "משתמש"}`,
+        candidateId: candidate.id,
+        positionId,
+        uploaderId: candidate.uploadedById,
+        recruiterId: position?.recruiterId || null,
+        resolved: true,
       })
     }
 

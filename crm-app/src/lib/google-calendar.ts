@@ -59,6 +59,91 @@ export interface CalendarEventInput {
   organizerEmail: string
 }
 
+export interface AllDayCalendarEventInput {
+  title: string
+  description?: string
+  date: Date
+  attendeeEmails?: string[]
+}
+
+export interface CalendarListEvent {
+  id: string
+  title: string
+  start: string
+  end: string
+  allDay: boolean
+}
+
+function toCalendarDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jerusalem",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date)
+}
+
+/** Create an all-day event, used for candidates marked as hired. */
+export async function createAllDayCalendarEvent(
+  refreshToken: string,
+  input: AllDayCalendarEventInput
+): Promise<string> {
+  const auth = createOAuth2Client(refreshToken)
+  const calendar = google.calendar({ version: "v3", auth })
+  const startDate = toCalendarDate(input.date)
+  const endDate = new Date(`${startDate}T12:00:00+03:00`)
+  endDate.setDate(endDate.getDate() + 1)
+
+  const event = await calendar.events.insert({
+    calendarId: "primary",
+    sendUpdates: input.attendeeEmails?.length ? "all" : "none",
+    requestBody: {
+      summary: input.title,
+      description: input.description,
+      start: { date: startDate },
+      end: { date: toCalendarDate(endDate) },
+      attendees: input.attendeeEmails?.map(email => ({ email })),
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: "popup", minutes: 9 * 60 }],
+      },
+    },
+  })
+
+  return event.data.id!
+}
+
+/** List events for an authenticated calendar without exposing OAuth credentials. */
+export async function listCalendarEvents(
+  refreshToken: string,
+  timeMin: Date,
+  timeMax: Date
+): Promise<CalendarListEvent[]> {
+  const auth = createOAuth2Client(refreshToken)
+  const calendar = google.calendar({ version: "v3", auth })
+  const response = await calendar.events.list({
+    calendarId: "primary",
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    singleEvents: true,
+    orderBy: "startTime",
+    maxResults: 250,
+  })
+
+  return (response.data.items || []).flatMap(event => {
+    const start = event.start?.dateTime || event.start?.date
+    const end = event.end?.dateTime || event.end?.date
+    if (!event.id || !start || !end || event.status === "cancelled") return []
+    return [{
+      id: event.id,
+      title: event.summary || "ללא כותרת",
+      start,
+      end,
+      allDay: Boolean(event.start?.date),
+    }]
+  })
+}
+
 /** Create a Google Calendar event and return the event ID */
 export async function createCalendarEvent(
   refreshToken: string,

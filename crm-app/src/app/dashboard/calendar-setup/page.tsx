@@ -12,6 +12,7 @@ import {
   Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { TeamCalendarView } from "@/components/team-calendar-view"
 
 export default function CalendarSetupPage() {
   const searchParams  = useSearchParams()
@@ -61,7 +62,7 @@ export default function CalendarSetupPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto" dir="rtl">
+    <div className="p-6 max-w-6xl mx-auto" dir="rtl">
       <div className="flex items-center gap-3 mb-6">
         <CalendarCheck className="h-7 w-7 text-blue-500" />
         <h1 className="text-2xl font-black text-slate-800">הגדרת Google Calendar</h1>
@@ -196,6 +197,10 @@ export default function CalendarSetupPage() {
           </li>
           <li>אם האפליקציה ב-Testing mode, הוסף את המשתמשים ל-Test Users</li>
         </ol>
+      </div>
+
+      <div className="mt-6">
+        <TeamCalendarView />
       </div>
     </div>
   )

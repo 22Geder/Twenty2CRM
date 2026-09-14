@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
 import { resolveHiredAtForUpdate } from "@/lib/candidate-hired-dates"
+import { addHiredCandidateToTeamCalendars } from "@/lib/hired-candidate-calendar"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -313,6 +314,16 @@ export async function PUT(
         oldStatus: existingCandidate.employmentStatus,
         candidateId: candidate.id,
       })
+
+      if (employmentStatus === 'EMPLOYED') {
+        await addHiredCandidateToTeamCalendars({
+          candidateId: candidate.id,
+          candidateName: candidate.name,
+          hiredAt: candidate.hiredAt || new Date(),
+          positionTitle: posTitle,
+          employerName: empName,
+        })
+      }
     }
 
     // 📧 מועמד ירד מתהליך (חזרה לחדש - ללא דחייה רשמית)

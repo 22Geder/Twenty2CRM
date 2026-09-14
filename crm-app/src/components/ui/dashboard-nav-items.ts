@@ -54,7 +54,7 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
       { name: "קליטת Gmail", href: "/dashboard/gmail-auto", icon: Inbox, color: "#2563EB", commandGroup: "ניווט" },
       { name: "הגדרת Gmail", href: "/dashboard/gmail-setup", icon: Settings, color: "#64748B", commandGroup: "ניווט" },
       { name: "מיילים אוטומטיים", href: "/dashboard/email-auto", icon: Mail, color: "#F97316", commandGroup: "ניווט" },
-      { name: "חיבור יומן", href: "/dashboard/calendar-setup", icon: CalendarClock, color: "#3B82F6", commandGroup: "ניווט" },
+      { name: "יומן Google", href: "/dashboard/calendar-setup", icon: CalendarClock, color: "#3B82F6", commandGroup: "ניווט" },
     ],
   },
   {

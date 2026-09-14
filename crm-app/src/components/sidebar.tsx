@@ -1,62 +1,33 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { motion } from "framer-motion"
 import { StarryBg } from "@/components/starry-bg"
+import { getActiveNavigationHref } from "@/components/ui/dashboard-navigation"
+import { dashboardNavGroups, type DashboardNavItem } from "@/components/ui/dashboard-nav-items"
 import { 
-  LayoutDashboard, Users, Briefcase, Building2, Calendar, 
-  Settings, FileText, Upload, Sparkles, TrendingUp, Clock,
-  ChevronLeft, ChevronRight, LogOut, Shield
+  Clock, ChevronLeft, ChevronRight, LogOut, Shield
 } from "lucide-react"
 
-type NavItem = {
-  name: string
-  href: string
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
-  exact?: boolean
-  badge?: string
-  color?: string
-}
+type NavItem = DashboardNavItem
 
-const navGroups: { label: string; items: NavItem[] }[] = [
-  {
-    label: "ניהול",
-    items: [
-      { name: "לוח בקרה",      href: "/dashboard",                    icon: LayoutDashboard, exact: true, color: "#06B6D4" },
-      { name: "מועמדים",        href: "/dashboard/candidates",         icon: Users,           color: "#8B5CF6" },
-      { name: "משרות",          href: "/dashboard/positions",          icon: Briefcase,       color: "#F97316" },
-      { name: "מעסיקים",        href: "/dashboard/employers",          icon: Building2,       color: "#10B981" },
-      { name: "ראיונות",        href: "/dashboard/interviews",         icon: Calendar,        color: "#3B82F6" },
-    ]
-  },
-  {
-    label: "כלים",
-    items: [
-      { name: "הכנסת מועמד",    href: "/dashboard/recruitment-board",  icon: Sparkles,        badge: "AI",  color: "#F97316" },
-      { name: "העלאה המונית",   href: "/dashboard/upload",             icon: Upload,          color: "#06B6D4" },
-      { name: "משרות המוניות",  href: "/dashboard/positions/bulk-upload", icon: Briefcase,      badge: "AI", color: "#F97316" },
-      { name: "סטטוס חודשי",    href: "/dashboard/monthly-status",     icon: TrendingUp,      badge: "NEW", color: "#10B981" },
-      { name: "שעון נוכחות",    href: "/dashboard/attendance",         icon: Clock,           color: "#A78BFA" },
-      { name: "פנקס רישום",     href: "/dashboard/system-registry",    icon: FileText,        color: "#34D399" },
-    ]
-  },
-  {
-    label: "מערכת",
-    items: [
-      { name: "הגדרות",         href: "/dashboard/settings",           icon: Settings,        color: "#94A3B8" },
-    ]
-  }
-]
+const sidebarFocusClass = "focus-visible:[outline:2px_solid_#22D3EE]! focus-visible:outline-offset-2"
+
+const navGroups = dashboardNavGroups
 
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [collapsed, setCollapsed] = useState(false)
   const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null)
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState(false)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const focusToggleAfterRender = useRef(false)
   // רוחב הסרגל כשפתוח: נשאר 250px במסכים תקניים (רוחב ≥1500),
   // ומתכווץ אוטומטית במסכים/טלוויזיות ברזולוציה נמוכה כדי לא לבלוע את התוכן
   const [expandedWidth, setExpandedWidth] = useState(250)
@@ -70,6 +41,34 @@ export function Sidebar() {
     window.addEventListener("resize", update)
     return () => window.removeEventListener("resize", update)
   }, [])
+
+  useEffect(() => {
+    if (focusToggleAfterRender.current) {
+      toggleRef.current?.focus()
+      focusToggleAfterRender.current = false
+    }
+  }, [collapsed])
+
+  function toggleSidebar() {
+    // כפתור הפתיחה מחליף מיקום בקיפול; המיקוד נשאר בכפתור החדש.
+    focusToggleAfterRender.current = true
+    setTooltip(null)
+    setCollapsed((value) => !value)
+  }
+
+  async function handleSignOut() {
+    if (signingOut) return
+    setSigningOut(true)
+    setSignOutError(false)
+    try {
+      await signOut({ callbackUrl: "/login" })
+    } catch {
+      console.error("Sidebar sign out failed")
+      setSignOutError(true)
+    } finally {
+      setSigningOut(false)
+    }
+  }
   
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || 'משתמש'
@@ -82,14 +81,17 @@ export function Sidebar() {
     ...(isAdmin ? [{
       label: "אדמין",
       items: [
-        { name: "ניהול אדמין", href: "/dashboard/admin", icon: Shield, color: "#EF4444", exact: true } as NavItem,
+        { name: "ניהול אדמין", href: "/dashboard/admin", icon: Shield, color: "#EF4444" } as NavItem,
+        { name: "דוח שעות", href: "/dashboard/admin/hours-report", icon: Clock, color: "#6366F1" } as NavItem,
       ]
     }] : [])
   ]
+  const activeHref = getActiveNavigationHref(pathname, dynamicNavGroups.flatMap((group) => group.items))
 
   return (
     <motion.aside
       dir="rtl"
+      aria-label="סרגל צד"
       initial={false}
       animate={{ width: collapsed ? 70 : expandedWidth }}
       transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
@@ -117,7 +119,7 @@ export function Sidebar() {
       <div className={`flex items-center h-20 px-4 border-b border-white/[0.06] flex-shrink-0 relative z-10
         ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center gap-3 group">
+          <Link href="/dashboard" aria-label="Twenty2CRM — לוח בקרה" className={`flex items-center gap-3 group rounded-lg ${sidebarFocusClass}`}>
             <div className="relative w-12 h-12 flex-shrink-0">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
                 <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
@@ -132,7 +134,7 @@ export function Sidebar() {
             </div>
           </Link>
         ) : (
-          <Link href="/dashboard">
+          <Link href="/dashboard" aria-label="Twenty2CRM — לוח בקרה" className={`rounded-full ${sidebarFocusClass}`}>
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all overflow-hidden p-0.5">
               <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
             </div>
@@ -140,20 +142,31 @@ export function Sidebar() {
         )}
         {!collapsed && (
           <button
-            onClick={() => setCollapsed(true)}
-            className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-white/8 transition-all border border-white/5 hover:border-white/10"
+            ref={toggleRef}
+            type="button"
+            onClick={toggleSidebar}
+            aria-label="כווץ את סרגל הניווט"
+            title="כווץ את סרגל הניווט"
+            aria-expanded={!collapsed}
+            aria-controls="dashboard-sidebar-navigation"
+            className={`w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/8 transition-all border border-white/5 hover:border-white/10 ${sidebarFocusClass}`}
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         )}
       </div>
 
       {/* Nav Groups */}
-      <nav className="flex-shrink min-h-0 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none relative z-10">
+      <nav
+        id="dashboard-sidebar-navigation"
+        aria-label="ניווט ראשי"
+        onScroll={() => setTooltip(null)}
+        className="flex-shrink min-h-0 overflow-y-auto py-5 space-y-6 px-3 scrollbar-none relative z-10"
+      >
         {dynamicNavGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-2 mb-2 flex items-center gap-2">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-2 mb-2 flex items-center gap-2">
                 <div className="h-px flex-1 bg-white/5" />
                 <span>{group.label}</span>
                 <div className="h-px flex-1 bg-white/5" />
@@ -164,13 +177,28 @@ export function Sidebar() {
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon
-                const isActive = item.exact
-                  ? pathname === item.href
-                  : pathname === item.href || pathname?.startsWith(item.href + '/')
+                const isActive = activeHref === item.href
                 const color = item.color || '#06B6D4'
 
                 return (
-                  <Link key={item.href} href={item.href}>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-label={item.name}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`block rounded-xl ${sidebarFocusClass}`}
+                    onFocus={(e) => {
+                      if (collapsed) {
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        setTooltip({ text: item.name, top: rect.top + rect.height / 2 })
+                      }
+                    }}
+                    onBlur={() => setTooltip(null)}
+                    onClick={() => setTooltip(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setTooltip(null)
+                    }}
+                  >
                     <div
                       className={`flex items-center gap-3 px-2.5 py-2.5 rounded-xl transition-all duration-200 group/item relative overflow-hidden
                         ${collapsed ? 'justify-center' : ''}
@@ -207,6 +235,7 @@ export function Sidebar() {
 
                       {/* Icon box */}
                       <div
+                        aria-hidden="true"
                         className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200"
                         style={isActive
                           ? { background: `${color}22`, boxShadow: `0 4px 12px ${color}25` }
@@ -215,7 +244,7 @@ export function Sidebar() {
                       >
                         <Icon
                           className="h-[17px] w-[17px] transition-colors"
-                          style={{ color: isActive ? color : '#7B879B' }}
+                          style={{ color: isActive ? color : '#94A3B8' }}
                         />
                       </div>
 
@@ -231,8 +260,8 @@ export function Sidebar() {
                             <span
                               className="text-[10px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-wide"
                               style={item.badge === 'AI'
-                                ? { background: '#F97316', color: 'white' }
-                                : { background: '#10B981', color: 'white' }
+                                ? { background: '#F97316', color: '#0F172A' }
+                                : { background: '#10B981', color: '#0F172A' }
                               }
                             >
                               {item.badge}
@@ -265,19 +294,31 @@ export function Sidebar() {
       {/* Expand button when collapsed */}
       {collapsed && (
         <button
-          onClick={() => setCollapsed(false)}
-          className="mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-600 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5 relative z-10"
-          title="הרחב"
+          ref={toggleRef}
+          type="button"
+          onClick={toggleSidebar}
+          aria-label="הרחב את סרגל הניווט"
+          aria-expanded={!collapsed}
+          aria-controls="dashboard-sidebar-navigation"
+          className={`mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5 relative z-10 ${sidebarFocusClass}`}
+          title="הרחב את סרגל הניווט"
         >
-          <ChevronLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       )}
 
       {/* User Section */}
       <div className="border-t border-white/[0.06] p-3 flex-shrink-0 relative z-10">
-        <div
-          className={`flex items-center gap-3 rounded-xl p-2.5 transition-all cursor-pointer group
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          aria-busy={signingOut}
+          aria-label={signingOut ? "מתנתק..." : `התנתקות מהחשבון של ${firstName}`}
+          title={signOutError ? "ההתנתקות נכשלה. נסו שוב." : "התנתקות"}
+          className={`w-full flex items-center gap-3 rounded-xl p-2.5 text-right transition-all cursor-pointer group
             hover:bg-white/[0.04] border border-transparent hover:border-white/5
+            disabled:cursor-wait disabled:opacity-60 ${sidebarFocusClass}
             ${collapsed ? 'justify-center' : ''}`}
         >
           {/* Avatar */}
@@ -294,15 +335,21 @@ export function Sidebar() {
             </div>
           )}
           {!collapsed && (
-            <LogOut className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400 flex-shrink-0 transition-colors" />
+            <LogOut className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-200 flex-shrink-0 transition-colors" aria-hidden="true" />
           )}
-        </div>
+        </button>
+        {signOutError && (
+          <p role="alert" className={collapsed ? "sr-only" : "mt-2 px-2 text-xs text-red-300"}>
+            ההתנתקות נכשלה. נסו שוב.
+          </p>
+        )}
       </div>
 
       {/* Tooltip מרחף - מוצג בעת ריחוף על כפתור כשהסרגל סגור */}
       {collapsed && tooltip && (
         <div
           dir="rtl"
+          aria-hidden="true"
           className="fixed z-[60] pointer-events-none -translate-y-1/2 px-3 py-1.5 rounded-lg
             text-[13.5px] font-semibold text-white whitespace-nowrap
             shadow-[0_8px_24px_rgba(0,0,0,0.45)] border border-white/10"

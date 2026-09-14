@@ -103,7 +103,7 @@ export default function FacebookJobImportPage() {
           </h1>
         </div>
         <p className="text-gray-600 text-xl">
-          העתק את המשרות שפרסמת בפייסבוק והעלה אותן לCRM
+          העתקה ידנית ל-CRM בלבד. אין חיבור שמפרסם לקיר או לקבוצות בפייסבוק.
         </p>
       </div>
 

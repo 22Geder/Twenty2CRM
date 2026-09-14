@@ -3,25 +3,28 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Search, Users, Briefcase, Building2, Calendar,
-  Upload, TrendingUp, Clock, Settings, FileText,
-  UserPlus, LayoutDashboard, Sparkles, X, ArrowLeft
+  Search, X, ArrowLeft, Shield, Printer
 } from "lucide-react"
 import Link from "next/link"
+import { dashboardCommandExtras, dashboardNavItems } from "@/components/ui/dashboard-nav-items"
 
 const commands = [
-  { group: "ניווט", label: "לוח בקרה", href: "/dashboard", icon: LayoutDashboard, shortcut: "G H" },
-  { group: "ניווט", label: "מועמדים", href: "/dashboard/candidates", icon: Users, shortcut: "G C" },
-  { group: "ניווט", label: "משרות", href: "/dashboard/positions", icon: Briefcase, shortcut: "G P" },
-  { group: "ניווט", label: "מעסיקים", href: "/dashboard/employers", icon: Building2 },
-  { group: "ניווט", label: "ראיונות", href: "/dashboard/interviews", icon: Calendar },
-  { group: "ניווט", label: "סטטוס חודשי", href: "/dashboard/monthly-status", icon: TrendingUp },
-  { group: "ניווט", label: "שעון נוכחות", href: "/dashboard/attendance", icon: Clock },
-  { group: "ניווט", label: "הגדרות", href: "/dashboard/settings", icon: Settings },
-  { group: "פעולות", label: "הכנסת מועמד חדש", href: "/dashboard/recruitment-board", icon: Sparkles, shortcut: "N C" },
-  { group: "פעולות", label: "הוספת משרה חדשה", href: "/dashboard/positions/new", icon: UserPlus, shortcut: "N P" },
-  { group: "פעולות", label: "העלאה המונית", href: "/dashboard/upload", icon: Upload },
-  { group: "פעולות", label: "פנקס רישום", href: "/dashboard/system-registry", icon: FileText },
+  ...dashboardNavItems.map((item) => ({
+    group: item.commandGroup,
+    label: item.name,
+    href: item.href,
+    icon: item.icon,
+    shortcut: item.shortcut,
+  })),
+  ...dashboardCommandExtras.map((item) => ({
+    group: item.commandGroup,
+    label: item.name,
+    href: item.href,
+    icon: item.icon,
+    shortcut: item.shortcut,
+  })),
+  { group: "אדמין", label: "ניהול אדמין", href: "/dashboard/admin", icon: Shield },
+  { group: "אדמין", label: "דוח שעות להדפסה", href: "/dashboard/admin/hours-report", icon: Printer },
 ]
 
 interface CommandPaletteProps {

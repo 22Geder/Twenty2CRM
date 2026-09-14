@@ -133,15 +133,10 @@ export default function JobPostingBotPage() {
     }
 
     setIsPosting(true)
-    
-    // כאן יהיה הקוד לשליחה לקבוצות
     setTimeout(() => {
-      alert(`המשרה נשלחה ל-${selectedGroups.length} קבוצות בהצלחה!`)
+      alert("פרסום לקבוצות לא פעיל. פייסבוק חסמה פרסום לקבוצות ב-API, והמסך הזה לא שולח הודעות באמת.")
       setIsPosting(false)
-      setSelectedGroups([])
-      setJobTitle("")
-      setJobDescription("")
-    }, 2000)
+    }, 400)
   }
 
   const selectAllCityGroups = () => {
@@ -157,7 +152,7 @@ export default function JobPostingBotPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">בוט פרסום משרות</h1>
           <p className="text-gray-600">
-            פרסם משרות בקבוצות אמיתיות בערים בישראל
+            מסך תצוגה בלבד. פרסום לקבוצות פייסבוק / וואטסאפ / טלגרם לא פעיל.
           </p>
         </div>
         <div className="flex gap-3">

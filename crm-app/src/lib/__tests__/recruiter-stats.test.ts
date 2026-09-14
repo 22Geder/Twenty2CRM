@@ -13,10 +13,8 @@ describe('canSeeAllRecruiters', () => {
 })
 
 describe('recruiterStatsUserWhere', () => {
-  it('מסנן למגייסים/מנהלים כשרואים הכל', () => {
-    expect(recruiterStatsUserWhere('user-1', true)).toEqual({
-      role: { in: ['ADMIN', 'RECRUITER', 'MANAGER'] },
-    })
+  it('שולף את כל המשתמשים כשרואים הכל, בלי סינון תפקיד', () => {
+    expect(recruiterStatsUserWhere('user-1', true)).toEqual({})
   })
 
   it('מסנן למשתמש המחובר כשלא רואים הכל', () => {

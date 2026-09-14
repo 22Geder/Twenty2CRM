@@ -8,7 +8,6 @@ describe("dashboardNavItems", () => {
       "/dashboard",
       "/dashboard/candidates",
       "/dashboard/hired",
-      "/dashboard/kanban",
       "/dashboard/positions",
       "/dashboard/employers",
       "/dashboard/interviews",
@@ -21,20 +20,11 @@ describe("dashboardNavItems", () => {
       "/dashboard/share-agent",
       "/dashboard/attendance",
       "/dashboard/system-registry",
-      "/dashboard/reports",
-      "/dashboard/activity",
-      "/dashboard/templates",
-      "/dashboard/reminders",
-      "/dashboard/tasks",
-      "/dashboard/messages",
       "/dashboard/email-auto-scanner",
       "/dashboard/gmail-auto",
       "/dashboard/gmail-setup",
       "/dashboard/email-auto",
       "/dashboard/calendar-setup",
-      "/dashboard/facebook-import",
-      "/dashboard/job-posting-bot",
-      "/dashboard/smart-matching",
       "/dashboard/settings",
       "/dashboard/backup-rescue",
     ]))
@@ -45,13 +35,27 @@ describe("dashboardNavItems", () => {
     expect(new Set(hrefs).size).toBe(hrefs.length)
   })
 
+  it("מסתיר פייפליין, מעקב ופרסום-AI מהסרגל", () => {
+    const hrefs = dashboardNavItems.map((item) => item.href)
+    expect(hrefs).not.toEqual(expect.arrayContaining([
+      "/dashboard/kanban",
+      "/dashboard/reports",
+      "/dashboard/activity",
+      "/dashboard/templates",
+      "/dashboard/reminders",
+      "/dashboard/tasks",
+      "/dashboard/messages",
+      "/dashboard/facebook-import",
+      "/dashboard/job-posting-bot",
+      "/dashboard/smart-matching",
+    ]))
+  })
+
   it("מחלק לקבוצות עם תוויות בעברית", () => {
     expect(dashboardNavGroups.map((group) => group.label)).toEqual([
       "ניהול",
       "כלים",
-      "מעקב",
       "מייל ויומן",
-      "פרסום ו-AI",
       "מערכת",
     ])
   })

@@ -1,9 +1,8 @@
 import type { LucideIcon } from "lucide-react"
 import {
   LayoutDashboard, Users, Briefcase, Building2, Calendar, Settings, FileText,
-  Upload, Sparkles, TrendingUp, Clock, UserCheck, KanbanSquare, Send, History,
-  FileEdit, Bell, Facebook, RefreshCw, Inbox, Mail, Brain, CheckSquare,
-  MessageSquare, Database, CalendarClock, UserPlus,
+  Upload, Sparkles, TrendingUp, Clock, UserCheck, Send,
+  RefreshCw, Inbox, Mail, MessageSquare, Database, CalendarClock, UserPlus,
 } from "lucide-react"
 
 export type DashboardNavItem = {
@@ -29,7 +28,6 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
       { name: "לוח בקרה", href: "/dashboard", icon: LayoutDashboard, exact: true, color: "#06B6D4", commandGroup: "ניווט", shortcut: "G H" },
       { name: "מועמדים", href: "/dashboard/candidates", icon: Users, color: "#8B5CF6", commandGroup: "ניווט", shortcut: "G C" },
       { name: "מועמדים שגויסו", href: "/dashboard/hired", icon: UserCheck, color: "#10B981", commandGroup: "ניווט" },
-      { name: "פייפליין Kanban", href: "/dashboard/kanban", icon: KanbanSquare, color: "#6366F1", commandGroup: "ניווט" },
       { name: "משרות", href: "/dashboard/positions", icon: Briefcase, color: "#F97316", commandGroup: "ניווט", shortcut: "G P" },
       { name: "מעסיקים", href: "/dashboard/employers", icon: Building2, color: "#10B981", commandGroup: "ניווט" },
       { name: "ראיונות", href: "/dashboard/interviews", icon: Calendar, color: "#3B82F6", commandGroup: "ניווט" },
@@ -50,17 +48,6 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
     ],
   },
   {
-    label: "מעקב",
-    items: [
-      { name: "דוחות", href: "/dashboard/reports", icon: FileText, color: "#3B82F6", commandGroup: "ניווט" },
-      { name: "היסטוריית פעילות", href: "/dashboard/activity", icon: History, color: "#64748B", commandGroup: "ניווט" },
-      { name: "תבניות הודעות", href: "/dashboard/templates", icon: FileEdit, color: "#8B5CF6", commandGroup: "ניווט" },
-      { name: "תזכורות", href: "/dashboard/reminders", icon: Bell, color: "#F59E0B", commandGroup: "ניווט" },
-      { name: "משימות", href: "/dashboard/tasks", icon: CheckSquare, color: "#10B981", commandGroup: "ניווט" },
-      { name: "הודעות", href: "/dashboard/messages", icon: MessageSquare, color: "#06B6D4", commandGroup: "ניווט" },
-    ],
-  },
-  {
     label: "מייל ויומן",
     items: [
       { name: "סורק מיילים", href: "/dashboard/email-auto-scanner", icon: RefreshCw, color: "#0EA5E9", commandGroup: "ניווט" },
@@ -68,14 +55,6 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
       { name: "הגדרת Gmail", href: "/dashboard/gmail-setup", icon: Settings, color: "#64748B", commandGroup: "ניווט" },
       { name: "מיילים אוטומטיים", href: "/dashboard/email-auto", icon: Mail, color: "#F97316", commandGroup: "ניווט" },
       { name: "חיבור יומן", href: "/dashboard/calendar-setup", icon: CalendarClock, color: "#3B82F6", commandGroup: "ניווט" },
-    ],
-  },
-  {
-    label: "פרסום ו-AI",
-    items: [
-      { name: "העלאה מפייסבוק", href: "/dashboard/facebook-import", icon: Facebook, color: "#1877F2", commandGroup: "ניווט" },
-      { name: "בוט פרסום קבוצות", href: "/dashboard/job-posting-bot", icon: Send, badge: "דמה", color: "#2563EB", commandGroup: "ניווט" },
-      { name: "התאמה חכמה", href: "/dashboard/smart-matching", icon: Brain, color: "#A855F7", commandGroup: "ניווט" },
     ],
   },
   {

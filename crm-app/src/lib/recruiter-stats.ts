@@ -1,5 +1,4 @@
 const ADMIN_EMAIL = 'office@hr22group.com'
-const RECRUITER_ROLES = ['ADMIN', 'RECRUITER', 'MANAGER'] as const
 
 export function canSeeAllRecruiters(user: {
   role?: string | null
@@ -11,9 +10,10 @@ export function canSeeAllRecruiters(user: {
 export function recruiterStatsUserWhere(
   currentUserId: string,
   seeAll: boolean
-): { id: string } | { role: { in: string[] } } {
+): { id: string } | Record<string, never> {
   if (seeAll) {
-    return { role: { in: [...RECRUITER_ROLES] } }
+    // כל המשתמשים — גם אם התפקיד לא RECRUITER (ליאל/אבירן/ספיר/רוני וכו')
+    return {}
   }
   return { id: currentUserId }
 }

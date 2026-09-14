@@ -59,6 +59,7 @@ export default function CalendarSetupPage() {
     unauthorized: "אין הרשאה — נסה להתחבר מחדש",
     no_code:      "לא התקבל קוד אימות מגוגל",
     oauth_failed: "אימות OAuth נכשל — בדוק את הגדרות Google Cloud Console",
+    oauth_config: "חיבור Google עדיין לא הוגדר בשרת",
   }
 
   return (

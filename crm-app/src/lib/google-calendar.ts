@@ -12,6 +12,17 @@ export function isCalendarOAuthConfigured(): boolean {
   return Boolean(readServerEnv("GMAIL_CLIENT_ID") && readServerEnv("GMAIL_CLIENT_SECRET"))
 }
 
+export function getCalendarAppOrigin(): string | undefined {
+  const configuredUrl = readServerEnv("GOOGLE_CALENDAR_REDIRECT_URI") || readServerEnv("NEXTAUTH_URL")
+  if (!configuredUrl) return undefined
+
+  try {
+    return new URL(configuredUrl).origin
+  } catch {
+    return undefined
+  }
+}
+
 function getOAuthConfig() {
   const clientId = readServerEnv("GMAIL_CLIENT_ID")
   const clientSecret = readServerEnv("GMAIL_CLIENT_SECRET")

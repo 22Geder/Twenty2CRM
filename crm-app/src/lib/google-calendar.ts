@@ -100,6 +100,12 @@ export interface CalendarListEvent {
   start: string
   end: string
   allDay: boolean
+  location?: string
+  description?: string
+  meetingUrl?: string
+  htmlLink?: string
+  colorId?: string
+  attendeeEmails?: string[]
 }
 
 export interface TaggedCalendarEventInput extends CalendarEventInput {
@@ -172,6 +178,15 @@ export async function listCalendarEvents(
       start,
       end,
       allDay: Boolean(event.start?.date),
+      location: event.location || undefined,
+      description: event.description || undefined,
+      meetingUrl: event.hangoutLink || event.conferenceData?.entryPoints
+        ?.find(entryPoint => entryPoint.entryPointType === "video")?.uri || undefined,
+      htmlLink: event.htmlLink || undefined,
+      colorId: event.colorId || undefined,
+      attendeeEmails: event.attendees
+        ?.map(attendee => attendee.email)
+        .filter((email): email is string => Boolean(email)),
     }]
   })
 }

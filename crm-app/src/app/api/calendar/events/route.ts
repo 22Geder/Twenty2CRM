@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { listCalendarEvents } from "@/lib/google-calendar"
+import { getCalendarEventCrmLinks } from "@/lib/calendar-event-crm-link"
+import { CalendarListEvent, listCalendarEvents } from "@/lib/google-calendar"
 import { HIRING_CALENDAR_EMAILS } from "@/lib/hired-candidate-calendar"
 import { canSeeAllRecruiters } from "@/lib/recruiter-stats"
 import { prisma } from "@/lib/prisma"
@@ -53,12 +54,7 @@ export async function GET(request: NextRequest) {
       events: await listCalendarEvents(user.googleCalendarRefreshToken!, from, to),
     })))
 
-    const merged = new Map<string, {
-      id: string
-      title: string
-      start: string
-      end: string
-      allDay: boolean
+    const merged = new Map<string, CalendarListEvent & {
       calendarEmails: string[]
     }>()
 
@@ -75,8 +71,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const mergedEvents = [...merged.values()]
+    const interviewLinks = await getCalendarEventCrmLinks(mergedEvents.map(event => event.id))
+
     return NextResponse.json({
-      events: [...merged.values()],
+      events: mergedEvents.map(event => ({
+        ...event,
+        interview: interviewLinks.get(event.id) || null,
+      })),
       connectedCalendars: calendars.map(user => user.googleCalendarEmail),
     })
   } catch (error) {

@@ -46,6 +46,22 @@ async function waitForDB() {
   process.exit(1);
 }
 
+function deployMigrations() {
+  console.log('📦 Applying database migrations...');
+  try {
+    const output = execSync('npx prisma migrate deploy', { encoding: 'utf8' });
+    process.stdout.write(output);
+  } catch (err) {
+    const output = `${err.stdout || ''}${err.stderr || ''}`;
+    process.stdout.write(output);
+    if (!output.includes('P3005')) throw err;
+
+    console.log('📦 Existing schema detected; recording the reviewed baseline...');
+    execSync('npx prisma migrate resolve --applied 20260914000000_baseline', { stdio: 'inherit' });
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  }
+}
+
 async function main() {
   // Write env vars for Next.js
   writeEnvLocal();
@@ -54,8 +70,7 @@ async function main() {
   await waitForDB();
 
   // Step 2: Apply reviewed migrations only. Never infer or force schema changes at startup.
-  console.log('📦 Applying database migrations...');
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  deployMigrations();
 
   // Step 3: Run seed/update script (non-critical - don't crash if it fails)
   try {

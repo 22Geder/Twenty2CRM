@@ -8,6 +8,7 @@ import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { UrgentCandidatesAlert } from "@/components/urgent-candidates-alert"
 import { DashboardTabs } from "@/components/dashboard-tabs"
 import { CANDIDATE_HIRED_WHERE, CANDIDATE_REJECTED_WHERE, CANDIDATE_IN_PROCESS_WHERE } from "@/lib/candidate-status"
+import { canSeeAllRecruiters, recruiterStatsUserWhere } from "@/lib/recruiter-stats"
 
 async function getDashboardStats() {
   const now = new Date()
@@ -242,11 +243,11 @@ async function getUntreatedInProcessCandidates() {
 }
 
 // 🎯 סטטיסטיקת מגייסים — כמה העלה, כמה בתהליך, כמה התקבלו.
-// שיוך לפי uploadedById (מי שהעלה את המועמד). תמיד רק המשתמש המחובר, גם לאדמין.
-async function getRecruiterStats(currentUserId: string) {
+// שיוך לפי uploadedById. מגייס רואה רק את עצמו; אדמין/office רואים את כולם.
+async function getRecruiterStats(currentUserId: string, seeAll: boolean) {
   const [users, uploadedGroups, inProcessGroups, hiredGroups, rejectedGroups] = await Promise.all([
     prisma.user.findMany({
-      where: { id: currentUserId },
+      where: recruiterStatsUserWhere(currentUserId, seeAll),
       select: { id: true, name: true, avatar: true, role: true },
     }),
     prisma.candidate.groupBy({
@@ -297,6 +298,10 @@ export default async function CiviDashboardPage() {
   if (!session) { redirect("/login") }
 
   const currentUserId = (session.user as any)?.id as string
+  const seeAllRecruiters = canSeeAllRecruiters({
+    role: (session.user as any)?.role,
+    email: session.user?.email,
+  })
 
   const [
     stats, recentPositions, upcomingTasks, candidateSources,
@@ -305,7 +310,7 @@ export default async function CiviDashboardPage() {
   ] = await Promise.all([
     getDashboardStats(), getRecentPositions(), getUpcomingTasks(), getCandidateSources(),
     getCandidatesInProcess(), getRejectedCandidates(), getHiredCandidates(), getUntreatedInProcessCandidates(),
-    getRecruiterStats(currentUserId),
+    getRecruiterStats(currentUserId, seeAllRecruiters),
   ])
 
   const totalInProcess = stats.inProcess || 1
@@ -601,9 +606,13 @@ export default async function CiviDashboardPage() {
                     <Target className="h-4 w-4 text-indigo-500" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800">הביצועים שלי</div>
+                    <div className="font-bold text-slate-800">
+                      {seeAllRecruiters ? 'ביצועי מגייסים' : 'הביצועים שלי'}
+                    </div>
                     <div className="text-xs text-slate-400">
-                      כאן אתה רואה איפה אתה עומד
+                      {seeAllRecruiters
+                        ? 'כל המגייסים במערכת — העלאות, תהליך וקבלה'
+                        : 'כאן אתה רואה איפה אתה עומד'}
                     </div>
                   </div>
                 </div>

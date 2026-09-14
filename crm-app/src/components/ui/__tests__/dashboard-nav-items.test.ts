@@ -18,6 +18,7 @@ describe("dashboardNavItems", () => {
       "/dashboard/send-candidate",
       "/dashboard/bulk-broadcast",
       "/dashboard/monthly-status",
+      "/dashboard/share-agent",
       "/dashboard/attendance",
       "/dashboard/system-registry",
       "/dashboard/reports",

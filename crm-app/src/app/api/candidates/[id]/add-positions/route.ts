@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
+import { buildInProcessCandidateData } from "@/lib/in-process-candidate"
 
 // POST /api/candidates/[id]/add-positions - הוספת מועמד למספר משרות בתהליך
 export async function POST(
@@ -113,13 +114,11 @@ export async function POST(
     const firstPos = positions.find(p => p.id === firstPositionId)
     await prisma.candidate.update({
       where: { id: candidateId },
-      data: {
-        employmentStatus: 'IN_PROCESS', // 🆕 עדכון סטטוס המועמד לבתהליך!
+      data: buildInProcessCandidateData({
+        employmentStatus: 'IN_PROCESS',
         inProcessPositionId: candidate.inProcessPositionId || firstPositionId,
-        inProcessPositionTitle: firstPos?.title ?? candidate.inProcessPositionTitle ?? null,
-        inProcessEmployerName: (firstPos as any)?.employer?.name ?? candidate.inProcessEmployerName ?? null,
         inProcessAt: candidate.inProcessAt || new Date(),
-      },
+      }),
     })
 
     // 🆕 שליחת מייל כניסה לתהליך (רק אם לא היה בתהליך לפני כן)
@@ -246,14 +245,13 @@ export async function DELETE(
 
       await prisma.candidate.update({
         where: { id: candidateId },
-        data: {
+        data: buildInProcessCandidateData({
           inProcessPositionId: nextApplication?.positionId || null,
           inProcessAt: nextApplication ? candidate.inProcessAt : null,
-          // 🔄 אם אין יותר משרות בתהליך - נקה את סטטוס IN_PROCESS
           ...((!nextApplication && candidate.employmentStatus === 'IN_PROCESS') && {
             employmentStatus: null,
           }),
-        },
+        }),
       })
 
       if (!nextApplication && candidate.employmentStatus === 'IN_PROCESS') {

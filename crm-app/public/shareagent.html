@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧠 TWENTY2 SHAREAGENT — ניתוח שיחות גיוס</title>
+  <style>
+    :root {
+      --green: #25D366;
+      --dark: #0a0a0a;
+      --card: #111111;
+      --border: #222;
+      --text: #e0e0e0;
+      --accent: #128C7E;
+      --red: #ff4444;
+      --orange: #ff8c00;
+      --blue: #4fa3e0;
+      --gold: #ffd700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Arial Hebrew', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, #075E54 0%, #128C7E 50%, #25D366 100%);
+      padding: 40px 20px 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.3;
+    }
+    .header h1 { font-size: 2.4rem; font-weight: 900; color: #fff; position: relative; }
+    .header p { font-size: 1.1rem; color: rgba(255,255,255,0.85); margin-top: 8px; position: relative; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.3); border-radius: 20px;
+      padding: 6px 16px; margin-top: 12px; font-size: 0.9rem; color: #fff;
+      position: relative;
+    }
+    .dot { width: 8px; height: 8px; background: #25D366; border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+    /* STATS BAR */
+    .stats-bar {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      padding: 24px 20px; background: #0d0d0d;
+      border-bottom: 1px solid var(--border);
+      justify-content: center;
+    }
+    .stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 24px; text-align: center; min-width: 120px;
+      transition: transform .2s;
+    }
+    .stat:hover { transform: translateY(-3px); }
+    .stat-num { font-size: 2rem; font-weight: 900; }
+    .stat-label { font-size: 0.78rem; color: #888; margin-top: 4px; }
+    .stat.red .stat-num { color: var(--red); }
+    .stat.orange .stat-num { color: var(--orange); }
+    .stat.green .stat-num { color: var(--green); }
+    .stat.blue .stat-num { color: var(--blue); }
+    .stat.gold .stat-num { color: var(--gold); }
+
+    /* MAIN */
+    .main { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
+
+    /* SECTION */
+    .section { margin-bottom: 40px; }
+    .section-title {
+      font-size: 1.3rem; font-weight: 800; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 2px solid var(--border); padding-bottom: 12px;
+    }
+    .section-title .icon { font-size: 1.6rem; }
+
+    /* MISTAKES GRID */
+    .mistakes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .mistake-card {
+      background: var(--card); border: 1px solid #2a0000;
+      border-right: 4px solid var(--red); border-radius: 12px; padding: 20px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .mistake-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,68,68,0.15); }
+    .mistake-num {
+      width: 28px; height: 28px; background: var(--red); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 900; margin-bottom: 12px;
+    }
+    .mistake-title { font-size: 1rem; font-weight: 700; color: #ff6b6b; margin-bottom: 8px; }
+    .mistake-desc { font-size: 0.88rem; color: #bbb; line-height: 1.6; }
+    .mistake-example {
+      margin-top: 12px; background: rgba(255,68,68,0.08); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.83rem; color: #ff9999; font-style: italic;
+    }
+    .mistake-example::before { content: '💬 מה שנאמר: '; font-weight: 700; }
+
+    /* CHAT EXAMPLES */
+    .chat-box {
+      background: #0a1a12; border: 1px solid #1a3020; border-radius: 14px;
+      padding: 20px; margin-bottom: 16px;
+    }
+    .chat-contact { font-size: 0.85rem; color: var(--green); font-weight: 700; margin-bottom: 12px; }
+    .msg { display: flex; margin-bottom: 8px; }
+    .msg.out { justify-content: flex-end; }
+    .bubble {
+      max-width: 75%; padding: 8px 14px; border-radius: 12px;
+      font-size: 0.88rem; line-height: 1.5;
+    }
+    .bubble.in { background: #1f2937; color: #d1fae5; border-bottom-right-radius: 3px; }
+    .bubble.out { background: #075E54; color: #fff; border-bottom-left-radius: 3px; }
+    .msg-time { font-size: 0.7rem; color: #666; margin-top: 4px; text-align: left; }
+    .problem-tag {
+      display: inline-block; background: rgba(255,68,68,0.15); color: var(--red);
+      border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700;
+      margin-right: 6px; margin-top: 4px;
+    }
+
+    /* FIXES */
+    .fixes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .fix-card {
+      background: var(--card); border: 1px solid #001a00;
+      border-right: 4px solid var(--green); border-radius: 12px; padding: 20px;
+    }
+    .fix-title { font-size: 1rem; font-weight: 700; color: #4ade80; margin-bottom: 8px; }
+    .fix-before {
+      background: rgba(255,68,68,0.08); border-radius: 8px; padding: 10px;
+      font-size: 0.83rem; color: #ff9999; margin-bottom: 8px;
+    }
+    .fix-after {
+      background: rgba(37,211,102,0.08); border-radius: 8px; padding: 10px;
+      font-size: 0.83rem; color: #86efac;
+    }
+    .fix-before::before { content: '❌ לפני: '; font-weight: 700; }
+    .fix-after::before { content: '✅ אחרי: '; font-weight: 700; }
+    .fix-source { font-size: 0.75rem; color: #666; margin-top: 8px; }
+
+    /* BOOKS */
+    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .book-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; position: relative; overflow: hidden;
+    }
+    .book-card::before {
+      content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%;
+      background: linear-gradient(to bottom, var(--gold), var(--orange));
+    }
+    .book-icon { font-size: 2rem; margin-bottom: 10px; }
+    .book-name { font-size: 1rem; font-weight: 800; color: var(--gold); margin-bottom: 4px; }
+    .book-author { font-size: 0.8rem; color: #888; margin-bottom: 12px; }
+    .book-tip { font-size: 0.85rem; color: #ccc; line-height: 1.6; }
+    .book-apply {
+      margin-top: 12px; background: rgba(255,215,0,0.08); border-radius: 8px;
+      padding: 10px; font-size: 0.8rem; color: #ffd700;
+    }
+    .book-apply::before { content: '💡 יישום: '; font-weight: 700; }
+
+    /* SCRIPT TEMPLATE */
+    .script-box {
+      background: #050d08; border: 1px solid #1a3020; border-radius: 14px;
+      padding: 24px; font-family: monospace;
+    }
+    .script-step {
+      display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start;
+    }
+    .step-num {
+      min-width: 32px; height: 32px; background: var(--accent);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 0.9rem; color: #fff;
+    }
+    .step-content { flex: 1; }
+    .step-title { font-size: 0.85rem; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+    .step-msg {
+      background: #075E54; border-radius: 12px; border-bottom-left-radius: 3px;
+      padding: 12px 16px; font-size: 0.85rem; color: #fff; line-height: 1.6;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .step-note { font-size: 0.75rem; color: #888; margin-top: 6px; font-family: 'Segoe UI', sans-serif; }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .kpi-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center;
+    }
+    .kpi-current { font-size: 1.8rem; font-weight: 900; color: var(--red); }
+    .kpi-target { font-size: 1.8rem; font-weight: 900; color: var(--green); }
+    .kpi-arrow { font-size: 1.5rem; color: var(--orange); margin: 4px 0; }
+    .kpi-name { font-size: 0.8rem; color: #888; margin-top: 6px; }
+
+    /* FOOTER */
+    footer {
+      text-align: center; padding: 32px; background: #050505;
+      border-top: 1px solid var(--border); color: #555; font-size: 0.85rem;
+    }
+    footer a { color: var(--green); text-decoration: none; }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .header h1 { font-size: 1.6rem; }
+      .mistakes-grid, .fixes-grid, .books-grid, .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* TABS */
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .tab {
+      padding: 8px 20px; border-radius: 20px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 600; border: 1px solid var(--border);
+      background: var(--card); color: #888; transition: all .2s;
+    }
+    .tab.active, .tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ===== SMART AGENT ===== */
+    .sa-stats-bar {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      padding: 20px 0; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sa-stat {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 20px; flex: 1; min-width: 170px;
+    }
+    .sa-stat-icon { font-size: 1.8rem; }
+    .sa-stat-num { font-size: 1.6rem; font-weight: 900; line-height: 1; }
+    .sa-stat-label { font-size: 0.75rem; color: #888; margin-top: 3px; }
+    .sa-stat.green .sa-stat-num { color: var(--green); }
+    .sa-stat.orange .sa-stat-num { color: var(--orange); }
+    .sa-stat.blue .sa-stat-num { color: var(--blue); }
+    .sa-stat.gold .sa-stat-num { color: var(--gold); }
+    .sa-layout {
+      display: grid; grid-template-columns: 360px 1fr; gap: 16px;
+      height: 620px;
+    }
+    .sa-sidebar {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .sa-sidebar-header {
+      padding: 16px 20px; font-weight: 800; font-size: 1rem;
+      border-bottom: 1px solid var(--border); display: flex;
+      justify-content: space-between; align-items: center;
+      position: sticky; top: 0; background: var(--card); z-index: 1;
+    }
+    .sa-badge-count {
+      background: var(--accent); color: #fff; border-radius: 10px;
+      padding: 2px 10px; font-size: 0.8rem;
+    }
+    .sa-conv-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #1a1a1a;
+      transition: background .15s; position: relative;
+    }
+    .sa-conv-card:hover { background: #1a1a1a; }
+    .sa-conv-card.selected { background: #0f2d1e; }
+    .sa-conv-card.waiting { border-right: 3px solid var(--orange); }
+    .sa-conv-card.bot { border-right: 3px solid var(--green); }
+    .sa-conv-card.agent { border-right: 3px solid var(--blue); }
+    .sa-conv-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #25D366; color: #000; font-weight: 900; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sa-conv-info { flex: 1; min-width: 0; }
+    .sa-conv-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 3px; }
+    .sa-conv-preview { font-size: 0.82rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sa-conv-meta { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+    .sa-conv-time { font-size: 0.72rem; color: #555; }
+    .sa-status { font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .sa-status.waiting { background: rgba(255,140,0,.15); color: var(--orange); }
+    .sa-status.bot { background: rgba(37,211,102,.15); color: var(--green); }
+    .sa-status.agent { background: rgba(79,163,224,.15); color: var(--blue); }
+    .sa-unread {
+      min-width: 22px; height: 22px; background: var(--orange); color: #000;
+      border-radius: 11px; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 900; padding: 0 4px; flex-shrink: 0;
+    }
+    .sa-chat-window {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sa-chat-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .sa-chat-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      background: #0d1f18; flex-shrink: 0;
+    }
+    .sa-chat-header-name { font-weight: 800; font-size: 1rem; }
+    .sa-chat-header-sub { font-size: 0.78rem; color: #888; }
+    .sa-takeover-btn {
+      background: var(--orange); color: #000; border: none;
+      border-radius: 8px; padding: 8px 16px; font-weight: 700; font-size: 0.82rem;
+      cursor: pointer; transition: opacity .2s; white-space: nowrap;
+    }
+    .sa-takeover-btn:hover { opacity: 0.8; }
+    .sa-chat-messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 8px;
+      background: #0a1510; min-height: 0;
+    }
+    .sa-msg { display: flex; }
+    .sa-msg.out { justify-content: flex-start; }
+    .sa-msg.in { justify-content: flex-end; }
+    .sa-bubble {
+      max-width: 72%; padding: 9px 14px; border-radius: 12px;
+      font-size: 0.88rem; line-height: 1.5;
+    }
+    .sa-bubble.in { background: #1f2937; color: #d1fae5; border-bottom-right-radius: 3px; }
+    .sa-bubble.out { background: #075E54; color: #fff; border-bottom-left-radius: 3px; }
+    .sa-bubble.agent-msg { background: #1a2a3a; border: 1px solid var(--blue); color: #fff; border-bottom-left-radius: 3px; }
+    .sa-msg-sender { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
+    .sa-msg-time { font-size: 0.68rem; color: #555; margin-top: 3px; }
+    .sa-suggestions {
+      padding: 10px 16px; border-top: 1px solid var(--border);
+      background: #0d1f18; flex-shrink: 0;
+    }
+    .sa-suggestions-label { font-size: 0.75rem; color: #888; margin-bottom: 7px; }
+    .sa-suggestions-list { display: flex; flex-direction: column; gap: 5px; }
+    .sa-suggestion {
+      background: #1a1a1a; border: 1px solid #2a3a2a;
+      border-radius: 8px; padding: 7px 12px; font-size: 0.82rem; color: #ccc;
+      cursor: pointer; transition: all .15s; text-align: right;
+    }
+    .sa-suggestion:hover { background: #0f2d1e; border-color: var(--green); color: var(--green); }
+    .sa-reply-area {
+      padding: 10px 16px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; align-items: center;
+      background: #0d1f18; flex-shrink: 0;
+    }
+    .sa-reply-input {
+      flex: 1; background: #1a1a1a; border: 1px solid var(--border);
+      border-radius: 24px; padding: 10px 16px; color: var(--text);
+      font-size: 0.88rem; outline: none; direction: rtl; font-family: inherit;
+    }
+    .sa-reply-input:focus { border-color: var(--green); }
+    .sa-send-btn {
+      background: var(--green); color: #000; border: none;
+      border-radius: 50%; width: 40px; height: 40px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: opacity .2s; flex-shrink: 0;
+    }
+    .sa-send-btn:hover { opacity: 0.85; }
+    .sa-bot-btn {
+      background: #1a1a1a; color: var(--green); border: 1px solid var(--green);
+      border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0;
+    }
+    .sa-bot-btn:hover { background: rgba(37,211,102,.1); }
+    .sa-chat-inner { display: flex; flex-direction: column; height: 100%; }
+    @media (max-width: 768px) {
+      .sa-layout { grid-template-columns: 1fr; height: auto; }
+      .sa-sidebar { max-height: 300px; }
+      .sa-chat-window { min-height: 500px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- URGENT TODAY CASES BAR -->
+<div style="background:#1a0a00;border-bottom:2px solid #ff8c00;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div style="font-size:1rem;font-weight:900;color:#ff8c00;">⚡ מקרה פתוח היום — 31.8.2026</div>
+  <div style="background:#111;border:1px solid #ff8c00;border-radius:10px;padding:10px 18px;font-size:0.9rem;">
+    <span style="color:#ffd700;font-weight:700;">אושר (052-244-5685)</span> — 
+    נשלח יום שישי לראיון בנמל אשדוד אצל <span style="color:#4ade80;">אלכסנדר לוי / קישרי ים</span> — 
+    <span style="color:#ff6b6b;">⚠️ טרם עודכן תוצאת הראיון!</span>
+    <span style="background:#ff8c00;color:#000;border-radius:4px;padding:2px 8px;margin-right:8px;font-weight:700;font-size:0.8rem;">TO DO: שאל "הגעת? איך עבר?"</span>
+  </div>
+  <div style="background:#111;border:1px solid #25D366;border-radius:10px;padding:10px 18px;font-size:0.85rem;color:#d1fae5;">
+    📋 <strong>קישרי ים — נמל אשדוד:</strong> סוורות 48-52₪/שעה | אתתות 45-48₪/שעה | הסעות כלולות | אין ניסיון נדרש
+  </div>
+</div>
+
+<div class="header">
+  <h1>🧠 TWENTY2 SHAREAGENT</h1>
+  <p>ניתוח מקיף של שיחות גיוס — WhatsApp Business</p>
+  <div class="badge">
+    <div class="dot"></div>
+    נסרקו 150 שיחות • 31.8.2026 • מבוסס על ספרי מכירות וגיוס מובילים
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat red">
+    <div class="stat-num">11</div>
+    <div class="stat-label">טעויות קריטיות זוהו</div>
+  </div>
+  <div class="stat orange">
+    <div class="stat-num">~30%</div>
+    <div class="stat-label">שיחות ללא מענה לשאלה</div>
+  </div>
+  <div class="stat red">
+    <div class="stat-num">~60%</div>
+    <div class="stat-label">שיחות ניתקות ללא סגירה</div>
+  </div>
+  <div class="stat blue">
+    <div class="stat-num">7</div>
+    <div class="stat-label">ספרים יושמו בניתוח</div>
+  </div>
+  <div class="stat gold">
+    <div class="stat-num">+40%</div>
+    <div class="stat-label">פוטנציאל שיפור בהמרה</div>
+  </div>
+  <div class="stat green">
+    <div class="stat-num">150</div>
+    <div class="stat-label">שיחות נסרקו</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab(this,'smart-agent')">📱 Smart Agent</div>
+    <div class="tab" onclick="showTab(this,'mistakes')">❌ טעויות</div>
+    <div class="tab" onclick="showTab(this,'examples')">💬 דוגמאות אמיתיות</div>
+    <div class="tab" onclick="showTab(this,'fixes')">✅ תיקונים</div>
+    <div class="tab" onclick="showTab(this,'books')">📚 שיטות מספרים</div>
+    <div class="tab" onclick="showTab(this,'script')">📝 סקריפט מוגדר</div>
+    <div class="tab" onclick="showTab(this,'kpi')">📊 יעדים</div>
+  </div>
+
+  <!-- TAB: SMART AGENT -->
+  <div id="tab-smart-agent" class="tab-content active">
+
+    <!-- Smart Agent Stats Bar -->
+    <div class="sa-stats-bar">
+      <div class="sa-stat green">
+        <div class="sa-stat-icon">🤖</div>
+        <div><div class="sa-stat-num">8</div><div class="sa-stat-label">שיחות בוט פעילות</div></div>
+      </div>
+      <div class="sa-stat orange">
+        <div class="sa-stat-icon">⏳</div>
+        <div><div class="sa-stat-num">3</div><div class="sa-stat-label">ממתין לנציג</div></div>
+      </div>
+      <div class="sa-stat blue">
+        <div class="sa-stat-icon">✅</div>
+        <div><div class="sa-stat-num">24</div><div class="sa-stat-label">נענו היום</div></div>
+      </div>
+      <div class="sa-stat gold">
+        <div class="sa-stat-icon">⚡</div>
+        <div><div class="sa-stat-num">4 דק'</div><div class="sa-stat-label">זמן תגובה ממוצע</div></div>
+      </div>
+    </div>
+
+    <div class="sa-layout">
+
+      <!-- Conversation List -->
+      <div class="sa-sidebar">
+        <div class="sa-sidebar-header">
+          <span>📱 שיחות פעילות</span>
+          <span class="sa-badge-count">11</span>
+        </div>
+
+        <div class="sa-conv-card waiting" onclick="openChat(0)" id="conv-0">
+          <div class="sa-conv-avatar">יפ</div>
+          <div class="sa-conv-info">
+            <div class="sa-conv-name">יוסף פנחסוב</div>
+            <div class="sa-conv-preview">אז איך אני יגיע לעבודה באשדוד 😕</div>
+            <div class="sa-conv-meta">
+              <span class="sa-status waiting">⏳ ממתין</span>
+              <span class="sa-conv-time">לפני 2 שעות</span>
+            </div>
+          </div>
+          <div class="sa-unread">4</div>
+        </div>
+
+        <div class="sa-conv-card bot" onclick="openChat(1)" id="conv-1">
+          <div class="sa-conv-avatar" style="background:#128C7E;color:#fff">אש</div>
+          <div class="sa-conv-info">
+            <div class="sa-conv-name">אושר</div>
+            <div class="sa-conv-preview">אוקיי תודה אני אגיע ביום שישי</div>
+            <div class="sa-conv-meta">
+              <span class="sa-status bot">🤖 בוט</span>
+              <span class="sa-conv-time">לפני 45 דק'</span>
+            </div>
+          </div>
+          <div class="sa-unread" style="background:#128C7E;color:#fff">1</div>
+        </div>
+
+        <div class="sa-conv-card waiting" onclick="openChat(2)" id="conv-2">
+          <div class="sa-conv-avatar" style="background:#c0392b;color:#fff">אא</div>
+          <div class="sa-conv-info">
+            <div class="sa-conv-name">אביתר אלקובי</div>
+            <div class="sa-conv-preview">שאלת אותי מאיפה אני פעמיים 😒</div>
+            <div class="sa-conv-meta">
+              <span class="sa-status waiting">⏳ ממתין</span>
+              <span class="sa-conv-time">לפני 3 שעות</span>
+            </div>
+          </div>
+          <div class="sa-unread">2</div>
+        </div>
+
+        <div class="sa-conv-card agent" onclick="openChat(3)" id="conv-3">
+          <div class="sa-conv-avatar" style="background:#2980b9;color:#fff">קא</div>
+          <div class="sa-conv-info">
+            <div class="sa-conv-name">מועמד — קרית אתא</div>
+            <div class="sa-conv-preview">כמה לשעה ומה עושים שם 🤔</div>
+            <div class="sa-conv-meta">
+              <span class="sa-status agent">👤 נציג</span>
+              <span class="sa-conv-time">לפני 1 שעה</span>
+            </div>
+          </div>
+          <div class="sa-unread" style="background:#2980b9;color:#fff">1</div>
+        </div>
+
+        <div class="sa-conv-card bot" onclick="openChat(4)" id="conv-4">
+          <div class="sa-conv-avatar" style="background:#8e44ad;color:#fff">סט</div>
+          <div class="sa-conv-info">
+            <div class="sa-conv-name">סטודנט — חיפה</div>
+            <div class="sa-conv-preview">האם זה עבודה מלאה או חלקית?</div>
+            <div class="sa-conv-meta">
+              <span class="sa-status bot">🤖 בוט</span>
+              <span class="sa-conv-time">לפני 20 דק'</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /sa-sidebar -->
+
+      <!-- Chat Window -->
+      <div class="sa-chat-window" id="sa-chat-window">
+        <div class="sa-chat-empty" id="sa-empty-state">
+          <div style="font-size:4rem">💬</div>
+          <div style="font-size:1.2rem;margin-top:16px;color:#666">בחר שיחה מהרשימה</div>
+          <div style="font-size:0.9rem;color:#444;margin-top:8px">לצפייה בהיסטוריה ושליחת הודעה</div>
+        </div>
+        <div id="sa-chat-content" class="sa-chat-inner" style="display:none">
+          <div class="sa-chat-header" id="sa-chat-header"></div>
+          <div class="sa-chat-messages" id="sa-chat-messages"></div>
+          <div class="sa-suggestions">
+            <div class="sa-suggestions-label">💡 הצעות תגובה חכמות — לחץ להכנסה:</div>
+            <div class="sa-suggestions-list" id="sa-suggestions-list"></div>
+          </div>
+          <div class="sa-reply-area">
+            <button class="sa-bot-btn" onclick="returnToBot()">🤖 החזר לבוט</button>
+            <input class="sa-reply-input" id="sa-reply-input" placeholder="כתוב הודעה כנציג..." />
+            <button class="sa-send-btn" onclick="sendAgentMsg()" title="שלח">&#10148;</button>
+          </div>
+        </div>
+      </div><!-- /sa-chat-window -->
+
+    </div><!-- /sa-layout -->
+
+  </div><!-- /tab-smart-agent -->
+
+  <!-- TAB: MISTAKES -->
+  <div id="tab-mistakes" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">🚨</span>
+        11 הטעויות הקריטיות שנמצאו בשיחות
+      </div>
+      <div class="mistakes-grid">
+
+        <div class="mistake-card">
+          <div class="mistake-num">1</div>
+          <div class="mistake-title">אין מענה לשאלות קריטיות של מועמד</div>
+          <div class="mistake-desc">מועמד שואל שאלת לוגיסטיקה/שכר ולא מקבל תשובה. השיחה מתה. המועמד מרגיש מוזנח ועובר הלאה.</div>
+          <div class="mistake-example">"אז איך אני יגיע לעבודה באשדוד" — ללא מענה</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">2</div>
+          <div class="mistake-title">הצעת משרה לפני בדיקת ניידות</div>
+          <div class="mistake-desc">מציעים משרה בעיר מסוימת (אשדוד, חיפה) ורק אחר כך שואלים "אתה נייד?". בזבוז זמן לשני הצדדים + מחמיצים את המועמד שנדלק ואז כיבה.</div>
+          <div class="mistake-example">"יש לי משרה שתוכל להתאים באשדוד" → "אתה נייד?"</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">3</div>
+          <div class="mistake-title">שאלה כפולה — לא מקשיבים</div>
+          <div class="mistake-desc">שואלים "מאיפה אתה?" פעמיים באותה שיחה. מעיד שלא קוראים את ההיסטוריה. המועמד מאבד אמון.</div>
+          <div class="mistake-example">"מאיפה אתה?" — נשאל 2 פעמים לאותו איש (אביתר)</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">4</div>
+          <div class="mistake-title">תגובות רובוטיות/תבניות ניכרות</div>
+          <div class="mistake-desc">אותה הודעת פתיחה בדיוק לכל מועמד. אין התאמה אישית. המועמד מרגיש שהוא "מספר" ולא אדם.</div>
+          <div class="mistake-example">"שלום! אפשר לקבל מידע נוסף על זה?" — בכל שיחה</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">5</div>
+          <div class="mistake-title">אין ערך מוצג לפני הבקשה</div>
+          <div class="mistake-desc">הדבר הראשון שמבקשים הוא "תשלח קורות חיים" — לפני שהמועמד יודע מה המשרה, כמה משלמים, מה ייחודה. זה כמו לבקש חתונה בפגישה ראשונה.</div>
+          <div class="mistake-example">"היי בוקר טוב תשלח קורות חיים בבקשה" — ללא הקשר</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">6</div>
+          <div class="mistake-title">אין יצירת דחיפות/FOMO</div>
+          <div class="mistake-desc">שום הודעה לא יוצרת תחושה של "צריך לפעול עכשיו". המועמד דוחה, מתעייף, לא ממשיך. אין deadline, אין "רק 2 מקומות נותרו".</div>
+          <div class="mistake-example">כל השיחות — ללא שום אלמנט של urgency</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">7</div>
+          <div class="mistake-title">אין בניית ראפור לפני הסינון</div>
+          <div class="mistake-desc">קופצים מיד לשאלות עסקיות. אין שאלה קטנה אנושית, אין הצגה עצמית, אין connection. לפי "The Like Switch" — צריך 2-3 משפטי חמימות קודם.</div>
+          <div class="mistake-example">"בוקר טוב תשלח קורות חיים" — בלי שום היכרות</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">8</div>
+          <div class="mistake-title">אין תגובה להתנגדות שכר</div>
+          <div class="mistake-desc">מועמד אמר "ואבל זה משכורת קטן" — ולא קיבל מענה. טכניקת SPIN מחייבת להבין את הצורך הפיננסי ולהציג ערך כולל (הכשרות, נסיעות, בונוס).</div>
+          <div class="mistake-example">"ואבל זה משכורת קטן" — ללא תגובה ממשית</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">9</div>
+          <div class="mistake-title">שיחות נשארות פתוחות ללא סגירה</div>
+          <div class="mistake-desc">לפחות 60% מהשיחות שנסרקו נגמרות ב-"cliffhanger" — מועמד שלח הודעה אחרונה וחודשים עברו. אין follow-up מובנה.</div>
+          <div class="mistake-example">"+972 54-667-7589" — שלח CV ונגמר. אין מענה.</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">10</div>
+          <div class="mistake-title">שאלת המיקום לפני הכל — שוברת קסם</div>
+          <div class="mistake-desc">כמעט כל שיחה פותחת ב"מאיפה אתה?" — זה מרגיש כמו חקירה, לא שיחה. המועמד כבר בדיפנסיב לפני שהצגת את עצמך.</div>
+          <div class="mistake-example">"בוקר טוב מאיפה אתה?" — ללא הצגה עצמית</div>
+        </div>
+
+        <div class="mistake-card">
+          <div class="mistake-num">11</div>
+          <div class="mistake-title">אין הצגת מיקום ברור מההתחלה</div>
+          <div class="mistake-desc">מועמד שואל "כמה לשעה ומה עושים שם" — שאלה לגיטימית. אין מענה = אין עסקה. לפי Challenger Sale, השקיפות מנצחת.</div>
+          <div class="mistake-example">"כמה לשעה ומה עושים שם" — ללא מענה</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: EXAMPLES -->
+  <div id="tab-examples" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">💬</span>
+        שיחות אמיתיות עם ניתוח בזמן אמת
+      </div>
+
+      <!-- Conversation 1 -->
+      <div class="chat-box">
+        <div class="chat-contact">📱 +972 50-827-4686 (יוסף פנחסוב, קרית מלאכי)</div>
+        <span class="problem-tag">❌ הצעה לפני בדיקה</span>
+        <span class="problem-tag">❌ אין מענה</span>
+        <br><br>
+        <div class="msg"><div class="bubble in">שלום ! ספר/י לנו כיצד אפשר לעזור לך.<br><span style="font-size:0.75rem;color:#666">הודעת פתיחה אוטומטית</span></div></div>
+        <div class="msg out"><div class="bubble out">אפשר לקבוע פגישה? <span style="font-size:0.7rem;opacity:0.7">0:44</span></div></div>
+        <div class="msg"><div class="bubble in">היי בוקר טוב תשלח קורות חיים בבקשה <span style="font-size:0.7rem;opacity:0.7">10:00</span></div></div>
+        <div class="msg out"><div class="bubble out">היי שלום מה נשמע — שם: יוסף פנחסוב, גיל 30, קרית מלאכי... <span style="font-size:0.7rem;opacity:0.7">10:09</span></div></div>
+        <div class="msg"><div class="bubble in" style="border:1px solid #ff4444">אתה נייד ? יש לי משרה שתוכל להתאים באשדוד ⚠️ <span style="font-size:0.7rem;opacity:0.7">10:31</span></div></div>
+        <div class="msg out"><div class="bubble out">כן מתאים לי <span style="font-size:0.7rem;opacity:0.7">10:32</span></div></div>
+        <div class="msg out"><div class="bubble out">אבל אני לא נייד <span style="font-size:0.7rem;opacity:0.7">10:32</span></div></div>
+        <div class="msg out"><div class="bubble out">אין לי הסעות <span style="font-size:0.7rem;opacity:0.7">10:32</span></div></div>
+        <div class="msg out"><div class="bubble out">אז איך אני יגיע לעבודה באשדוד 😕 <span style="font-size:0.7rem;opacity:0.7">10:34</span></div></div>
+        <div style="background:#1a0000;border-radius:8px;padding:12px;margin-top:10px;font-size:0.85rem;color:#ff6b6b">
+          ⛔ <strong>מה קרה:</strong> המגייס לא ענה! המועמד שלח 4 הודעות ברצף ללא מענה. אבוד לחלוטין.
+          <br>✅ <strong>מה היה צריך:</strong> "יוסף, קרית מלאכי לאשדוד זה ~40 דק'. יש אופציה להסעות מצדנו — נבדוק יחד?"
+        </div>
+      </div>
+
+      <!-- Conversation 2 -->
+      <div class="chat-box">
+        <div class="chat-contact">📱 +972 55-558-5403 (קריית אתא, חיפה)</div>
+        <span class="problem-tag">❌ שאלת שכר ללא מענה</span>
+        <br><br>
+        <div class="msg"><div class="bubble in">בוקר טוב מאיפה אתה ? <span style="font-size:0.7rem;opacity:0.7">9:53</span></div></div>
+        <div class="msg out"><div class="bubble out">קריית אתא <span style="font-size:0.7rem;opacity:0.7">9:54</span></div></div>
+        <div class="msg"><div class="bubble in">המשרה בחיפה רלוונטי לך ? <span style="font-size:0.7rem;opacity:0.7">10:20</span></div></div>
+        <div class="msg out"><div class="bubble out" style="border:1px solid #ffd700">כמה לשעה ומה עושים שם 🤔 <span style="font-size:0.7rem;opacity:0.7">10:37</span></div></div>
+        <div style="background:#1a1a00;border-radius:8px;padding:12px;margin-top:10px;font-size:0.85rem;color:#ffd700">
+          ⚠️ <strong>שאלה לגיטימית 100%</strong> — המועמד רוצה לדעת שכר ותיאור. זה הגיוני לחלוטין.
+          <br>✅ <strong>מה היה צריך:</strong> "המשרה בחיפה — מחסנאי/עובד ייצור. 35-40₪ לשעה. משמרות בוקר/ערב. מתאים?"
+        </div>
+      </div>
+
+      <!-- Conversation 3 -->
+      <div class="chat-box">
+        <div class="chat-contact">📱 +972 50-272-2738 (אביתר אלקובי, נהג)</div>
+        <span class="problem-tag">❌ שאלה כפולה</span>
+        <br><br>
+        <div class="msg"><div class="bubble in">מאיפה אתה מה השם שלך, תן לי פרטים עלייך? <span style="font-size:0.7rem;opacity:0.7">9:22</span></div></div>
+        <div class="msg out"><div class="bubble out">אביתר אלקובי, בן 29 נשוי +2, נייד, רישיון מ-2016 <span style="font-size:0.7rem;opacity:0.7">9:28</span></div></div>
+        <div class="msg"><div class="bubble in" style="border:1px solid #ff4444">מאיפה אתה ⚠️ <span style="font-size:0.7rem;opacity:0.7">10:33</span></div></div>
+        <div style="background:#1a0000;border-radius:8px;padding:12px;margin-top:10px;font-size:0.85rem;color:#ff6b6b">
+          ⛔ <strong>שאלת "מאיפה אתה" פעמיים!</strong> אביתר כבר סיפר על עצמו — 5 פרטים בהודעה אחת. השאלה הכפולה מראה שלא קראתם. זה פוגע באמון.
+          <br>✅ <strong>מה היה צריך:</strong> "אביתר, ראיתי שאתה נייד עם רישיון מ-2016 — מושלם למשרת הנהג שלנו. מה הניסיון שלך בהפצה?"
+        </div>
+      </div>
+
+      <!-- Conversation 4 -->
+      <div class="chat-box">
+        <div class="chat-contact">📱 +972 55-929-8682 (נציג שירות השכרה)</div>
+        <span class="problem-tag">❌ התנגדות שכר ללא מענה</span>
+        <br><br>
+        <div class="msg"><div class="bubble in">נציג שירות השכרה — שינוע והכנת רכבי השכרה: מסירה וקבלת הרכבים מלקוחות... <span style="font-size:0.7rem;opacity:0.7">10:11</span></div></div>
+        <div class="msg out"><div class="bubble out" style="border:1px solid #ff4444">ואבל זה משכורת קטן 😕 <span style="font-size:0.7rem;opacity:0.7">10:12</span></div></div>
+        <div style="background:#1a0000;border-radius:8px;padding:12px;margin-top:10px;font-size:0.85rem;color:#ff6b6b">
+          ⛔ <strong>התנגדות שכר קיבלה שתיקה</strong> — זו הזדמנות מכירה שאבדה.
+          <br>✅ <strong>מה היה צריך:</strong> "הבסיס 35₪ לשעה + בונוס על שביעות רצון לקוח + אחרי 3 חודשים עולים ל-40. מה הציפייה שלך?"
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB: FIXES -->
+  <div id="tab-fixes" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">✅</span>
+        11 תיקונים מיידיים — לפני ואחרי
+      </div>
+      <div class="fixes-grid">
+
+        <div class="fix-card">
+          <div class="fix-title">1. פתיחת שיחה עם ערך</div>
+          <div class="fix-before">"היי בוקר טוב תשלח קורות חיים בבקשה"</div>
+          <div class="fix-after">"היי [שם]! ראיתי שנרשמת — יש לי משרת [תפקיד] ב[עיר קרובה אליך] ב-[X]₪ לשעה. מתאים לך שנדבר?"</div>
+          <div class="fix-source">📚 Go-Giver: תן קודם, בקש אחרי</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">2. סינון ניידות לפני הצעה</div>
+          <div class="fix-before">"יש לי משרה באשדוד — אתה נייד?"</div>
+          <div class="fix-after">"מה הגבולות שלך מבחינת נסיעה? עד כמה דקות מוכן לנסוע?" → ואז הצע רק אם מתאים</div>
+          <div class="fix-source">📚 SPIN Selling: Situation questions ראשון</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">3. מענה לשאלות שכר</div>
+          <div class="fix-before">שתיקה אחרי "כמה לשעה?"</div>
+          <div class="fix-after">"המשרה מתחילה ב-[X]₪ + [הטבות]. לאחר 3 חודשי ניסיון עולים ל-[Y]₪. כולל [נסיעות/ביגוד/בונוס]."</div>
+          <div class="fix-source">📚 Challenger Sale: שקיפות מנצחת</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">4. טיפול בהתנגדות שכר</div>
+          <div class="fix-before">"ואבל זה משכורת קטן" → שתיקה</div>
+          <div class="fix-after">"מה הציפייה שלך? [שמע] — בואו נדבר על המסלול כולו כולל בונוסים"</div>
+          <div class="fix-source">📚 Never Split the Difference: Calibrated questions</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">5. מניעת שאלה כפולה</div>
+          <div class="fix-before">"מאיפה אתה?" (פעמיים)</div>
+          <div class="fix-after">לפני כל הודעה — קרא את ה-3 הודעות האחרונות. פנה לפי מה שכבר יודעים.</div>
+          <div class="fix-source">📚 The Like Switch: זיכרון = כבוד</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">6. יצירת דחיפות</div>
+          <div class="fix-before">אין deadline, אין urgency</div>
+          <div class="fix-after">"יש לי עוד שני מקומות פתוחים לתפקיד הזה — מישהו כבר מחר בראיון. אפשר לפגוש השבוע?"</div>
+          <div class="fix-source">📚 Influence (Cialdini): Scarcity principle</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">7. ראפור לפני סינון</div>
+          <div class="fix-before">"בוקר טוב מאיפה אתה?" (מיידי)</div>
+          <div class="fix-after">"בוקר טוב [שם]! 😊 ראיתי שאתה מחפש עבודה — כמה שנות ניסיון יש לך בתחום?"</div>
+          <div class="fix-source">📚 The Like Switch: FORD (Family, Occupation, Recreation, Dreams)</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">8. follow-up מובנה לשיחות שנגמרו</div>
+          <div class="fix-before">שיחה מתה — לא מדברים</div>
+          <div class="fix-after">אחרי 24 שעות: "היי [שם], בדקתי את הפרטים שלך — יש לי הצעה מתאימה. מתי נוח לדבר?" + אחרי 72 שעות: "אחרון אחרון!"</div>
+          <div class="fix-source">📚 Fanatical Prospecting: 3-touch follow-up</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">9. אישיות שיחה</div>
+          <div class="fix-before">אותה תבנית לכולם</div>
+          <div class="fix-after">זהה את סוג המועמד מהמסרים — נהג? → דגש ניידות. אקדמאי? → דגש קידום. סטודנט? → דגש גמישות.</div>
+          <div class="fix-source">📚 DISC Communication: התאם לסגנון</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">10. הפנמת שם המועמד</div>
+          <div class="fix-before">"היי" (ללא שם)</div>
+          <div class="fix-after">"היי יוסף" / "היי אביתר" — שם האדם הוא המילה הכי נעימה לאוזנו.</div>
+          <div class="fix-source">📚 How to Win Friends (Carnegie): Rule #4</div>
+        </div>
+
+        <div class="fix-card">
+          <div class="fix-title">11. סגירה ברורה בכל שיחה</div>
+          <div class="fix-before">שיחה נגמרת בהודעה פתוחה</div>
+          <div class="fix-after">כל שיחה צריכה לסגור עם Next Step: "אם רלוונטי — שלח CV", "נקבע ראיון ב-[תאריך]?", "לא מתאים? בסדר, שמרתי פרטיך למשרות עתידיות"</div>
+          <div class="fix-source">📚 SPIN Selling: Commitment close</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: BOOKS -->
+  <div id="tab-books" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">📚</span>
+        7 ספרים מובילים — שיטות מותאמות לגיוס WhatsApp
+      </div>
+      <div class="books-grid">
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">SPIN Selling</div>
+          <div class="book-author">Neil Rackham</div>
+          <div class="book-tip">4 שלבי שאלות: <strong>S</strong>ituation → <strong>P</strong>roblem → <strong>I</strong>mplication → <strong>N</strong>eed-Payoff. לא מוכרים לפני שמבינים את הצורך.</div>
+          <div class="book-apply">במקום "שלח CV" — "מה הכי חשוב לך במשרה הבאה?" → "מה מנע אותך מלהתקדם בתפקיד הקודם?" → הצג פתרון</div>
+        </div>
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">The Challenger Sale</div>
+          <div class="book-author">Matthew Dixon</div>
+          <div class="book-tip">Teach, Tailor, Take Control. המגייס הטוב מלמד את המועמד משהו שהוא לא ידע — ומוביל את השיחה.</div>
+          <div class="book-apply">"רוב האנשים שמחפשים עבודה בתחום X לא יודעים שיש 30% יותר ביקוש השנה — המשמעות: תנאים טובים יותר"</div>
+        </div>
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">Never Split the Difference</div>
+          <div class="book-author">Chris Voss (FBI)</div>
+          <div class="book-tip">Tactical Empathy: שיקוף (mirroring), תיוג (labeling), שאלות קליברציה (calibrated questions).</div>
+          <div class="book-apply">"נראה שהשכר חשוב לך" (labeling) → "מה היה עוזר לך להחליט?" (calibrated) → שתיקה</div>
+        </div>
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">The Like Switch</div>
+          <div class="book-author">Jack Schafer (FBI)</div>
+          <div class="book-tip">FORD Framework: Family, Occupation, Recreation, Dreams. בנה חברות לפני עסק. אנשים קונים מאנשים שהם אוהבים.</div>
+          <div class="book-apply">"איזה תחום תמיד עניין אותך? [שמע] — מגניב, בדיוק לזה יש לי משרה שיכולה להתאים"</div>
+        </div>
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">Influence</div>
+          <div class="book-author">Robert Cialdini</div>
+          <div class="book-tip">6 עקרונות שכנוע: Reciprocity, Commitment, Social Proof, Authority, Liking, Scarcity.</div>
+          <div class="book-apply">Social Proof: "השבוע השמנו 3 אנשים מקרית מלאכי" | Scarcity: "נותר מקום אחרון" | Authority: "20+ שנה בתעשייה"</div>
+        </div>
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">The Go-Giver</div>
+          <div class="book-author">Bob Burg</div>
+          <div class="book-tip">Give value first. תן מידע שימושי, עצות, תובנות — לפני שמבקשים משהו בחזרה.</div>
+          <div class="book-apply">שלח טיפ מעניין: "אגב, ראיתי את הרקע שלך — בתחום הזה יש עלייה של 20% בשכר בשנה האחרונה. כדאי שתדע"</div>
+        </div>
+
+        <div class="book-card">
+          <div class="book-icon">📖</div>
+          <div class="book-name">Fanatical Prospecting</div>
+          <div class="book-author">Jeb Blount</div>
+          <div class="book-tip">3-touch follow-up system. אל תוותר אחרי שתיקה אחת. 80% מהעסקאות נסגרות בין contact 5-12.</div>
+          <div class="book-apply">Day 1: שלח הצעה | Day 2: "ראית?" | Day 4: "הפרטים שישנו" | Day 7: "אחרון!" | Day 14: "שמרתי לך"</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SCRIPT -->
+  <div id="tab-script" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">📝</span>
+        סקריפט WhatsApp מוגדר — 7 שלבים לסגירה
+      </div>
+      <div class="script-box">
+
+        <div class="script-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">⚡ פתיחה עם ערך (תוך 2 שניות)</div>
+            <div class="step-msg">היי [שם]! 👋 ראיתי שנרשמת — אני [שמך] מ-Twenty2 Jobs. יש לי משרת [תפקיד] שנראית מדויקת לרקע שלך. 2 דקות?</div>
+            <div class="step-note">✅ שם + הצגה עצמית + ערך מיידי + שאלת רשות</div>
+          </div>
+        </div>
+
+        <div class="script-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">📍 ראפור + סינון ניידות (יחד!)</div>
+            <div class="step-msg">מגניב! אני רואה שאתה מ[עיר]. המשרה ב[עיר] — נסיעה של [X] דקות. זה בסדר מבחינתך?</div>
+            <div class="step-note">✅ מראה שאתה יודע מאיפה הוא + סינון ניידות בצורה עדינה</div>
+          </div>
+        </div>
+
+        <div class="script-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">💰 שקיפות בשכר (לפני שישאלו)</div>
+            <div class="step-msg">המשרה: [תיאור קצר]. שכר: [X]₪/שעה + [הטבות]. לאחר 3 חודשים — [Y]₪. מה הציפייה שלך?</div>
+            <div class="step-note">✅ אל תחכה לשאלת השכר — תציג אתה ראשון. זה בונה אמון</div>
+          </div>
+        </div>
+
+        <div class="script-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">📋 CV — בקשה בעדינות</div>
+            <div class="step-msg">כדי שאוכל להגיש אותך מהר — תשלח לי CV קצר (גם בהודעה כאן זה בסדר) ואני מסדר הכל.</div>
+            <div class="step-note">✅ מסביר למה (כדי להגיש אותך) + מוריד חסם (גם הודעה זה בסדר)</div>
+          </div>
+        </div>
+
+        <div class="script-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">⏰ יצירת דחיפות</div>
+            <div class="step-msg">מצוין! יש לי עוד 2 מועמדים שמתעניינים — אם אתה רלוונטי נשמח לסדר ראיון עד סוף השבוע. מתי נוח לך?</div>
+            <div class="step-note">✅ Scarcity (Cialdini) + ה-Next Step ברור</div>
+          </div>
+        </div>
+
+        <div class="script-step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <div class="step-title">📅 קביעת ראיון</div>
+            <div class="step-msg">מעולה [שם]! הראיון ב[כתובת] ביום [X] בשעה [Y]. תתקשר ל[מנהל] רבע שעה לפני. אשמח לעדכן את [שם המנהל] שאתה מגיע. 👍</div>
+            <div class="step-note">✅ כל הפרטים + commitment + confirmation</div>
+          </div>
+        </div>
+
+        <div class="script-step">
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <div class="step-title">🔄 follow-up חכם (אם שתיקה)</div>
+            <div class="step-msg">
+              <strong>+24h:</strong> "היי [שם], ראית? עדיין יש מקום 😊"<br>
+              <strong>+72h:</strong> "הפרטים שלך מתאימים — לא נרצה לפספס אותך"<br>
+              <strong>+7d:</strong> "[שם], זו הודעתי האחרונה — אחרי זה סוגר את הרשומה. עדיין רלוונטי?"
+            </div>
+            <div class="step-note">✅ Fanatical Prospecting: 3-touch system. לא ויתור — מבנה</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: KPI -->
+  <div id="tab-kpi" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">📊</span>
+        יעדים מדידים — לפני ואחרי השיפור
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-current">~30%</div>
+          <div class="kpi-arrow">↓</div>
+          <div class="kpi-target">0%</div>
+          <div class="kpi-name">שיחות ללא מענה לשאלת מועמד</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-current">~60%</div>
+          <div class="kpi-arrow">↓</div>
+          <div class="kpi-target">20%</div>
+          <div class="kpi-name">שיחות ללא next step</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-current">~5%</div>
+          <div class="kpi-arrow">↑</div>
+          <div class="kpi-target">15-20%</div>
+          <div class="kpi-name">המרה: ליד → ראיון</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-current">1</div>
+          <div class="kpi-arrow">↑</div>
+          <div class="kpi-target">3</div>
+          <div class="kpi-name">מספר follow-up ממוצע</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-current">0</div>
+          <div class="kpi-arrow">↑</div>
+          <div class="kpi-target">100%</div>
+          <div class="kpi-name">שיחות עם שכר מוצג מהמגייס</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-current">~1h</div>
+          <div class="kpi-arrow">↓</div>
+          <div class="kpi-target">15 דקות</div>
+          <div class="kpi-name">זמן תגובה ממוצע לשאלה</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px; background: var(--card); border-radius: 14px; padding: 24px; border: 1px solid var(--border);">
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--gold); margin-bottom: 16px;">🎯 3 דברים לעשות מחר בבוקר</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #0a1a12; border-radius: 10px;">
+            <div style="width: 32px; height: 32px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; flex-shrink: 0;">1</div>
+            <div>לכל שאלת שכר / לוגיסטיקה שלא ענית — ענה עכשיו. "היי [שם], מצטער על האיחור — [תשובה]"</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #0a1a12; border-radius: 10px;">
+            <div style="width: 32px; height: 32px; background: var(--orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; flex-shrink: 0;">2</div>
+            <div>שנה את תבנית הפתיחה — הוסף שם, ערך, ושכר מהרגע הראשון</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #0a1a12; border-radius: 10px;">
+            <div style="width: 32px; height: 32px; background: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; flex-shrink: 0;">3</div>
+            <div>שאל ניידות לפני שמציע משרה בעיר מסוימת — "עד כמה דקות נסיעה מוכן?" קודם</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>🤖 <strong>TWENTY2 SHAREAGENT</strong> | נוצר ב-31.8.2026 | מבוסס על סריקת 150 שיחות WhatsApp Business</p>
+  <p style="margin-top: 8px;">ספרים: SPIN Selling · The Challenger Sale · Never Split the Difference · The Like Switch · Influence · The Go-Giver · Fanatical Prospecting</p>
+</footer>
+
+<script>
+function showTab(el, name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ===== SMART AGENT ===== */
+const SA_CHATS = [
+  {
+    id: 0, name: 'יוסף פנחסוב', phone: '050-827-4686', initials: 'יפ',
+    avatarBg: '#25D366', avatarColor: '#000', status: 'waiting',
+    statusLabel: '⏳ ממתין לנציג', location: 'קרית מלאכי',
+    messages: [
+      { from: 'bot', text: 'שלום יוסף! ראיתי שנרשמת. יש לי משרת סוורות בנמל אשדוד — 48-52₪/שעה + הסעות כלולות. מתאים?', time: '10:00' },
+      { from: 'candidate', text: 'כן מתאים לי', time: '10:09' },
+      { from: 'candidate', text: 'אבל אני לא נייד', time: '10:09' },
+      { from: 'candidate', text: 'אין לי הסעות', time: '10:10' },
+      { from: 'candidate', text: 'אז איך אני יגיע לעבודה באשדוד 😕', time: '10:34' }
+    ],
+    suggestions: [
+      'יוסף, יש הסעות מקרית מלאכי! אוטובוס יוצא ב-06:30 מהמרכז. רוצה שנסדר לך מקום?',
+      'קרית מלאכי לאשדוד כ-40 דקות — ההסעה כלולה בתנאי המשרה, לא עולה לך כלום. מתאים?',
+      'יוסף, בוא נקבע ראיון ביום שישי בנמל אשדוד. שם יסבירו על ההסעות ישירות. אפשר?'
+    ]
+  },
+  {
+    id: 1, name: 'אושר', phone: '052-244-5685', initials: 'אש',
+    avatarBg: '#128C7E', avatarColor: '#fff', status: 'bot',
+    statusLabel: '🤖 בוט פעיל', location: 'נמל אשדוד',
+    messages: [
+      { from: 'bot', text: 'היי אושר! יש ראיון בנמל אשדוד אצל אלכסנדר לוי / קישרי ים — סוורות 48-52₪/שעה. מה השעה שנוחה לך ביום שישי?', time: '09:00' },
+      { from: 'candidate', text: 'בוקר נוח לי', time: '09:15' },
+      { from: 'bot', text: 'מצוין! ראיון ביום שישי 29.8 בשעה 09:00. נמל אשדוד — שאל על אלכסנדר לוי. תתקשר 10 דקות לפני ✅', time: '09:17' },
+      { from: 'candidate', text: 'אוקיי תודה אני אגיע ביום שישי', time: '09:20' }
+    ],
+    suggestions: [
+      'אושר, הגעת לראיון ביום שישי? איך עבר? 😊 נשמח לשמוע!',
+      'היי אושר! קיבלת תשובה מאלכסנדר לוי בנמל אשדוד? עדכן אותי 🙏',
+      'אושר, התחלת לעבוד? יש שאלות? אנחנו פה לכל דבר 😊'
+    ]
+  },
+  {
+    id: 2, name: 'אביתר אלקובי', phone: '050-272-2738', initials: 'אא',
+    avatarBg: '#c0392b', avatarColor: '#fff', status: 'waiting',
+    statusLabel: '⏳ ממתין לנציג', location: 'לא ידוע',
+    messages: [
+      { from: 'bot', text: 'מאיפה אתה מה השם שלך, תן לי פרטים עלייך?', time: '09:22' },
+      { from: 'candidate', text: 'אביתר אלקובי, בן 29 נשוי +2, נייד, רישיון מ-2016 😊', time: '09:28' },
+      { from: 'bot', text: 'מאיפה אתה?', time: '10:33' },
+      { from: 'candidate', text: 'שאלת אותי את אותה שאלה פעמיים... 😒', time: '10:35' }
+    ],
+    suggestions: [
+      'אביתר, סליחה על הכפילות! ראיתי שאתה נייד עם רישיון מ-2016 — יש לי משרת נהג מצוינת. מאיזה אזור אתה?',
+      'אביתר, מתנצל על הבלבול. אתה נשמע מועמד מצוין — בן 29, נייד, רישיון. מה העיר שלך?',
+      'אביתר, סליחה! אתה בדיוק מה שמחפשים. רק תגיד לי מאיפה אתה ואסדר לך משרה קרובה אליך.'
+    ]
+  },
+  {
+    id: 3, name: 'מועמד — קרית אתא', phone: '055-558-5403', initials: 'קא',
+    avatarBg: '#2980b9', avatarColor: '#fff', status: 'agent',
+    statusLabel: '👤 נציג בשיחה', location: 'קרית אתא',
+    messages: [
+      { from: 'bot', text: 'בוקר טוב! מאיפה אתה?', time: '09:53' },
+      { from: 'candidate', text: 'קרית אתא', time: '09:54' },
+      { from: 'bot', text: 'המשרה בחיפה — רלוונטי לך?', time: '10:20' },
+      { from: 'candidate', text: 'כמה לשעה ומה עושים שם 🤔', time: '10:37' }
+    ],
+    suggestions: [
+      'המשרה בחיפה: מחסנאי/עובד ייצור. 35-40₪/שעה. משמרות בוקר וערב. יש הכשרה מהחברה. מתאים?',
+      'שכר: 38₪/שעה + 5₪ בונוס נוכחות + ביגוד. עושים: ניהול מלאי + הפעלת ציוד. נסיעות מכוסות.',
+      'מה אתה עושה היום? ניסיון מחסן? יכולים להתחיל מ-40₪. ספר לי על הרקע שלך 😊'
+    ]
+  },
+  {
+    id: 4, name: 'סטודנט — חיפה', phone: '054-123-4567', initials: 'סט',
+    avatarBg: '#8e44ad', avatarColor: '#fff', status: 'bot',
+    statusLabel: '🤖 בוט פעיל', location: 'חיפה',
+    messages: [
+      { from: 'bot', text: 'היי! יש לנו משרות מעניינות בחיפה ובאזור. מה אתה מחפש?', time: '13:10' },
+      { from: 'candidate', text: 'אני סטודנט, מחפש עבודה צדדית', time: '13:15' },
+      { from: 'bot', text: 'מגניב! כמה שעות בשבוע אתה יכול? ומה הניסיון שלך?', time: '13:16' },
+      { from: 'candidate', text: 'האם זה עבודה מלאה או חלקית?', time: '13:20' }
+    ],
+    suggestions: [
+      'יש לנו גם חלקית! 4-5 שעות ביום, כולל סופ"ש. מה הימים שנוחים לך?',
+      'גמישות מלאה — חלקית ~25 שעות/שבוע. לסטודנטים יש משמרות ערב/בוקר. מה הלו"ז שלך?',
+      'חלקית: ~25 שעות/שבוע. שכר 35-38₪/שעה. אפשר לשלב עם לימודים. מתאים?'
+    ]
+  }
+];
+
+let currentChat = null;
+
+function openChat(idx) {
+  currentChat = idx;
+  const chat = SA_CHATS[idx];
+  document.querySelectorAll('.sa-conv-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('conv-' + idx);
+  if (card) card.classList.add('selected');
+
+  const emptyState = document.getElementById('sa-empty-state');
+  const chatContent = document.getElementById('sa-chat-content');
+  if (emptyState) emptyState.style.display = 'none';
+  if (chatContent) chatContent.style.display = 'flex';
+
+  const statusColors = { waiting: '#ff8c00', bot: '#25D366', agent: '#4fa3e0' };
+  document.getElementById('sa-chat-header').innerHTML =
+    '<div class="sa-conv-avatar" style="background:' + chat.avatarBg + ';color:' + chat.avatarColor + ';width:40px;height:40px;flex-shrink:0">' + chat.initials + '</div>' +
+    '<div><div class="sa-chat-header-name">' + chat.name + '</div><div class="sa-chat-header-sub">📱 ' + chat.phone + ' &nbsp;·&nbsp; 📍 ' + chat.location + '</div></div>' +
+    '<div style="margin-right:auto;display:flex;align-items:center;gap:10px">' +
+    '<span class="sa-status ' + chat.status + '">' + chat.statusLabel + '</span>' +
+    '<button class="sa-takeover-btn" onclick="takeOver(' + idx + ')">' + (chat.status === 'agent' ? '🤖 שחרר לבוט' : '👤 קח שליטה') + '</button>' +
+    '</div>';
+
+  const msgsEl = document.getElementById('sa-chat-messages');
+  msgsEl.innerHTML = '';
+  chat.messages.forEach(function(m) {
+    const isOut = m.from === 'bot' || m.from === 'agent';
+    const bubbleClass = m.from === 'agent' ? 'agent-msg' : (isOut ? 'out' : 'in');
+    const senderLabel = m.from === 'bot' ? '🤖 בוט' : m.from === 'agent' ? '👤 נציג' : chat.name;
+    const div = document.createElement('div');
+    div.className = 'sa-msg ' + (isOut ? 'out' : 'in');
+    div.innerHTML = '<div><div class="sa-msg-sender">' + senderLabel + '</div><div class="sa-bubble ' + bubbleClass + '">' + m.text + '</div><div class="sa-msg-time">' + m.time + '</div></div>';
+    msgsEl.appendChild(div);
+  });
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+
+  const suggEl = document.getElementById('sa-suggestions-list');
+  suggEl.innerHTML = '';
+  chat.suggestions.forEach(function(s) {
+    const div = document.createElement('div');
+    div.className = 'sa-suggestion';
+    div.textContent = s;
+    div.onclick = function() { document.getElementById('sa-reply-input').value = s; };
+    suggEl.appendChild(div);
+  });
+}
+
+function sendAgentMsg() {
+  const input = document.getElementById('sa-reply-input');
+  const text = input.value.trim();
+  if (!text || currentChat === null) return;
+  const chat = SA_CHATS[currentChat];
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  chat.messages.push({ from: 'agent', text: text, time: time });
+  input.value = '';
+  openChat(currentChat);
+}
+
+function takeOver(idx) {
+  const chat = SA_CHATS[idx];
+  if (chat.status !== 'agent') {
+    chat.status = 'agent';
+    chat.statusLabel = '👤 נציג בשיחה';
+    const card = document.getElementById('conv-' + idx);
+    if (card) { card.className = 'sa-conv-card agent selected'; }
+  } else {
+    chat.status = 'bot';
+    chat.statusLabel = '🤖 בוט פעיל';
+    const card = document.getElementById('conv-' + idx);
+    if (card) { card.className = 'sa-conv-card bot selected'; }
+  }
+  openChat(idx);
+}
+
+function returnToBot() {
+  if (currentChat !== null) takeOver(currentChat);
+}
+</script>
+
+</body>
+</html>

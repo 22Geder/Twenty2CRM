@@ -74,6 +74,7 @@ export default function MonthlyStatusPage() {
   });
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
   const selectedPeriod = periodMode === 'year' ? selectedYear : selectedMonth;
+  const yearOptions = Array.from({ length: 8 }, (_, index) => String(new Date().getFullYear() - index));
 
   useEffect(() => {
     fetchData();
@@ -269,14 +270,14 @@ export default function MonthlyStatusPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">📊 סטטוס חודשי</h1>
+          <h1 className="text-3xl font-bold">📊 סטטוס חודשי / שנתי</h1>
           <p className="text-gray-600">
             {periodMode === 'year'
-              ? `מעקב שנתי לפי תאריך העלאה ותאריך התקבל — שנת ${selectedYear}`
-              : 'מעקב חודשי לפי תאריך העלאה ותאריך התקבל'}
+              ? `מעקב שנתי לפי תאריך העלאה, תהליך וקבלה — כל שנת ${selectedYear}`
+              : 'מעקב חודשי לפי תאריך העלאה, תהליך וקבלה'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex rounded-md border overflow-hidden">
             <Button
               type="button"
@@ -296,14 +297,16 @@ export default function MonthlyStatusPage() {
             </Button>
           </div>
           {periodMode === 'year' ? (
-            <Input
-              type="number"
-              min="2000"
-              max="2100"
+            <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-28"
-            />
+              className="h-9 w-32 rounded-md border border-input bg-background px-3 text-sm"
+              aria-label="בחירת שנה"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
           ) : (
             <Input
               type="month"

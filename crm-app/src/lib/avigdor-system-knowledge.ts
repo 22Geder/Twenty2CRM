@@ -4,12 +4,12 @@ const SCREENS_OVERVIEW: CrmHowToSnippet = {
   topic: "מסכי המערכת",
   answer: [
     "מסכי TWENTY2CRM לפי התפריט הימני:",
-    "לוח בקרה (/dashboard) — סיכום פעילות ו\"הביצועים שלי\" (רק המשתמש המחובר).",
+    "לוח בקרה (/dashboard) — סיכום פעילות וביצועי מגייסים (אדמין רואה את כולם; מגייס רואה רק את עצמו).",
     "מועמדים (/dashboard/candidates) — מאגר וכרטיס מועמד עם מאצ'ינג; סימון התקבל בכרטיס.",
     "משרות (/dashboard/positions) — מאגר משרות; משרה חדשה נשמרת לא פעילה עד שמפעילים אותה.",
     "מעסיקים (/dashboard/employers), ראיונות (/dashboard/interviews).",
     "הכנסת מועמד (/dashboard/recruitment-board), העלאה המונית (/dashboard/upload), משרות המוניות (/dashboard/positions/bulk-upload).",
-    "סטטוס חודשי/שנתי (/dashboard/monthly-status) — בחירת חודש או שנה ותאריכי עלה/התקבל. שעון נוכחות (/dashboard/attendance), פנקס רישום (/dashboard/system-registry), הגדרות (/dashboard/settings).",
+    "סטטוס חודשי/שנתי (/dashboard/monthly-status) — בחירת חודש או שנה מלאה ותאריכי עלה/תהליך/התקבל. Share Agent (/dashboard/share-agent). שעון נוכחות (/dashboard/attendance), פנקס רישום (/dashboard/system-registry), הגדרות (/dashboard/settings).",
     "בצד שמאל: פאנל אביגדור — צ'אט + גרירת קו\"ח (PDF/Word/תמונה) ושאלות מאצ'ינג.",
     "אל תמציא סיסמאות, מיילים או טלפונים.",
   ].join(" "),
@@ -50,7 +50,7 @@ const PLAYBOOK: { topic: string; keywords: string[]; answer: string }[] = [
     topic: "דשבורד ומסכים",
     keywords: ["דשבורד", "לוח בקרה", "תפריט", "איפה", "מסך", "הגדרות"],
     answer:
-      'לוח בקרה: /dashboard — כולל "הביצועים שלי" (רק המשתמש המחובר). מועמדים, משרות, מעסיקים וראיונות בקבוצת ניהול. כלים: הכנסת מועמד, העלאה המונית, משרות המוניות, סטטוס חודשי/שנתי, שעון נוכחות, פנקס רישום. הגדרות: /dashboard/settings.',
+      'לוח בקרה: /dashboard — כולל ביצועי מגייסים (אדמין רואה את כולם). מועמדים, משרות, מעסיקים וראיונות בקבוצת ניהול. כלים: הכנסת מועמד, העלאה המונית, משרות המוניות, סטטוס חודשי/שנתי, שעון נוכחות, פנקס רישום. הגדרות: /dashboard/settings.',
   },
   {
     topic: "ראיונות",
@@ -94,7 +94,7 @@ const PLAYBOOK: { topic: string; keywords: string[]; answer: string }[] = [
     topic: "ביצועי מגייס",
     keywords: ["מגייסים", "מגייס", "ביצועים", "הביצועים שלי"],
     answer:
-      'לוח בקרה / מגייסים: /dashboard — וידג\'ט "הביצועים שלי" מציג רק את המשתמש המחובר (גם לאדמין).',
+      'לוח בקרה / מגייסים: /dashboard — וידג\'ט ביצועי מגייסים. אדמין/office רואים את כל המגייסים; מגייס רגיל רואה רק את עצמו.',
   },
 ]
 

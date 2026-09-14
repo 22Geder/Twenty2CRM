@@ -20,7 +20,7 @@ describe("lookupCrmHowTo", () => {
   it.each([
     ["איפה מסמנים שהתקבל", "/dashboard/candidates/", "התקבל"],
     ["איך מעלים קוח", "/dashboard/upload", "אביגדור"],
-    ["איפה רואים מגייסים", "/dashboard", "הביצועים שלי"],
+    ["איפה רואים מגייסים", "/dashboard", "מגייסים"],
     ["סטטוס שנתי", "/dashboard/monthly-status", "שנה"],
   ])("מפנה למסך הנכון עבור %s", (question, path, hint) => {
     const hits = lookupCrmHowTo(question)

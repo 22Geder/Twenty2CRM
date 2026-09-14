@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { isCalendarOAuthConfigured } from "@/lib/google-calendar"
 
 // GET /api/calendar/status — is the current user connected to Google Calendar?
 export async function GET() {
@@ -20,6 +21,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
+      configured: isCalendarOAuthConfigured(),
       connected: Boolean(user?.googleCalendarRefreshToken),
       calendarEmail: user?.googleCalendarEmail ?? null,
     })

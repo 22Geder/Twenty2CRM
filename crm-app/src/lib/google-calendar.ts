@@ -8,6 +8,10 @@ function readServerEnv(name: string): string | undefined {
   return process.env[name]?.trim()
 }
 
+export function isCalendarOAuthConfigured(): boolean {
+  return Boolean(readServerEnv("GMAIL_CLIENT_ID") && readServerEnv("GMAIL_CLIENT_SECRET"))
+}
+
 function getOAuthConfig() {
   const clientId = readServerEnv("GMAIL_CLIENT_ID")
   const clientSecret = readServerEnv("GMAIL_CLIENT_SECRET")

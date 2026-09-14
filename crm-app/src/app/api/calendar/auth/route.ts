@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { getCalendarAuthUrl } from "@/lib/google-calendar"
 
 // GET /api/calendar/auth — redirect to Google OAuth for Calendar access
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -15,6 +15,6 @@ export async function GET() {
     return NextResponse.redirect(url)
   } catch (error) {
     console.error("Calendar OAuth configuration error:", error)
-    return NextResponse.redirect(new URL("/dashboard/calendar-setup?error=oauth_config", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/dashboard/calendar-setup?error=oauth_config", request.url))
   }
 }

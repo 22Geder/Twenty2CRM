@@ -13,15 +13,21 @@ describe('getNotifyEmails', () => {
     }
   })
 
-  it('תמיד כולל את 22geder@gmail.com', () => {
+  it('תמיד כולל את office@hr22group.com בלבד כברירת מחדל', () => {
     delete process.env.CRM_NOTIFY_EMAIL
     expect(getNotifyEmails()).toEqual([CRM_NOTIFY_DEFAULT_EMAIL])
-    expect(getNotifyEmails()[0]).toBe('22geder@gmail.com')
+    expect(getNotifyEmails()[0]).toBe('office@hr22group.com')
   })
 
-  it('מוסיף כתובות נוספות מ-CRM_NOTIFY_EMAIL בלי לשכפל', () => {
-    process.env.CRM_NOTIFY_EMAIL = '22geder@gmail.com, office@hr22group.com, not-an-email'
-    expect(getNotifyEmails()).toEqual(['22geder@gmail.com', 'office@hr22group.com'])
+  it('מתעלם מ-CRM_NOTIFY_EMAIL ושולח רק לאדמין office', () => {
+    process.env.CRM_NOTIFY_EMAIL = 'office@hr22group.com, 22geder@gmail.com, liel@twenty.com'
+    expect(getNotifyEmails()).toEqual(['office@hr22group.com'])
+  })
+
+  it('לא שולח ל-Liel או 22geder', () => {
+    expect(getNotifyEmails()).not.toContain('22geder@gmail.com')
+    expect(getNotifyEmails()).not.toContain('liel@twenty.com')
+    expect(getNotifyEmails()).toHaveLength(1)
   })
 })
 

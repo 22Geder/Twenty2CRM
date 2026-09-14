@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
-import { sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
+import { sendCandidateStatusChangeEmail, sendProcessEntryEmail } from "@/lib/process-notifications"
 
 // GET /api/applications/[id] - קבלת בקשה ספציפית
 export async function GET(
@@ -166,8 +166,21 @@ export async function PUT(
         },
       })
 
-      // 📧 מייל עדכון סטטוס - שליחה ברקע
-      sendCandidateStatusChangeEmail({
+      if (
+        status === 'IN_PROCESS' &&
+        existingApplication.status !== 'IN_PROCESS' &&
+        existingApplication.candidate.employmentStatus !== 'IN_PROCESS'
+      ) {
+        await sendProcessEntryEmail({
+          candidateName: existingApplication.candidate.name,
+          positionTitle: existingApplication.position.title,
+          employerName: (existingApplication.position as any).employer?.name ?? null,
+          phone: existingApplication.candidate.phone,
+          recruiterName: session.user?.name || session.user?.email || null,
+        })
+      }
+
+      await sendCandidateStatusChangeEmail({
         candidateName: existingApplication.candidate.name,
         phone: existingApplication.candidate.phone,
         positionTitle: existingApplication.position.title,
@@ -176,7 +189,7 @@ export async function PUT(
         oldStatus: existingApplication.status,
         rejectionReason: rejectionReason ?? null,
         candidateId: existingApplication.candidateId,
-      }).catch(() => {})
+      })
     }
 
     return NextResponse.json(application)

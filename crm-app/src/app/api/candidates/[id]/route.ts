@@ -33,7 +33,7 @@ export async function GET(
         interviews: {
           include: {
             position: true,
-            scheduler: true,
+            scheduler: { select: { id: true, name: true, email: true } },
           },
           orderBy: { scheduledAt: "desc" },
         },
@@ -42,7 +42,7 @@ export async function GET(
         },
         communications: {
           include: {
-            user: true,
+            user: { select: { id: true, name: true, email: true } },
           },
           orderBy: { createdAt: "desc" },
         },
@@ -275,14 +275,13 @@ export async function PUT(
           empName = pos?.employer?.name || null
         } catch { /* ignore */ }
       }
-      // שליחה ברקע - לא חוסמת את התגובה
-      sendProcessEntryEmail({
+      await sendProcessEntryEmail({
         candidateName: candidate.name,
         positionTitle: posTitle,
         employerName: empName,
         phone: candidate.phone,
         recruiterName: session.user?.name || session.user?.email || null,
-      }).catch(() => {})
+      })
     }
 
     // 📧 מייל שינוי סטטוס - התקבל / נדחה
@@ -305,7 +304,7 @@ export async function PUT(
           empName = pos?.employer?.name || null
         } catch { /* ignore */ }
       }
-      sendCandidateStatusChangeEmail({
+      await sendCandidateStatusChangeEmail({
         candidateName: candidate.name,
         phone: candidate.phone,
         positionTitle: posTitle,
@@ -313,7 +312,7 @@ export async function PUT(
         newStatus: employmentStatus,
         oldStatus: existingCandidate.employmentStatus,
         candidateId: candidate.id,
-      }).catch(() => {})
+      })
     }
 
     // 📧 מועמד ירד מתהליך (חזרה לחדש - ללא דחייה רשמית)
@@ -337,7 +336,7 @@ export async function PUT(
           prevEmpName = pos?.employer?.name || null
         } catch { /* ignore */ }
       }
-      sendCandidateStatusChangeEmail({
+      await sendCandidateStatusChangeEmail({
         candidateName: candidate.name,
         phone: candidate.phone,
         positionTitle: prevPosTitle,
@@ -345,7 +344,7 @@ export async function PUT(
         newStatus: 'WITHDRAWN',
         oldStatus: 'IN_PROCESS',
         candidateId: candidate.id,
-      }).catch(() => {})
+      })
     }
 
     return NextResponse.json(candidate)

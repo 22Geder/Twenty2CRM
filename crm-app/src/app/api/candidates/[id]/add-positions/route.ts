@@ -110,25 +110,27 @@ export async function POST(
     // עדכון המועמד - שינוי לסטטוס "בתהליך" עם המשרה הראשונה
     const firstPositionId = positionIds[0]
     const wasAlreadyInProcess = candidate.employmentStatus === 'IN_PROCESS'
+    const firstPos = positions.find(p => p.id === firstPositionId)
     await prisma.candidate.update({
       where: { id: candidateId },
       data: {
         employmentStatus: 'IN_PROCESS', // 🆕 עדכון סטטוס המועמד לבתהליך!
         inProcessPositionId: candidate.inProcessPositionId || firstPositionId,
+        inProcessPositionTitle: firstPos?.title ?? candidate.inProcessPositionTitle ?? null,
+        inProcessEmployerName: (firstPos as any)?.employer?.name ?? candidate.inProcessEmployerName ?? null,
         inProcessAt: candidate.inProcessAt || new Date(),
       },
     })
 
     // 🆕 שליחת מייל כניסה לתהליך (רק אם לא היה בתהליך לפני כן)
     if (!wasAlreadyInProcess) {
-      const firstPos = positions.find(p => p.id === firstPositionId)
-      sendProcessEntryEmail({
+      await sendProcessEntryEmail({
         candidateName: candidate.name,
         positionTitle: firstPos?.title || null,
         employerName: (firstPos as any)?.employer?.name || null,
         phone: candidate.phone,
         recruiterName: session.user?.name || session.user?.email || null,
-      }).catch(() => {})
+      })
     }
 
     return NextResponse.json({
@@ -255,13 +257,13 @@ export async function DELETE(
       })
 
       if (!nextApplication && candidate.employmentStatus === 'IN_PROCESS') {
-        sendCandidateStatusChangeEmail({
+        await sendCandidateStatusChangeEmail({
           candidateName: candidate.name,
           phone: candidate.phone,
           newStatus: 'WITHDRAWN',
           oldStatus: 'IN_PROCESS',
           candidateId: candidate.id,
-        }).catch(() => {})
+        })
       }
     }
 

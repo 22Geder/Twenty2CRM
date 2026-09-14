@@ -3,9 +3,7 @@
 
 import { sendCrmEmail } from './email-sender'
 
-export const CRM_NOTIFY_DEFAULT_EMAIL = '22geder@gmail.com'
-
-const EMAIL_RE = /^[\w.-]+@[\w.-]+\.\w+$/
+export const CRM_NOTIFY_DEFAULT_EMAIL = 'office@hr22group.com'
 
 export function escapeHtml(value: string | null | undefined): string {
   if (!value) return ''
@@ -18,12 +16,7 @@ export function escapeHtml(value: string | null | undefined): string {
 }
 
 export function getNotifyEmails(): string[] {
-  const extras = (process.env.CRM_NOTIFY_EMAIL || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => EMAIL_RE.test(s))
-
-  return [...new Set([CRM_NOTIFY_DEFAULT_EMAIL, ...extras])]
+  return [CRM_NOTIFY_DEFAULT_EMAIL]
 }
 
 function getNotifyEmail(): string {

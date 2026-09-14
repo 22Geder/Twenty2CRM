@@ -355,7 +355,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    sendCandidateUploadEmail({
+    await sendCandidateUploadEmail({
       candidateName: candidate.name,
       phone: candidate.phone,
       email: candidate.email,
@@ -364,7 +364,7 @@ export async function POST(request: NextRequest) {
       createdCandidate: true,
       uploadedByName: session.user?.name || session.user?.email || null,
       candidateId: candidate.id,
-    }).catch(() => {})
+    })
 
     return NextResponse.json(candidate, { status: 201 })
   } catch (error) {

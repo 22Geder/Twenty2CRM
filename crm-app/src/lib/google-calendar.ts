@@ -4,13 +4,22 @@
  */
 import { google } from "googleapis"
 
-const CLIENT_ID     = process.env.GMAIL_CLIENT_ID!
-const CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET!
-const REDIRECT_URI  = process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
-                      `${process.env.NEXTAUTH_URL}/api/calendar/callback`
+function getOAuthConfig() {
+  const clientId = process.env.GMAIL_CLIENT_ID?.trim()
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET?.trim()
+  const redirectUri = process.env.GOOGLE_CALENDAR_REDIRECT_URI?.trim() ||
+    `${process.env.NEXTAUTH_URL}/api/calendar/callback`
+
+  if (!clientId || !clientSecret) {
+    throw new Error("Google Calendar OAuth is not configured")
+  }
+
+  return { clientId, clientSecret, redirectUri }
+}
 
 export function createOAuth2Client(refreshToken?: string) {
-  const auth = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
+  const { clientId, clientSecret, redirectUri } = getOAuthConfig()
+  const auth = new google.auth.OAuth2(clientId, clientSecret, redirectUri)
   if (refreshToken) {
     auth.setCredentials({ refresh_token: refreshToken })
   }

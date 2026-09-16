@@ -8,6 +8,7 @@
  */
 
 import { prisma } from './prisma'
+import { websiteEmployerFields } from './employer-logo'
 
 // הגדרות
 const TWENTY2JOBS_URL = process.env.TWENTY2JOBS_URL || 'https://hr22group.com'
@@ -141,14 +142,7 @@ function preparePositionPayload(position: PositionData) {
     openings: position.openings || 1,
     benefits: position.benefits || '',
     work_hours: position.workHours || '',
-    employer: position.employer ? {
-      name: position.employer.name,
-      email: position.employer.email || '',
-      phone: position.employer.phone || '',
-      website: position.employer.website || '',
-      logo: position.employer.logo || '',
-      description: position.employer.description || '',
-    } : undefined,
+    employer: websiteEmployerFields(position.employer),
   }
 }
 

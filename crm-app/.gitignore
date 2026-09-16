@@ -42,6 +42,9 @@ next-env.d.ts
 
 service-account-key.json
 
+# לוגואים פנימיים של מעסיקים — CRM בלבד
+/private-uploads/
+
 # Test scripts with secrets
 send-test-email.js
 test-*.js

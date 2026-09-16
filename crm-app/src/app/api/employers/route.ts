@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { sanitizeEmployerLogoUrl } from "@/lib/employer-logo"
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
           }
         },
         positions: {
-          select: { updatedAt: true }
+          select: { updatedAt: true, active: true }
         }
       }
     })
@@ -28,7 +29,8 @@ export async function GET(request: NextRequest) {
       const lastPositionUpdate = positions.length > 0
         ? positions.reduce((latest, p) => p.updatedAt > latest ? p.updatedAt : latest, positions[0].updatedAt)
         : null
-      return { ...emp, lastPositionUpdate }
+      const activePositions = positions.filter((p) => p.active).length
+      return { ...emp, lastPositionUpdate, activePositions }
     })
 
     return NextResponse.json(result)
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
         email,
         phone,
         website,
-        logo,
+        logo: sanitizeEmployerLogoUrl(logo),
         description
       }
     })

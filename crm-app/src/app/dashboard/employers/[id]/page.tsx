@@ -22,6 +22,7 @@ import {
   MapPin, Calendar, User, ChevronRight, CheckCircle, Clock, XCircle, Pencil, Save, Loader2, Plus,
   MessageCircle, ExternalLink, Download, Star, TrendingUp, ChevronDown, ChevronUp, X, FileText
 } from "lucide-react"
+import { EmployerLogo, EmployerLogoUploader } from "@/components/employer-logo"
 
 interface Employer {
   id: string
@@ -140,7 +141,8 @@ export default function EmployerDetailPage({ params }: PageProps) {
     email: "",
     phone: "",
     website: "",
-    description: ""
+    description: "",
+    logo: ""
   })
   
   // Matching candidates state
@@ -167,7 +169,8 @@ export default function EmployerDetailPage({ params }: PageProps) {
           email: data.email || "",
           phone: data.phone || "",
           website: data.website || "",
-          description: data.description || ""
+          description: data.description || "",
+          logo: data.logo || ""
         })
       } else {
         setError("לקוח לא נמצא")
@@ -188,7 +191,10 @@ export default function EmployerDetailPage({ params }: PageProps) {
       const response = await fetch(`/api/employers/${employer.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify({
+          ...editForm,
+          logo: editForm.logo.trim() || null
+        })
       })
       
       if (response.ok) {
@@ -440,9 +446,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
 
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-[#FF8C00] to-[#E65100] rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF8C00]/30">
-                <Building2 className="h-10 w-10 text-white" />
-              </div>
+              <EmployerLogo name={employer.name} logo={employer.logo} size="xl" className="shadow-lg" />
               <div>
                 <h1 className="text-4xl font-bold text-white">{employer.name}</h1>
                 <div className="flex items-center gap-4 mt-2">
@@ -478,6 +482,11 @@ export default function EmployerDetailPage({ params }: PageProps) {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
+                    <EmployerLogoUploader
+                      name={editForm.name}
+                      value={editForm.logo}
+                      onChange={(logo) => setEditForm({ ...editForm, logo })}
+                    />
                     <div className="space-y-2">
                       <Label htmlFor="name">שם הלקוח</Label>
                       <Input

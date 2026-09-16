@@ -112,7 +112,7 @@ function preparePositionPayload(position: Position) {
       email: position.employer.email || '',
       phone: position.employer.phone || '',
       website: position.employer.website || '',
-      logo: position.employer.logo || '',
+      logo: '',
       description: position.employer.description || '',
     } : undefined,
   }

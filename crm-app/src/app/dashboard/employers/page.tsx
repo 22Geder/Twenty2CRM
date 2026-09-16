@@ -5,13 +5,13 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Plus, Search, Building2, Phone, Mail, Globe, Briefcase,
-  X, Save, Tag, ChevronRight, Pencil, Loader2
+  X, Save, Tag, ChevronLeft, Pencil, Loader2
 } from "lucide-react"
+import { EmployerLogo, EmployerLogoUploader } from "@/components/employer-logo"
 
 interface Employer {
   id: string
@@ -23,6 +23,7 @@ interface Employer {
   description?: string
   createdAt: string
   lastPositionUpdate?: string | null
+  activePositions?: number
   _count?: {
     positions: number
   }
@@ -37,7 +38,8 @@ export default function EmployersModernPage() {
     email: "",
     phone: "",
     website: "",
-    description: ""
+    description: "",
+    logo: ""
   }
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -86,7 +88,8 @@ export default function EmployersModernPage() {
       email: emp.email || "",
       phone: emp.phone || "",
       website: emp.website || "",
-      description: emp.description || ""
+      description: emp.description || "",
+      logo: emp.logo || ""
     })
     setFormError("")
     setShowModal(true)
@@ -113,7 +116,8 @@ export default function EmployersModernPage() {
             email: formData.email.trim(),
             phone: formData.phone.trim(),
             website: formData.website.trim(),
-            description: formData.description.trim()
+            description: formData.description.trim(),
+            logo: formData.logo.trim() || null
           })
         }
       )
@@ -140,10 +144,16 @@ export default function EmployersModernPage() {
     }
   }
 
-  const filteredEmployers = employers.filter(emp =>
-    emp.name.toLowerCase().includes(search.toLowerCase()) ||
-    emp.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredEmployers = employers.filter(emp => {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    return emp.name.toLowerCase().includes(q) ||
+      emp.email?.toLowerCase().includes(q) ||
+      emp.phone?.includes(q) ||
+      emp.website?.toLowerCase().includes(q)
+  })
+  const totalPositions = employers.reduce((sum, emp) => sum + (emp._count?.positions || 0), 0)
+  const totalActive = employers.reduce((sum, emp) => sum + (emp.activePositions || 0), 0)
 
   if (loading) {
     return (
@@ -200,7 +210,7 @@ export default function EmployersModernPage() {
           </div>
           <div>
             <p className="t22-num text-3xl font-bold text-slate-900">
-              {employers.reduce((sum, emp) => sum + (emp._count?.positions || 0), 0)}
+              {totalActive}
             </p>
             <p className="text-sm text-slate-500 font-medium">משרות פעילות</p>
           </div>
@@ -213,9 +223,7 @@ export default function EmployersModernPage() {
           </div>
           <div>
             <p className="t22-num text-3xl font-bold text-slate-900">
-              {employers.length > 0 
-                ? Math.round(employers.reduce((sum, emp) => sum + (emp._count?.positions || 0), 0) / employers.length)
-                : 0}
+              {employers.length > 0 ? Math.round(totalPositions / employers.length) : 0}
             </p>
             <p className="text-sm text-slate-500 font-medium">ממוצע משרות ללקוח</p>
           </div>
@@ -247,29 +255,30 @@ export default function EmployersModernPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="חפש לפי שם לקוח או אימייל..."
+            placeholder="חפש לפי שם לקוח, אימייל, טלפון או אתר..."
             className="pr-12 h-12 text-base border border-slate-200 rounded-xl bg-slate-50/50"
           />
         </div>
       </div>
 
       {/* Clean Employers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredEmployers.map((employer) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {filteredEmployers.map((employer) => {
+          const positionCount = employer._count?.positions || 0
+          const activeCount = employer.activePositions || 0
+          return (
           <Link key={employer.id} href={`/dashboard/employers/${employer.id}`} className="h-full">
-            <Card className="t22-card-elevated t22-card-soft group p-6 cursor-pointer relative h-full flex flex-col">
-              <div className="relative flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
-                    <Building2 className="h-6 w-6" style={{ color: 'var(--brand-primary)' }} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-900 transition-colors" style={{ }}>{employer.name}</h3>
-                    <p className="text-xs text-slate-400">
-                      נוצר {new Date(employer.createdAt).toLocaleDateString('he-IL')}
+            <Card className="t22-card-elevated t22-card-soft group p-0 cursor-pointer relative h-full flex flex-col overflow-hidden">
+              <div className="p-5 pb-4 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <EmployerLogo name={employer.name} logo={employer.logo} size="md" />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg text-slate-900 leading-tight truncate">{employer.name}</h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      נוסף {new Date(employer.createdAt).toLocaleDateString('he-IL')}
                     </p>
                     {employer.lastPositionUpdate && (
-                      <p className="text-xs font-medium" style={{ color: 'var(--brand-primary)' }}>
+                      <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--brand-primary)' }}>
                         משרות עודכנו {new Date(employer.lastPositionUpdate).toLocaleDateString('he-IL')}
                       </p>
                     )}
@@ -280,7 +289,7 @@ export default function EmployersModernPage() {
                   variant="ghost"
                   size="sm"
                   onClick={(e) => openEdit(e, employer)}
-                  className="hover:bg-orange-50 hover:text-[#E65100]"
+                  className="hover:bg-orange-50 hover:text-[#E65100] flex-shrink-0"
                   title="עריכת מעסיק"
                 >
                   <Pencil className="h-4 w-4" />
@@ -288,11 +297,11 @@ export default function EmployersModernPage() {
                 </Button>
               </div>
 
-            <p className="text-sm text-slate-500 mb-4 max-h-20 overflow-hidden line-clamp-2 relative min-h-[2.5rem]">
-              {employer.description || ''}
+            <p className="text-sm text-slate-500 px-5 mb-4 line-clamp-2 min-h-[2.5rem]">
+              {employer.description || "אין תיאור לחברה"}
             </p>
 
-            <div className="space-y-2 mb-4 relative">
+            <div className="space-y-2 px-5 mb-4">
               <div className="flex items-center gap-2 text-sm min-w-0">
                 <Mail className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--brand-primary)' }} />
                 <span className="text-slate-600 truncate min-w-0" dir="ltr" title={employer.email}>{employer.email}</span>
@@ -306,42 +315,46 @@ export default function EmployersModernPage() {
               {employer.website && (
                 <div className="flex items-center gap-2 text-sm min-w-0">
                   <Globe className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--brand-lavender)' }} />
-                  <a 
-                    href={employer.website} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:underline truncate min-w-0"
-                    style={{ color: 'var(--brand-primary)' }}
+                  <span
+                    className="truncate min-w-0 text-slate-600"
+                    dir="ltr"
+                    title={employer.website}
                   >
-                    {employer.website}
-                  </a>
+                    {employer.website.replace(/^https?:\/\//, "")}
+                  </span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 relative mt-auto">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 mt-auto bg-slate-50/70">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="t22-pill t22-pill--primary">
-                  {employer._count?.positions || 0} משרות
+                  {positionCount} משרות
+                </span>
+                <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">
+                  {activeCount} פעילות
                 </span>
               </div>
-              <span className="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl inline-flex items-center gap-1 text-xs font-semibold transition-colors">
+              <span className="text-blue-600 inline-flex items-center gap-1 text-xs font-semibold">
                 לפרטים
-                <ChevronRight className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
               </span>
             </div>
           </Card>
           </Link>
-        ))}
+          )
+        })}
       </div>
 
       {filteredEmployers.length === 0 && (
         <Card className="p-16">
           <div className="text-center">
             <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-30" />
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">אין לקוחות עדיין</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              {search.trim() ? "לא נמצאו לקוחות מתאימים" : "אין לקוחות עדיין"}
+            </h3>
             <p className="text-muted-foreground text-lg">
-              התחל בהוספת לקוח ראשון כדי לנהל משרות
+              {search.trim() ? "נסו שם, אימייל או טלפון אחר" : "התחל בהוספת לקוח ראשון כדי לנהל משרות"}
             </p>
             <Button 
               onClick={openCreate}
@@ -379,6 +392,11 @@ export default function EmployersModernPage() {
                   {formError}
                 </div>
               )}
+              <EmployerLogoUploader
+                name={formData.name}
+                value={formData.logo}
+                onChange={(logo) => setFormData({ ...formData, logo })}
+              />
               <div>
                 <Label htmlFor="name" className="text-lg font-semibold">שם החברה *</Label>
                 <Input

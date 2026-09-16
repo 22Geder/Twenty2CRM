@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { sanitizeEmployerLogoUrl } from "@/lib/employer-logo"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -97,7 +98,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         email: trimmedEmail,
         phone: typeof phone === "string" ? phone.trim() || null : phone,
         website: typeof website === "string" ? website.trim() || null : website,
-        logo,
+        logo: logo === null || logo === "" ? null : sanitizeEmployerLogoUrl(logo) ?? existing.logo,
         description: typeof description === "string" ? description.trim() || null : description
       }
     })

@@ -9,9 +9,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Plus, Search, Building2, Phone, Mail, Globe, Briefcase,
-  X, Save, Tag, ChevronLeft, Pencil, Loader2
+  X, Save, Tag, ChevronLeft, Pencil, Loader2, ImageIcon, ImageOff, ArrowDownAZ
 } from "lucide-react"
 import { EmployerLogo, EmployerLogoUploader } from "@/components/employer-logo"
+
+const hebrewCollator = new Intl.Collator("he", { sensitivity: "base", numeric: true })
+type LogoFilter = "all" | "with-logo" | "without-logo"
 
 interface Employer {
   id: string
@@ -33,6 +36,7 @@ export default function EmployersModernPage() {
   const [employers, setEmployers] = useState<Employer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [logoFilter, setLogoFilter] = useState<LogoFilter>("all")
   const emptyForm = {
     name: "",
     email: "",
@@ -144,16 +148,21 @@ export default function EmployersModernPage() {
     }
   }
 
-  const filteredEmployers = employers.filter(emp => {
-    const q = search.trim().toLowerCase()
-    if (!q) return true
-    return emp.name.toLowerCase().includes(q) ||
-      emp.email?.toLowerCase().includes(q) ||
-      emp.phone?.includes(q) ||
-      emp.website?.toLowerCase().includes(q)
-  })
+  const filteredEmployers = employers
+    .filter(emp => {
+      const q = search.trim().toLowerCase()
+      const matchesSearch = !q || emp.name.toLowerCase().includes(q) ||
+        emp.email?.toLowerCase().includes(q) ||
+        emp.phone?.includes(q) ||
+        emp.website?.toLowerCase().includes(q)
+      const matchesLogo = logoFilter === "all" ||
+        (logoFilter === "with-logo" ? Boolean(emp.logo) : !emp.logo)
+      return matchesSearch && matchesLogo
+    })
+    .sort((first, second) => hebrewCollator.compare(first.name, second.name))
   const totalPositions = employers.reduce((sum, emp) => sum + (emp._count?.positions || 0), 0)
   const totalActive = employers.reduce((sum, emp) => sum + (emp.activePositions || 0), 0)
+  const logoCount = employers.filter((employer) => employer.logo).length
 
   if (loading) {
     return (
@@ -248,9 +257,10 @@ export default function EmployersModernPage() {
         </div>
       </div>
 
-      {/* Sticky search */}
-      <div className="t22-card-soft mb-8 p-3 relative overflow-hidden">
-        <div className="relative">
+      {/* Search and logo status filters */}
+      <div className="t22-card-soft mb-8 p-3 md:p-4 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="relative flex-1">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: 'var(--text-faint)' }} />
           <Input
             value={search}
@@ -258,6 +268,33 @@ export default function EmployersModernPage() {
             placeholder="חפש לפי שם לקוח, אימייל, טלפון או אתר..."
             className="pr-12 h-12 text-base border border-slate-200 rounded-xl bg-slate-50/50"
           />
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto" aria-label="סינון לפי מצב לוגו">
+            {([
+              { value: "all", label: "הכול", count: employers.length, icon: Building2 },
+              { value: "with-logo", label: "יש לוגו", count: logoCount, icon: ImageIcon },
+              { value: "without-logo", label: "חסר לוגו", count: employers.length - logoCount, icon: ImageOff },
+            ] as const).map(({ value, label, count, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setLogoFilter(value)}
+                className={`h-10 px-3 inline-flex items-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors ${
+                  logoFilter === value
+                    ? "border-cyan-600 bg-cyan-50 text-cyan-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+                <span className="t22-num text-xs opacity-70">{count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3 px-1 text-xs text-slate-500">
+          <span>{filteredEmployers.length} תוצאות</span>
+          <span className="inline-flex items-center gap-1.5"><ArrowDownAZ className="h-4 w-4" />מיון א-ב</span>
         </div>
       </div>
 
@@ -354,7 +391,7 @@ export default function EmployersModernPage() {
               {search.trim() ? "לא נמצאו לקוחות מתאימים" : "אין לקוחות עדיין"}
             </h3>
             <p className="text-muted-foreground text-lg">
-              {search.trim() ? "נסו שם, אימייל או טלפון אחר" : "התחל בהוספת לקוח ראשון כדי לנהל משרות"}
+              {search.trim() || logoFilter !== "all" ? "נסו לשנות את החיפוש או את מסנן הלוגו" : "התחל בהוספת לקוח ראשון כדי לנהל משרות"}
             </p>
             <Button 
               onClick={openCreate}

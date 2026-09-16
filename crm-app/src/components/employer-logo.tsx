@@ -1,22 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, ImagePlus, Loader2, X } from "lucide-react"
+import { ImagePlus, Loader2, X } from "lucide-react"
 import { isSafeCrmLogoSrc } from "@/lib/employer-logo-url"
-
-const palettes = [
-  { from: "#06B6D4", to: "#0891B2" },
-  { from: "#6366F1", to: "#4F46E5" },
-  { from: "#10B981", to: "#059669" },
-  { from: "#F97316", to: "#EA580C" },
-  { from: "#A855F7", to: "#7C3AED" },
-  { from: "#3B82F6", to: "#2563EB" },
-]
-
-function nameToColor(name: string) {
-  const idx = (name || "").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % palettes.length
-  return palettes[idx]
-}
 
 const sizeMap = {
   sm: "w-11 h-11",
@@ -38,7 +24,6 @@ export function EmployerLogo({
 }) {
   const [failed, setFailed] = useState(false)
   const src = isSafeCrmLogoSrc(logo) ? logo! : null
-  const { from, to } = nameToColor(name)
   const initial = (name || "?").trim().charAt(0) || "?"
 
   return (
@@ -56,15 +41,8 @@ export function EmployerLogo({
           className="w-full h-full object-contain p-1.5 bg-white"
         />
       ) : (
-        <div
-          className="w-full h-full flex items-center justify-center"
-          style={{ background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)` }}
-        >
-          {initial ? (
-            <span className="text-white font-bold text-lg leading-none">{initial}</span>
-          ) : (
-            <Building2 className="h-6 w-6 text-white" />
-          )}
+        <div className="w-full h-full flex items-center justify-center bg-slate-100">
+          <span className="text-slate-500 font-bold text-lg leading-none">{initial}</span>
         </div>
       )}
     </div>

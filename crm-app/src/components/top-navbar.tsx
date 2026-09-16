@@ -6,30 +6,72 @@ import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { 
   Settings, Menu, X,
-  Home, ChevronLeft, LogOut, User, UserCog
+  Home, ChevronLeft, LogOut, User, UserCog, Bell, BriefcaseBusiness, Trash2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CommandPaletteButton } from "@/components/command-palette"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { getActiveNavigationHref, getDashboardBreadcrumbs } from "@/components/ui/dashboard-navigation"
 import { dashboardNavItems } from "@/components/ui/dashboard-nav-items"
+import {
+  buildPositionSnapshot,
+  getJobUpdates,
+  type JobUpdate,
+  type PositionSnapshot,
+} from "@/lib/job-update-notifications"
 
 const navbarFocusClass = "focus-visible:[outline:2px_solid_#2563EB]! focus-visible:outline-offset-2 dark:focus-visible:[outline-color:#22D3EE]!"
 
 const navigationItems = dashboardNavItems
+const JOB_SNAPSHOT_KEY = "twenty2crm-job-position-snapshot"
+const JOB_NOTIFICATIONS_KEY = "twenty2crm-job-update-notifications"
+const JOB_POLL_INTERVAL = 60_000
+const MAX_JOB_NOTIFICATIONS = 50
+
+type StoredJobNotification = JobUpdate & {
+  id: string
+  createdAt: string
+  read: boolean
+}
+
+function getStorageKey(baseKey: string, userId: string) {
+  return `${baseKey}:${userId}`
+}
+
+function readStoredValue<T>(key: string, fallback: T): T {
+  try {
+    const value = localStorage.getItem(key)
+    return value ? JSON.parse(value) as T : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function formatJobUpdate(update: Pick<JobUpdate, "added" | "removed">) {
+  const parts = []
+  if (update.added > 0) parts.push(`נוספו ${update.added}`)
+  if (update.removed > 0) parts.push(`הוסרו ${update.removed}`)
+  return parts.join(" · ")
+}
 
 export function TopNavbar() {
   const pathname = usePathname()
-  const [openMenu, setOpenMenu] = useState<"mobile" | "profile" | null>(null)
+  const [openMenu, setOpenMenu] = useState<"mobile" | "profile" | "notifications" | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState(false)
+  const [jobNotifications, setJobNotifications] = useState<StoredJobNotification[]>([])
+  const [popupUpdates, setPopupUpdates] = useState<JobUpdate[]>([])
   const { data: session } = useSession()
   const profileRef = useRef<HTMLDivElement>(null)
   const profileTriggerRef = useRef<HTMLButtonElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
+  const notificationsTriggerRef = useRef<HTMLButtonElement>(null)
   const mobileMenuRef = useRef<HTMLElement>(null)
   const mobileTriggerRef = useRef<HTMLButtonElement>(null)
   const mobileMenuOpen = openMenu === "mobile"
   const profileOpen = openMenu === "profile"
+  const notificationsOpen = openMenu === "notifications"
+  const unreadNotifications = jobNotifications.filter((notification) => !notification.read).length
 
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || fullName || 'משתמש'
@@ -44,8 +86,16 @@ export function TopNavbar() {
   useEffect(() => {
     if (!openMenu) return
 
-    const panel = openMenu === "profile" ? profileRef.current : mobileMenuRef.current
-    const trigger = openMenu === "profile" ? profileTriggerRef.current : mobileTriggerRef.current
+    const panel = openMenu === "profile"
+      ? profileRef.current
+      : openMenu === "notifications"
+        ? notificationsRef.current
+        : mobileMenuRef.current
+    const trigger = openMenu === "profile"
+      ? profileTriggerRef.current
+      : openMenu === "notifications"
+        ? notificationsTriggerRef.current
+        : mobileTriggerRef.current
     const desktop = window.matchMedia("(min-width: 1024px)")
     const isInside = (target: EventTarget | null) => target instanceof Node && (
       panel?.contains(target) || trigger?.contains(target)
@@ -87,6 +137,110 @@ export function TopNavbar() {
       desktop.removeEventListener("change", onViewportChange)
     }
   }, [openMenu])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) return
+
+    const notificationsKey = getStorageKey(JOB_NOTIFICATIONS_KEY, userId)
+    const snapshotKey = getStorageKey(JOB_SNAPSHOT_KEY, userId)
+    let stopped = false
+    let polling = false
+    let popupTimer: ReturnType<typeof setTimeout> | undefined
+
+    setJobNotifications(readStoredValue<StoredJobNotification[]>(notificationsKey, []))
+
+    async function checkForJobUpdates() {
+      if (polling || document.visibilityState === "hidden") return
+      polling = true
+
+      try {
+        const response = await fetch("/api/positions?fast=true&active=true", { cache: "no-store" })
+        if (!response.ok) return
+
+        const payload = await response.json()
+        if (!Array.isArray(payload.positions) || stopped) return
+
+        const currentSnapshot = buildPositionSnapshot(payload.positions)
+        const storedSnapshot = localStorage.getItem(snapshotKey)
+        if (!storedSnapshot) {
+          localStorage.setItem(snapshotKey, JSON.stringify(currentSnapshot))
+          return
+        }
+
+        let previousSnapshot: PositionSnapshot
+        try {
+          previousSnapshot = JSON.parse(storedSnapshot) as PositionSnapshot
+        } catch {
+          localStorage.setItem(snapshotKey, JSON.stringify(currentSnapshot))
+          return
+        }
+
+        const updates = getJobUpdates(previousSnapshot, currentSnapshot)
+        localStorage.setItem(snapshotKey, JSON.stringify(currentSnapshot))
+        if (updates.length === 0) return
+
+        const createdAt = new Date().toISOString()
+        const newNotifications = updates.map((update, index) => ({
+          ...update,
+          id: `${createdAt}-${index}-${update.employerId}`,
+          createdAt,
+          read: false,
+        }))
+        const existingNotifications = readStoredValue<StoredJobNotification[]>(notificationsKey, [])
+        const nextNotifications = [...newNotifications, ...existingNotifications].slice(0, MAX_JOB_NOTIFICATIONS)
+        localStorage.setItem(notificationsKey, JSON.stringify(nextNotifications))
+        setJobNotifications(nextNotifications)
+        setPopupUpdates(updates)
+        if (popupTimer) clearTimeout(popupTimer)
+        popupTimer = setTimeout(() => setPopupUpdates([]), 8_000)
+      } catch {
+        console.error("Job update notification check failed")
+      } finally {
+        polling = false
+      }
+    }
+
+    function checkWhenVisible() {
+      if (document.visibilityState === "visible") void checkForJobUpdates()
+    }
+
+    void checkForJobUpdates()
+    const interval = window.setInterval(checkForJobUpdates, JOB_POLL_INTERVAL)
+    document.addEventListener("visibilitychange", checkWhenVisible)
+    return () => {
+      stopped = true
+      window.clearInterval(interval)
+      if (popupTimer) clearTimeout(popupTimer)
+      document.removeEventListener("visibilitychange", checkWhenVisible)
+    }
+  }, [session?.user?.id])
+
+  function markJobNotificationsAsRead() {
+    const userId = session?.user?.id
+    if (!userId || unreadNotifications === 0) return
+
+    const nextNotifications = jobNotifications.map((notification) => ({ ...notification, read: true }))
+    localStorage.setItem(
+      getStorageKey(JOB_NOTIFICATIONS_KEY, userId),
+      JSON.stringify(nextNotifications)
+    )
+    setJobNotifications(nextNotifications)
+  }
+
+  function clearJobNotifications() {
+    const userId = session?.user?.id
+    if (!userId) return
+
+    localStorage.removeItem(getStorageKey(JOB_NOTIFICATIONS_KEY, userId))
+    setJobNotifications([])
+  }
+
+  function toggleNotifications() {
+    const opening = openMenu !== "notifications"
+    setOpenMenu(opening ? "notifications" : null)
+    if (opening) markJobNotificationsAsRead()
+  }
 
   async function handleSignOut() {
     if (signingOut) return
@@ -147,8 +301,80 @@ export function TopNavbar() {
       </nav>
       <div className="flex-1 lg:hidden" />
 
-      {/* פעולות זמינות בלבד — ללא חיווי התראות שאינו מחובר לנתונים */}
+      {/* פעולות זמינות */}
       <div className="flex items-center gap-2 [&>button:focus-visible]:[outline:2px_solid_#2563EB]! [&>button:focus-visible]:outline-offset-2 dark:[&>button:focus-visible]:[outline-color:#22D3EE]!">
+        <div className="relative" ref={notificationsRef}>
+          <button
+            ref={notificationsTriggerRef}
+            type="button"
+            aria-label={unreadNotifications > 0 ? `${unreadNotifications} עדכוני משרות חדשים` : "עדכוני משרות"}
+            aria-expanded={notificationsOpen}
+            aria-controls="top-navbar-job-notifications"
+            title="עדכוני משרות"
+            onClick={toggleNotifications}
+            className={`relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 ${navbarFocusClass}`}
+          >
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            {unreadNotifications > 0 && (
+              <span className="absolute -left-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                {unreadNotifications > 99 ? "99+" : unreadNotifications}
+              </span>
+            )}
+          </button>
+
+          {notificationsOpen && (
+            <div
+              id="top-navbar-job-notifications"
+              role="region"
+              aria-label="עדכוני משרות"
+              className="absolute left-0 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl z-50 dark:bg-[#1e293b]!"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">עדכוני משרות</h2>
+                  <p className="text-xs text-slate-500">שינויים לפי חברה</p>
+                </div>
+                {jobNotifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearJobNotifications}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-red-600 ${navbarFocusClass}`}
+                    aria-label="נקה את כל עדכוני המשרות"
+                    title="נקה הכל"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <div className="max-h-96 overflow-y-auto overscroll-contain">
+                {jobNotifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <Bell className="mx-auto mb-2 h-6 w-6 text-slate-300" aria-hidden="true" />
+                    <p className="text-sm text-slate-500">אין עדכוני משרות חדשים</p>
+                  </div>
+                ) : jobNotifications.map((notification) => (
+                  <Link
+                    key={notification.id}
+                    href="/dashboard/positions"
+                    onClick={() => setOpenMenu(null)}
+                    className={`flex gap-3 border-b border-slate-100 px-4 py-3 transition-colors last:border-0 hover:bg-slate-50 ${navbarFocusClass} focus-visible:-outline-offset-2!`}
+                  >
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                      <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-800">{notification.employerName}</p>
+                      <p className="mt-0.5 text-xs font-medium text-slate-600">{formatJobUpdate(notification)}</p>
+                      <time className="mt-1 block text-[11px] text-slate-400" dateTime={notification.createdAt}>
+                        {new Date(notification.createdAt).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })}
+                      </time>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <CommandPaletteButton />
         <ThemeToggle />
 
@@ -267,6 +493,39 @@ export function TopNavbar() {
               )
             })}
           </nav>
+        </div>
+      )}
+
+      {popupUpdates.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-4 top-16 z-[70] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-blue-200 bg-white p-4 shadow-2xl dark:bg-[#1e293b]!"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
+              <Bell className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-900">עדכון משרות חדש</p>
+              <div className="mt-1 space-y-1">
+                {popupUpdates.map((update) => (
+                  <p key={update.employerId} className="text-sm text-slate-600">
+                    <span className="font-semibold text-slate-800">{update.employerName}:</span>{" "}
+                    {formatJobUpdate(update)}
+                  </p>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPopupUpdates([])}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 ${navbarFocusClass}`}
+              aria-label="סגור הודעת עדכון משרות"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       )}
     </header>

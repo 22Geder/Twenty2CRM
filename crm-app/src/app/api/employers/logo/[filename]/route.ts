@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
 import { readFile, realpath, stat } from "fs/promises"
 import path from "path"
-import { requireApiUser } from "@/lib/api-authorization"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { getEmployerLogosPath, isEmployerLogoFilename } from "@/lib/employer-logo"
 import { inlineFileDisposition, isPathWithin, resolveUploadPath } from "@/lib/safe-file-path"
 
@@ -17,8 +18,10 @@ type RouteContext = { params: Promise<{ filename: string }> }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
-    const authorization = await requireApiUser()
-    if ("response" in authorization) return authorization.response
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: privateHeaders })
+    }
 
     const { filename } = await context.params
     if (!isEmployerLogoFilename(filename)) {

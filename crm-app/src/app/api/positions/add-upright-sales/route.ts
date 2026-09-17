@@ -119,17 +119,9 @@ export async function POST(request: NextRequest) {
       employer = await prisma.employer.create({
         data: {
           name: 'אופרייט - יד ראשונה (Operait)',
-          contactEmail: 'liatg@opl.co.il',
-          contactName: 'ליאת',
+          email: 'liatg@opl.co.il',
           phone: '',
-          notes: `חברת יד ראשונה - מכירת רכבים וליסינג
-סניפים: גלילות, חולון, חדרה
-
-תנאים לאנשי מכירות:
-• שכר בסיס: 6,050 ₪
-• עמלה: 640 ₪ לרכב (מהראשון!)
-• הגנת שכר: 8,000 ₪ ל-3 חודשים
-• ממוצע מכירות: 15-18 רכבים/חודש`
+          description: 'חברת יד ראשונה - מכירת רכבים וליסינג. סניפים: גלילות, חולון, חדרה. איש קשר: ליאת'
         }
       })
     }

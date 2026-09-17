@@ -111,8 +111,7 @@ export async function POST() {
           name: 'סלע לוגיסטיקה',
           email: 'pninit@selabonded.co.il',
           phone: '',
-          company: 'סלע לוגיסטיקה',
-          status: 'active'
+          description: 'סלע לוגיסטיקה'
         }
       })
       console.log('✅ נוצר מעסיק חדש: סלע לוגיסטיקה')

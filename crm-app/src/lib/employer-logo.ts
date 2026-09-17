@@ -16,9 +16,9 @@ export const MAX_EMPLOYER_LOGO_BYTES = Math.min(2 * 1024 * 1024, MAX_IMAGE_UPLOA
 export const EMPLOYER_LOGOS_DIR = 'employer-logos'
 
 const LOGO_FORMATS = [
-  { kind: 'png' as const, extension: '.png', mimeTypes: ['image/png'] },
-  { kind: 'jpeg' as const, extension: '.jpg', mimeTypes: ['image/jpeg', 'image/jpg'] },
-  { kind: 'webp' as const, extension: '.webp', mimeTypes: ['image/webp'] },
+  { kind: 'png' as const, extension: '.png', mimeTypes: ['image/png'] as readonly string[] },
+  { kind: 'jpeg' as const, extension: '.jpg', mimeTypes: ['image/jpeg', 'image/jpg'] as readonly string[] },
+  { kind: 'webp' as const, extension: '.webp', mimeTypes: ['image/webp'] as readonly string[] },
 ] as const
 
 export function getEmployerLogosPath(): string {

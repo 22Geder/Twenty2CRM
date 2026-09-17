@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 // 🔔 Push Notifications API - הרשמה והתראות
@@ -7,7 +8,6 @@ import { prisma } from '@/lib/prisma';
 // VAPID keys - בייצור צריך ליצור מפתחות חדשים ולשמור ב-env
 // npx web-push generate-vapid-keys
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 
 // שמירת subscription
 export async function POST(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         data: {
           pushSubscription: JSON.stringify(subscription),
           pushEnabled: true
-        }
+        } as unknown as Prisma.UserUpdateInput
       }).catch(() => {
         // If user model doesn't have these fields, log and continue
         console.log('⚠️ User model does not have pushSubscription field');
@@ -43,10 +43,10 @@ export async function POST(request: NextRequest) {
       publicKey: VAPID_PUBLIC_KEY
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Push subscription error:', error);
     return NextResponse.json(
-      { error: error.message || 'שגיאה בהרשמה להתראות' },
+      { error: error instanceof Error ? error.message : 'שגיאה בהרשמה להתראות' },
       { status: 500 }
     );
   }

@@ -536,10 +536,9 @@ export async function POST(request: NextRequest) {
       employer = await prisma.employer.create({
         data: {
           name: 'בנק מזרחי טפחות',
-          contactEmail: 'orpazsm@gmail.com',
-          contactName: 'סמדר אורפז',
+          email: 'orpazsm@twenty2jobs.co.il',
           phone: '',
-          description: 'בנק מזרחי טפחות - מרחבים: מרכז, דן, יהודה, LIVE, דרום, צפון, שרון'
+          description: 'בנק מזרחי טפחות - מרחבים: מרכז, דן, יהודה, LIVE, דרום, צפון, שרון | איש קשר: סמדר אורפז'
         }
       });
     }

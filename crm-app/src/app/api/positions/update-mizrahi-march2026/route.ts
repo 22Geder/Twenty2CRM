@@ -117,7 +117,7 @@ const regions = {
 
 export async function GET() {
   try {
-    const results: any[] = [];
+    const results: Array<{ action: string; count: number }> = [];
     
     // חיפוש/יצירת מעסיק מזרחי טפחות
     let employer = await prisma.employer.findFirst({
@@ -128,11 +128,9 @@ export async function GET() {
       employer = await prisma.employer.create({
         data: {
           name: 'מזרחי טפחות',
-          industry: 'בנקאות',
-          contactPerson: '',
-          email: 'noreply-mizrahi@twenty2jobs.co.il', // מייל פנימי - לא לשלוח התראות
+          email: 'noreply-mizrahi@twenty2jobs.co.il',
           phone: '',
-          address: 'ישראל'
+          description: 'בנק מזרחי טפחות - בנקאות'
         }
       });
     }
@@ -146,7 +144,7 @@ export async function GET() {
     // יצירת משרות חדשות
     let positionCount = 0;
     
-    for (const [regionName, regionData] of Object.entries(regions)) {
+    for (const regionData of Object.values(regions)) {
       for (const pos of regionData.positions) {
         const isTeller = pos.type === 'טלר';
         const isLive = pos.type === 'בנקאי דיגיטלי';

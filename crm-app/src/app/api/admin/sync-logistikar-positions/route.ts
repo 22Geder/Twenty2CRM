@@ -220,8 +220,8 @@ export async function POST() {
       employer = await prisma.employer.create({
         data: {
           name: 'לוגיסטיקר',
+          email: 'logistiker@twenty2jobs.co.il',
           description: 'לוגיסטיקר - שירותי לוגיסטיקה והפצה',
-          active: true,
         },
       })
     }
@@ -268,8 +268,9 @@ export async function POST() {
       totalActiveInSystem: totalAllActive,
       positions: results,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('sync-logistikar error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

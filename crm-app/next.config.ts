@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   serverExternalPackages: ['pdf-parse'],
-  experimental: {
-    instrumentationHook: true,
-  },
   
   // 🔒 Security Headers
   async headers() {

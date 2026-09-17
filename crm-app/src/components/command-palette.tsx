@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import {
   Search, X, ArrowLeft, Shield, Printer
 } from "lucide-react"
-import Link from "next/link"
 import { dashboardCommandExtras, dashboardNavItems } from "@/components/ui/dashboard-nav-items"
 
 const commands = [
@@ -23,8 +22,8 @@ const commands = [
     icon: item.icon,
     shortcut: item.shortcut,
   })),
-  { group: "אדמין", label: "ניהול אדמין", href: "/dashboard/admin", icon: Shield },
-  { group: "אדמין", label: "דוח שעות להדפסה", href: "/dashboard/admin/hours-report", icon: Printer },
+  { group: "אדמין", label: "ניהול אדמין", href: "/dashboard/admin", icon: Shield, shortcut: undefined },
+  { group: "אדמין", label: "דוח שעות להדפסה", href: "/dashboard/admin/hours-report", icon: Printer, shortcut: undefined },
 ]
 
 interface CommandPaletteProps {
@@ -46,11 +45,14 @@ function CommandPaletteModal({ open, onClose }: CommandPaletteProps) {
     : commands
 
   useEffect(() => {
-    if (open) {
+    if (!open) return
+
+    const focusTimer = window.setTimeout(() => {
       setQuery("")
       setSelected(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
+      inputRef.current?.focus()
+    }, 50)
+    return () => window.clearTimeout(focusTimer)
   }, [open])
 
   const navigate = useCallback((href: string) => {

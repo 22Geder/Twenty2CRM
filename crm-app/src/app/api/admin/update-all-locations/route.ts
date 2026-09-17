@@ -42,7 +42,7 @@ export async function GET() {
           where: { id: pos.id },
           data: { location: newLoc }
         })
-        updates.push({ title: pos.title, oldLocation: pos.location || '', newLocation: newLoc })
+        updates.push({ title: pos.title, oldLocation: pos.location || '', newLocation: newLoc ?? '' })
       }
     }
 
@@ -73,7 +73,7 @@ export async function GET() {
           where: { id: pos.id },
           data: { location: newLoc }
         })
-        updates.push({ title: pos.title, oldLocation: pos.location || '', newLocation: newLoc })
+        updates.push({ title: pos.title, oldLocation: pos.location || '', newLocation: newLoc ?? '' })
       }
     }
 

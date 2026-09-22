@@ -237,6 +237,60 @@ export async function PUT(
     if ('interviewDate' in body) {
       try {
         const positionId = candidate.inProcessPositionId || existingCandidate.inProcessPositionId
+        const schedulerId = (session.user as { id?: string } | undefined)?.id
+
+        if (positionId && schedulerId) {
+          const application = await prisma.application.findFirst({
+            where: { candidateId: candidate.id, positionId },
+            orderBy: { appliedAt: 'desc' },
+            select: { id: true },
+          })
+          const existingInterview = existingCandidate.interviewDate
+            ? await prisma.interview.findFirst({
+                where: {
+                  candidateId: candidate.id,
+                  positionId,
+                  scheduledAt: existingCandidate.interviewDate,
+                  status: { not: 'CANCELLED' },
+                },
+                orderBy: { createdAt: 'desc' },
+                select: { id: true },
+              })
+            : null
+
+          if (application && resolvedInterviewDate) {
+            if (existingInterview) {
+              await prisma.interview.update({
+                where: { id: existingInterview.id },
+                data: { scheduledAt: resolvedInterviewDate, status: 'SCHEDULED' },
+              })
+            } else {
+              await prisma.interview.create({
+                data: {
+                  title: `ראיון עם ${candidate.name}`,
+                  type: 'HR',
+                  scheduledAt: resolvedInterviewDate,
+                  duration: 60,
+                  applicationId: application.id,
+                  positionId,
+                  candidateId: candidate.id,
+                  schedulerId,
+                },
+              })
+            }
+          } else if (existingInterview && !resolvedInterviewDate) {
+            await prisma.interview.update({
+              where: { id: existingInterview.id },
+              data: { status: 'CANCELLED' },
+            })
+          }
+        }
+      } catch (interviewError) {
+        console.error("Candidate interview record sync failed:", interviewError)
+      }
+
+      try {
+        const positionId = candidate.inProcessPositionId || existingCandidate.inProcessPositionId
         const position = positionId
           ? await prisma.position.findUnique({
               where: { id: positionId },

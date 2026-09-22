@@ -199,6 +199,18 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    try {
+      await prisma.candidate.update({
+        where: { id: candidateId },
+        data: {
+          interviewDate: interview.scheduledAt,
+          interviewReminderSent: false,
+        },
+      })
+    } catch (candidateSyncError) {
+      console.error("Candidate interview date sync failed:", candidateSyncError)
+    }
+
     // 📅 Google Calendar event creation (non-blocking)
     try {
       const scheduler = await prisma.user.findUnique({

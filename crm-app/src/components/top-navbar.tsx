@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { 
   Settings, Menu, X,
-  Home, ChevronLeft, LogOut, User, UserCog, Bell, BriefcaseBusiness, Trash2
+  Home, ChevronLeft, LogOut, User, UserCog, Bell, BriefcaseBusiness, Trash2,
+  CalendarClock, MessageCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CommandPaletteButton } from "@/components/command-palette"
@@ -19,6 +20,11 @@ import {
   type JobUpdate,
   type PositionSnapshot,
 } from "@/lib/job-update-notifications"
+import {
+  buildInterviewWhatsAppUrl,
+  getLocalDayKey,
+  getLocalDayRange,
+} from "@/lib/interview-notifications"
 
 const navbarFocusClass = "focus-visible:[outline:2px_solid_#2563EB]! focus-visible:outline-offset-2 dark:focus-visible:[outline-color:#22D3EE]!"
 
@@ -27,11 +33,25 @@ const JOB_SNAPSHOT_KEY = "twenty2crm-job-position-snapshot"
 const JOB_NOTIFICATIONS_KEY = "twenty2crm-job-update-notifications"
 const JOB_POLL_INTERVAL = 60_000
 const MAX_JOB_NOTIFICATIONS = 50
+const INTERVIEW_ALERT_READ_KEY = "twenty2crm-interview-alert-read"
+const INTERVIEW_POLL_INTERVAL = 5 * 60_000
 
 type StoredJobNotification = JobUpdate & {
   id: string
   createdAt: string
   read: boolean
+}
+
+type TodayInterview = {
+  id: string
+  scheduledAt: string
+  location: string | null
+  candidate: { id: string; name: string; phone: string | null }
+  position: {
+    id: string
+    title: string
+    employer: { id: string; name: string } | null
+  }
 }
 
 function getStorageKey(baseKey: string, userId: string) {
@@ -61,6 +81,9 @@ export function TopNavbar() {
   const [signOutError, setSignOutError] = useState(false)
   const [jobNotifications, setJobNotifications] = useState<StoredJobNotification[]>([])
   const [popupUpdates, setPopupUpdates] = useState<JobUpdate[]>([])
+  const [todayInterviews, setTodayInterviews] = useState<TodayInterview[]>([])
+  const [interviewAlertsRead, setInterviewAlertsRead] = useState(true)
+  const [showInterviewPopup, setShowInterviewPopup] = useState(false)
   const { data: session } = useSession()
   const profileRef = useRef<HTMLDivElement>(null)
   const profileTriggerRef = useRef<HTMLButtonElement>(null)
@@ -72,6 +95,7 @@ export function TopNavbar() {
   const profileOpen = openMenu === "profile"
   const notificationsOpen = openMenu === "notifications"
   const unreadNotifications = jobNotifications.filter((notification) => !notification.read).length
+    + (interviewAlertsRead ? 0 : todayInterviews.length)
 
   const fullName = session?.user?.name || ''
   const firstName = fullName.split(' ')[0] || fullName || 'משתמש'
@@ -216,6 +240,58 @@ export function TopNavbar() {
     }
   }, [session?.user?.id])
 
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) return
+
+    const readKey = getStorageKey(INTERVIEW_ALERT_READ_KEY, userId)
+    let stopped = false
+    let polling = false
+
+    async function loadTodayInterviews() {
+      if (polling || document.visibilityState === "hidden") return
+      polling = true
+
+      try {
+        const { start, end } = getLocalDayRange()
+        const params = new URLSearchParams({
+          status: "SCHEDULED",
+          fromDate: start.toISOString(),
+          toDate: end.toISOString(),
+          limit: "100",
+        })
+        const response = await fetch(`/api/interviews?${params}`, { cache: "no-store" })
+        if (!response.ok) return
+
+        const payload = await response.json()
+        if (stopped || !Array.isArray(payload.interviews)) return
+
+        const interviews = payload.interviews as TodayInterview[]
+        const alertsRead = localStorage.getItem(readKey) === getLocalDayKey()
+        setTodayInterviews(interviews)
+        setInterviewAlertsRead(alertsRead)
+        setShowInterviewPopup(interviews.length > 0 && !alertsRead)
+      } catch {
+        console.error("Interview notification check failed")
+      } finally {
+        polling = false
+      }
+    }
+
+    function checkWhenVisible() {
+      if (document.visibilityState === "visible") void loadTodayInterviews()
+    }
+
+    void loadTodayInterviews()
+    const interval = window.setInterval(loadTodayInterviews, INTERVIEW_POLL_INTERVAL)
+    document.addEventListener("visibilitychange", checkWhenVisible)
+    return () => {
+      stopped = true
+      window.clearInterval(interval)
+      document.removeEventListener("visibilitychange", checkWhenVisible)
+    }
+  }, [session?.user?.id])
+
   function markJobNotificationsAsRead() {
     const userId = session?.user?.id
     if (!userId || unreadNotifications === 0) return
@@ -236,10 +312,25 @@ export function TopNavbar() {
     setJobNotifications([])
   }
 
+  function markInterviewAlertsAsRead() {
+    const userId = session?.user?.id
+    if (!userId || interviewAlertsRead) return
+
+    localStorage.setItem(
+      getStorageKey(INTERVIEW_ALERT_READ_KEY, userId),
+      getLocalDayKey()
+    )
+    setInterviewAlertsRead(true)
+    setShowInterviewPopup(false)
+  }
+
   function toggleNotifications() {
     const opening = openMenu !== "notifications"
     setOpenMenu(opening ? "notifications" : null)
-    if (opening) markJobNotificationsAsRead()
+    if (opening) {
+      markJobNotificationsAsRead()
+      markInterviewAlertsAsRead()
+    }
   }
 
   async function handleSignOut() {
@@ -307,10 +398,10 @@ export function TopNavbar() {
           <button
             ref={notificationsTriggerRef}
             type="button"
-            aria-label={unreadNotifications > 0 ? `${unreadNotifications} עדכוני משרות חדשים` : "עדכוני משרות"}
+            aria-label={unreadNotifications > 0 ? `${unreadNotifications} התראות חדשות` : "התראות"}
             aria-expanded={notificationsOpen}
             aria-controls="top-navbar-job-notifications"
-            title="עדכוני משרות"
+            title="התראות"
             onClick={toggleNotifications}
             className={`relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 ${navbarFocusClass}`}
           >
@@ -326,13 +417,13 @@ export function TopNavbar() {
             <div
               id="top-navbar-job-notifications"
               role="region"
-              aria-label="עדכוני משרות"
+              aria-label="התראות"
               className="absolute left-0 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl z-50 dark:bg-[#1e293b]!"
             >
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900">עדכוני משרות</h2>
-                  <p className="text-xs text-slate-500">שינויים לפי חברה</p>
+                  <h2 className="text-sm font-bold text-slate-900">התראות</h2>
+                  <p className="text-xs text-slate-500">ראיונות היום ועדכוני משרות</p>
                 </div>
                 {jobNotifications.length > 0 && (
                   <button
@@ -347,12 +438,65 @@ export function TopNavbar() {
                 )}
               </div>
               <div className="max-h-96 overflow-y-auto overscroll-contain">
-                {jobNotifications.length === 0 ? (
+                {todayInterviews.length === 0 && jobNotifications.length === 0 ? (
                   <div className="px-4 py-8 text-center">
                     <Bell className="mx-auto mb-2 h-6 w-6 text-slate-300" aria-hidden="true" />
-                    <p className="text-sm text-slate-500">אין עדכוני משרות חדשים</p>
+                    <p className="text-sm text-slate-500">אין התראות חדשות</p>
                   </div>
-                ) : jobNotifications.map((notification) => (
+                ) : null}
+                {todayInterviews.length > 0 && (
+                  <div className="border-b border-slate-200 bg-cyan-50/60 px-4 py-2 text-xs font-bold text-cyan-900">
+                    ראיונות היום ({todayInterviews.length})
+                  </div>
+                )}
+                {todayInterviews.map((interview) => {
+                  const whatsappUrl = buildInterviewWhatsAppUrl({
+                    candidateName: interview.candidate.name,
+                    phone: interview.candidate.phone,
+                    scheduledAt: interview.scheduledAt,
+                    positionTitle: interview.position.title,
+                    employerName: interview.position.employer?.name,
+                    location: interview.location,
+                  })
+
+                  return (
+                    <div key={interview.id} className="border-b border-slate-100 px-4 py-3">
+                      <Link
+                        href={`/dashboard/interviews/${interview.id}`}
+                        onClick={() => setOpenMenu(null)}
+                        className={`flex gap-3 rounded-lg ${navbarFocusClass}`}
+                      >
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-800">
+                          <CalendarClock className="h-4 w-4" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-slate-800">{interview.candidate.name}</p>
+                          <p className="mt-0.5 truncate text-xs text-slate-600">{interview.position.title}</p>
+                          <time className="mt-1 block text-[11px] font-medium text-cyan-800" dateTime={interview.scheduledAt}>
+                            היום, {new Date(interview.scheduledAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                          </time>
+                        </div>
+                      </Link>
+                      {whatsappUrl && (
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 ${navbarFocusClass}`}
+                        >
+                          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                          שליחת תזכורת ב-WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  )
+                })}
+                {jobNotifications.length > 0 && (
+                  <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700">
+                    עדכוני משרות
+                  </div>
+                )}
+                {jobNotifications.map((notification) => (
                   <Link
                     key={notification.id}
                     href="/dashboard/positions"
@@ -496,7 +640,67 @@ export function TopNavbar() {
         </div>
       )}
 
-      {popupUpdates.length > 0 && (
+      {showInterviewPopup && todayInterviews.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-4 top-16 z-[70] w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-cyan-200 bg-white p-4 shadow-2xl dark:bg-[#1e293b]!"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-700 text-white">
+              <CalendarClock className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-900">יש {todayInterviews.length} ראיונות היום</p>
+              <div className="mt-2 space-y-2">
+                {todayInterviews.slice(0, 3).map((interview) => {
+                  const whatsappUrl = buildInterviewWhatsAppUrl({
+                    candidateName: interview.candidate.name,
+                    phone: interview.candidate.phone,
+                    scheduledAt: interview.scheduledAt,
+                    positionTitle: interview.position.title,
+                    employerName: interview.position.employer?.name,
+                    location: interview.location,
+                  })
+
+                  return (
+                    <div key={interview.id} className="flex items-center justify-between gap-2 rounded-lg bg-cyan-50 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">{interview.candidate.name}</p>
+                        <p className="text-xs text-slate-600">
+                          {new Date(interview.scheduledAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {interview.position.title}
+                        </p>
+                      </div>
+                      {whatsappUrl && (
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 ${navbarFocusClass}`}
+                          aria-label={`שליחת תזכורת WhatsApp אל ${interview.candidate.name}`}
+                          title="שליחת תזכורת ב-WhatsApp"
+                        >
+                          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={markInterviewAlertsAsRead}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 ${navbarFocusClass}`}
+              aria-label="סגור תזכורת ראיונות"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {popupUpdates.length > 0 && !showInterviewPopup && (
         <div
           role="status"
           aria-live="polite"

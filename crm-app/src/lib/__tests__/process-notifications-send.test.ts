@@ -14,7 +14,7 @@ import {
 
 const ORIGINAL_NOTIFY = process.env.CRM_NOTIFY_EMAIL
 
-describe('notification emails go only to office', () => {
+describe('notification email recipients', () => {
   beforeEach(() => {
     sendCrmEmail.mockClear()
     process.env.CRM_NOTIFY_EMAIL = '22geder@gmail.com, liel@twenty.com'
@@ -28,7 +28,7 @@ describe('notification emails go only to office', () => {
     }
   })
 
-  it('שולח מייל העלאה רק ל-office גם כשמעלה Liel', async () => {
+  it('שולח מייל העלאה לכתובות הצוות גם כשמעלה Liel', async () => {
     await sendCandidateUploadEmail({
       candidateName: 'מועמד בדיקה',
       createdCandidate: true,
@@ -37,10 +37,14 @@ describe('notification emails go only to office', () => {
     })
 
     expect(sendCrmEmail).toHaveBeenCalledTimes(1)
-    expect(sendCrmEmail.mock.calls[0][0].to).toEqual(['office@hr22group.com'])
+    expect(sendCrmEmail.mock.calls[0][0].to).toEqual([
+      'office@hr22group.com',
+      '22geder@gmail.com',
+      'liel@twenty.com',
+    ])
   })
 
-  it('שולח מייל העלאה רק ל-office גם כשמעלה 22geder', async () => {
+  it('שולח מייל העלאה לכתובות הצוות גם כשמעלה 22geder', async () => {
     await sendCandidateUploadEmail({
       candidateName: 'מועמד בדיקה',
       createdCandidate: true,
@@ -49,20 +53,28 @@ describe('notification emails go only to office', () => {
     })
 
     expect(sendCrmEmail).toHaveBeenCalledTimes(1)
-    expect(sendCrmEmail.mock.calls[0][0].to).toEqual(['office@hr22group.com'])
+    expect(sendCrmEmail.mock.calls[0][0].to).toEqual([
+      'office@hr22group.com',
+      '22geder@gmail.com',
+      'liel@twenty.com',
+    ])
   })
 
-  it('שולח מייל כניסה לתהליך רק ל-office', async () => {
+  it('שולח מייל כניסה לתהליך לכתובות הצוות', async () => {
     await sendProcessEntryEmail({
       candidateName: 'מועמד בדיקה',
       recruiterName: 'Liel',
     })
 
     expect(sendCrmEmail).toHaveBeenCalledTimes(1)
-    expect(sendCrmEmail.mock.calls[0][0].to).toEqual(['office@hr22group.com'])
+    expect(sendCrmEmail.mock.calls[0][0].to).toEqual([
+      'office@hr22group.com',
+      '22geder@gmail.com',
+      'liel@twenty.com',
+    ])
   })
 
-  it('שולח מייל שינוי סטטוס רק ל-office', async () => {
+  it('שולח מייל שינוי סטטוס לכתובות הצוות', async () => {
     await sendCandidateStatusChangeEmail({
       candidateName: 'מועמד בדיקה',
       newStatus: 'EMPLOYED',
@@ -71,6 +83,10 @@ describe('notification emails go only to office', () => {
     })
 
     expect(sendCrmEmail).toHaveBeenCalledTimes(1)
-    expect(sendCrmEmail.mock.calls[0][0].to).toEqual(['office@hr22group.com'])
+    expect(sendCrmEmail.mock.calls[0][0].to).toEqual([
+      'office@hr22group.com',
+      '22geder@gmail.com',
+      'liel@twenty.com',
+    ])
   })
 })

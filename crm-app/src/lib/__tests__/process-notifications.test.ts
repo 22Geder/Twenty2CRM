@@ -1,5 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { escapeHtml, getNotifyEmails, CRM_NOTIFY_DEFAULT_EMAIL } from '../process-notifications'
+import {
+  escapeHtml,
+  getNotifyEmails,
+  getStatusNotifyEmails,
+  CRM_NOTIFY_DEFAULT_EMAIL,
+} from '../process-notifications'
 import { sendCrmEmail } from '../email-sender'
 
 const ORIGINAL_NOTIFY = process.env.CRM_NOTIFY_EMAIL
@@ -13,21 +18,41 @@ describe('getNotifyEmails', () => {
     }
   })
 
-  it('תמיד כולל את office@hr22group.com בלבד כברירת מחדל', () => {
+  it('תמיד כולל את כתובות הצוות כברירת מחדל', () => {
     delete process.env.CRM_NOTIFY_EMAIL
-    expect(getNotifyEmails()).toEqual([CRM_NOTIFY_DEFAULT_EMAIL])
+    expect(getNotifyEmails()).toEqual([
+      CRM_NOTIFY_DEFAULT_EMAIL,
+      '22geder@gmail.com',
+      'liel@twenty.com',
+    ])
     expect(getNotifyEmails()[0]).toBe('office@hr22group.com')
   })
 
-  it('מתעלם מ-CRM_NOTIFY_EMAIL ושולח רק לאדמין office', () => {
-    process.env.CRM_NOTIFY_EMAIL = 'office@hr22group.com, 22geder@gmail.com, liel@twenty.com'
-    expect(getNotifyEmails()).toEqual(['office@hr22group.com'])
+  it(' merges configured recipients with the default team list without duplicates', () => {
+    process.env.CRM_NOTIFY_EMAIL = 'office@hr22group.com, 22geder@gmail.com, custom@test.com'
+    expect(getNotifyEmails()).toEqual([
+      'office@hr22group.com',
+      '22geder@gmail.com',
+      'liel@twenty.com',
+      'custom@test.com',
+    ])
   })
 
-  it('לא שולח ל-Liel או 22geder', () => {
-    expect(getNotifyEmails()).not.toContain('22geder@gmail.com')
-    expect(getNotifyEmails()).not.toContain('liel@twenty.com')
-    expect(getNotifyEmails()).toHaveLength(1)
+  it('שולח ל-22geder ול-Liel ולא לכתובות שאינן חלק מהצוות', () => {
+    expect(getNotifyEmails()).toContain('22geder@gmail.com')
+    expect(getNotifyEmails()).toContain('liel@twenty.com')
+    expect(getNotifyEmails()).not.toContain('liel@other.com')
+    expect(getNotifyEmails()).toHaveLength(3)
+  })
+})
+
+describe('getStatusNotifyEmails', () => {
+  it('כולל את כתובות הצוות לעדכוני סטטוס ותהליך', () => {
+    expect(getStatusNotifyEmails()).toEqual([
+      'office@hr22group.com',
+      '22geder@gmail.com',
+      'liel@twenty.com',
+    ])
   })
 })
 

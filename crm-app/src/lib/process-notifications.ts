@@ -4,6 +4,21 @@
 import { sendCrmEmail } from './email-sender'
 
 export const CRM_NOTIFY_DEFAULT_EMAIL = 'office@hr22group.com'
+export const CRM_STATUS_NOTIFY_EMAILS = [
+  CRM_NOTIFY_DEFAULT_EMAIL,
+  '22geder@gmail.com',
+  'liel@twenty.com',
+] as const
+
+function parseNotificationEmails(rawValue?: string): string[] {
+  if (!rawValue) return []
+
+  return rawValue
+    .split(/[\n,;]+/)
+    .map((email) => email.trim())
+    .filter(Boolean)
+    .filter((email) => /@/.test(email))
+}
 
 export function escapeHtml(value: string | null | undefined): string {
   if (!value) return ''
@@ -16,7 +31,21 @@ export function escapeHtml(value: string | null | undefined): string {
 }
 
 export function getNotifyEmails(): string[] {
-  return [CRM_NOTIFY_DEFAULT_EMAIL]
+  const merged: string[] = []
+  const seen = new Set<string>()
+
+  for (const email of [...CRM_STATUS_NOTIFY_EMAILS, ...parseNotificationEmails(process.env.CRM_NOTIFY_EMAIL)]) {
+    const normalized = email.trim().toLowerCase()
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    merged.push(email.trim())
+  }
+
+  return merged
+}
+
+export function getStatusNotifyEmails(): string[] {
+  return getNotifyEmails()
 }
 
 function getNotifyEmail(): string {
@@ -52,7 +81,7 @@ export async function sendProcessEntryEmail({
   recruiterName?: string | null
 }) {
   try {
-    const toEmails = getNotifyEmails()
+    const toEmails = getStatusNotifyEmails()
 
     const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
     const safeName = escapeHtml(candidateName)
@@ -139,7 +168,7 @@ export async function sendWeeklyProcessCheckEmail(
   }>
 ) {
   try {
-    const toEmails = getNotifyEmails()
+    const toEmails = getStatusNotifyEmails()
     if (candidates.length === 0) return
 
     const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
@@ -258,7 +287,7 @@ export async function sendCandidateStatusChangeEmail({
   candidateId?: string | null
 }) {
   try {
-    const toEmails = getNotifyEmails()
+    const toEmails = getStatusNotifyEmails()
 
     const meta = STATUS_META[newStatus] || {
       emoji: '🔔',

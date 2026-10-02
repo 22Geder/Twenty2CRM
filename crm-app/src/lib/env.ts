@@ -31,9 +31,11 @@ function envKey(key: string): string | undefined {
 }
 
 export function getResendApiKey(): string | undefined {
-  return envKey('RESEND_API_KEY')
+  // Next.js inlines only statically referenced env keys into the server bundle.
+  // Dynamic access like process.env[key] is stripped, so production saw Resend as missing.
+  return process.env.RESEND_API_KEY || envKey('RESEND_API_KEY')
 }
 
 export function getResendFromEmail(): string {
-  return envKey('RESEND_FROM_EMAIL') || 'office@hr22group.com'
+  return process.env.RESEND_FROM_EMAIL || envKey('RESEND_FROM_EMAIL') || 'office@hr22group.com'
 }

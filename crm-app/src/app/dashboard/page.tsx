@@ -411,50 +411,50 @@ export default async function CiviDashboardPage() {
 
           overviewContent={
             <div className="space-y-4 md:space-y-5">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-                <Link href="/dashboard/candidates?status=hired" className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200">
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
-                      <UserCheck className="h-5 w-5" />
+              <div className="grid grid-cols-2 gap-3 rounded-3xl bg-slate-950 p-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-3">
+                <Link href="/dashboard/candidates?status=hired" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 text-cyan-300">
+                      <UserCheck className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-slate-950">{stats.startedWorkThisMonth}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-500">התחילו לעבוד החודש</div>
+                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.startedWorkThisMonth}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-400">התחילו לעבוד החודש</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/interviews" className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:border-orange-200">
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-700">
-                      <Bell className="h-5 w-5" />
+                <Link href="/dashboard/interviews" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-400/15 text-orange-300">
+                      <Bell className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-slate-950">{stats.upcomingInterviews}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-500">ראיונות קרובים</div>
+                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.upcomingInterviews}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-400">ראיונות קרובים</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/candidates?status=hired" className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:border-emerald-200">
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                      <CheckCircle className="h-5 w-5" />
+                <Link href="/dashboard/candidates?status=hired" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-300">
+                      <CheckCircle className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-slate-950">{stats.hiredThisMonth}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-500">התקבלו לעבודה החודש</div>
+                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.hiredThisMonth}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-400">התקבלו לעבודה החודש</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/candidates?status=in-process" className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:border-violet-200">
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-                      <Send className="h-5 w-5" />
+                <Link href="/dashboard/candidates?status=in-process" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 text-violet-300">
+                      <Send className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-slate-950">{stats.applicationsThisMonth}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-500">הפניות החודש</div>
+                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.applicationsThisMonth}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-400">הפניות החודש</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/candidates?status=in-process" className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200">
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
-                      <Users className="h-5 w-5" />
+                <Link href="/dashboard/candidates?status=in-process" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/15 text-sky-300">
+                      <Users className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-slate-950">{stats.inProcess}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-500">מועמדים בתהליך</div>
+                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.inProcess}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-400">מועמדים בתהליך</div>
                   </div>
                 </Link>
               </div>

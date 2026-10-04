@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   CheckCircle, XCircle, Clock, User, Phone, MapPin,
   Building2, Calendar, Edit3, Save, X, Loader2, RefreshCw,
-  Users, Target, Search, ChevronRight, ChevronLeft, Sparkles,
+  Users, Target, Search, ChevronRight, ChevronLeft, Sparkles, Banknote,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateHe, isStatusPeriodCandidate } from '@/lib/candidate-hired-dates';
@@ -34,6 +35,7 @@ interface Candidate {
   employmentStatus: string | null;
   hiredAt: string | null;
   hiredToEmployerId: string | null;
+  placementFeePaid: boolean | null;
   inProcessPositionId: string | null;
   inProcessPositionTitle?: string | null;
   inProcessEmployerName?: string | null;
@@ -145,12 +147,15 @@ const STATUS_META: Record<StatusKey, {
 
 export default function MonthlyStatusPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN';
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const [paymentSavingId, setPaymentSavingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [periodMode, setPeriodMode] = useState<'month' | 'year'>('month');
@@ -302,6 +307,28 @@ export default function MonthlyStatusPage() {
       console.error('Error updating status:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const markPlacementFee = async (candidateId: string, paid: boolean | null) => {
+    if (!isAdmin) return;
+    const previous = candidates;
+    setPaymentSavingId(candidateId);
+    setCandidates(current => current.map(candidate => (
+      candidate.id === candidateId ? { ...candidate, placementFeePaid: paid } : candidate
+    )));
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ placementFeePaid: paid }),
+      });
+      if (!response.ok) setCandidates(previous);
+    } catch (error) {
+      console.error('Error saving payment status:', error);
+      setCandidates(previous);
+    } finally {
+      setPaymentSavingId(null);
     }
   };
 
@@ -554,6 +581,13 @@ export default function MonthlyStatusPage() {
                           <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
                             <DatePill icon={<Calendar className="h-3 w-3" />} label={`עלה ${formatDateHe(candidate.createdAt)}`} />
                             {candidate.hiredAt && <DatePill tone="emerald" icon={<CheckCircle className="h-3 w-3" />} label={`התקבל ${formatDateHe(candidate.hiredAt)}`} />}
+                            {isAdmin && status === 'hired' && (
+                              <PaymentMark
+                                paid={candidate.placementFeePaid}
+                                saving={paymentSavingId === candidate.id}
+                                onChange={(paid) => markPlacementFee(candidate.id, paid)}
+                              />
+                            )}
                             {candidate.inProcessAt && <DatePill tone="sky" icon={<Clock className="h-3 w-3" />} label={`נכנס לתהליך ${formatDateHe(candidate.inProcessAt)}`} />}
                             {candidate.interviewDate && <DatePill tone="violet" icon={<Calendar className="h-3 w-3" />} label={`ראיון ${formatInterviewDate(candidate.interviewDate)}`} />}
                             {status === 'in-process' && !candidate.interviewDate && (
@@ -598,6 +632,43 @@ function QuickAction({
     >
       {children}
     </button>
+  );
+}
+
+function PaymentMark({
+  paid, saving, onChange,
+}: {
+  paid: boolean | null;
+  saving: boolean;
+  onChange: (paid: boolean | null) => void;
+}) {
+  const options: Array<{ value: boolean; label: string; active: string }> = [
+    { value: true, label: 'שולם', active: 'bg-emerald-600 text-white' },
+    { value: false, label: 'לא שולם', active: 'bg-amber-500 text-white' },
+  ];
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-white px-1 py-1 ring-1 ring-slate-200" role="group" aria-label="סטטוס תשלום">
+      <Banknote className="ms-1 h-3.5 w-3.5 text-slate-400" />
+      {options.map((option) => {
+        const selected = paid === option.value;
+        return (
+          <button
+            key={option.label}
+            type="button"
+            aria-pressed={selected}
+            disabled={saving}
+            onClick={() => onChange(selected ? null : option.value)}
+            className={`inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition disabled:opacity-50 ${selected ? option.active : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            <span className={`grid h-3.5 w-3.5 place-items-center rounded-[4px] border text-[10px] ${selected ? 'border-white/70' : 'border-slate-300'}`}>
+              {selected ? 'V' : ''}
+            </span>
+            {option.label}
+          </button>
+        );
+      })}
+    </span>
   );
 }
 

@@ -135,6 +135,7 @@ export async function PUT(
       inProcessAt,  // 🆕 מתי נכנס לתהליך
       interviewDate,  // 🆕 תאריך ראיון מתוכנן
       manualSummary,  // 🆕 תקציר ידני של המשתמש
+      placementFeePaid, // סימון תשלום עמלה — אדמין בלבד
     } = body
 
     // Check if candidate exists
@@ -174,6 +175,16 @@ export async function PUT(
     const resolvedInterviewDate = interviewDate ? new Date(interviewDate) : null
     if ('interviewDate' in body && interviewDate && resolvedInterviewDate && !Number.isFinite(resolvedInterviewDate.getTime())) {
       return NextResponse.json({ error: "Invalid interview date" }, { status: 400 })
+    }
+
+    if ('placementFeePaid' in body) {
+      const role = (session.user as { role?: string } | undefined)?.role
+      if (role !== 'ADMIN') {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      if (placementFeePaid !== null && typeof placementFeePaid !== 'boolean') {
+        return NextResponse.json({ error: "Invalid payment status" }, { status: 400 })
+      }
     }
 
     const candidate = await prisma.candidate.update({
@@ -222,6 +233,10 @@ export async function PUT(
           manualSummaryUpdatedAt: (manualSummary || null) !== (existingCandidate.manualSummary || null)
             ? new Date()
             : existingCandidate.manualSummaryUpdatedAt,
+        }),
+        ...('placementFeePaid' in body && {
+          placementFeePaid,
+          placementFeePaidAt: placementFeePaid === null ? null : new Date(),
         }),
       },
       include: {

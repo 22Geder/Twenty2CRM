@@ -177,6 +177,9 @@ model Candidate {
   score         Int?            // Overall candidate score 0-100
   source        String?         // Job board, referral, LinkedIn, etc.
   hiredAt       DateTime?
+  // סימון תשלום עמלה — רק אדמין מסמן בסטטוס חודשי. null = לא סומן
+  placementFeePaid Boolean?
+  placementFeePaidAt DateTime?
   employmentType String?        // PERMANENT, TEMP, PLACEMENT
   employmentStatus String?      // ACTIVE, ENDED
   employmentEndAt DateTime?

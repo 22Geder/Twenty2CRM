@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  CheckCircle, XCircle, Clock, User, Phone, Mail, MapPin, 
+import {
+  CheckCircle, XCircle, Clock, User, Phone, MapPin,
   Building2, Calendar, Edit3, Save, X, Loader2, RefreshCw,
-  TrendingUp, Users, Target, Search
+  Users, Target, Search, ChevronRight, ChevronLeft, Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateHe, isStatusPeriodCandidate } from '@/lib/candidate-hired-dates';
@@ -43,19 +42,22 @@ interface Candidate {
   createdAt: string;
   updatedAt: string;
   hiredToEmployer?: { id: string; name: string };
-  inProcessPosition?: { 
+  inProcessPosition?: {
     id: string;
-    title: string; 
-    employer?: { id: string; name: string } 
+    title: string;
+    employer?: { id: string; name: string };
   };
-  applications?: Application[]; // 🆕 כל הפניות של המועמד
-  uploadedBy?: { id: string; name: string; email: string }; // 🆕 מי העלה את המועמד
+  applications?: Application[];
+  uploadedBy?: { id: string; name: string; email: string };
 }
 
 interface Employer {
   id: string;
   name: string;
 }
+
+type StatusKey = 'hired' | 'in-process' | 'rejected' | 'new';
+type FilterKey = 'all' | StatusKey;
 
 function toIsraelDateTimeInput(value: string | null): string {
   if (!value) return '';
@@ -83,6 +85,64 @@ function formatInterviewDate(value: string): string {
   });
 }
 
+function formatPeriodLabel(period: string, mode: 'month' | 'year'): string {
+  if (mode === 'year') return `שנת ${period}`;
+  const [year, month] = period.split('-').map(Number);
+  if (!year || !month) return period;
+  return new Date(year, month - 1, 1).toLocaleDateString('he-IL', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function shiftMonth(period: string, delta: number): string {
+  const [year, month] = period.split('-').map(Number);
+  const next = new Date(year, (month - 1) + delta, 1);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+}
+
+const STATUS_META: Record<StatusKey, {
+  short: string;
+  chip: string;
+  number: string;
+  ring: string;
+  tint: string;
+  action: string;
+}> = {
+  hired: {
+    short: 'התקבל',
+    chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+    number: 'text-emerald-700',
+    ring: 'ring-emerald-500',
+    tint: 'bg-emerald-50/80',
+    action: 'bg-emerald-600 text-white',
+  },
+  'in-process': {
+    short: 'בתהליך',
+    chip: 'bg-sky-50 text-sky-700 ring-sky-200',
+    number: 'text-sky-700',
+    ring: 'ring-sky-500',
+    tint: 'bg-sky-50/80',
+    action: 'bg-sky-600 text-white',
+  },
+  rejected: {
+    short: 'לא התקבל',
+    chip: 'bg-rose-50 text-rose-700 ring-rose-200',
+    number: 'text-rose-700',
+    ring: 'ring-rose-500',
+    tint: 'bg-rose-50/80',
+    action: 'bg-rose-600 text-white',
+  },
+  new: {
+    short: 'חדש',
+    chip: 'bg-slate-100 text-slate-700 ring-slate-200',
+    number: 'text-slate-700',
+    ring: 'ring-slate-500',
+    tint: 'bg-slate-50',
+    action: 'bg-slate-700 text-white',
+  },
+};
+
 export default function MonthlyStatusPage() {
   const router = useRouter();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -91,7 +151,7 @@ export default function MonthlyStatusPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'hired' | 'in-process' | 'rejected' | 'new'>('all');
+  const [filter, setFilter] = useState<FilterKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [periodMode, setPeriodMode] = useState<'month' | 'year'>('month');
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -101,6 +161,7 @@ export default function MonthlyStatusPage() {
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
   const selectedPeriod = periodMode === 'year' ? selectedYear : selectedMonth;
   const yearOptions = Array.from({ length: 8 }, (_, index) => String(new Date().getFullYear() - index));
+  const periodLabel = formatPeriodLabel(selectedPeriod, periodMode);
 
   useEffect(() => {
     fetchData();
@@ -109,19 +170,13 @@ export default function MonthlyStatusPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/candidates?limit=5000`);
+      const response = await fetch('/api/candidates?limit=5000');
       if (response.ok) {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
-        
-        // סינון לחודש או לשנה שנבחרו: הועלה / התקבל / נכנס לתהליך בתקופה זו
-        const periodCandidates = allCandidates.filter((c: Candidate) =>
-          isStatusPeriodCandidate(c, selectedPeriod)
-        );
-        setCandidates(periodCandidates);
+        setCandidates(allCandidates.filter((c: Candidate) => isStatusPeriodCandidate(c, selectedPeriod)));
       }
 
-      // Fetch employers
       const empResponse = await fetch('/api/employers');
       if (empResponse.ok) {
         const empData = await empResponse.json();
@@ -134,7 +189,7 @@ export default function MonthlyStatusPage() {
     }
   };
 
-  const getStatus = (candidate: Candidate): 'hired' | 'in-process' | 'rejected' | 'new' => {
+  const getStatus = (candidate: Candidate): StatusKey => {
     if (candidate.hiredAt || candidate.employmentStatus === 'EMPLOYED') return 'hired';
     if (candidate.employmentStatus === 'REJECTED') return 'rejected';
     if (candidate.employmentStatus === 'IN_PROCESS' || candidate.inProcessPositionId) return 'in-process';
@@ -153,7 +208,14 @@ export default function MonthlyStatusPage() {
         hiredToEmployerId: candidate.hiredToEmployerId,
         hiredAt: candidate.hiredAt ? candidate.hiredAt.split('T')[0] : '',
         interviewDate: toIsraelDateTimeInput(candidate.interviewDate),
-      }
+      },
+    });
+  };
+
+  const patchEdit = (candidateId: string, patch: Record<string, string>) => {
+    setEditData({
+      ...editData,
+      [candidateId]: { ...editData[candidateId], ...patch },
     });
   };
 
@@ -169,21 +231,14 @@ export default function MonthlyStatusPage() {
         employmentStatus: data.employmentStatus,
       };
 
-      // If status is EMPLOYED, set hiredAt and hiredToEmployerId
       if (data.employmentStatus === 'EMPLOYED') {
-        if (data.hiredAt) {
-          updatePayload.hiredAt = data.hiredAt;
-        }
-        if (data.hiredToEmployerId) {
-          updatePayload.hiredToEmployerId = data.hiredToEmployerId;
-        }
-        // 🔄 מנקה שדות "בתהליך" כי המועמד התקבל
+        if (data.hiredAt) updatePayload.hiredAt = data.hiredAt;
+        if (data.hiredToEmployerId) updatePayload.hiredToEmployerId = data.hiredToEmployerId;
         updatePayload.inProcessPositionId = null;
         updatePayload.inProcessAt = null;
       } else if (data.employmentStatus === 'REJECTED') {
         updatePayload.hiredAt = null;
         updatePayload.hiredToEmployerId = null;
-        // 🔄 מנקה שדות "בתהליך" כי המועמד נדחה
         updatePayload.inProcessPositionId = null;
         updatePayload.inProcessAt = null;
       } else if (data.employmentStatus === 'IN_PROCESS' || !data.employmentStatus) {
@@ -191,12 +246,9 @@ export default function MonthlyStatusPage() {
         updatePayload.hiredToEmployerId = null;
       }
 
-      // Add interview date if set
-      if (data.interviewDate) {
-        updatePayload.interviewDate = new Date(data.interviewDate).toISOString();
-      } else {
-        updatePayload.interviewDate = null;
-      }
+      updatePayload.interviewDate = data.interviewDate
+        ? new Date(data.interviewDate).toISOString()
+        : null;
 
       const response = await fetch(`/api/candidates/${candidateId}`, {
         method: 'PUT',
@@ -207,7 +259,7 @@ export default function MonthlyStatusPage() {
       if (response.ok) {
         setEditingId(null);
         fetchData();
-        router.refresh(); // 🔄 מרענן את דף הבית עם הנתונים החדשים
+        router.refresh();
       }
     } catch (error) {
       console.error('Error saving:', error);
@@ -220,19 +272,15 @@ export default function MonthlyStatusPage() {
     setSaving(true);
     try {
       const updatePayload: any = { employmentStatus: newStatus };
-      
+
       if (newStatus === 'EMPLOYED') {
         const current = candidates.find(c => c.id === candidateId);
-        if (!current?.hiredAt) {
-          updatePayload.hiredAt = new Date().toISOString();
-        }
-        // 🔄 מנקה שדות "בתהליך" כי המועמד התקבל
+        if (!current?.hiredAt) updatePayload.hiredAt = new Date().toISOString();
         updatePayload.inProcessPositionId = null;
         updatePayload.inProcessAt = null;
       } else if (newStatus === 'REJECTED') {
         updatePayload.hiredAt = null;
         updatePayload.hiredToEmployerId = null;
-        // 🔄 מנקה שדות "בתהליך" כי המועמד נדחה
         updatePayload.inProcessPositionId = null;
         updatePayload.inProcessAt = null;
       } else {
@@ -248,7 +296,7 @@ export default function MonthlyStatusPage() {
 
       if (res.ok) {
         fetchData();
-        router.refresh(); // 🔄 מרענן את דף הבית עם הנתונים החדשים
+        router.refresh();
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -257,510 +305,428 @@ export default function MonthlyStatusPage() {
     }
   };
 
-  // Filter candidates
-  const filteredCandidates = candidates.filter(c => {
+  const filteredCandidates = useMemo(() => candidates.filter(c => {
     const status = getStatus(c);
     const matchesFilter = filter === 'all' || status === filter;
-    const matchesSearch = !searchQuery || 
-      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery ||
+      c.name?.toLowerCase().includes(query) ||
       c.phone?.includes(searchQuery) ||
-      c.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      c.email?.toLowerCase().includes(query);
     return matchesFilter && matchesSearch;
-  });
+  }), [candidates, filter, searchQuery]);
 
-  // Stats
-  const stats = {
+  const stats = useMemo(() => ({
     total: candidates.length,
     hired: candidates.filter(c => getStatus(c) === 'hired').length,
     inProcess: candidates.filter(c => getStatus(c) === 'in-process').length,
     rejected: candidates.filter(c => getStatus(c) === 'rejected').length,
     new: candidates.filter(c => getStatus(c) === 'new').length,
-  };
+  }), [candidates]);
 
-  const statusColors = {
-    hired: 'bg-green-100 text-green-700 border-green-300',
-    'in-process': 'bg-blue-100 text-blue-700 border-blue-300',
-    rejected: 'bg-red-100 text-red-700 border-red-300',
-    new: 'bg-gray-100 text-gray-700 border-gray-300',
-  };
+  const conversion = stats.total > 0 ? Math.round((stats.hired / stats.total) * 100) : null;
+  const filterLabel = filter === 'all' ? 'כל הסטטוסים' : STATUS_META[filter].short;
 
-  const statusLabels = {
-    hired: '✅ התקבל',
-    'in-process': '🔄 בתהליך',
-    rejected: '❌ לא התקבל',
-    new: '🆕 חדש',
-  };
+  const metricCards: Array<{
+    key: FilterKey;
+    label: string;
+    value: number;
+    hint: string;
+    icon: typeof Users;
+    accent: string;
+    ring: string;
+    tint: string;
+  }> = [
+    { key: 'all', label: 'בצינור', value: stats.total, hint: 'בתקופה שנבחרה', icon: Users, accent: 'text-indigo-700', ring: 'ring-indigo-500', tint: 'bg-indigo-50/80' },
+    { key: 'hired', label: 'התקבלו', value: stats.hired, hint: conversion === null ? 'אין בסיס להמרה' : `${conversion}% המרה`, icon: CheckCircle, accent: STATUS_META.hired.number, ring: STATUS_META.hired.ring, tint: STATUS_META.hired.tint },
+    { key: 'in-process', label: 'בתהליך', value: stats.inProcess, hint: 'ממתינים להחלטה', icon: Clock, accent: STATUS_META['in-process'].number, ring: STATUS_META['in-process'].ring, tint: STATUS_META['in-process'].tint },
+    { key: 'rejected', label: 'לא התקבלו', value: stats.rejected, hint: 'נסגרו בלי קבלה', icon: XCircle, accent: STATUS_META.rejected.number, ring: STATUS_META.rejected.ring, tint: STATUS_META.rejected.tint },
+    { key: 'new', label: 'חדשים', value: stats.new, hint: 'עדיין בלי סטטוס', icon: Sparkles, accent: STATUS_META.new.number, ring: STATUS_META.new.ring, tint: STATUS_META.new.tint },
+  ];
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">📊 סטטוס חודשי / שנתי</h1>
-          <p className="text-gray-600">
-            {periodMode === 'year'
-              ? `מעקב שנתי לפי תאריך העלאה, תהליך וקבלה — כל שנת ${selectedYear}`
-              : 'מעקב חודשי לפי תאריך העלאה, תהליך וקבלה'}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex rounded-md border overflow-hidden">
-            <Button
-              type="button"
-              variant={periodMode === 'month' ? 'default' : 'ghost'}
-              className="rounded-none h-9 px-3"
-              onClick={() => setPeriodMode('month')}
-            >
-              חודש
-            </Button>
-            <Button
-              type="button"
-              variant={periodMode === 'year' ? 'default' : 'ghost'}
-              className="rounded-none h-9 px-3"
-              onClick={() => setPeriodMode('year')}
-            >
-              שנה
-            </Button>
-          </div>
-          {periodMode === 'year' ? (
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="h-9 w-32 rounded-md border border-input bg-background px-3 text-sm"
-              aria-label="בחירת שנה"
-            >
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          ) : (
-            <Input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-40"
-            />
-          )}
-          <Button variant="outline" onClick={fetchData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
-            רענון
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card 
-          className={`cursor-pointer transition-all ${filter === 'all' ? 'ring-2 ring-purple-500' : 'hover:shadow-md'}`}
-          onClick={() => setFilter('all')}
-        >
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">סך הכל</p>
-                <p className="text-3xl font-bold text-purple-600">{stats.total}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-400" />
+    <div className="min-h-full bg-[radial-gradient(1100px_420px_at_100%_-8%,rgba(99,102,241,0.18),transparent),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 md:p-6">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <header className="overflow-hidden rounded-3xl bg-slate-950 text-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.8)]">
+          <div className="flex flex-col gap-5 p-5 md:flex-row md:items-end md:justify-between md:p-7">
+            <div className="space-y-2">
+              <p className="text-xs font-medium tracking-[0.18em] text-indigo-200">PIPELINE</p>
+              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">סטטוס גיוס</h1>
+              <p className="max-w-xl text-sm text-slate-300">
+                {periodLabel}. המספרים נספרים לפי תאריך העלאה, כניסה לתהליך או קבלה.
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card 
-          className={`cursor-pointer transition-all ${filter === 'hired' ? 'ring-2 ring-green-500' : 'hover:shadow-md'}`}
-          onClick={() => setFilter('hired')}
-        >
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">התקבלו</p>
-                <p className="text-3xl font-bold text-green-600">{stats.hired}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`cursor-pointer transition-all ${filter === 'in-process' ? 'ring-2 ring-blue-500' : 'hover:shadow-md'}`}
-          onClick={() => setFilter('in-process')}
-        >
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">בתהליך</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.inProcess}</p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`cursor-pointer transition-all ${filter === 'rejected' ? 'ring-2 ring-red-500' : 'hover:shadow-md'}`}
-          onClick={() => setFilter('rejected')}
-        >
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">לא התקבלו</p>
-                <p className="text-3xl font-bold text-red-600">{stats.rejected}</p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`cursor-pointer transition-all ${filter === 'new' ? 'ring-2 ring-gray-500' : 'hover:shadow-md'}`}
-          onClick={() => setFilter('new')}
-        >
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">חדשים</p>
-                <p className="text-3xl font-bold text-gray-600">{stats.new}</p>
-              </div>
-              <User className="h-8 w-8 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="חיפוש לפי שם, טלפון או אימייל..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-10"
-        />
-      </div>
-
-      {/* Candidates List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            מועמדים ({filteredCandidates.length})
-          </CardTitle>
-          <CardDescription>
-            {filter === 'all'
-              ? (periodMode === 'year' ? `מועמדים לשנת ${selectedYear}` : `מועמדים לחודש ${selectedMonth}`)
-              : statusLabels[filter]}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          ) : filteredCandidates.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>לא נמצאו מועמדים</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredCandidates.map((candidate) => {
-                const status = getStatus(candidate);
-                const isEditing = editingId === candidate.id;
-
-                return (
-                  <div 
-                    key={candidate.id} 
-                    className={`border rounded-lg p-4 transition-all ${isEditing ? 'bg-yellow-50 border-yellow-300' : 'hover:bg-gray-50'}`}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-full bg-white/10 p-1" role="group" aria-label="תקופת מעקב">
+                {(['month', 'year'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setPeriodMode(mode)}
+                    aria-pressed={periodMode === mode}
+                    className={`h-9 rounded-full px-4 text-sm transition ${periodMode === mode ? 'bg-white text-slate-950 shadow' : 'text-slate-200 hover:text-white'}`}
                   >
-                    {isEditing ? (
-                      /* Edit Mode */
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          <div>
-                            <label className="text-xs text-gray-500">שם</label>
-                            <Input
-                              value={editData[candidate.id]?.name || ''}
-                              onChange={(e) => setEditData({
-                                ...editData,
-                                [candidate.id]: { ...editData[candidate.id], name: e.target.value }
-                              })}
-                              className="h-9"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-500">טלפון</label>
-                            <Input
-                              value={editData[candidate.id]?.phone || ''}
-                              onChange={(e) => setEditData({
-                                ...editData,
-                                [candidate.id]: { ...editData[candidate.id], phone: e.target.value }
-                              })}
-                              className="h-9"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-500">אימייל</label>
-                            <Input
-                              value={editData[candidate.id]?.email || ''}
-                              onChange={(e) => setEditData({
-                                ...editData,
-                                [candidate.id]: { ...editData[candidate.id], email: e.target.value }
-                              })}
-                              className="h-9"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-500">עיר</label>
-                            <Input
-                              value={editData[candidate.id]?.city || ''}
-                              onChange={(e) => setEditData({
-                                ...editData,
-                                [candidate.id]: { ...editData[candidate.id], city: e.target.value }
-                              })}
-                              className="h-9"
-                            />
-                          </div>
-                        </div>
+                    {mode === 'month' ? 'חודש' : 'שנה'}
+                  </button>
+                ))}
+              </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-xs text-gray-500">סטטוס</label>
-                            <select
-                              value={editData[candidate.id]?.employmentStatus || ''}
-                              onChange={(e) => setEditData({
-                                ...editData,
-                                [candidate.id]: { ...editData[candidate.id], employmentStatus: e.target.value }
-                              })}
-                              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-                            >
-                              <option value="">חדש</option>
-                              <option value="IN_PROCESS">בתהליך</option>
-                              <option value="EMPLOYED">התקבל</option>
-                              <option value="REJECTED">לא התקבל</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-500">📅 תאריך ושעת ראיון</label>
-                            <Input
-                              type="datetime-local"
-                              value={editData[candidate.id]?.interviewDate || ''}
-                              onChange={(e) => setEditData({
-                                ...editData,
-                                [candidate.id]: { ...editData[candidate.id], interviewDate: e.target.value }
-                              })}
-                              className="h-9"
-                            />
-                          </div>
-                          {editData[candidate.id]?.employmentStatus === 'EMPLOYED' && (
-                            <div>
-                              <label className="text-xs text-gray-500">📅 תאריך התקבל</label>
-                              <Input
-                                type="date"
-                                value={editData[candidate.id]?.hiredAt || ''}
-                                onChange={(e) => setEditData({
-                                  ...editData,
-                                  [candidate.id]: { ...editData[candidate.id], hiredAt: e.target.value }
-                                })}
-                                className="h-9"
-                              />
-                            </div>
-                          )}
-                        </div>
+              {periodMode === 'year' ? (
+                <label className="flex h-11 items-center gap-2 rounded-full bg-white/10 px-3 text-sm">
+                  <span className="text-slate-300">שנה</span>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="bg-transparent font-medium text-white outline-none"
+                    aria-label="בחירת שנה"
+                  >
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year} className="text-slate-950">{year}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <div className="flex h-11 items-center rounded-full bg-white/10 px-1">
+                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10" aria-label="חודש קודם" onClick={() => setSelectedMonth(shiftMonth(selectedMonth, -1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  <label className="relative min-w-36 px-2 text-center text-sm font-medium">
+                    {formatPeriodLabel(selectedMonth, 'month')}
+                    <input
+                      type="month"
+                      value={selectedMonth}
+                      onChange={(e) => e.target.value && setSelectedMonth(e.target.value)}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      aria-label="בחירת חודש"
+                    />
+                  </label>
+                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10" aria-label="חודש הבא" onClick={() => setSelectedMonth(shiftMonth(selectedMonth, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
 
-                        <div className="grid grid-cols-2 gap-3">
-                          {editData[candidate.id]?.employmentStatus === 'EMPLOYED' && (
-                            <div>
-                              <label className="text-xs text-gray-500">התקבל ל:</label>
-                              <select
-                                value={editData[candidate.id]?.hiredToEmployerId || ''}
-                                onChange={(e) => setEditData({
-                                  ...editData,
-                                  [candidate.id]: { ...editData[candidate.id], hiredToEmployerId: e.target.value }
-                                })}
-                                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-                              >
-                                <option value="">בחר מעסיק...</option>
-                                {employers.map((emp) => (
-                                  <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </div>
+              <Button variant="secondary" onClick={fetchData} disabled={loading} className="h-11 rounded-full bg-white text-slate-950 hover:bg-slate-100">
+                <RefreshCw className={loading ? 'animate-spin' : ''} />
+                רענון
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 border-t border-white/10 text-center text-xs text-slate-300">
+            <div className="px-4 py-3">
+              <span className="block text-lg font-semibold tabular-nums text-white">{stats.total}</span>
+              רשומות
+            </div>
+            <div className="border-x border-white/10 px-4 py-3">
+              <span className="block text-lg font-semibold tabular-nums text-white">{conversion === null ? '—' : `${conversion}%`}</span>
+              המרה לקבלה
+            </div>
+            <div className="px-4 py-3">
+              <span className="block text-lg font-semibold text-white">{periodMode === 'year' ? '12 חודשים' : 'חודש אחד'}</span>
+              חלון זמן
+            </div>
+          </div>
+        </header>
 
-                        <div className="flex gap-2 justify-end">
-                          <Button size="sm" variant="outline" onClick={() => setEditingId(null)} disabled={saving}>
-                            <X className="h-4 w-4 ml-1" />
-                            ביטול
-                          </Button>
-                          <Button size="sm" onClick={() => saveEdit(candidate.id)} disabled={saving} className="bg-green-600 hover:bg-green-700">
-                            {saving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
-                            שמור
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* View Mode */
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Badge className={`${statusColors[status]} border`}>
-                              {statusLabels[status]}
-                            </Badge>
-                            <div>
-                              <Link href={`/dashboard/candidates/${candidate.id}`} className="font-medium hover:text-blue-600">
-                                {candidate.name}
-                              </Link>
-                              <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
-                                {candidate.phone && (
-                                  <span className="flex items-center gap-1">
-                                    <Phone className="h-3 w-3" />
-                                    {candidate.phone}
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="סינון לפי סטטוס">
+          {metricCards.map((metric) => {
+            const Icon = metric.icon;
+            const selected = filter === metric.key;
+            return (
+              <button
+                key={metric.key}
+                type="button"
+                onClick={() => setFilter(metric.key)}
+                aria-pressed={selected}
+                className={`rounded-2xl border border-white/80 p-4 text-right shadow-[0_12px_36px_-28px_rgba(15,23,42,0.7)] transition hover:-translate-y-0.5 ${selected ? `ring-2 ${metric.ring} ${metric.tint}` : 'bg-white/80 backdrop-blur'}`}
+              >
+                <span className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">{metric.label}</span>
+                  <Icon className={`h-4 w-4 ${metric.accent}`} />
+                </span>
+                <span className={`mt-3 block text-3xl font-semibold tabular-nums ${metric.accent}`}>{metric.value}</span>
+                <span className="mt-1 block text-xs text-slate-400">{metric.hint}</span>
+              </button>
+            );
+          })}
+        </section>
+
+        <Card className="overflow-hidden rounded-3xl border-white/70 bg-white/85 shadow-[0_18px_50px_-36px_rgba(15,23,42,0.65)] backdrop-blur">
+          <div className="flex flex-col gap-3 border-b border-slate-100 p-4 md:flex-row md:items-center md:justify-between md:px-5">
+            <div>
+              <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950">
+                <Target className="h-4 w-4 text-indigo-600" />
+                מועמדים
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600">{filteredCandidates.length}</span>
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">{filterLabel} · {periodLabel}</p>
+            </div>
+            <div className="relative w-full md:w-80">
+              <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="שם, טלפון או אימייל"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 rounded-full border-slate-200 bg-slate-50 pr-9"
+                aria-label="חיפוש מועמדים"
+              />
+            </div>
+          </div>
+
+          <CardContent className="p-3 md:p-4">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <p className="text-sm">טוען את {periodLabel}</p>
+              </div>
+            ) : filteredCandidates.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 py-16 text-center">
+                <Users className="mx-auto h-8 w-8 text-slate-300" />
+                <p className="mt-3 font-medium text-slate-700">אין מועמדים בחתך הזה</p>
+                <p className="mt-1 text-sm text-slate-400">{periodLabel} · {filterLabel}</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {filteredCandidates.map((candidate) => {
+                  const status = getStatus(candidate);
+                  const meta = STATUS_META[status];
+                  const isEditing = editingId === candidate.id;
+                  const initial = candidate.name?.trim()?.charAt(0) || 'מ';
+
+                  return (
+                    <article
+                      key={candidate.id}
+                      className={`rounded-2xl border p-4 transition ${isEditing ? 'border-amber-200 bg-amber-50/70' : 'border-slate-100 bg-white hover:border-slate-200'}`}
+                    >
+                      {isEditing ? (
+                        <EditPanel
+                          candidate={candidate}
+                          employers={employers}
+                          data={editData[candidate.id]}
+                          saving={saving}
+                          onChange={(patch) => patchEdit(candidate.id, patch)}
+                          onCancel={() => setEditingId(null)}
+                          onSave={() => saveEdit(candidate.id)}
+                        />
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex min-w-0 gap-3">
+                              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-sm font-semibold ring-1 ring-inset ${meta.chip}`}>
+                                {initial}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Link href={`/dashboard/candidates/${candidate.id}`} className="font-semibold text-slate-950 hover:text-indigo-700">
+                                    {candidate.name}
+                                  </Link>
+                                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${meta.chip}`}>
+                                    {meta.short}
                                   </span>
-                                )}
-                                {candidate.city && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    {candidate.city}
-                                  </span>
-                                )}
-                                {candidate.hiredToEmployer && (
-                                  <span className="flex items-center gap-1 text-green-600 font-medium">
-                                    <Building2 className="h-3 w-3" />
-                                    התקבל ל: {candidate.hiredToEmployer.name}
-                                  </span>
-                                )}
-                                {/* הצגת כל המשרות שהמועמד בתהליך עבורן */}
-                                {(() => {
-                                  // סינון כל הפניות שבתהליך
-                                  const inProcessApps = candidate.applications?.filter(
-                                    app => app.status === 'IN_PROCESS' || app.stage === 'IN_PROCESS'
-                                  ) || [];
-                                  
-                                  if (inProcessApps.length > 0) {
-                                    return inProcessApps.map((app, idx) => (
-                                      <span key={app.id} className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
-                                        <Target className="h-3 w-3" />
-                                        נשלח ל: {app.position.title}
-                                        {app.position.employer && (
-                                          <span className="text-blue-500">({app.position.employer.name})</span>
-                                        )}
-                                      </span>
-                                    ));
-                                  } else if (candidate.inProcessPosition) {
-                                    // אם אין פניות בתהליך, נציג את המשרה הישנה
-                                    return (
-                                      <span className="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
-                                        <Target className="h-3 w-3" />
-                                        נשלח ל: {candidate.inProcessPosition.title}
-                                        {candidate.inProcessPosition.employer && (
-                                          <span className="text-blue-500">({candidate.inProcessPosition.employer.name})</span>
-                                        )}
-                                      </span>
-                                    );
-                                  } else if ((candidate as any).inProcessPositionTitle) {
-                                    // המשרה נמחקה - מציג snapshot
-                                    return (
-                                      <span className="flex items-center gap-1 text-yellow-700 font-medium bg-yellow-50 px-2 py-0.5 rounded border border-yellow-200">
-                                        <Target className="h-3 w-3" />
-                                        נשלח ל: {(candidate as any).inProcessPositionTitle}
-                                        {(candidate as any).inProcessEmployerName && (
-                                          <span className="text-yellow-600">(נמחקה מהמערכת)</span>
-                                        )}
-                                      </span>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                                {candidate.uploadedBy && (
-                                  <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
-                                    <User className="h-3 w-3" />
-                                    הועלה ע"י: {candidate.uploadedBy.name}
-                                  </span>
-                                )}
+                                </div>
+                                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
+                                  {candidate.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{candidate.phone}</span>}
+                                  {candidate.city && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{candidate.city}</span>}
+                                  {candidate.uploadedBy && <span className="inline-flex items-center gap-1"><User className="h-3.5 w-3.5" />הועלה ע״י {candidate.uploadedBy.name}</span>}
+                                </div>
+                                <PlacementTags candidate={candidate} />
                               </div>
                             </div>
+
+                            <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
+                              <QuickAction label="סמן בתהליך" active={status === 'in-process'} activeClass={STATUS_META['in-process'].action} disabled={saving} onClick={() => quickStatusUpdate(candidate.id, 'IN_PROCESS')}>
+                                <Clock className="h-3.5 w-3.5" />
+                              </QuickAction>
+                              <QuickAction label="סמן התקבל" active={status === 'hired'} activeClass={STATUS_META.hired.action} disabled={saving} onClick={() => quickStatusUpdate(candidate.id, 'EMPLOYED')}>
+                                <CheckCircle className="h-3.5 w-3.5" />
+                              </QuickAction>
+                              <QuickAction label="סמן לא התקבל" active={status === 'rejected'} activeClass={STATUS_META.rejected.action} disabled={saving} onClick={() => quickStatusUpdate(candidate.id, 'REJECTED')}>
+                                <XCircle className="h-3.5 w-3.5" />
+                              </QuickAction>
+                              <Button size="sm" variant="outline" onClick={() => startEdit(candidate)} className="h-8 rounded-full px-3" aria-label={`עריכת ${candidate.name}`}>
+                                <Edit3 className="h-3.5 w-3.5" />
+                                עריכה
+                              </Button>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            {/* Quick status buttons */}
-                            <div className="flex gap-1">
-                            <Button 
-                              size="sm" 
-                              variant={status === 'in-process' ? 'default' : 'ghost'}
-                              className={status === 'in-process' ? 'bg-blue-500 h-7 px-2' : 'h-7 px-2 hover:bg-blue-100'}
-                              onClick={() => quickStatusUpdate(candidate.id, 'IN_PROCESS')}
-                              disabled={saving}
-                            >
-                              <Clock className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant={status === 'hired' ? 'default' : 'ghost'}
-                              className={status === 'hired' ? 'bg-green-500 h-7 px-2' : 'h-7 px-2 hover:bg-green-100'}
-                              onClick={() => quickStatusUpdate(candidate.id, 'EMPLOYED')}
-                              disabled={saving}
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant={status === 'rejected' ? 'default' : 'ghost'}
-                              className={status === 'rejected' ? 'bg-red-500 h-7 px-2' : 'h-7 px-2 hover:bg-red-100'}
-                              onClick={() => quickStatusUpdate(candidate.id, 'REJECTED')}
-                              disabled={saving}
-                            >
-                              <XCircle className="h-3 w-3" />
-                            </Button>
+                          <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                            <DatePill icon={<Calendar className="h-3 w-3" />} label={`עלה ${formatDateHe(candidate.createdAt)}`} />
+                            {candidate.hiredAt && <DatePill tone="emerald" icon={<CheckCircle className="h-3 w-3" />} label={`התקבל ${formatDateHe(candidate.hiredAt)}`} />}
+                            {candidate.inProcessAt && <DatePill tone="sky" icon={<Clock className="h-3 w-3" />} label={`נכנס לתהליך ${formatDateHe(candidate.inProcessAt)}`} />}
+                            {candidate.interviewDate && <DatePill tone="violet" icon={<Calendar className="h-3 w-3" />} label={`ראיון ${formatInterviewDate(candidate.interviewDate)}`} />}
+                            {status === 'in-process' && !candidate.interviewDate && (
+                              <button type="button" onClick={() => startEdit(candidate)} className="rounded-full px-2.5 py-1 font-medium text-violet-700 hover:bg-violet-50">
+                                קביעת ראיון
+                              </button>
+                            )}
                           </div>
-                          <Button size="sm" variant="outline" onClick={() => startEdit(candidate)} className="h-7">
-                            <Edit3 className="h-3 w-3" />
-                          </Button>
                         </div>
-                        </div>
-                        
-                        {/* Dates row */}
-                        <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2 mt-1">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            עלה: {formatDateHe(candidate.createdAt)}
-                          </span>
-                          {candidate.hiredAt && (
-                            <span className="flex items-center gap-1 text-green-700 font-medium bg-green-50 px-2 py-0.5 rounded">
-                              <CheckCircle className="h-3 w-3" />
-                              התקבל: {formatDateHe(candidate.hiredAt)}
-                            </span>
-                          )}
-                          {candidate.inProcessAt && (
-                            <span className="flex items-center gap-1 text-blue-600">
-                              <Clock className="h-3 w-3" />
-                              נכנס לתהליך: {formatDateHe(candidate.inProcessAt)}
-                            </span>
-                          )}
-                          {candidate.interviewDate && (
-                            <span className="flex items-center gap-1 text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
-                              📅 ראיון: {formatInterviewDate(candidate.interviewDate)}
-                            </span>
-                          )}
-                          {status === 'in-process' && !candidate.interviewDate && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50"
-                              onClick={() => startEdit(candidate)}
-                            >
-                              + קבע תאריך ושעת ראיון
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function QuickAction({
+  label, active, activeClass, disabled, onClick, children,
+}: {
+  label: string;
+  active: boolean;
+  activeClass: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={`grid h-8 w-8 place-items-center rounded-full transition disabled:opacity-50 ${active ? activeClass : 'text-slate-500 hover:bg-slate-100'}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DatePill({ icon, label, tone = 'slate' }: { icon: ReactNode; label: string; tone?: 'slate' | 'emerald' | 'sky' | 'violet' }) {
+  const tones = {
+    slate: 'bg-slate-50 text-slate-600',
+    emerald: 'bg-emerald-50 text-emerald-700',
+    sky: 'bg-sky-50 text-sky-700',
+    violet: 'bg-violet-50 text-violet-700',
+  };
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${tones[tone]}`}>{icon}{label}</span>;
+}
+
+function PlacementTags({ candidate }: { candidate: Candidate }) {
+  const inProcessApps = candidate.applications?.filter(
+    app => app.status === 'IN_PROCESS' || app.stage === 'IN_PROCESS'
+  ) || [];
+
+  if (candidate.hiredToEmployer) {
+    return (
+      <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+        <Building2 className="h-3 w-3" />
+        התקבל ל{candidate.hiredToEmployer.name}
+      </p>
+    );
+  }
+
+  if (inProcessApps.length > 0) {
+    return (
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {inProcessApps.map((app) => (
+          <span key={app.id} className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700">
+            <Target className="h-3 w-3" />
+            {app.position.title}
+            {app.position.employer && <span className="text-sky-500">· {app.position.employer.name}</span>}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  if (candidate.inProcessPosition) {
+    return (
+      <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700">
+        <Target className="h-3 w-3" />
+        {candidate.inProcessPosition.title}
+        {candidate.inProcessPosition.employer && <span className="text-sky-500">· {candidate.inProcessPosition.employer.name}</span>}
+      </p>
+    );
+  }
+
+  if (candidate.inProcessPositionTitle) {
+    return (
+      <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+        <Target className="h-3 w-3" />
+        {candidate.inProcessPositionTitle}
+        <span className="text-amber-600">· המשרה נמחקה</span>
+      </p>
+    );
+  }
+
+  return null;
+}
+
+function EditPanel({
+  candidate, employers, data, saving, onChange, onCancel, onSave,
+}: {
+  candidate: Candidate;
+  employers: Employer[];
+  data: Record<string, string>;
+  saving: boolean;
+  onChange: (patch: Record<string, string>) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const field = 'space-y-1';
+  const label = 'text-xs font-medium text-slate-500';
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-slate-900">עריכת {candidate.name}</p>
+        <span className="text-xs text-amber-700">השינויים נשמרים רק אחרי אישור</span>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <label className={field}><span className={label}>שם</span><Input value={data?.name || ''} onChange={(e) => onChange({ name: e.target.value })} className="h-9 bg-white" /></label>
+        <label className={field}><span className={label}>טלפון</span><Input value={data?.phone || ''} onChange={(e) => onChange({ phone: e.target.value })} className="h-9 bg-white" /></label>
+        <label className={field}><span className={label}>אימייל</span><Input value={data?.email || ''} onChange={(e) => onChange({ email: e.target.value })} className="h-9 bg-white" /></label>
+        <label className={field}><span className={label}>עיר</span><Input value={data?.city || ''} onChange={(e) => onChange({ city: e.target.value })} className="h-9 bg-white" /></label>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label className={field}>
+          <span className={label}>סטטוס</span>
+          <select value={data?.employmentStatus || ''} onChange={(e) => onChange({ employmentStatus: e.target.value })} className="h-9 w-full rounded-md border border-input bg-white px-3 text-sm">
+            <option value="">חדש</option>
+            <option value="IN_PROCESS">בתהליך</option>
+            <option value="EMPLOYED">התקבל</option>
+            <option value="REJECTED">לא התקבל</option>
+          </select>
+        </label>
+        <label className={field}>
+          <span className={label}>תאריך ושעת ראיון</span>
+          <Input type="datetime-local" value={data?.interviewDate || ''} onChange={(e) => onChange({ interviewDate: e.target.value })} className="h-9 bg-white" />
+        </label>
+        {data?.employmentStatus === 'EMPLOYED' && (
+          <>
+            <label className={field}>
+              <span className={label}>תאריך התקבל</span>
+              <Input type="date" value={data?.hiredAt || ''} onChange={(e) => onChange({ hiredAt: e.target.value })} className="h-9 bg-white" />
+            </label>
+            <label className={field}>
+              <span className={label}>התקבל אל</span>
+              <select value={data?.hiredToEmployerId || ''} onChange={(e) => onChange({ hiredToEmployerId: e.target.value })} className="h-9 w-full rounded-md border border-input bg-white px-3 text-sm">
+                <option value="">בחר מעסיק</option>
+                {employers.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+              </select>
+            </label>
+          </>
+        )}
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="outline" onClick={onCancel} disabled={saving} className="rounded-full">
+          <X className="h-4 w-4" />
+          ביטול
+        </Button>
+        <Button size="sm" onClick={onSave} disabled={saving} className="rounded-full bg-slate-950 hover:bg-slate-800">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          שמירה
+        </Button>
+      </div>
     </div>
   );
 }

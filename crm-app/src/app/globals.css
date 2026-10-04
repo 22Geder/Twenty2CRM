@@ -106,10 +106,11 @@ html {
 
 body {
   font-family: var(--font-rubik), var(--font-heebo), 'Heebo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(160deg, #fafbff 0%, #f0f0fa 40%, #e8f4f8 100%);
+  background: #f6f7fb;
   color: var(--t22-gray-900);
   line-height: 1.6;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.011em;
+  font-feature-settings: "ss01", "tnum";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
@@ -915,15 +916,15 @@ button:not(:disabled):active {
    ======================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
+
+
 
 /* ========================================================================
    TWENTY2CRM — Navy Glass Upgrade v3.0
@@ -971,53 +972,11 @@ main > * {
   animation: t22-fade-in 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* === 5. Glass effect on all white rounded cards — skip gradient cards === */
-.bg-white.rounded-2xl:not([class*="from-"]):not([class*="bg-gradient"]),
-.bg-white.rounded-xl:not([class*="from-"]):not([class*="bg-gradient"]) {
-  background: rgba(255, 255, 255, 0.90) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  backdrop-filter: blur(12px) saturate(180%);
-  border-color: rgba(203, 213, 225, 0.55) !important;
-  box-shadow:
-    0 1px 2px rgba(0,0,0,0.04),
-    0 4px 20px rgba(6,182,212,0.06),
-    inset 0 1px 0 rgba(255,255,255,0.95) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
 
-/* === 6. Card hover — float + teal glow === */
-.bg-white.rounded-2xl:not([class*="from-"]):hover,
-.bg-white.rounded-xl:not([class*="from-"]):hover {
-  background: rgba(255, 255, 255, 0.97) !important;
-  box-shadow:
-    0 4px 12px rgba(0,0,0,0.06),
-    0 12px 40px rgba(6,182,212,0.12),
-    inset 0 1px 0 rgba(255,255,255,1) !important;
-  border-color: rgba(6, 182, 212, 0.22) !important;
-  transform: translateY(-2px);
-}
 
-/* === 5b. Protect gradient cards from white override === */
-[class*="from-"][class*="rounded"],[class*="bg-gradient"][class*="rounded"] {
-  background: revert !important;
-}
 
-/* === 7. Shadcn Card component glass treatment — skip gradient cards === */
-[class*="rounded-2xl"][class*="bg-card"]:not([class*="from-"]):not([class*="bg-gradient"]),
-[class*="rounded-2xl"][class*="border-slate"]:not([class*="from-"]):not([class*="bg-gradient"]) {
-  background: rgba(255, 255, 255, 0.88) !important;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-color: rgba(203, 213, 225, 0.50) !important;
-  box-shadow: 0 2px 16px rgba(6,182,212,0.07), 0 1px 3px rgba(0,0,0,0.04) !important;
-  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease !important;
-}
 
-[class*="rounded-2xl"][class*="bg-card"]:not([class*="from-"]):hover {
-  border-color: rgba(6, 182, 212, 0.20) !important;
-  box-shadow: 0 6px 28px rgba(6,182,212,0.11), 0 2px 8px rgba(0,0,0,0.05) !important;
-  transform: translateY(-1px);
-}
+
 
 /* === 8. Page header bar — glass effect === */
 .bg-white\/80.backdrop-blur-md {
@@ -1033,39 +992,7 @@ main > * {
     0 20px 60px rgba(0,0,0,0.08) !important;
 }
 
-/* === 10. Button glow effects === */
-button:not(:disabled):focus-visible,
-button:not(:disabled):hover {
-  outline: none;
-}
 
-/* Primary action buttons (blue/teal gradients) */
-[class*="from-blue"][class*="to-indigo"]:hover,
-[class*="from-cyan"][class*="to-blue"]:hover,
-[class*="bg-cyan"]:hover,
-[class*="bg-blue-6"]:hover {
-  box-shadow: 0 4px 18px rgba(6,182,212,0.35), 0 0 0 2px rgba(6,182,212,0.12) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* === 11. Table rows — refined hover === */
-tbody tr {
-  transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
-}
-
-tbody tr:hover {
-  background: linear-gradient(90deg, rgba(6,182,212,0.04) 0%, rgba(6,182,212,0.02) 100%) !important;
-  box-shadow: inset 3px 0 0 rgba(6,182,212,0.5) !important;
-}
-
-/* === 12. Input focus — teal glow ring === */
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none !important;
-  border-color: rgba(6,182,212,0.60) !important;
-  box-shadow: 0 0 0 3px rgba(6,182,212,0.15), 0 1px 6px rgba(6,182,212,0.10) !important;
-}
 
 /* === 13. Link hover underline accent === */
 a:not([class]):hover {
@@ -1112,19 +1039,7 @@ a:not([class]):hover {
   border: 1px solid rgba(203,213,225,0.40) !important;
 }
 
-/* === 18. Smooth top-of-page transition stripe — subtle single accent === */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--brand-primary, #4F46E5), var(--brand-teal, #14B8A6), transparent);
-  z-index: 9999;
-  pointer-events: none;
-  opacity: 0.5;
-}
+
 
 /* === 19. Loading skeleton — enhanced shimmer === */
 .t22-skeleton {
@@ -1488,7 +1403,7 @@ body {
 }
 
 /* כל grid ב-dashboard — gap מוגדל */
-.grid {
+.t22-grid {
   gap: 1.25rem;
 }
 
@@ -1499,11 +1414,7 @@ body {
   line-height: 1.2 !important;
 }
 
-/* Cards with white bg everywhere look elevated */
-.bg-white {
-  box-shadow: 0 2px 12px rgba(15,23,42,0.07), 0 1px 3px rgba(15,23,42,0.04) !important;
-  border: 1px solid rgba(226,232,240,0.8) !important;
-}
+
 
 /* Buttons — slightly bigger & more obvious */
 button.bg-orange-500, button.bg-blue-600, button[class*="from-orange"], button[class*="from-blue"] {
@@ -1511,12 +1422,6 @@ button.bg-orange-500, button.bg-blue-600, button[class*="from-orange"], button[c
   font-weight: 600 !important;
 }
 
-/* Table rows — clear stripes */
-table tbody tr:nth-child(even) {
-  background: rgba(241,245,249,0.7) !important;
-}
-table tbody tr:hover {
-  background: rgba(219,234,254,0.5) !important;
-}
+
 
 

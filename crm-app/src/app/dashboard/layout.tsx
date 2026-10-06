@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--app-bg)' }} dir="rtl">
+    <div className="t22-dashboard-shell flex h-screen overflow-hidden" dir="rtl">
       {/* Sidebar — part of flex flow, not fixed/overlay */}
       <Sidebar />
       

@@ -648,7 +648,7 @@ export default function CandidatesPageModern() {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-8 space-y-5">
+      <div className="p-4 md:p-8 space-y-5 candidates-light-canvas min-h-screen" style={{ background: '#F1F5F9' }}>
         {/* Header skeleton */}
         <div className="t22-card-soft p-6 md:p-7">
           <div className="flex items-center gap-4">
@@ -691,7 +691,7 @@ export default function CandidatesPageModern() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--app-bg)' }}>
+    <div className="min-h-screen candidates-light-canvas" style={{ background: '#F1F5F9' }}>
       {/* Premium sticky header */}
       <div className="bg-white border-b border-slate-100 px-6 py-5 sticky top-0 z-20 shadow-sm">
         <div className="flex items-center justify-between max-w-[1400px] mx-auto">

@@ -963,6 +963,34 @@ body {
   color: #e2e8f0;
 }
 
+/* עמודי מועמדים נשארים על הרקע הבהיר המקורי, גם כשהדשבורד כהה */
+.candidates-light-canvas {
+  --app-bg: #F1F5F9;
+  background: #F1F5F9 !important;
+  color: #0f172a;
+}
+
+/* טפסים על כרטיס לבן: טקסט כהה וקריא, לא יורש את צבע הדשבורד הכהה */
+.t22-dashboard-shell :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]) {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  -webkit-text-fill-color: #0f172a;
+}
+
+.t22-dashboard-shell :is(input, textarea)::placeholder {
+  color: #94a3b8;
+  -webkit-text-fill-color: #94a3b8;
+}
+
+.t22-dashboard-shell :is(label, .text-card-foreground) {
+  color: #0f172a;
+}
+
+.t22-dashboard-shell :is(.bg-white, .bg-card) > :is(h1, h2, h3, h4, p) {
+  color: #0f172a;
+}
+
 /* === 4. Page entry animation — smooth fade on every page === */
 main > * {
   animation: t22-fade-in 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;

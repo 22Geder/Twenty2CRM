@@ -683,7 +683,7 @@ export default function CandidateDetailsPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-8 candidates-light-canvas min-h-screen" style={{ background: '#F1F5F9' }}>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -694,7 +694,7 @@ export default function CandidateDetailsPage() {
 
   if (!candidate) {
     return (
-      <div className="p-8">
+      <div className="p-8 candidates-light-canvas min-h-screen" style={{ background: '#F1F5F9' }}>
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-red-600">מועמד לא נמצא</p>
@@ -708,7 +708,7 @@ export default function CandidateDetailsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto candidates-light-canvas min-h-screen" style={{ background: '#F1F5F9' }}>
       {/* Premium Profile Header */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-5">
         <div className="flex items-start gap-5">

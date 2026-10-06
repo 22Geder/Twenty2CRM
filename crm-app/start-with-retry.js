@@ -14,17 +14,20 @@ function writeEnvLocal() {
     }
   }
   if (lines.length > 0) {
-    fs.writeFileSync('.env.local', lines.join('\n') + '\n');
+    const envLocal = lines.join('\n') + '\n';
+    fs.writeFileSync('.env.local', envLocal);
+    fs.writeFileSync(require('path').join(__dirname, '.env.local'), envLocal);
     console.log(`📝 Wrote .env.local with ${lines.length} vars`);
   }
   
-  // Also write runtime-env.json as backup
+  // Also write runtime-env.json as backup (cwd + script dir)
   const config = {};
   for (const key of keysToPass) {
     if (process.env[key]) config[key] = process.env[key];
   }
-  const filePath = require('path').join(__dirname, 'runtime-env.json');
-  fs.writeFileSync(filePath, JSON.stringify(config));
+  const jsonBody = JSON.stringify(config);
+  fs.writeFileSync('runtime-env.json', jsonBody);
+  fs.writeFileSync(require('path').join(__dirname, 'runtime-env.json'), jsonBody);
 }
 
 async function waitForDB() {

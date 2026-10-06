@@ -19,7 +19,7 @@ describe('Resend env access', () => {
     }
   })
 
-  it('reads RESEND_API_KEY from process.env via static access', () => {
+  it('reads RESEND_API_KEY from process.env at runtime', () => {
     process.env.RESEND_API_KEY = 're_test_key'
     expect(getResendApiKey()).toBe('re_test_key')
   })

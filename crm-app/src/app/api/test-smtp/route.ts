@@ -17,8 +17,7 @@ export async function GET() {
     
     const envCheck = {
       RESEND_API_KEY: !!resendKey,
-      RESEND_API_KEY_PREFIX: resendKey ? resendKey.substring(0, 6) + '...' : 'NOT SET',
-      RESEND_FROM_EMAIL_VALUE: resendFrom,
+      RESEND_FROM_EMAIL: !!resendFrom,
       SMTP_USER: !!smtpUser,
     }
 

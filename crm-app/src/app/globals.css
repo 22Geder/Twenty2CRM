@@ -93,11 +93,14 @@
    Base Styles
    ======================================================================== */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  border-color: hsl(var(--border));
+/* בתוך layer כדי שמחלקות Tailwind (p-*, m-*, mx-auto) ינצחו — reset לא שכבתי ביטל אותן בכל המערכת */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: hsl(var(--border));
+  }
 }
 
 html {

@@ -89,32 +89,10 @@ function getCandidateIcon(title: string | null): React.ReactNode {
   return null
 }
 
-// Deterministic gradient per name (so same person always gets same color)
-// Uses INLINE STYLE (not Tailwind classes) to avoid JIT purge of dynamic values
-function nameToColor(name: string): { from: string; to: string } {
-  const palettes = [
-    { from: '#06B6D4', to: '#0891B2' },
-    { from: '#6366F1', to: '#4F46E5' },
-    { from: '#10B981', to: '#059669' },
-    { from: '#F97316', to: '#EA580C' },
-    { from: '#A855F7', to: '#7C3AED' },
-    { from: '#EC4899', to: '#DB2777' },
-    { from: '#3B82F6', to: '#2563EB' },
-    { from: '#14B8A6', to: '#0D9488' },
-  ]
-  const idx = (name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % palettes.length
-  return palettes[idx]
-}
-
 function CandidateAvatar({ candidate }: { candidate: { name: string; currentTitle?: string | null; avatar?: string | null } }) {
   const [imgError, setImgError] = useState(false)
-  const { from, to } = nameToColor(candidate.name)
   const icon = getCandidateIcon(candidate.currentTitle || null)
   const initial = candidate.name.charAt(0)
-
-  const gradientStyle = {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
-  }
 
   return (
     <div className="relative w-12 h-12 flex-shrink-0">
@@ -123,22 +101,18 @@ function CandidateAvatar({ candidate }: { candidate: { name: string; currentTitl
           src={candidate.avatar}
           alt={candidate.name}
           onError={() => setImgError(true)}
-          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+          className="w-12 h-12 rounded-full object-cover border-2 border-white"
         />
       ) : (
-        <div
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-md ring-2 ring-white"
-          style={gradientStyle}
-        >
+        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-700 ring-2 ring-white">
           {icon ?? (
-            <span className="text-white font-bold text-lg leading-none">{initial}</span>
+            <span className="text-white font-semibold text-lg leading-none">{initial}</span>
           )}
         </div>
       )}
       {/* 22JOBS logo badge — always visible bottom-right */}
       <div
-        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center overflow-hidden border border-slate-200"
-        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}
+        className="absolute -bottom-1 -start-1 w-5 h-5 rounded-full bg-white flex items-center justify-center overflow-hidden border border-slate-200"
       >
         <img src="/logo-22jobs-clean.png" alt="22jobs" width={16} height={16} style={{ objectFit: 'contain', width: 16, height: 16 }} />
       </div>
@@ -693,16 +667,16 @@ export default function CandidatesPageModern() {
   return (
     <div className="min-h-screen candidates-light-canvas" style={{ background: '#F1F5F9' }}>
       {/* Premium sticky header */}
-      <div className="bg-white border-b border-slate-100 px-6 py-5 sticky top-0 z-20 shadow-sm">
+      <div className="bg-white border-b border-slate-200 px-6 py-5 sticky top-0 z-20">
         <div className="flex items-center justify-between max-w-[1400px] mx-auto">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
               <Users className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">מועמדים</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">מועמדים</h1>
               <p className="text-sm text-slate-500">
-                <span className="font-semibold text-indigo-600">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-slate-700">{candidates.length}</span> מועמדים
+                <span className="font-semibold text-slate-900 tabular-nums">{filteredCandidates.length}</span> מתוך <span className="font-semibold text-slate-700 tabular-nums">{candidates.length}</span> מועמדים
               </p>
             </div>
           </div>
@@ -719,7 +693,7 @@ export default function CandidatesPageModern() {
             {compareSet.size >= 2 && (
               <button
                 onClick={() => setShowCompare(true)}
-                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg shadow-violet-200 transition-all hover:-translate-y-0.5"
+                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors"
               >
                 <GitCompare className="h-4 w-4" />
                 השווה ({compareSet.size})
@@ -738,7 +712,7 @@ export default function CandidatesPageModern() {
               <span className="hidden sm:inline">התאמות טובות ביותר</span>
             </Button>
             <Link href="/dashboard/candidates/new">
-              <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5">
+              <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors">
                 <Plus className="h-4 w-4" />
                 הוסף מועמד
               </button>
@@ -749,25 +723,25 @@ export default function CandidatesPageModern() {
       <div className="p-4 md:p-8 space-y-5">
 
       {/* Tab switcher: רשימה / חיפוש AI */}
-      <div className="flex gap-2 bg-white rounded-2xl p-2 shadow-md border border-slate-100">
+      <div className="flex gap-1 bg-white rounded-2xl p-1.5 border border-slate-200 w-fit">
         <Button
           variant={activeView === 'list' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setActiveView('list')}
-          className={activeView === 'list' ? 'bg-slate-800 text-white' : 'hover:bg-slate-100 text-slate-600'}
+          className={activeView === 'list' ? 'bg-slate-900 text-white hover:bg-slate-800' : 'hover:bg-slate-100 text-slate-600'}
         >
-          <Users className="h-4 w-4 ml-1" />
+          <Users className="h-4 w-4 me-1" />
           רשימת מועמדים
         </Button>
         <Button
           variant={activeView === 'ai-search' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setActiveView('ai-search')}
-          className={activeView === 'ai-search' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white' : 'hover:bg-purple-50 text-purple-700'}
+          className={activeView === 'ai-search' ? 'bg-slate-900 text-white hover:bg-slate-800' : 'hover:bg-slate-100 text-slate-600'}
         >
-          <Bot className="h-4 w-4 ml-1" />
+          <Bot className="h-4 w-4 me-1" />
           חיפוש AI חכם
-          <Sparkles className="h-3 w-3 mr-1 text-yellow-400" />
+          <Sparkles className="h-3 w-3 ms-1 opacity-70" />
         </Button>
       </div>
 
@@ -781,38 +755,39 @@ export default function CandidatesPageModern() {
       <Card className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#06B6D4] h-5 w-5" />
+            <Search className="absolute start-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
             <Input
               type="text"
               placeholder="חפש מועמד לפי שם, אימייל, כישורים, עיר, תגית..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pr-12 pl-14 h-14 text-lg border-2 border-slate-200 focus:border-[#06B6D4] rounded-xl bg-slate-50/50"
+              className="pr-12 pl-14 h-12 text-base border border-slate-200 focus:border-[#06B6D4] rounded-xl bg-slate-50/50"
             />
             <button
               onClick={startVoiceSearch}
-              className={`absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'hover:bg-slate-100 text-slate-400 hover:text-[#06B6D4]'}`}
+              className={`absolute end-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
               title="חיפוש קולי"
+              aria-label="חיפוש קולי"
             >
               {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </button>
           </div>
           {isListening && (
-            <p className="text-center text-sm text-red-500 mt-2 animate-pulse">🎤 מקשיב... דבר עכשיו</p>
+            <p className="text-center text-sm text-red-500 mt-2">מקשיב... דבר עכשיו</p>
           )}
         </CardContent>
       </Card>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 t22-card-soft p-2.5 flex-wrap">
-        <Filter className="h-4 w-4 text-slate-400 mr-1 flex-shrink-0" />
+      <div className="flex items-center gap-1 rounded-2xl bg-white border border-slate-200 p-1.5 flex-wrap">
+        <Filter className="h-4 w-4 text-slate-400 mx-2 flex-shrink-0" />
         <Button
           variant="ghost"
           size="sm"
           onClick={() => handleStatusFilterChange('all')}
           className={statusFilter === 'all' ? 'rounded-full bg-slate-900 text-white' : 'rounded-full text-slate-500 hover:bg-slate-100'}
         >
-          <Users className="h-3.5 w-3.5 ml-1" />
+          <Users className="h-3.5 w-3.5 me-1" />
           הכל ({candidates.length})
         </Button>
         <Button
@@ -821,7 +796,7 @@ export default function CandidatesPageModern() {
           onClick={() => handleStatusFilterChange('in-process')}
           className={statusFilter === 'in-process' ? 'rounded-full bg-[#1D4ED8] text-white' : 'rounded-full text-[#1D4ED8] hover:bg-blue-50'}
         >
-          <Clock className="h-3.5 w-3.5 ml-1" />
+          <Clock className="h-3.5 w-3.5 me-1" />
           בתהליך ({candidates.filter(c => getCandidateStatus(c) === 'in-process').length})
         </Button>
         <Button
@@ -830,7 +805,7 @@ export default function CandidatesPageModern() {
           onClick={() => handleStatusFilterChange('hired')}
           className={statusFilter === 'hired' ? 'rounded-full bg-[#047857] text-white' : 'rounded-full text-[#047857] hover:bg-green-50'}
         >
-          <CheckCircle className="h-3.5 w-3.5 ml-1" />
+          <CheckCircle className="h-3.5 w-3.5 me-1" />
           התקבל ({candidates.filter(c => getCandidateStatus(c) === 'hired').length})
         </Button>
         <Button
@@ -839,7 +814,7 @@ export default function CandidatesPageModern() {
           onClick={() => handleStatusFilterChange('rejected')}
           className={statusFilter === 'rejected' ? 'rounded-full bg-[#B91C1C] text-white' : 'rounded-full text-[#B91C1C] hover:bg-red-50'}
         >
-          <XCircle className="h-3.5 w-3.5 ml-1" />
+          <XCircle className="h-3.5 w-3.5 me-1" />
           לא התקבל ({candidates.filter(c => getCandidateStatus(c) === 'rejected').length})
         </Button>
         <Button
@@ -848,7 +823,7 @@ export default function CandidatesPageModern() {
           onClick={() => handleStatusFilterChange('new')}
           className={statusFilter === 'new' ? 'rounded-full bg-[#B45309] text-white' : 'rounded-full text-[#B45309] hover:bg-orange-50'}
         >
-          <Star className="h-3.5 w-3.5 ml-1" />
+          <Star className="h-3.5 w-3.5 me-1" />
           חדש ({candidates.filter(c => getCandidateStatus(c) === 'new').length})
         </Button>
       </div>
@@ -859,53 +834,53 @@ export default function CandidatesPageModern() {
       {/* Clean Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Stat 1 */}
-        <div className="t22-card-soft p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
-            <Users className="h-6 w-6" style={{ color: 'var(--brand-primary)' }} />
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
+            <Users className="h-5 w-5 text-slate-600" />
           </div>
           <div>
-            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.length}</div>
-            <div className="text-sm text-slate-500 font-medium">מועמדים</div>
+            <div className="t22-num text-3xl font-semibold text-slate-900">{filteredCandidates.length}</div>
+            <div className="text-sm text-slate-500">מועמדים</div>
           </div>
         </div>
 
         {/* Stat 2 */}
-        <div className="t22-card-soft p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.12)' }}>
-            <Star className="h-6 w-6" style={{ color: '#D97706' }} />
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
+            <Star className="h-5 w-5 text-slate-600" />
           </div>
           <div>
-            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.filter(c => c.rating && c.rating >= 4).length}</div>
-            <div className="text-sm text-slate-500 font-medium">מדורגים גבוה</div>
+            <div className="t22-num text-3xl font-semibold text-slate-900">{filteredCandidates.filter(c => c.rating && c.rating >= 4).length}</div>
+            <div className="text-sm text-slate-500">מדורגים גבוה</div>
           </div>
         </div>
 
         {/* Stat 3 */}
-        <div className="t22-card-soft p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-lavender-50)' }}>
-            <Briefcase className="h-6 w-6" style={{ color: 'var(--brand-lavender)' }} />
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
+            <Briefcase className="h-5 w-5 text-slate-600" />
           </div>
           <div>
-            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.filter(c => (c.yearsOfExperience || 0) >= 5).length}</div>
-            <div className="text-sm text-slate-500 font-medium">ותיקים בתחום</div>
+            <div className="t22-num text-3xl font-semibold text-slate-900">{filteredCandidates.filter(c => (c.yearsOfExperience || 0) >= 5).length}</div>
+            <div className="text-sm text-slate-500">ותיקים בתחום</div>
           </div>
         </div>
 
         {/* Stat 4 */}
-        <div className="t22-card-soft p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-teal-50)' }}>
-            <Calendar className="h-6 w-6" style={{ color: 'var(--brand-teal)' }} />
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
+            <Calendar className="h-5 w-5 text-slate-600" />
           </div>
           <div>
-            <div className="t22-num text-3xl font-bold text-slate-900">{filteredCandidates.reduce((sum, c) => sum + (c._count?.applications || 0), 0)}</div>
-            <div className="text-sm text-slate-500 font-medium">מועמדויות</div>
+            <div className="t22-num text-3xl font-semibold text-slate-900">{filteredCandidates.reduce((sum, c) => sum + (c._count?.applications || 0), 0)}</div>
+            <div className="text-sm text-slate-500">מועמדויות</div>
           </div>
         </div>
       </div>
 
       {/* 🆕 Bulk Delete Toolbar */}
       {filteredCandidates.length > 0 && (
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <Card className="border border-slate-200 shadow-none bg-white">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -920,7 +895,7 @@ export default function CandidatesPageModern() {
                   </label>
                 </div>
                 {selectedCandidates.size > 0 && (
-                  <span className="text-sm text-[#06B6D4] font-medium bg-[#06B6D4]/10 px-3 py-1 rounded-full">
+                  <span className="text-sm text-slate-700 font-medium bg-slate-100 px-3 py-1 rounded-full">
                     נבחרו {selectedCandidates.size} מועמדים
                   </span>
                 )}
@@ -993,10 +968,10 @@ export default function CandidatesPageModern() {
       {/* Premium Candidates Grid */}
       {filteredCandidates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-50 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
-            <Users className="h-12 w-12 text-slate-300" />
+          <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mb-6">
+            <Users className="h-10 w-10 text-slate-300" />
           </div>
-          <h3 className="text-xl font-bold text-slate-600 mb-2">לא נמצאו מועמדים</h3>
+          <h3 className="text-xl font-semibold text-slate-700 mb-2">לא נמצאו מועמדים</h3>
           <p className="text-slate-400 text-sm">נסה לשנות את פרמטרי החיפוש</p>
         </div>
       ) : (
@@ -1017,28 +992,28 @@ export default function CandidatesPageModern() {
               </div>
 
               <Link href={`/dashboard/candidates/${candidate.id}`}>
-                <div className={`candidate-card group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-1
-                  ${selectedCandidates.has(candidate.id) ? 'border-[#06B6D4] ring-2 ring-[#06B6D4]/20' : 'border-slate-100 hover:border-indigo-200'}`}>
-
-                  {/* Top color strip by status */}
-                  <div className={`h-1 w-full ${
-                    candidate.hiredAt ? 'bg-gradient-to-r from-[#10B981] to-[#34D399]' :
-                    candidate.applications?.some(a => a.status === 'REJECTED') ? 'bg-gradient-to-r from-red-400 to-rose-400' :
-                    candidate.applications?.length ? 'bg-gradient-to-r from-[#3B82F6] to-[#60A5FA]' :
-                    'bg-gradient-to-r from-[#F97316] to-[#FB923C]'
-                  }`} />
+                <div className={`candidate-card group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden cursor-pointer shadow-sm
+                  ${selectedCandidates.has(candidate.id) ? 'border-[#06B6D4] ring-2 ring-[#06B6D4]/20' : 'border-slate-200 hover:border-slate-300'}`}>
 
                   <div className="p-5">
-                    {/* Badges row: abandonment / duplicate */}
-                    <div className="flex flex-wrap gap-1 mb-2">
+                    {/* Status + flags row */}
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {(() => {
+                        const status = getCandidateStatus(candidate)
+                        const pill = status === 'hired' ? { cls: 't22-pill--success', label: 'התקבל' }
+                          : status === 'rejected' ? { cls: 't22-pill--danger', label: 'לא התקבל' }
+                          : status === 'in-process' ? { cls: 't22-pill--info', label: 'בתהליך' }
+                          : { cls: 't22-pill--warning', label: 'חדש' }
+                        return <span className={`t22-pill ${pill.cls}`}>{pill.label}</span>
+                      })()}
                       {isAbandoned(candidate) && (
                         <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
-                          ⚠️ לא נוצר קשר 14+ יום
+                          <AlertTriangle className="h-3 w-3" aria-hidden="true" /> לא נוצר קשר 14+ יום
                         </span>
                       )}
                       {duplicateIds.has(candidate.id) && (
                         <span className="inline-flex items-center gap-1 text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
-                          🔁 כפילות אפשרית
+                          <Copy className="h-3 w-3" aria-hidden="true" /> כפילות אפשרית
                         </span>
                       )}
                     </div>
@@ -1049,9 +1024,9 @@ export default function CandidatesPageModern() {
                       <div className="flex items-center gap-3 min-w-0">
                         <CandidateAvatar candidate={candidate} />
                         <div className="min-w-0">
-                          <h3 className="font-bold text-slate-800 text-[15px] truncate group-hover:text-[#06B6D4] transition-colors">
+                          <h3 className="font-semibold text-slate-900 text-base truncate">
                             {candidate.name}
-                            {candidate.rating && candidate.rating >= 4 && <Award className="inline h-3.5 w-3.5 text-[#F97316] mr-1" />}
+                            {candidate.rating && candidate.rating >= 4 && <Award className="inline h-3.5 w-3.5 text-amber-500 ms-1" />}
                           </h3>
                           {candidate.currentTitle && (
                             <p className="text-xs text-slate-500 truncate">{candidate.currentTitle}</p>
@@ -1078,25 +1053,25 @@ export default function CandidatesPageModern() {
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
                       {candidate.phone && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                          <Phone className="h-3.5 w-3.5 text-[#10B981] flex-shrink-0" />
-                          <span className="truncate">{candidate.phone}</span>
+                          <Phone className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                          <span className="truncate tabular-nums" dir="ltr">{candidate.phone}</span>
                         </div>
                       )}
                       {candidate.city && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                          <MapPin className="h-3.5 w-3.5 text-[#F97316] flex-shrink-0" />
+                          <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                           <span className="truncate">{candidate.city}</span>
                         </div>
                       )}
                       {candidate.email && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-500 col-span-2 min-w-0">
-                          <Mail className="h-3.5 w-3.5 text-[#06B6D4] flex-shrink-0" />
+                          <Mail className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                           <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0" dir="ltr" title={candidate.email}>{candidate.email}</span>
                         </div>
                       )}
                       {candidate.yearsOfExperience !== null && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                          <Briefcase className="h-3.5 w-3.5 text-purple-400 flex-shrink-0" />
+                          <Briefcase className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                           <span>{candidate.yearsOfExperience} שנ׳ ניסיון</span>
                         </div>
                       )}
@@ -1122,9 +1097,8 @@ export default function CandidatesPageModern() {
 
                     {/* Manual summary */}
                     {candidate.manualSummary && (
-                      <div className="mb-3 px-3 py-2 rounded-lg border text-[11px] text-slate-700 bg-[#FEFCE8] border-amber-100"
-                        style={{}}>
-                        <span className="font-semibold text-amber-700">📝 </span>
+                      <div className="mb-3 px-3 py-2 rounded-lg border text-[11px] text-slate-700 bg-slate-50 border-slate-200">
+                        <span className="font-semibold text-slate-500">תקציר: </span>
                         <span className="line-clamp-2">{candidate.manualSummary}</span>
                       </div>
                     )}
@@ -1132,11 +1106,11 @@ export default function CandidatesPageModern() {
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div className="flex gap-1.5">
-                        <span title="מספר הפניות" className="inline-flex items-center gap-1 text-[10px] bg-[#06B6D4]/10 text-[#0891B2] px-2.5 py-1 rounded-lg font-semibold cursor-help">
-                          📋 {candidate._count?.applications || 0}
+                        <span title="מספר הפניות" className="inline-flex items-center gap-1 text-[11px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-semibold cursor-help">
+                          הפניות <span className="tabular-nums">{candidate._count?.applications || 0}</span>
                         </span>
-                        <span title="מספר ראיונות" className="inline-flex items-center gap-1 text-[10px] bg-[#F97316]/10 text-[#EA580C] px-2.5 py-1 rounded-lg font-semibold cursor-help">
-                          🎙 {candidate._count?.interviews || 0}
+                        <span title="מספר ראיונות" className="inline-flex items-center gap-1 text-[11px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-semibold cursor-help">
+                          ראיונות <span className="tabular-nums">{candidate._count?.interviews || 0}</span>
                         </span>
                       </div>
                       <div className="flex gap-1" onClick={(e) => e.preventDefault()}>
@@ -1145,7 +1119,8 @@ export default function CandidatesPageModern() {
                           variant="ghost"
                           size="sm"
                           title="השווה מועמדים"
-                          className={`h-8 w-8 p-0 rounded-xl ${compareSet.has(candidate.id) ? 'bg-violet-100 text-violet-600' : 'hover:bg-violet-50 text-slate-400'}`}
+                          aria-label="השווה מועמדים"
+                          className={`h-8 w-8 p-0 rounded-xl ${compareSet.has(candidate.id) ? 'bg-slate-900 text-white hover:bg-slate-800' : 'hover:bg-slate-100 text-slate-500'}`}
                           onClick={(e) => toggleCompare(candidate.id, e)}
                         >
                           <GitCompare className="h-4 w-4" />
@@ -1155,7 +1130,8 @@ export default function CandidatesPageModern() {
                           variant="ghost"
                           size="sm"
                           title="הוסף תזכורת"
-                          className="h-8 w-8 p-0 rounded-xl hover:bg-amber-50 text-slate-400 hover:text-amber-600"
+                          aria-label="הוסף תזכורת"
+                          className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100 text-slate-500"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReminderCandidate(candidate); setReminderText(''); setReminderDate(''); }}
                         >
                           <Bell className="h-4 w-4" />
@@ -1166,7 +1142,8 @@ export default function CandidatesPageModern() {
                             variant="ghost"
                             size="sm"
                             title="שלח וואטסאפ"
-                            className="h-8 w-8 p-0 rounded-xl hover:bg-green-50"
+                            aria-label="שלח וואטסאפ"
+                            className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); const name = candidate.name; setWaPreviewCandidate(candidate); setWaMessage(`שלום ${name}, אני פונה אליך בנוגע להצעת עבודה מעניינת. האם ניתן לשוחח?`); }}
                           >
                             <MessageCircle className="h-4 w-4 text-green-600" />
@@ -1176,18 +1153,19 @@ export default function CandidatesPageModern() {
                         variant="ghost" 
                         size="sm" 
                         title="התאמה אוטומטית עם AI"
-                        className="h-8 w-8 p-0 rounded-xl hover:bg-[#06B6D4]/10"
+                        aria-label="התאמה אוטומטית עם AI"
+                        className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100"
                         onClick={(e) => handleAutoMatch(candidate.id, candidate.name, e)}
                         disabled={matchingCandidate === candidate.id}
                       >
                         {matchingCandidate === candidate.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-[#06B6D4]" />
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
                         ) : (
-                          <Bot className="h-4 w-4 text-[#06B6D4]" />
+                          <Bot className="h-4 w-4 text-slate-500" />
                         )}
                       </Button>
-                      <Button variant="ghost" size="sm" title="צפייה בפרטי המועמד" className="h-8 w-8 p-0 rounded-xl hover:bg-[#10B981]/10">
-                        <Eye className="h-4 w-4 text-[#10B981]" />
+                      <Button variant="ghost" size="sm" title="צפייה בפרטי המועמד" aria-label="צפייה בפרטי המועמד" className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100">
+                        <Eye className="h-4 w-4 text-slate-500" />
                       </Button>
                     </div>
                   </div>
@@ -1199,12 +1177,12 @@ export default function CandidatesPageModern() {
               {(pinnedSummaryId === candidate.id) && (
                 <div
                   dir="rtl"
-                  className="fixed z-50 bottom-6 left-6 w-96 bg-white rounded-2xl shadow-2xl border border-amber-200 p-5 animate-in fade-in slide-in-from-bottom-3"
+                  className="fixed z-50 bottom-6 left-6 w-96 bg-white rounded-2xl shadow-xl border border-slate-200 p-5 animate-in fade-in slide-in-from-bottom-3"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2">
-                      📝 תקציר ידני — {candidate.name}
+                    <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      תקציר ידני — {candidate.name}
                     </h4>
                     <button
                       className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
@@ -1215,11 +1193,11 @@ export default function CandidatesPageModern() {
                   </div>
                   {candidate.source && (
                     <Badge variant="outline" className="text-[10px] mb-3">
-                      {candidate.source === 'UPLOAD' ? '📂 מהמחשב' :
-                       candidate.source === 'EMAIL_AUTO' ? '📧 מייל' :
-                       candidate.source === 'EMAIL_HISTORICAL' ? '📧 מייל (היסטורי)' :
-                       candidate.source === 'WHATSAPP' ? '💬 וואטסאפ' :
-                       candidate.source === 'MANUAL' ? '✍️ ידני' :
+                      {candidate.source === 'UPLOAD' ? 'מהמחשב' :
+                       candidate.source === 'EMAIL_AUTO' ? 'מייל' :
+                       candidate.source === 'EMAIL_HISTORICAL' ? 'מייל (היסטורי)' :
+                       candidate.source === 'WHATSAPP' ? 'וואטסאפ' :
+                       candidate.source === 'MANUAL' ? 'ידני' :
                        candidate.source}
                     </Badge>
                   )}
@@ -1240,7 +1218,7 @@ export default function CandidatesPageModern() {
                   />
                   {candidate.lastViewedAt && (
                     <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                      👁️ נצפה לאחרונה: {new Date(candidate.lastViewedAt).toLocaleString('he-IL')}
+                      נצפה לאחרונה: {new Date(candidate.lastViewedAt).toLocaleString('he-IL')}
                       {candidate.lastViewedBy?.name ? ` · ${candidate.lastViewedBy.name}` : ''}
                     </div>
                   )}
@@ -1357,7 +1335,7 @@ export default function CandidatesPageModern() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <GitCompare className="h-5 w-5 text-violet-600" />
+                <GitCompare className="h-5 w-5 text-slate-700" />
                 השוואת מועמדים
               </h3>
               <button className="p-2 hover:bg-slate-100 rounded-xl" onClick={() => setShowCompare(false)}>
@@ -1399,10 +1377,10 @@ export default function CandidatesPageModern() {
                     )}
                     {/* Stats */}
                     <div className="flex gap-2 pt-2 border-t border-slate-100">
-                      <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg">📋 {c._count?.applications || 0} פניות</span>
-                      <span className="text-[11px] bg-orange-50 text-orange-700 px-2 py-1 rounded-lg">🎙 {c._count?.interviews || 0} ראיונות</span>
+                      <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{c._count?.applications || 0} פניות</span>
+                      <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{c._count?.interviews || 0} ראיונות</span>
                     </div>
-                    <Link href={`/dashboard/candidates/${c.id}`} className="block text-center text-xs text-indigo-600 hover:underline" onClick={() => setShowCompare(false)}>
+                    <Link href={`/dashboard/candidates/${c.id}`} className="block text-center text-xs text-slate-700 hover:underline" onClick={() => setShowCompare(false)}>
                       פתח פרופיל מלא ←
                     </Link>
                   </div>
@@ -1426,19 +1404,19 @@ export default function CandidatesPageModern() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#F97316] to-[#C2410C] p-6 flex items-center justify-between">
+            <div className="bg-slate-900 p-6 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
                   <Target className="h-6 w-6" />
-                  🎯 התאמות טובות ביותר
+                  התאמות טובות ביותר
                 </h2>
                 <p className="text-white/80 mt-1">
                   {bestMatchesData.positionsWithMatches} משרות | 
                   {bestMatchesData.totalCandidatesNotInProcess} מועמדים פנויים |
-                  ⚡ {bestMatchesData.processingTime}ms
+                  {bestMatchesData.processingTime}ms
                 </p>
                 <p className="text-xs text-white/60 mt-1">
-                  🏷️ תגיות 40 | 📊 ניסיון 15 | ⭐ דירוג 10 | 💼 תפקיד 10 | 🔗 חלקי 10 | 📍 מיקום 5 | 🆕 עדכניות 5 | +5 נוסף
+                  תגיות 40 | ניסיון 15 | דירוג 10 | תפקיד 10 | חלקי 10 | מיקום 5 | עדכניות 5 | +5 נוסף
                 </p>
               </div>
               <Button
@@ -1461,15 +1439,15 @@ export default function CandidatesPageModern() {
                 </div>
               ) : (
                 bestMatchesData.positions.map((item: any) => (
-                  <Card key={item.position.id} className="border-0 shadow-lg overflow-hidden">
+                  <Card key={item.position.id} className="border border-slate-200 shadow-none overflow-hidden">
                     {/* Position Header */}
                     <div 
-                      className="bg-gradient-to-r from-slate-800 to-slate-900 p-4 cursor-pointer hover:from-slate-700 hover:to-slate-800 transition-colors"
+                      className="bg-slate-900 p-4 cursor-pointer hover:bg-slate-800 transition-colors"
                       onClick={() => togglePositionExpand(item.position.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#F97316] to-[#C2410C] rounded-xl flex items-center justify-center">
+                          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
                             <Briefcase className="h-6 w-6 text-white" />
                           </div>
                           <div>
@@ -1490,7 +1468,7 @@ export default function CandidatesPageModern() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-[#F97316]">{item.candidates.length}</div>
+                            <div className="text-2xl font-semibold text-white tabular-nums">{item.candidates.length}</div>
                             <div className="text-xs text-slate-400">מועמדים מתאימים</div>
                           </div>
                           {expandedPositions.has(item.position.id) ? (
@@ -1523,11 +1501,8 @@ export default function CandidatesPageModern() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 {/* Rank Badge */}
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
-                                  ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 
-                                    index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-500' :
-                                    index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
-                                    'bg-slate-400'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm
+                                  ${index < 3 ? 'bg-slate-900' : 'bg-slate-400'}`}>
                                   {index + 1}
                                 </div>
                                 
@@ -1569,9 +1544,9 @@ export default function CandidatesPageModern() {
                                   {/* פירוט ציון מקוצר */}
                                   {candidate.scoreBreakdown && (
                                     <div className="text-[9px] text-slate-500 flex gap-1" title={`תגיות:${candidate.scoreBreakdown.tags}/40 | חלקי:${candidate.scoreBreakdown.partial}/10 | ניסיון:${candidate.scoreBreakdown.experience}/15 | דירוג:${candidate.scoreBreakdown.rating}/10 | מיקום:${candidate.scoreBreakdown.location}/5 | תפקיד:${candidate.scoreBreakdown.title}/10`}>
-                                      <span>🏷️{candidate.scoreBreakdown.tags}</span>
-                                      <span>📊{candidate.scoreBreakdown.experience}</span>
-                                      <span>📍{candidate.scoreBreakdown.location}</span>
+                                      <span>תגיות {candidate.scoreBreakdown.tags}</span>
+                                      <span>ניסיון {candidate.scoreBreakdown.experience}</span>
+                                      <span>מיקום {candidate.scoreBreakdown.location}</span>
                                     </div>
                                   )}
                                   {/* ציון כולל */}
@@ -1619,7 +1594,7 @@ export default function CandidatesPageModern() {
             {/* Footer */}
             <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
               <div className="text-sm text-slate-500">
-                <Sparkles className="h-4 w-4 inline ml-1 text-[#F97316]" />
+                <Sparkles className="h-4 w-4 inline me-1 text-slate-400" />
                 אותו אלגוריתם כמו כשפותחים מועמד - עד 100 נקודות
               </div>
               <Button

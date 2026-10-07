@@ -396,7 +396,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
       {/* Active Positions */}
       {visibleActive.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+          <h2 className="text-xl font-semibold text-slate-100">
             משרות פעילות ({activeFiltered.length})
           </h2>
           <div className="grid gap-4">
@@ -410,7 +410,7 @@ export function PositionsClient({ positions }: { positions: PositionWithRelation
       {/* Draft Positions */}
       {visibleDraft.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+          <h2 className="text-xl font-semibold text-slate-100">
             טיוטות ({draftFiltered.length})
           </h2>
           <div className="grid gap-4">

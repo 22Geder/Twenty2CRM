@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail, Lock, User, LogIn, UserPlus, Globe, Sparkles } from "lucide-react"
+import { Mail, Lock, User, LogIn, UserPlus, AlertTriangle } from "lucide-react"
 import Image from "next/image"
 
 export default function LoginPage() {
@@ -73,13 +73,13 @@ export default function LoginPage() {
           // 🔒 בדיקת נעילת חשבון
           if (result.error === "ACCOUNT_LOCKED") {
             setIsLocked(true)
-            setError("🔒 החשבון ננעל! נשלח מייל לאדמין עם קישור שחרור.")
+            setError("החשבון ננעל! נשלח מייל לאדמין עם קישור שחרור.")
             return
           }
 
           // ⛔ בדיקת חשבון לא פעיל
           if (result.error === "ACCOUNT_INACTIVE") {
-            setError("⛔ החשבון שלך לא פעיל. פנה לאדמין להפעלה.")
+            setError("החשבון שלך לא פעיל. פנה לאדמין להפעלה.")
             return
           }
           
@@ -88,7 +88,7 @@ export default function LoginPage() {
           if (failedMatch) {
             const remaining = parseInt(failedMatch[1])
             setRemainingAttempts(remaining)
-            setError(`⚠️ סיסמה שגויה! נותרו ${remaining} ניסיונות לפני נעילה.`)
+            setError(`סיסמה שגויה! נותרו ${remaining} ניסיונות לפני נעילה.`)
             return
           }
           
@@ -106,36 +106,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 relative overflow-hidden" dir="rtl">
-      {/* רקע רשת דינמי */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Network Grid Animation */}
-        <div className="absolute inset-0 opacity-20">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <circle cx="30" cy="30" r="2" fill="#7CB342" opacity="0.5"/>
-                <line x1="30" y1="0" x2="30" y2="60" stroke="#7CB342" strokeWidth="0.5" opacity="0.3"/>
-                <line x1="0" y1="30" x2="60" y2="30" stroke="#7CB342" strokeWidth="0.5" opacity="0.3"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)"/>
-          </svg>
-        </div>
-        
-        {/* Floating Orbs */}
-        <div className="absolute top-20 left-20 w-64 h-64 bg-[#00A8A8]/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-[#FF8C00]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-[#7CB342]/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-      </div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* לוגו פרימיום */}
-        <div className="text-center mb-10 animate-fade-in">
-          {/* לוגו תמונה אמיתית */}
-          <div className="relative mx-auto mb-6 flex justify-center">
-            <div className="absolute inset-0 bg-[#FF8C00]/20 rounded-full blur-3xl scale-90" />
-            <div className="relative w-44 h-44 rounded-full overflow-hidden bg-white shadow-2xl ring-4 ring-white/20 flex items-center justify-center p-3">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4" dir="rtl">
+      <div className="w-full max-w-md">
+        {/* לוגו */}
+        <div className="text-center mb-8">
+          <div className="relative mx-auto mb-4 flex justify-center">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-3">
               <Image 
                 src="/logo-22jobs-clean.png" 
                 alt="22JOBS Logo" 
@@ -146,26 +122,21 @@ export default function LoginPage() {
               />
             </div>
           </div>
-          
-          {/* תג CRM */}
-          <div className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-[#00A8A8]/20 to-[#FF8C00]/20 px-4 py-2 rounded-full border border-[#00A8A8]/30">
-            <Sparkles size={16} className="text-[#FF8C00]" />
-            <span className="text-sm font-bold text-white">מערכת CRM מתקדמת</span>
-          </div>
+          <p className="text-sm text-slate-500">מערכת CRM מתקדמת</p>
         </div>
         
         {/* כרטיס התחברות */}
-        <Card className="w-full shadow-2xl border-0 bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden">
-          <CardHeader className="space-y-2 pb-6 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-            <CardTitle className="text-2xl font-bold text-center text-slate-800 flex items-center justify-center gap-2">
+        <Card className="w-full shadow-sm border border-slate-200 bg-white rounded-3xl overflow-hidden">
+          <CardHeader className="space-y-2 pb-6 border-b border-slate-100">
+            <CardTitle className="text-2xl font-semibold tracking-tight text-center text-slate-900 flex items-center justify-center gap-2">
               {isRegister ? (
                 <>
-                  <UserPlus className="text-[#7CB342]" size={28} />
+                  <UserPlus className="text-slate-500" size={24} />
                   הרשמה למערכת
                 </>
               ) : (
                 <>
-                  <LogIn className="text-[#00A8A8]" size={28} />
+                  <LogIn className="text-slate-500" size={24} />
                   התחברות למערכת
                 </>
               )}
@@ -182,7 +153,7 @@ export default function LoginPage() {
               {isRegister && (
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-slate-700 font-medium flex items-center gap-2">
-                    <User size={16} className="text-[#7CB342]" />
+                    <User size={16} className="text-slate-400" />
                     שם מלא
                   </Label>
                   <Input
@@ -192,14 +163,14 @@ export default function LoginPage() {
                     placeholder="ישראל ישראלי"
                     required={isRegister}
                     disabled={isLoading}
-                    className="h-12 rounded-xl border-2 border-slate-200 focus:border-[#7CB342] focus:ring-4 focus:ring-[#7CB342]/20 transition-all"
+                    className="h-12 rounded-xl border border-slate-300 focus:border-[#0891B2] focus:ring-4 focus:ring-[#0891B2]/15 transition-colors"
                   />
                 </div>
               )}
               
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-700 font-medium flex items-center gap-2">
-                  <Mail size={16} className="text-[#00A8A8]" />
+                  <Mail size={16} className="text-slate-400" />
                   אימייל
                 </Label>
                 <Input
@@ -209,13 +180,13 @@ export default function LoginPage() {
                   placeholder="email@example.com"
                   required
                   disabled={isLoading}
-                  className="h-12 rounded-xl border-2 border-slate-200 focus:border-[#00A8A8] focus:ring-4 focus:ring-[#00A8A8]/20 transition-all"
+                  className="h-12 rounded-xl border border-slate-300 focus:border-[#0891B2] focus:ring-4 focus:ring-[#0891B2]/15 transition-colors"
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-slate-700 font-medium flex items-center gap-2">
-                  <Lock size={16} className="text-[#FF8C00]" />
+                  <Lock size={16} className="text-slate-400" />
                   סיסמה
                 </Label>
                 <Input
@@ -225,46 +196,42 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   disabled={isLoading}
-                  className="h-12 rounded-xl border-2 border-slate-200 focus:border-[#FF8C00] focus:ring-4 focus:ring-[#FF8C00]/20 transition-all"
+                  className="h-12 rounded-xl border border-slate-300 focus:border-[#0891B2] focus:ring-4 focus:ring-[#0891B2]/15 transition-colors"
                 />
               </div>
               
               {error && (
-                <div className={`${isLocked ? 'bg-gradient-to-r from-red-100 to-red-200 border-red-600' : remainingAttempts !== null && remainingAttempts <= 1 ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-500' : 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-500'} border-r-4 text-red-700 px-4 py-3 rounded-xl shadow-sm animate-shake`}>
+                <div role="alert" className={`${isLocked || (remainingAttempts !== null && remainingAttempts <= 1) ? 'bg-red-50 border-red-500 text-red-700' : 'bg-amber-50 border-amber-500 text-amber-800'} border-e-4 px-4 py-3 rounded-xl animate-shake`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{isLocked ? '🔒' : '⚠️'}</span>
+                    {isLocked ? <Lock size={18} className="shrink-0" /> : <AlertTriangle size={18} className="shrink-0" />}
                     <span className="font-medium">{error}</span>
                   </div>
                   {isLocked && (
-                    <p className="text-sm text-red-500 mt-2">נשלח מייל לאדמין הראשי (office@hr22group.com) עם קישור שחרור</p>
+                    <p className="text-sm text-red-600 mt-2">נשלח מייל לאדמין הראשי (office@hr22group.com) עם קישור שחרור</p>
                   )}
                 </div>
               )}
 
               <Button
                 type="submit"
-                className={`w-full h-14 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg ${
-                  isRegister 
-                    ? 'bg-gradient-to-r from-[#7CB342] to-[#8BC34A] hover:shadow-green-500/30' 
-                    : 'bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] hover:shadow-teal-500/30'
-                }`}
+                className="w-full h-12 rounded-xl font-semibold text-base text-white transition-colors bg-[#0891B2] hover:bg-[#0E7490]"
                 disabled={isLoading || isLocked}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                     <span>{isRegister ? "נרשם..." : "מתחבר..."}</span>
                   </div>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
                     {isRegister ? (
                       <>
-                        <UserPlus size={22} />
+                        <UserPlus size={20} />
                         הרשמה
                       </>
                     ) : (
                       <>
-                        <LogIn size={22} />
+                        <LogIn size={20} />
                         התחברות
                       </>
                     )}
@@ -279,12 +246,12 @@ export default function LoginPage() {
                     setIsRegister(!isRegister)
                     setError("")
                   }}
-                  className="text-[#00A8A8] hover:text-[#008080] font-medium transition-all duration-200 hover:underline"
+                  className="text-[#0E7490] hover:text-[#155E75] font-medium transition-colors hover:underline"
                   disabled={isLoading}
                 >
                   {isRegister 
-                    ? "יש לך כבר חשבון? התחבר כאן 👈" 
-                    : "אין לך חשבון? הירשם כאן 👈"}
+                    ? "יש לך כבר חשבון? התחבר כאן" 
+                    : "אין לך חשבון? הירשם כאן"}
                 </button>
               </div>
 
@@ -292,11 +259,11 @@ export default function LoginPage() {
               {!isRegister && (
                 <div className="text-center pt-1">
                   <p className="text-sm text-slate-400">
-                    שכחת סיסמה? פנה לאדמין: <a href="mailto:office@hr22group.com" className="text-[#FF8C00] hover:underline font-medium">office@hr22group.com</a>
+                    שכחת סיסמה? פנה לאדמין: <a href="mailto:office@hr22group.com" className="text-[#0E7490] hover:underline font-medium">office@hr22group.com</a>
                   </p>
                   {isLocked && (
-                    <p className="text-sm text-red-400 mt-1 font-medium">
-                      🔒 החשבון ננעל - נשלח מייל אוטומטי לאדמין לשחרור
+                    <p className="text-sm text-red-500 mt-1 font-medium">
+                      החשבון ננעל - נשלח מייל אוטומטי לאדמין לשחרור
                     </p>
                   )}
                 </div>

@@ -243,15 +243,6 @@ export default function CandidatesPageModern() {
     })
   }
 
-  // 🆕 בחירת/ביטול בחירת כולם
-  const toggleSelectAll = () => {
-    if (selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0) {
-      setSelectedCandidates(new Set())
-    } else {
-      setSelectedCandidates(new Set(filteredCandidates.map(c => c.id)))
-    }
-  }
-
   // 🆕 מחיקה המונית
   const bulkDelete = async () => {
     if (selectedCandidates.size === 0) return
@@ -879,21 +870,11 @@ export default function CandidatesPageModern() {
       </div>
 
       {/* 🆕 Bulk Delete Toolbar */}
-      {filteredCandidates.length > 0 && (
+      {selectedCandidates.size > 0 && (
         <Card className="border border-slate-200 shadow-none bg-white">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="select-all"
-                    checked={selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                  <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                    בחר הכל
-                  </label>
-                </div>
                 {selectedCandidates.size > 0 && (
                   <span className="text-sm text-slate-700 font-medium bg-slate-100 px-3 py-1 rounded-full">
                     נבחרו {selectedCandidates.size} מועמדים
@@ -1007,12 +988,12 @@ export default function CandidatesPageModern() {
                         return <span className={`t22-pill ${pill.cls}`}>{pill.label}</span>
                       })()}
                       {isAbandoned(candidate) && (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                        <span className="inline-flex items-center gap-1 text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
                           <AlertTriangle className="h-3 w-3" aria-hidden="true" /> לא נוצר קשר 14+ יום
                         </span>
                       )}
                       {duplicateIds.has(candidate.id) && (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
+                        <span className="inline-flex items-center gap-1 text-[11px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-semibold">
                           <Copy className="h-3 w-3" aria-hidden="true" /> כפילות אפשרית
                         </span>
                       )}
@@ -1041,7 +1022,7 @@ export default function CandidatesPageModern() {
                           [1, 2, 3, 4, 5].map((i) => (
                             <Star
                               key={i}
-                              className={`h-3.5 w-3.5 cursor-pointer transition-colors ${(candidate.rating || 0) >= i ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200 hover:text-yellow-300'}`}
+                              className={`h-3.5 w-3.5 cursor-pointer transition-colors ${(candidate.rating || 0) >= i ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300 hover:text-yellow-400'}`}
                               onClick={(e) => updateRating(candidate.id, i, e)}
                             />
                           ))
@@ -1083,7 +1064,7 @@ export default function CandidatesPageModern() {
                         {candidate.tags.slice(0, 4).map((tag) => (
                           <span
                             key={tag.id}
-                            className="text-[10px] px-2 py-0.5 rounded-md font-semibold"
+                            className="text-[11px] px-2 py-0.5 rounded-md font-semibold"
                             style={{ backgroundColor: `${tag.color}18`, color: tag.color, border: `1px solid ${tag.color}25` }}
                           >
                             {tag.name}
@@ -1097,7 +1078,7 @@ export default function CandidatesPageModern() {
 
                     {/* Manual summary */}
                     {candidate.manualSummary && (
-                      <div className="mb-3 px-3 py-2 rounded-lg border text-[11px] text-slate-700 bg-slate-50 border-slate-200">
+                      <div className="mb-3 px-3 py-2 rounded-lg border text-xs text-slate-700 bg-slate-50 border-slate-200">
                         <span className="font-semibold text-slate-500">תקציר: </span>
                         <span className="line-clamp-2">{candidate.manualSummary}</span>
                       </div>

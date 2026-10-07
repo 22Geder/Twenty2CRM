@@ -84,14 +84,14 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
     (availability ? 1 : 0)
 
   return (
-    <Card className="border-2 border-blue-100">
+    <Card className="border border-slate-200 shadow-none">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Filter className="h-5 w-5 text-slate-600" />
             סינון מתקדם
             {activeFilterCount > 0 && (
-              <Badge variant="default" className="bg-blue-600">
+              <Badge variant="default" className="bg-slate-900">
                 {activeFilterCount} פילטרים פעילים
               </Badge>
             )}
@@ -111,7 +111,7 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
           {/* 🏙️ סינון לפי עיר */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-red-500" />
+              <MapPin className="h-4 w-4 text-slate-500" />
               <h3 className="font-semibold">עיר / מיקום</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -133,14 +133,14 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
                 <Badge
                   key={city}
                   variant={cityFilter === city ? 'default' : 'outline'}
-                  className={`cursor-pointer transition-all hover:scale-105 ${
+                  className={`cursor-pointer transition-colors ${
                     cityFilter === city
-                      ? 'bg-red-500'
-                      : 'hover:bg-red-50'
+                      ? 'bg-slate-900'
+                      : 'hover:bg-slate-100'
                   }`}
                   onClick={() => setCityFilter(cityFilter === city ? '' : city)}
                 >
-                  📍 {city}
+                  {city}
                 </Badge>
               ))}
             </div>
@@ -149,7 +149,7 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
           {/* טכניקת סינון #1: תגיות כישורים */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-600" />
+              <Target className="h-4 w-4 text-slate-500" />
               <h3 className="font-semibold">כישורים / תגיות</h3>
             </div>
             {/* חיפוש תגיות */}
@@ -165,13 +165,13 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
             </div>
             {/* תגיות שנבחרו */}
             {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-2 bg-blue-50 rounded-lg">
-                <span className="text-xs text-blue-600 font-medium">נבחרו:</span>
+              <div className="flex flex-wrap gap-2 p-2 bg-slate-100 rounded-lg">
+                <span className="text-xs text-slate-600 font-medium">נבחרו:</span>
                 {selectedTags.map((tagName) => (
                   <Badge
                     key={tagName}
                     variant="default"
-                    className="bg-blue-600 cursor-pointer hover:bg-blue-700"
+                    className="bg-slate-900 cursor-pointer hover:bg-slate-800"
                     onClick={() => toggleTag(tagName)}
                   >
                     {tagName} <X className="h-3 w-3 mr-1" />
@@ -187,10 +187,10 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
                 <Badge
                   key={tag.id}
                   variant={selectedTags.includes(tag.name) ? 'default' : 'outline'}
-                  className={`cursor-pointer transition-all hover:scale-105 ${
+                  className={`cursor-pointer transition-colors ${
                     selectedTags.includes(tag.name)
-                      ? 'bg-blue-600'
-                      : 'hover:bg-blue-50'
+                      ? 'bg-slate-900'
+                      : 'hover:bg-slate-100'
                   }`}
                   onClick={() => toggleTag(tag.name)}
                 >
@@ -209,7 +209,7 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
           {/* טכניקת סינון #2: שנות ניסיון */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-slate-500" />
               <h3 className="font-semibold">ניסיון מינימלי</h3>
             </div>
             <div className="flex items-center gap-4">
@@ -240,7 +240,7 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
           {/* טכניקת סינון #3: דירוג */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-yellow-500" />
+              <Star className="h-4 w-4 text-slate-500" />
               <h3 className="font-semibold">דירוג מינימלי</h3>
             </div>
             <div className="flex gap-2">
@@ -269,7 +269,7 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
           {/* טכניקת סינון #4: מקור המועמד */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Award className="h-4 w-4 text-purple-600" />
+              <Award className="h-4 w-4 text-slate-500" />
               <h3 className="font-semibold">מקור המועמד</h3>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -292,7 +292,7 @@ export function AdvancedCandidateFilters({ onFilterChange }: AdvancedFiltersProp
           {/* טכניקת סינון #5: זמינות */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-600" />
+              <Clock className="h-4 w-4 text-slate-500" />
               <h3 className="font-semibold">זמינות להתחלה</h3>
             </div>
             <div className="flex flex-wrap gap-2">

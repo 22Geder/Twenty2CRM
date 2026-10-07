@@ -351,7 +351,7 @@ export function TopNavbar() {
   const activeHref = getActiveNavigationHref(pathname, navigationItems)
 
   return (
-    <header className="h-14 shrink-0 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center px-4 gap-3 shadow-sm">
+    <header className="h-14 shrink-0 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center px-4 gap-3">
       {/* Mobile hamburger */}
       <Button
         ref={mobileTriggerRef}
@@ -370,7 +370,7 @@ export function TopNavbar() {
       {/* Mobile Logo */}
       <Link href="/dashboard" aria-label="Twenty2CRM — לוח בקרה" onClick={() => setOpenMenu(null)} className={`lg:hidden flex items-center gap-2 rounded-lg ${navbarFocusClass}`}>
         <div className="w-8 h-8 bg-gradient-to-br from-[#2563EB] to-[#1E3A8A] rounded-lg flex items-center justify-center">
-          <span className="text-white font-black text-sm">22</span>
+          <span className="text-white font-bold text-sm">22</span>
         </div>
       </Link>
 
@@ -407,7 +407,7 @@ export function TopNavbar() {
           >
             <Bell className="h-5 w-5" aria-hidden="true" />
             {unreadNotifications > 0 && (
-              <span className="absolute -left-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+              <span className="absolute -end-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
                 {unreadNotifications > 99 ? "99+" : unreadNotifications}
               </span>
             )}
@@ -532,10 +532,10 @@ export function TopNavbar() {
             aria-controls="top-navbar-profile-menu"
             title="תפריט משתמש"
             onClick={() => setOpenMenu((value) => value === "profile" ? null : "profile")}
-            className={`flex items-center gap-2.5 pr-1 pl-2.5 py-1 rounded-xl hover:bg-slate-100 transition-all ${navbarFocusClass}`}
+            className={`flex items-center gap-2.5 pe-1 ps-2.5 py-1 rounded-xl hover:bg-slate-100 transition-all ${navbarFocusClass}`}
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2563EB] to-[#1E40AF] flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-white">
-              <span className="text-white text-xs font-black">{initials}</span>
+            <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center flex-shrink-0 ring-2 ring-white">
+              <span className="text-white text-xs font-semibold">{initials}</span>
             </div>
             <span className="hidden sm:block text-slate-800 text-sm font-semibold max-w-[120px] truncate">{firstName}</span>
           </button>
@@ -548,8 +548,8 @@ export function TopNavbar() {
               className="absolute left-0 mt-2 w-60 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-4rem)] supports-[height:100dvh]:max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain bg-white dark:bg-[#1e293b]! rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 origin-top-left animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none"
             >
               <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2563EB] to-[#1E40AF] flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-sm font-black">{initials}</span>
+                <div className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-sm font-semibold">{initials}</span>
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-slate-800 truncate">{fullName || firstName}</div>
@@ -623,13 +623,13 @@ export function TopNavbar() {
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => setOpenMenu(null)}
                   className={`flex items-center gap-3 px-4 py-3 transition-all ${navbarFocusClass} focus-visible:-outline-offset-2! ${
-                    isActive ? 'bg-[#2563EB]/8 text-[#2563EB] dark:text-blue-300 border-r-2 border-[#2563EB]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    isActive ? 'bg-[#2563EB]/8 text-[#2563EB] dark:text-blue-300 border-s-2 border-[#2563EB]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
                   <span className="font-medium text-sm">{item.name}</span>
                   {item.badge && (
-                    <span className={`mr-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                    <span className={`ms-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                       item.badge === 'AI' ? 'bg-[#F97316]/15 text-orange-700 dark:text-orange-300' : 'bg-[#10B981]/15 text-emerald-700 dark:text-emerald-300'
                     }`}>{item.badge}</span>
                   )}
@@ -644,7 +644,7 @@ export function TopNavbar() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed left-4 top-16 z-[70] w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-cyan-200 bg-white p-4 shadow-2xl dark:bg-[#1e293b]!"
+          className="fixed left-4 top-16 z-[70] w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-cyan-200 bg-white p-4 shadow-xl dark:bg-[#1e293b]!"
         >
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-700 text-white">
@@ -704,7 +704,7 @@ export function TopNavbar() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed left-4 top-16 z-[70] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-blue-200 bg-white p-4 shadow-2xl dark:bg-[#1e293b]!"
+          className="fixed left-4 top-16 z-[70] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-blue-200 bg-white p-4 shadow-xl dark:bg-[#1e293b]!"
         >
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">

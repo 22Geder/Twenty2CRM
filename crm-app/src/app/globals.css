@@ -248,9 +248,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Focus Styles */
 *:focus-visible {
-  outline: 3px solid var(--t22-teal);
+  outline: 2px solid var(--t22-teal);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* ========================================================================
@@ -1440,6 +1439,100 @@ body {
 button.bg-orange-500, button.bg-blue-600, button[class*="from-orange"], button[class*="from-blue"] {
   padding: 0.6rem 1.25rem !important;
   font-weight: 600 !important;
+}
+
+/* ========================================================================
+   TWENTY2CRM — Apple Restraint Layer v6.0
+   שכבה אחרונה בקסקדה: תנועה שקטה, היררכיה בטיפוגרפיה, נגישות.
+   CSS בלבד — ללא שינוי בלוגיקה/API/DB.
+   ======================================================================== */
+
+:root {
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+}
+
+/* כותרות: semibold במקום bold — ההיררכיה נבנית מגודל ורווח */
+h1, h2, h3, h4, h5, h6 { font-weight: 600; }
+.t22-h1 { font-weight: 700 !important; }
+
+/* כניסת עמוד: fade בלבד, בלי הזזה — מסכי עבודה נשארים שקטים */
+@keyframes t22-fade-only {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+main > * {
+  animation: t22-fade-only var(--dur-base) var(--ease-standard) both;
+}
+
+/* הרמת כרטיסים ב-hover: עדינה, בלי קפיצה ובלי scale */
+.t22-card:hover,
+.t22-card-soft:hover {
+  transform: translateY(-1px);
+}
+.candidate-card {
+  transition: transform var(--dur-base) var(--ease-standard),
+              box-shadow var(--dur-base) var(--ease-standard),
+              border-color var(--dur-base) var(--ease-standard) !important;
+}
+.candidate-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow:
+    0 0 0 1px rgba(6,182,212,0.18),
+    0 8px 24px rgba(15,23,42,0.10) !important;
+}
+.stat-panel {
+  transition: transform var(--dur-base) var(--ease-standard),
+              box-shadow var(--dur-base) var(--ease-standard) !important;
+}
+.stat-panel:hover { transform: translateY(-2px) !important; }
+.quick-action-chip:hover { transform: none; filter: brightness(0.96); }
+
+/* מספרי KPI: צבע אחד ויציב + ספרות טבלאיות, בלי טקסט גרדיאנט */
+.text-3xl.font-bold.text-slate-800,
+.text-3xl.font-bold.text-slate-900,
+.text-4xl.font-bold.text-slate-800,
+.text-4xl.font-bold.text-slate-900 {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: currentColor;
+  font-variant-numeric: tabular-nums;
+}
+
+/* פס גלילה: ניטרלי ושקוף, לא מבליט על הקנבס הכהה */
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45) !important;
+  background-clip: padding-box !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7) !important;
+  background-clip: padding-box !important;
+}
+::-webkit-scrollbar-track { background: transparent !important; }
+
+/* מגע: שדות בגובה נוח ובגודל 16px כדי ש-iOS לא יעשה zoom בפוקוס */
+@media (pointer: coarse) {
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]) {
+    font-size: 16px;
+    min-height: 44px;
+  }
+}
+
+/* נגישות: כשהמשתמש מבקש פחות שקיפות, מוותרים על blur */
+@media (prefers-reduced-transparency: reduce) {
+  .t22-glass, .t22-glass-dark, .t22-sticky-bar, .t22-save-bar,
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* נגישות: ניגודיות מוגברת → גבולות ברורים יותר */
+@media (prefers-contrast: more) {
+  :root { --hairline: rgba(15, 23, 42, 0.28); --hairline-strong: rgba(15, 23, 42, 0.5); }
+  *:focus-visible { outline-width: 3px; }
 }
 
 

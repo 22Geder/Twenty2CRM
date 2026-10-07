@@ -1141,56 +1141,56 @@ export default function RecruitmentBoard() {
     <div className="min-h-screen bg-slate-50" dir="rtl">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl text-lg font-medium">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-lg text-base font-semibold">
           {toast}
         </div>
       )}
 
       {/* Header - Full Width */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="w-full px-10 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-2xl">
-                <span className="text-white text-4xl font-black">22</span>
+        <div className="w-full px-8 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center">
+                <span className="text-white text-xl font-bold">22</span>
               </div>
               <div>
-                <h1 className="text-5xl font-black text-slate-900">Twenty2Jobs</h1>
-                <p className="text-slate-500 text-xl mt-1">מערכת גיוס חכמה</p>
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Twenty2Jobs</h1>
+                <p className="text-slate-500 text-sm mt-0.5">מערכת גיוס חכמה</p>
               </div>
             </div>
 
             {/* Stats Bar */}
-            <div className="flex items-center gap-8">
-              <div className="bg-teal-50 px-10 py-5 rounded-2xl text-center min-w-[160px]">
-                <div className="text-5xl font-black text-teal-600">{stats.totalCandidates}</div>
-                <div className="text-slate-600 text-lg font-medium">מועמדים</div>
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-50 border border-slate-200 px-6 py-3 rounded-2xl text-center min-w-[120px]">
+                <div className="text-3xl font-semibold text-slate-900 tabular-nums">{stats.totalCandidates}</div>
+                <div className="text-slate-500 text-sm">מועמדים</div>
               </div>
-              <div className="bg-green-50 px-10 py-5 rounded-2xl text-center min-w-[160px]">
-                <div className="text-5xl font-black text-green-600">{allJobs.length}</div>
-                <div className="text-slate-600 text-lg font-medium">משרות פעילות</div>
+              <div className="bg-slate-50 border border-slate-200 px-6 py-3 rounded-2xl text-center min-w-[120px]">
+                <div className="text-3xl font-semibold text-slate-900 tabular-nums">{allJobs.length}</div>
+                <div className="text-slate-500 text-sm">משרות פעילות</div>
               </div>
-              <div className="bg-purple-50 px-10 py-5 rounded-2xl text-center min-w-[160px]">
-                <div className="text-5xl font-black text-purple-600">{stats.totalApplications}</div>
-                <div className="text-slate-600 text-lg font-medium">מועמדויות</div>
+              <div className="bg-slate-50 border border-slate-200 px-6 py-3 rounded-2xl text-center min-w-[120px]">
+                <div className="text-3xl font-semibold text-slate-900 tabular-nums">{stats.totalApplications}</div>
+                <div className="text-slate-500 text-sm">מועמדויות</div>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-5">
+          <div className="flex gap-2">
             {[
-              { id: 'ai', label: '🤖 סוכן AI' },
-              { id: 'jobs', label: '💼 משרות' },
-              { id: 'employers', label: '🏢 מעסיקים' },
-              { id: 'info', label: '📋 דרישות ושכר' },
+              { id: 'ai', label: 'סוכן AI' },
+              { id: 'jobs', label: 'משרות' },
+              { id: 'employers', label: 'מעסיקים' },
+              { id: 'info', label: 'דרישות ושכר' },
             ].map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id as typeof tab)}
-                className={`px-12 py-6 rounded-2xl font-bold text-2xl transition-all ${
+                className={`px-5 py-2.5 rounded-xl font-semibold text-base transition-colors ${
                   tab === t.id
-                    ? 'bg-teal-600 text-white shadow-xl shadow-teal-500/30'
+                    ? 'bg-slate-900 text-white'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -1202,18 +1202,18 @@ export default function RecruitmentBoard() {
       </div>
 
       {/* Content - Full Width */}
-      <div className="w-full px-10 py-12">
+      <div className="w-full px-8 py-8">
         
         {/* ========== AI TAB ========== */}
         {tab === 'ai' && (
-          <div className="flex gap-12">
+          <div className="flex gap-8">
             
             {/* Input Panel - Fixed Width */}
-            <div className="w-[600px] flex-shrink-0">
-              <div className="bg-white rounded-3xl shadow-xl p-10 sticky top-[220px]">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-black text-slate-900 mb-3">📄 הדבק קורות חיים</h2>
-                  <p className="text-slate-500 text-xl">העתק את תוכן קורות החיים והדבק בתיבה למטה</p>
+            <div className="w-[520px] flex-shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 sticky top-[170px]">
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-1">הדבק קורות חיים</h2>
+                  <p className="text-slate-500 text-sm">העתק את תוכן קורות החיים והדבק בתיבה למטה</p>
                 </div>
 
                 <textarea
@@ -1221,7 +1221,7 @@ export default function RecruitmentBoard() {
                   onChange={e => setCvText(e.target.value)}
                   placeholder={`הדבק כאן את קורות החיים...
 
-💡 טיפ: אפשר גם להעלות קובץ PDF, Word או תמונה!
+טיפ: אפשר גם להעלות קובץ PDF, Word או תמונה!
    לחץ על "העלאת קבצים" בתפריט הצדדי
 
 דוגמה:
@@ -1237,19 +1237,19 @@ yossi@email.com
 
 השכלה:
 - תואר ראשון בכלכלה`}
-                  className="w-full h-[450px] p-8 border-2 border-slate-200 rounded-2xl text-xl leading-relaxed resize-none t22-focus-ring transition-all"
+                  className="w-full h-[380px] p-5 border border-slate-200 rounded-xl text-base leading-relaxed resize-none t22-focus-ring transition-all"
                 />
 
-                <div className="flex gap-5 mt-8">
+                <div className="flex gap-3 mt-5">
                   <button
                     onClick={analyze}
                     disabled={loading || !cvText.trim()}
-                    className="flex-1 py-7 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-2xl font-bold text-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 transition-all"
+                    className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold text-base disabled:opacity-50 transition-colors"
                   >
-                    {loading ? '⏳ מנתח...' : '🔍 נתח ומצא משרות'}
+                    {loading ? 'מנתח...' : 'נתח ומצא משרות'}
                   </button>
                   {cvText && (
-                    <button onClick={clear} className="px-10 py-7 bg-slate-100 text-slate-700 rounded-2xl font-bold text-xl hover:bg-slate-200 transition-all">
+                    <button onClick={clear} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold text-base hover:bg-slate-200 transition-colors">
                       נקה
                     </button>
                   )}
@@ -1258,89 +1258,89 @@ yossi@email.com
             </div>
 
             {/* Results Panel - Flexible Width */}
-            <div className="flex-1 space-y-10 min-w-0">
+            <div className="flex-1 space-y-6 min-w-0">
               
               {/* Candidate Info */}
               {candidate ? (
-                <div className="bg-white rounded-3xl shadow-xl p-10">
-                  <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-3xl font-black text-slate-900">👤 פרטי המועמד</h2>
+                <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-slate-900">פרטי המועמד</h2>
                     <div className="flex items-center gap-4">
                       {saved && (
-                        <span className="bg-green-100 text-green-700 px-6 py-3 rounded-xl font-bold text-lg">
-                          ✓ נשמר ב-CRM
+                        <span className="bg-green-100 text-green-700 px-4 py-2 rounded-xl font-semibold text-sm">
+                          נשמר ב-CRM
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-8 mb-10">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
                     {[
-                      { label: 'שם מלא', value: candidate.name, icon: '👤' },
-                      { label: 'טלפון', value: candidate.phone, icon: '📱' },
-                      { label: 'אימייל', value: candidate.email, icon: '📧' },
-                      { label: 'עיר מגורים', value: candidate.city, icon: '📍' },
+                      { label: 'שם מלא', value: candidate.name },
+                      { label: 'טלפון', value: candidate.phone },
+                      { label: 'אימייל', value: candidate.email },
+                      { label: 'עיר מגורים', value: candidate.city },
                     ].map(f => (
-                      <div key={f.label} className="bg-slate-50 rounded-2xl p-8">
-                        <div className="text-slate-500 text-lg mb-2">{f.icon} {f.label}</div>
-                        <div className="text-3xl font-bold text-slate-900">{f.value || '—'}</div>
+                      <div key={f.label} className="bg-slate-50 rounded-xl p-5">
+                        <div className="text-slate-500 text-sm mb-1">{f.label}</div>
+                        <div className="text-lg font-semibold text-slate-900">{f.value || '—'}</div>
                       </div>
                     ))}
                   </div>
 
                   {/* Quick Actions - WhatsApp & Email */}
-                  <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-2xl p-8 mb-10">
-                    <h3 className="text-xl font-bold text-slate-700 mb-5">📲 פעולות מהירות</h3>
-                    <div className="flex flex-wrap gap-4">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+                    <h3 className="text-base font-semibold text-slate-700 mb-3">פעולות מהירות</h3>
+                    <div className="flex flex-wrap gap-3">
                       {candidate.phone && (
                         <a
                           href={getWhatsAppLink(candidate.phone, `שלום ${candidate.name}, קיבלתי את קורות החיים שלך ואשמח לדבר איתך על משרות מתאימות.`)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg"
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors"
                         >
-                          <span className="text-2xl">💬</span> וואטסאפ למועמד
+                          וואטסאפ למועמד
                         </a>
                       )}
                       {candidate.email && (
                         <a
                           href={getEmailLink(candidate.email, `בנוגע לקורות החיים שלך`, `שלום ${candidate.name},\n\nקיבלתי את קורות החיים שלך ואשמח לדבר איתך על הזדמנויות תעסוקה.\n\nבברכה,\nטוונטי טו ג'ובס`)}
-                          className="flex items-center gap-3 bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg"
+                          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors"
                         >
-                          <span className="text-2xl">📧</span> שלח מייל למועמד
+                          שלח מייל למועמד
                         </a>
                       )}
                       {employers.length > 0 && candidate.email && (
                         <a
                           href={getEmailLink(employers[0].email, `מועמד חדש: ${candidate.name}`, `שלום ${employers[0].name},\n\nרציתי להציג בפניך מועמד מתאים:\n\nשם: ${candidate.name}\nטלפון: ${candidate.phone || 'לא צוין'}\nאימייל: ${candidate.email || 'לא צוין'}\nעיר: ${candidate.city || 'לא צוינה'}\nתגיות: ${candidate.tags.map(t => t.label).join(', ')}\n\nבברכה,\nטוונטי טו ג'ובס`)}
-                          className="flex items-center gap-3 bg-purple-500 hover:bg-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg"
+                          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors"
                         >
-                          <span className="text-2xl">📤</span> שלח למעסיק
+                          שלח למעסיק
                         </a>
                       )}
                     </div>
                   </div>
 
                   {/* Notes */}
-                  <div className="mb-10">
-                    <h3 className="text-xl font-bold text-slate-700 mb-4">📝 הערות</h3>
+                  <div className="mb-6">
+                    <h3 className="text-base font-semibold text-slate-700 mb-3">הערות</h3>
                     <textarea
                       value={candidateNotes}
                       onChange={e => setCandidateNotes(e.target.value)}
                       placeholder="הוסף הערות על המועמד..."
-                      className="w-full h-32 p-5 border-2 border-slate-200 rounded-xl text-lg resize-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
+                      className="w-full h-28 p-4 border border-slate-200 rounded-xl text-base resize-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                     />
                   </div>
 
                   {candidate.tags.length > 0 && (
                     <div>
-                      <div className="text-slate-500 mb-5 text-lg font-medium">תגיות מקצועיות:</div>
-                      <div className="flex flex-wrap gap-4">
+                      <div className="text-slate-500 mb-3 text-sm font-semibold">תגיות מקצועיות:</div>
+                      <div className="flex flex-wrap gap-2">
                         {candidate.tags.map(tag => (
                           <span
                             key={tag.id}
                             style={{ backgroundColor: tag.color }}
-                            className="text-white px-7 py-4 rounded-full font-bold text-xl shadow-lg"
+                            className="text-white px-4 py-2 rounded-full font-semibold text-sm"
                           >
                             {tag.label}
                           </span>
@@ -1350,10 +1350,9 @@ yossi@email.com
                   )}
                 </div>
               ) : (
-                <div className="bg-white rounded-3xl shadow-xl p-20 text-center">
-                  <div className="text-9xl mb-10">📋</div>
-                  <h3 className="text-4xl font-black text-slate-900 mb-5">הדבק קורות חיים לניתוח</h3>
-                  <p className="text-slate-500 text-2xl">המערכת תזהה אוטומטית את הפרטים ותמצא משרות מתאימות</p>
+                <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
+                  <h3 className="text-2xl font-semibold text-slate-900 mb-3">הדבק קורות חיים לניתוח</h3>
+                  <p className="text-slate-500 text-base">המערכת תזהה אוטומטית את הפרטים ותמצא משרות מתאימות</p>
                 </div>
               )}
 

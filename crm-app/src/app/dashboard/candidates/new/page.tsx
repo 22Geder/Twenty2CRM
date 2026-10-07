@@ -215,11 +215,11 @@ export default function NewCandidatePage() {
     <div className="p-8 max-w-4xl mx-auto candidates-light-canvas min-h-screen" style={{ background: '#F1F5F9' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            👤 מועמד חדש
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            מועמד חדש
           </h1>
-          <p className="text-muted-foreground text-lg mt-2">
-            הוסף מועמד חדש עם התאמה אוטומטית למשרות 🤖
+          <p className="text-slate-500 text-base mt-1">
+            הוסף מועמד חדש עם התאמה אוטומטית למשרות
           </p>
         </div>
         <Link href="/dashboard/candidates">

@@ -784,10 +784,10 @@ export default function CandidateDetailsPage() {
       )}
 
       {/* 🆕 כרטיס סטטוס מועמד */}
-      <Card className="mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+      <Card className="mb-6 border border-slate-200 bg-white shadow-none">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            📊 סטטוס מועמד
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            סטטוס מועמד
             {statusSaving && <Loader2 className="h-4 w-4 animate-spin" />}
           </CardTitle>
         </CardHeader>
@@ -993,9 +993,8 @@ export default function CandidateDetailsPage() {
             const hoursInProcess = (new Date().getTime() - new Date(candidate.inProcessAt).getTime()) / (1000 * 60 * 60)
             if (hoursInProcess >= 24) {
               return (
-                <div className="mt-4 p-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg shadow-lg animate-pulse">
+                <div className="mt-4 p-4 bg-red-600 text-white rounded-xl">
                   <div className="flex items-center gap-3">
-                    <div className="text-3xl">⚠️</div>
                     <div>
                       <p className="font-bold text-lg">אבירן תתעורר! אני פה {Math.floor(hoursInProcess)} שעות! 😤</p>
                       <p className="text-sm opacity-90">
@@ -1394,7 +1393,7 @@ export default function CandidateDetailsPage() {
                   )}
                   {candidate.uploadedBy?.name && (
                     <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-1 rounded">
-                      👤 הועלה ע״י: <strong>{candidate.uploadedBy.name}</strong>
+                      הועלה ע״י: <strong>{candidate.uploadedBy.name}</strong>
                     </span>
                   )}
                   {candidate.lastViewedAt && (
@@ -1597,7 +1596,7 @@ export default function CandidateDetailsPage() {
                       {candidate.rating ? (
                         <>
                           {Array.from({ length: candidate.rating }).map((_, i) => (
-                            <span key={i} className="text-yellow-500">⭐</span>
+                            <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                           ))}
                           <span className="text-sm mr-2">({candidate.rating}/5)</span>
                         </>
@@ -1885,10 +1884,10 @@ export default function CandidateDetailsPage() {
       {showPositionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPositionModal(false)}>
           <div 
-            className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden"
+            className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <div className="flex items-center justify-between p-4 border-b bg-slate-900 text-white">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5" />
                 {isAddingMode ? 'הוסף משרות לתהליך' : 'בחר משרות לתהליך'}
@@ -1978,7 +1977,7 @@ export default function CandidateDetailsPage() {
                         <div key={empId} className="border rounded-lg overflow-hidden">
                           {/* כותרת לקוח - לחיצה פותחת/סוגרת */}
                           <div 
-                            className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-3 font-semibold flex items-center gap-2 cursor-pointer hover:from-blue-50 hover:to-blue-100 transition-colors"
+                            className="bg-slate-100 px-4 py-3 font-semibold flex items-center gap-2 cursor-pointer hover:bg-slate-200 transition-colors"
                             onClick={() => {
                               setExpandedEmployers(prev => {
                                 const newSet = new Set(prev)
@@ -2077,7 +2076,7 @@ export default function CandidateDetailsPage() {
                 <Button 
                   onClick={saveSelectedPositions}
                   disabled={selectedPositionIds.size === 0 || statusSaving}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="bg-slate-900 hover:bg-slate-800"
                 >
                   {statusSaving ? (
                     <>

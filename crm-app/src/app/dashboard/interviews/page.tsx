@@ -72,36 +72,20 @@ export default async function InterviewsPage() {
   const { upcoming, past } = await getInterviews()
 
   return (
-    <div className="p-4 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#dbeafe]/20 to-slate-100 min-h-screen">
-      {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl shadow-2xl p-6 md:p-8 border border-white/5">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="intGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#3B82F6" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#intGrid)" />
-          </svg>
-        </div>
-        
-        {/* Floating Orbs */}
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-blue-500/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#06B6D4]/30 to-transparent rounded-full blur-2xl"></div>
-        
-        <div className="relative flex justify-between items-center">
+    <div className="p-4 md:p-8 space-y-6 min-h-screen">
+      {/* Header */}
+      <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border border-slate-200">
+        <div className="flex justify-between items-center gap-4 flex-wrap">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-blue-500 to-[#06B6D4] bg-clip-text text-transparent">
-              📅 ראיונות
+            <h1 className="text-3xl font-semibold text-slate-900">
+              ראיונות
             </h1>
-            <p className="text-slate-300 mt-2 text-lg">
+            <p className="text-slate-500 mt-2">
               נהל את כל הראיונות ותאם פגישות עם מועמדים
             </p>
           </div>
           <Link href="/dashboard/interviews/new">
-            <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 text-white border-0">
+            <Button className="bg-teal-700 hover:bg-teal-800 shadow-sm shadow-blue-500/30 text-white border-0">
               <Plus className="ml-2 h-4 w-4" />
               תזמן ראיון
             </Button>
@@ -112,28 +96,28 @@ export default async function InterviewsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 text-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-blue-200/50">
+          <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-blue-200/50">
             <Calendar className="h-5 w-5 text-blue-500" />
           </div>
           <div className="text-3xl font-bold text-blue-600">{upcoming.length}</div>
           <div className="text-sm text-slate-500">ראיונות קרובים</div>
         </div>
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 text-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-green-200/50">
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-green-200/50">
             <Clock className="h-5 w-5 text-green-500" />
           </div>
           <div className="text-3xl font-bold text-green-600">{past.filter(i => i.status === 'COMPLETED').length}</div>
           <div className="text-sm text-slate-500">הושלמו</div>
         </div>
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 text-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-red-200/50">
+          <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-red-200/50">
             <Phone className="h-5 w-5 text-red-500" />
           </div>
           <div className="text-3xl font-bold text-red-600">{past.filter(i => i.status === 'CANCELLED').length}</div>
           <div className="text-sm text-slate-500">בוטלו</div>
         </div>
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-5 text-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-amber-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-amber-200/50">
+          <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-2 ring-1 ring-amber-200/50">
             <Video className="h-5 w-5 text-amber-500" />
           </div>
           <div className="text-3xl font-bold text-amber-600">{upcoming.length + past.length}</div>
@@ -147,13 +131,13 @@ export default async function InterviewsPage() {
         {upcoming.length === 0 ? (
           <Card className="border-0 bg-white/90 backdrop-blur-md rounded-2xl shadow-md">
             <CardContent className="flex flex-col items-center justify-center text-center py-16">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-5 ring-1 ring-blue-200/50">
+              <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-5 ring-1 ring-blue-200/50">
                 <Calendar className="h-10 w-10 text-blue-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-700 mb-1">אין ראיונות מתוכננים</h3>
               <p className="text-sm text-slate-400 mb-5 max-w-xs">כל הראיונות שתתאם יופיעו כאן. בוא נתחיל בתיאום הראיון הראשון.</p>
               <Link href="/dashboard/interviews/new">
-                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-md">
+                <Button className="bg-teal-700 hover:bg-teal-800 text-white border-0 shadow-md">
                   <Plus className="ml-2 h-4 w-4" />
                   תזמן ראיון ראשון
                 </Button>
@@ -167,19 +151,19 @@ export default async function InterviewsPage() {
               const isToday = new Date(interview.scheduledAt).toDateString() === new Date().toDateString()
               
               return (
-                <Card key={interview.id} className={`group hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl ${isToday ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/10' : 'shadow-md'}`}>
+                <Card key={interview.id} className={`group hover:shadow-sm transition-all duration-300 hover:-translate-y-0.5 border-0 bg-white/90 backdrop-blur-md overflow-hidden relative rounded-2xl ${isToday ? 'ring-2 ring-blue-500 shadow-sm shadow-blue-500/10' : 'shadow-md'}`}>
                   <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 to-[#06B6D4] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div className="flex gap-4 flex-1">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 ring-1 ring-blue-200/50 shadow-sm">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-50 ring-1 ring-blue-200/50 shadow-sm">
                           <Icon className="h-6 w-6 text-blue-600" />
                         </div>
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="text-lg font-semibold">{interview.candidate.name}</h3>
-                            {isToday && <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 border-0 text-white shadow-sm">היום</Badge>}
+                            {isToday && <Badge className="bg-teal-700 border-0 text-white shadow-sm">היום</Badge>}
                             <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
                               {interviewTypeLabels[interview.type as keyof typeof interviewTypeLabels]}
                             </Badge>
@@ -276,7 +260,7 @@ export default async function InterviewsPage() {
                               {statusLabels[interview.status as keyof typeof statusLabels]}
                             </Badge>
                             {interview.rating && (
-                              <Badge variant="secondary">⭐ {interview.rating}/5</Badge>
+                              <Badge variant="secondary">{interview.rating}/5</Badge>
                             )}
                           </div>
                           

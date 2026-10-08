@@ -93,13 +93,13 @@ export default function FacebookJobImportPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
+    <div className="p-8 max-w-6xl mx-auto bg-slate-50 min-h-screen">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Facebook className="h-10 w-10 text-blue-600" />
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            📋 העלאת משרות מפייסבוק
+          <h1 className="text-5xl font-bold text-slate-900 ">
+            העלאת משרות מפייסבוק
           </h1>
         </div>
         <p className="text-gray-600 text-xl">
@@ -141,7 +141,7 @@ export default function FacebookJobImportPage() {
       {/* Jobs Forms */}
       <div className="space-y-6">
         {jobs.map((job, index) => (
-          <Card key={job.id} className="p-6 hover:shadow-lg transition-shadow border-r-4 border-blue-500">
+          <Card key={job.id} className="p-6 hover:shadow-sm transition-shadow border-r-4 border-blue-500">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-800">
                 📄 משרה #{index + 1}
@@ -162,7 +162,7 @@ export default function FacebookJobImportPage() {
               {/* עמודה שמאל */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-base font-semibold">🏷️ כותרת המשרה</Label>
+                  <Label className="text-base font-semibold">כותרת המשרה</Label>
                   <Input
                     value={job.title}
                     onChange={(e) => updateJob(job.id, 'title', e.target.value)}
@@ -172,7 +172,7 @@ export default function FacebookJobImportPage() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold">🏢 חברה</Label>
+                  <Label className="text-base font-semibold">חברה</Label>
                   <Input
                     value={job.company}
                     onChange={(e) => updateJob(job.id, 'company', e.target.value)}
@@ -182,7 +182,7 @@ export default function FacebookJobImportPage() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold">📍 מיקום</Label>
+                  <Label className="text-base font-semibold">מיקום</Label>
                   <Input
                     value={job.location}
                     onChange={(e) => updateJob(job.id, 'location', e.target.value)}
@@ -192,7 +192,7 @@ export default function FacebookJobImportPage() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold">💰 שכר</Label>
+                  <Label className="text-base font-semibold">שכר</Label>
                   <Input
                     value={job.salary}
                     onChange={(e) => updateJob(job.id, 'salary', e.target.value)}
@@ -215,7 +215,7 @@ export default function FacebookJobImportPage() {
               {/* עמודה ימין */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-base font-semibold">📝 תיאור המשרה</Label>
+                  <Label className="text-base font-semibold">תיאור המשרה</Label>
                   <Textarea
                     value={job.description}
                     onChange={(e) => updateJob(job.id, 'description', e.target.value)}
@@ -226,7 +226,7 @@ export default function FacebookJobImportPage() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold">📋 דרישות</Label>
+                  <Label className="text-base font-semibold">דרישות</Label>
                   <Textarea
                     value={job.requirements}
                     onChange={(e) => updateJob(job.id, 'requirements', e.target.value)}
@@ -237,7 +237,7 @@ export default function FacebookJobImportPage() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold">🖼️ תמונה</Label>
+                  <Label className="text-base font-semibold">תמונה</Label>
                   <div className="mt-2 space-y-2">
                     <Input
                       type="file"
@@ -279,7 +279,7 @@ export default function FacebookJobImportPage() {
         <Button
           onClick={saveAllJobs}
           disabled={loading}
-          className="h-14 px-12 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+          className="h-14 px-12 text-lg bg-teal-700 hover:bg-teal-800 shadow-sm"
         >
           {loading ? (
             <div className="flex items-center gap-2">

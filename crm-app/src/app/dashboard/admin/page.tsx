@@ -153,7 +153,7 @@ export default function AdminPage() {
     setActionLoading(true)
     try {
       await apiCall('POST', newUserForm)
-      showToast(`✅ משתמש ${newUserForm.name} נוצר בהצלחה`)
+      showToast(`משתמש ${newUserForm.name} נוצר בהצלחה`)
       setModal(null)
       setNewUserForm({ name: '', email: '', password: '', role: 'RECRUITER', phone: '' })
       fetchUsers()
@@ -197,7 +197,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/30">
+          <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center shadow-sm shadow-red-500/30">
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -270,7 +270,7 @@ export default function AdminPage() {
                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-slate-600 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs font-bold">
                           {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                         </span>
@@ -397,7 +397,7 @@ export default function AdminPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null) }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-sm w-full max-w-md mx-4 p-6 space-y-4" dir="rtl">
             {/* Reset Password Modal */}
             {modal.type === 'resetPassword' && (
               <>
@@ -559,7 +559,7 @@ export default function AdminPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl shadow-xl text-white text-sm font-medium transition-all ${
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl shadow-sm text-white text-sm font-medium transition-all ${
           toast.ok ? 'bg-green-600' : 'bg-red-600'
         }`}>
           {toast.ok ? <Check className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}

@@ -47,15 +47,15 @@ export default function SmartMatchingPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 min-h-screen">
+    <div className="p-8 max-w-6xl mx-auto bg-slate-50 min-h-screen">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="p-3 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full shadow-lg">
+          <div className="p-3 bg-teal-700 rounded-full shadow-sm">
             <Brain className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            🧠 התאמה חכמה
+          <h1 className="text-3xl font-semibold text-slate-900">
+            התאמה חכמה
           </h1>
         </div>
         <p className="text-gray-600 text-xl">
@@ -65,36 +65,36 @@ export default function SmartMatchingPage() {
 
       {/* Features Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card className="p-6 text-center hover:shadow-lg transition-shadow bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-          <Sparkles className="h-10 w-10 mx-auto mb-3" />
-          <h3 className="font-bold text-lg">זיהוי כישורים</h3>
-          <p className="text-sm mt-2 opacity-90">AI מזהה כישורים מקורות חיים</p>
+        <Card className="p-6 text-center hover:shadow-sm transition-shadow bg-white text-slate-900 border border-slate-200">
+          <Sparkles className="h-10 w-10 mx-auto mb-3 text-teal-700" />
+          <h3 className="font-semibold text-lg">זיהוי כישורים</h3>
+          <p className="text-sm mt-2 text-slate-500">AI מזהה כישורים מקורות חיים</p>
         </Card>
 
-        <Card className="p-6 text-center hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <Target className="h-10 w-10 mx-auto mb-3" />
-          <h3 className="font-bold text-lg">התאמה מדויקת</h3>
-          <p className="text-sm mt-2 opacity-90">מתאים למשרות פתוחות</p>
+        <Card className="p-6 text-center hover:shadow-sm transition-shadow bg-white text-slate-900 border border-slate-200">
+          <Target className="h-10 w-10 mx-auto mb-3 text-teal-700" />
+          <h3 className="font-semibold text-lg">התאמה מדויקת</h3>
+          <p className="text-sm mt-2 text-slate-500">מתאים למשרות פתוחות</p>
         </Card>
 
-        <Card className="p-6 text-center hover:shadow-lg transition-shadow bg-gradient-to-br from-green-500 to-green-600 text-white">
-          <Bot className="h-10 w-10 mx-auto mb-3" />
-          <h3 className="font-bold text-lg">מועמדות אוטומטית</h3>
-          <p className="text-sm mt-2 opacity-90">יוצר מועמדויות אוטומטית</p>
+        <Card className="p-6 text-center hover:shadow-sm transition-shadow bg-white text-slate-900 border border-slate-200">
+          <Bot className="h-10 w-10 mx-auto mb-3 text-teal-700" />
+          <h3 className="font-semibold text-lg">מועמדות אוטומטית</h3>
+          <p className="text-sm mt-2 text-slate-500">יוצר מועמדויות אוטומטית</p>
         </Card>
 
-        <Card className="p-6 text-center hover:shadow-lg transition-shadow bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-          <Clock className="h-10 w-10 mx-auto mb-3" />
-          <h3 className="font-bold text-lg">מהיר ויעיל</h3>
-          <p className="text-sm mt-2 opacity-90">חוסך זמן וטעויות</p>
+        <Card className="p-6 text-center hover:shadow-sm transition-shadow bg-white text-slate-900 border border-slate-200">
+          <Clock className="h-10 w-10 mx-auto mb-3 text-teal-700" />
+          <h3 className="font-semibold text-lg">מהיר ויעיל</h3>
+          <p className="text-sm mt-2 text-slate-500">חוסך זמן וטעויות</p>
         </Card>
       </div>
 
       {!result ? (
         // Input Form
-        <Card className="p-8 shadow-2xl border-2 border-purple-200">
+        <Card className="p-8 shadow-sm border border-slate-200">
           <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">📋 העלה קורות חיים לניתוח</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">העלה קורות חיים לניתוח</h2>
             <p className="text-gray-600">המערכת תזהה כישורים ותמצא משרות מתאימות אוטומטית</p>
           </div>
 
@@ -114,7 +114,7 @@ export default function SmartMatchingPage() {
 
             <div>
               <label className="block text-lg font-semibold text-gray-700 mb-2">
-                📄 טקסט קורות חיים
+                טקסט קורות חיים
               </label>
               <Textarea
                 value={resumeText}
@@ -136,7 +136,7 @@ export default function SmartMatchingPage() {
             <Button
               onClick={handleSmartMatch}
               disabled={loading || (!candidateId && !resumeText)}
-              className="w-full h-16 text-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg"
+              className="w-full h-16 text-xl bg-teal-700 hover:bg-teal-800 shadow-sm"
             >
               {loading ? (
                 <div className="flex items-center gap-3">
@@ -157,9 +157,9 @@ export default function SmartMatchingPage() {
         // Results
         <div className="space-y-8">
           {/* Success Header */}
-          <Card className="p-8 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-center">
+          <Card className="p-8 bg-white text-slate-900 border border-slate-200 text-center">
             <CheckCircle className="h-16 w-16 mx-auto mb-4" />
-            <h2 className="text-4xl font-bold mb-2">🎉 התאמה הושלמה בהצלחה!</h2>
+            <h2 className="text-4xl font-bold mb-2">התאמה הושלמה בהצלחה!</h2>
             <p className="text-xl opacity-90">
               זוהו {result.detectedSkills?.length || 0} כישורים • נמצאו {result.matchingPositions} משרות מתאימות
             </p>
@@ -167,32 +167,32 @@ export default function SmartMatchingPage() {
 
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+            <Card className="p-6 bg-white text-slate-900 border border-slate-200">
               <div className="flex items-center gap-4">
-                <Sparkles className="h-12 w-12 opacity-80" />
+                <Sparkles className="h-12 w-12 text-teal-700" />
                 <div>
                   <p className="text-3xl font-bold">{result.detectedSkills?.length || 0}</p>
-                  <p className="opacity-90">כישורים זוהו</p>
+                  <p className="text-slate-500">כישורים זוהו</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <Card className="p-6 bg-white text-slate-900 border border-slate-200">
               <div className="flex items-center gap-4">
-                <Briefcase className="h-12 w-12 opacity-80" />
+                <Briefcase className="h-12 w-12 text-teal-700" />
                 <div>
                   <p className="text-3xl font-bold">{result.matchingPositions}</p>
-                  <p className="opacity-90">משרות נמצאו</p>
+                  <p className="text-slate-500">משרות נמצאו</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
+            <Card className="p-6 bg-white text-slate-900 border border-slate-200">
               <div className="flex items-center gap-4">
-                <CheckCircle className="h-12 w-12 opacity-80" />
+                <CheckCircle className="h-12 w-12 text-teal-700" />
                 <div>
                   <p className="text-3xl font-bold">{result.autoApplications}</p>
-                  <p className="opacity-90">מועמדויות נוצרו</p>
+                  <p className="text-slate-500">מועמדויות נוצרו</p>
                 </div>
               </div>
             </Card>
@@ -224,7 +224,7 @@ export default function SmartMatchingPage() {
               </h3>
               <div className="space-y-4">
                 {result.topMatches.map((match: any, index: number) => (
-                  <Card key={index} className="p-4 hover:shadow-lg transition-shadow border-r-4 border-blue-500">
+                  <Card key={index} className="p-4 hover:shadow-sm transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-bold text-lg">{match.position}</h4>
                       <Badge className="text-lg py-1 px-3">
@@ -274,7 +274,7 @@ export default function SmartMatchingPage() {
           <div className="flex gap-4 justify-center">
             <Button
               onClick={() => setResult(null)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-14 px-8 text-lg"
+              className="bg-teal-700 hover:bg-teal-800 h-14 px-8 text-lg"
             >
               <Upload className="ml-2 h-5 w-5" />
               התאמה חדשה

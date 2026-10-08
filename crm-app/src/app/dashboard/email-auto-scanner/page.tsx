@@ -148,7 +148,7 @@ export default function EmailAutoScannerPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">סורק מיילים אוטומטי 📧</h1>
+          <h1 className="text-3xl font-bold">סורק מיילים אוטומטי </h1>
           <p className="text-muted-foreground mt-1">
             סריקה אוטומטית של מיילים חדשים כל 3 שעות | קורות חיים שמגיעים מועלים אוטומטית
           </p>
@@ -243,7 +243,7 @@ export default function EmailAutoScannerPage() {
       </div>
 
       {/* כפתור סריקת היסטוריה */}
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+      <Card className="bg-slate-50 border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-purple-600" />
@@ -316,9 +316,9 @@ export default function EmailAutoScannerPage() {
       </Card>
 
       {/* מידע על 100 מילות הקוד */}
-      <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+      <Card className="bg-slate-50 border-blue-200">
         <CardHeader>
-          <CardTitle>🎯 מערכת זיהוי חכמה עם 100+ מילות קוד</CardTitle>
+          <CardTitle>מערכת זיהוי חכמה עם 100+ מילות קוד</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">

@@ -244,7 +244,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
     <div className="p-6 max-w-7xl mx-auto" dir="rtl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">📣 שליחה המונית</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">שליחה המונית</h1>
         <p className="text-gray-500">שלח מייל או SMS לעד 50 מועמדים במקביל</p>
       </div>
 
@@ -254,7 +254,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
           onClick={() => setMode('email')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
             mode === 'email' 
-              ? 'bg-teal-500 text-white shadow-lg scale-105' 
+              ? 'bg-teal-500 text-white shadow-sm scale-105' 
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -265,7 +265,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
           onClick={() => setMode('sms')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
             mode === 'sms' 
-              ? 'bg-orange-500 text-white shadow-lg scale-105' 
+              ? 'bg-orange-500 text-white shadow-sm scale-105' 
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -276,7 +276,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Candidate Selection */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <Users className="w-6 h-6 text-teal-500" />
@@ -389,7 +389,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
 
         {/* Right: Message Composer */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6">
             <h2 className="text-xl font-bold mb-4">✍️ הרכבת הודעה</h2>
 
             {/* Position selector */}
@@ -523,7 +523,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
 
             {/* Preview */}
             <div className="bg-gray-50 rounded-xl p-4 mb-4">
-              <div className="text-sm font-bold text-gray-600 mb-2">👁️ תצוגה מקדימה:</div>
+              <div className="text-sm font-bold text-gray-600 mb-2">תצוגה מקדימה:</div>
               <div className="text-sm whitespace-pre-wrap">
                 {message
                   .replace(/{name}/g, 'ישראל ישראלי')
@@ -548,9 +548,9 @@ ${selectedPosition ? `משרה: {position}` : ''}
                 <span className="font-bold text-green-700">השליחה הושלמה!</span>
               </div>
               <div className="text-sm text-green-600 space-y-1">
-                <div>✅ נשלחו בהצלחה: {results.sent}</div>
-                {results.failed > 0 && <div>❌ נכשלו: {results.failed}</div>}
-                {results.skippedUnsubscribed > 0 && <div>🔕 דילוג על מוסרים: {results.skippedUnsubscribed}</div>}
+                <div>נשלחו בהצלחה: {results.sent}</div>
+                {results.failed > 0 && <div>נכשלו: {results.failed}</div>}
+                {results.skippedUnsubscribed > 0 && <div>דילוג על מוסרים: {results.skippedUnsubscribed}</div>}
               </div>
             </div>
           )}
@@ -563,8 +563,8 @@ ${selectedPosition ? `משרה: {position}` : ''}
               sending || selectedCandidates.size === 0
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : mode === 'email'
-                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:shadow-lg hover:scale-[1.02]'
-                  : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:shadow-lg hover:scale-[1.02]'
+                  ? 'bg-teal-700 text-white hover:shadow-sm hover:scale-[1.02]'
+                  : 'bg-amber-600 text-white hover:shadow-sm hover:scale-[1.02]'
             }`}
           >
             {sending ? (
@@ -582,7 +582,7 @@ ${selectedPosition ? `משרה: {position}` : ''}
 
           {/* Info Box */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-            <strong>💡 טיפים:</strong>
+            <strong>טיפים:</strong>
             <ul className="mt-2 list-disc list-inside space-y-1">
               <li>מועמדים שביקשו הסרה לא יקבלו הודעות</li>
               <li>ב-SMS יתווסף אוטומטית "להסרה השב 1"</li>

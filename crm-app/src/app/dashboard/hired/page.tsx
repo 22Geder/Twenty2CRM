@@ -85,7 +85,7 @@ export default function HiredCandidatesPage() {
 
   if (loading) {
     return (
-      <div className="p-8 bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8] min-h-screen">
+      <div className="p-8 min-h-screen">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -97,25 +97,20 @@ export default function HiredCandidatesPage() {
   const hiredCount = candidates.filter(c => c.hiredAt).length
 
   return (
-    <div className="p-6 md:p-8 space-y-6 bg-gradient-to-br from-slate-50 via-[#f0f0fa] to-[#e8f4f8] min-h-screen">
-      {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5">
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="hiredGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(74,222,128,0.3)" strokeWidth="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#hiredGrid)"/></svg>
-        </div>
-        <div className="absolute top-0 left-0 w-48 h-48 bg-green-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-36 h-36 bg-teal-500/10 rounded-full blur-3xl"></div>
-        <div className="relative flex items-center justify-between">
+    <div className="p-6 md:p-8 space-y-6 min-h-screen">
+      {/* Header */}
+      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-l from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              👥 מועמדים שגוייסו
+            <h1 className="text-3xl font-semibold text-slate-900">
+              מועמדים שגוייסו
             </h1>
-            <p className="text-slate-400 mt-2 text-lg">
+            <p className="text-slate-500 mt-2">
               {hiredCount} גיוסים ב-2 השנים האחרונות
             </p>
           </div>
           <Link href="/dashboard/candidates">
-            <Button className="bg-gradient-to-l from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/20 rounded-xl">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-green-500/20 rounded-xl">
               <Users className="h-4 w-4 ml-2" />
               לרשימת מועמדים
             </Button>
@@ -153,7 +148,7 @@ export default function HiredCandidatesPage() {
       {candidates.length === 0 ? (
         <Card className="bg-white/90 backdrop-blur-md border-slate-100 shadow-md rounded-2xl">
           <CardContent className="py-12 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 ring-1 ring-green-200/50">
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 ring-1 ring-green-200/50">
               <Users className="h-8 w-8 text-green-500" />
             </div>
             <p className="text-slate-500">לא נמצאו מועמדים</p>
@@ -162,12 +157,12 @@ export default function HiredCandidatesPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {candidates.map((candidate) => (
-            <Card key={candidate.id} className="bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden">
-              <div className="absolute top-0 right-0 left-0 h-[3px] bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <Card key={candidate.id} className="bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 left-0 h-[3px] bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   {candidate.name}
-                  {candidate.hiredAt && <div className="w-7 h-7 bg-gradient-to-br from-green-100 to-emerald-50 rounded-lg flex items-center justify-center ring-1 ring-green-200/50"><Briefcase className="h-3.5 w-3.5 text-green-600" /></div>}
+                  {candidate.hiredAt && <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center ring-1 ring-green-200/50"><Briefcase className="h-3.5 w-3.5 text-green-600" /></div>}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -253,7 +248,7 @@ export default function HiredCandidatesPage() {
                 <Button
                   onClick={() => handleSave(candidate.id)}
                   disabled={savingId === candidate.id}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-md shadow-green-500/15 rounded-xl"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-green-500/15 rounded-xl"
                 >
                   <Save className="h-4 w-4 ml-2" />
                   {savingId === candidate.id ? 'שומר...' : 'שמור'}

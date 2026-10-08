@@ -186,7 +186,7 @@ export default function SendCandidatePage() {
     if (!emailPreview) return
 
     if (selectedEmails.length === 0) {
-      alert('❌ יש לבחור לפחות מייל אחד')
+      alert('יש לבחור לפחות מייל אחד')
       return
     }
 
@@ -224,7 +224,7 @@ export default function SendCandidatePage() {
       }, 3000)
       
     } catch (err: any) {
-      alert(`❌ שגיאה: ${err.message}`)
+      alert(`שגיאה: ${err.message}`)
     } finally {
       setSendingEmail(false)
     }
@@ -265,12 +265,12 @@ export default function SendCandidatePage() {
         <Card className="max-w-md w-full border-green-200 bg-green-50">
           <CardContent className="pt-6 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-green-700 mb-2">המייל נשלח בהצלחה! 🎉</h2>
+            <h2 className="text-xl font-semibold text-green-700 mb-2">המייל נשלח בהצלחה! </h2>
             {sendResult && (
               <div className="text-right mb-4">
                 {sendResult.sentTo.length > 0 && (
                   <div className="mb-2">
-                    <p className="text-green-600 font-medium">✅ נשלח ל:</p>
+                    <p className="text-green-600 font-medium">נשלח ל:</p>
                     {sendResult.sentTo.map((email, i) => (
                       <Badge key={i} variant="outline" className="m-1 bg-green-100">{email}</Badge>
                     ))}
@@ -278,7 +278,7 @@ export default function SendCandidatePage() {
                 )}
                 {sendResult.failedTo.length > 0 && (
                   <div>
-                    <p className="text-red-600 font-medium">❌ נכשל:</p>
+                    <p className="text-red-600 font-medium">נכשל:</p>
                     {sendResult.failedTo.map((f, i) => (
                       <Badge key={i} variant="outline" className="m-1 bg-red-100">{f.email}</Badge>
                     ))}
@@ -346,7 +346,7 @@ export default function SendCandidatePage() {
               )}
               {emailPreview.candidate.resumeUrl && (
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  ✅ קורות חיים מצורפים
+                  קורות חיים מצורפים
                 </Badge>
               )}
             </CardContent>
@@ -430,7 +430,7 @@ export default function SendCandidatePage() {
               {/* מיילים שמורים לבחירה */}
               {savedEmails.length > 0 && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">📧 מיילים שמורים למשרה זו:</p>
+                  <p className="text-sm text-gray-600 mb-2">מיילים שמורים למשרה זו:</p>
                   <div className="flex flex-wrap gap-2">
                     {savedEmails.map((email, i) => {
                       const isSelected = selectedEmails.find(e => e.email === email.email)
@@ -452,7 +452,7 @@ export default function SendCandidatePage() {
               
               {/* הוספת מייל חדש */}
               <div className="border-t pt-4">
-                <p className="text-sm text-gray-600 mb-2">➕ הוסף מייל חדש:</p>
+                <p className="text-sm text-gray-600 mb-2">הוסף מייל חדש:</p>
                 <div className="flex gap-2">
                   <Input
                     placeholder="שם (אופציונלי)"
@@ -518,7 +518,7 @@ export default function SendCandidatePage() {
             <CardContent className="space-y-3">
               {editedPoints.map((point, index) => (
                 <div key={index} className="flex items-start gap-2">
-                  <span className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  <span className="flex-shrink-0 w-6 h-6 bg-teal-700 text-white rounded-full flex items-center justify-center text-sm font-bold">
                     {index + 1}
                   </span>
                   <Textarea
@@ -546,7 +546,7 @@ export default function SendCandidatePage() {
             <Button 
               onClick={sendEmail}
               disabled={sendingEmail || selectedEmails.length === 0}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
             >
               {sendingEmail ? (
                 <>

@@ -402,18 +402,18 @@ export default function BulkUploadPage() {
       <div className="t22-card-soft p-6 md:p-7">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-primary-50)' }}>
-            <span className="text-2xl">📄</span>
+            
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="t22-h1">העלאת קורות חיים המונית</h1>
             <p className="t22-sub mt-1">העלה עד 500 קורות חיים — המערכת תקרא עם Gemini AI ותנתח אוטומטית</p>
             <div className="flex flex-wrap gap-2 mt-4 justify-start">
-              <span className="t22-pill t22-pill--info">📄 PDF (רגיל + סרוק)</span>
-              <span className="t22-pill t22-pill--success">📝 DOCX</span>
-              <span className="t22-pill t22-pill--primary">🖼️ תמונות OCR</span>
-              <span className="t22-pill t22-pill--warning">🤖 Gemini Vision AI</span>
+              <span className="t22-pill t22-pill--info">PDF (רגיל + סרוק)</span>
+              <span className="t22-pill t22-pill--success">DOCX</span>
+              <span className="t22-pill t22-pill--primary">תמונות OCR</span>
+              <span className="t22-pill t22-pill--warning">Gemini Vision AI</span>
             </div>
-            <p className="text-xs text-slate-400 mt-3">✨ חדש! המערכת קוראת גם קבצי PDF סרוקים (תמונה בתוך PDF) באמצעות Gemini Vision</p>
+            <p className="text-xs text-slate-400 mt-3">חדש! המערכת קוראת גם קבצי PDF סרוקים (תמונה בתוך PDF) באמצעות Gemini Vision</p>
           </div>
         </div>
       </div>
@@ -421,7 +421,7 @@ export default function BulkUploadPage() {
       {/* Stats Cards */}
       {files.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-slate-50 border-blue-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
                 <p className="text-xs text-blue-600 font-medium">סך הכל</p>
@@ -430,43 +430,43 @@ export default function BulkUploadPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-emerald-50 border-green-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
-                <p className="text-xs text-green-600 font-medium">✅ הצליחו</p>
+                <p className="text-xs text-green-600 font-medium">הצליחו</p>
                 <p className="text-2xl font-bold text-green-900">{stats.success}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <Card className="bg-amber-50 border-amber-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
-                <p className="text-xs text-amber-600 font-medium">⚠️ לאישור</p>
+                <p className="text-xs text-amber-600 font-medium">לאישור</p>
                 <p className="text-2xl font-bold text-amber-900">{stats.needsConfirm}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-amber-50 border-orange-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
-                <p className="text-xs text-orange-600 font-medium">🔄 כפילויות</p>
+                <p className="text-xs text-orange-600 font-medium">כפילויות</p>
                 <p className="text-2xl font-bold text-orange-900">{stats.duplicate}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <Card className="bg-red-50 border-red-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
-                <p className="text-xs text-red-600 font-medium">❌ כשלו</p>
+                <p className="text-xs text-red-600 font-medium">כשלו</p>
                 <p className="text-2xl font-bold text-red-900">{stats.error}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
+          <Card className="bg-slate-50 border-gray-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
                 <p className="text-xs text-gray-600 font-medium">⏭️ דולגו</p>
@@ -475,7 +475,7 @@ export default function BulkUploadPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-amber-50 border-orange-200">
             <CardContent className="pt-4 pb-4">
               <div className="text-center">
                 <p className="text-xs text-orange-600 font-medium">⏳ ממתינים</p>
@@ -521,7 +521,7 @@ export default function BulkUploadPage() {
                       processFiles();
                     }}
                     disabled={isProcessing}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    className="bg-teal-700 hover:bg-teal-800"
                   >
                     {isProcessing ? (
                       <>
@@ -804,7 +804,7 @@ export default function BulkUploadPage() {
                       {file.candidate && file.status === 'success' && (
                         <div className="flex items-center gap-2">
                           {file.aiExtracted && (
-                            <Badge className="bg-purple-100 text-purple-700 text-xs">🤖 AI</Badge>
+                            <Badge className="bg-purple-100 text-purple-700 text-xs">AI</Badge>
                           )}
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                             {file.candidate.currentTitle}

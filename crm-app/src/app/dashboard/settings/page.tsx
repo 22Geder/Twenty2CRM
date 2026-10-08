@@ -213,26 +213,21 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 md:p-8 t22-page-wrap pb-24">
-      {/* Premium Header */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-6 md:p-8 shadow-xl border border-white/5 mb-8">
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="settingsGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(96,165,250,0.3)" strokeWidth="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#settingsGrid)"/></svg>
-        </div>
-        <div className="absolute top-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-36 h-36 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="relative flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200 mb-8">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-semibold text-slate-900">
               הגדרות מערכת
             </h1>
-            <p className="text-slate-400 mt-1">
-              ניהול הגדרות המערכת - כל האפשרויות מופעלות ✅
+            <p className="text-slate-500 mt-1">
+              ניהול הגדרות המערכת - כל האפשרויות מופעלות 
             </p>
           </div>
           <Button 
             onClick={handleSave}
             disabled={saving}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 rounded-xl"
+            className="bg-teal-700 hover:bg-teal-800 shadow-sm shadow-blue-500/20 rounded-xl"
           >
             {saving ? (
               <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
@@ -249,7 +244,7 @@ export default function SettingsPage() {
       {/* 🔑 שינוי סיסמה */}
       <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl flex items-center justify-center shadow-md shadow-red-500/20">
+          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-md shadow-red-500/20">
             <Lock className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -330,7 +325,7 @@ export default function SettingsPage() {
           <Button
             onClick={handlePasswordChange}
             disabled={passwordChanging}
-            className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 shadow-lg shadow-red-500/20 rounded-xl"
+            className="bg-red-600 hover:bg-red-700 shadow-sm shadow-red-500/20 rounded-xl"
           >
             {passwordChanging ? (
               <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
@@ -345,7 +340,7 @@ export default function SettingsPage() {
       {/* סטטוס כל התכונות */}
       <Card className="p-6 mb-6 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-md border-green-200/60 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/20">
+          <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/20">
             <Check className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -393,10 +388,10 @@ export default function SettingsPage() {
           return (
             <Card
               key={section.title}
-              className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md relative overflow-hidden"
+              className="p-6 hover:shadow-sm transition-all duration-300 cursor-pointer group bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 left-0 h-[3px] bg-gradient-to-r from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ring-1 ring-blue-200/50">
+              <div className="absolute top-0 right-0 left-0 h-[3px] bg-teal-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ring-1 ring-blue-200/50">
                 <Icon className="h-6 w-6 text-blue-600" />
               </div>
               <h3 className="font-semibold mb-2 text-slate-800">{section.title}</h3>
@@ -411,7 +406,7 @@ export default function SettingsPage() {
       {/* הגדרות סינכרון מיילים */}
       <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20">
+          <div className="w-10 h-10 bg-teal-700 rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20">
             <Mail className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -461,7 +456,7 @@ export default function SettingsPage() {
       {/* הגדרות התראות */}
       <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20">
+          <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20">
             <Bell className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -509,7 +504,7 @@ export default function SettingsPage() {
       {/* הגדרות AI */}
       <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
+          <div className="w-10 h-10 bg-teal-700 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
             <Brain className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -547,7 +542,7 @@ export default function SettingsPage() {
       {/* מראה וצבעים — מצב יום/לילה */}
       <Card className="p-6 mb-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-slate-500/20">
+          <div className="w-10 h-10 bg-slate-600 rounded-xl flex items-center justify-center shadow-md shadow-slate-500/20">
             <Palette className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -573,7 +568,7 @@ export default function SettingsPage() {
       {/* תבניות אימייל */}
       <Card className="p-6 bg-white/90 backdrop-blur-md border-slate-100 rounded-2xl shadow-md">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/20">
+          <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/20">
             <Mail className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -623,7 +618,7 @@ export default function SettingsPage() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 rounded-xl mr-auto sm:mr-0"
+            className="bg-teal-700 hover:bg-teal-800 shadow-sm shadow-blue-500/20 rounded-xl mr-auto sm:mr-0"
           >
             {saving ? (
               <RefreshCw className="ml-2 h-4 w-4 animate-spin" />

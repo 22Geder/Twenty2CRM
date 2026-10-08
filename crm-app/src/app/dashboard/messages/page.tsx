@@ -57,14 +57,14 @@ export default function MessagesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 ">
             הודעות
           </h1>
           <p className="text-muted-foreground mt-1">
             {messages.filter(m => m.unread).length} הודעות חדשות
           </p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
+        <Button className="bg-teal-700">
           <Send className="ml-2 h-4 w-4" />
           הודעה חדשה
         </Button>
@@ -72,47 +72,47 @@ export default function MessagesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <Card className="p-4 border-r-4 border-blue-500">
+        <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">נכנס</p>
-              <p className="text-3xl font-bold text-blue-600">{messages.length}</p>
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">{messages.length}</p>
             </div>
-            <Inbox className="h-8 w-8 text-blue-600 opacity-50" />
+            <Inbox className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
 
-        <Card className="p-4 border-r-4 border-yellow-500">
+        <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">לא נקראו</p>
-              <p className="text-3xl font-bold text-yellow-600">
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">
                 {messages.filter(m => m.unread).length}
               </p>
             </div>
-            <Mail className="h-8 w-8 text-yellow-600 opacity-50" />
+            <Mail className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
 
-        <Card className="p-4 border-r-4 border-purple-500">
+        <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">מסומנים בכוכב</p>
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">
                 {messages.filter(m => m.starred).length}
               </p>
             </div>
-            <Star className="h-8 w-8 text-purple-600 opacity-50" />
+            <Star className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
 
-        <Card className="p-4 border-r-4 border-green-500">
+        <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">נשלחו היום</p>
-              <p className="text-3xl font-bold text-green-600">8</p>
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">8</p>
             </div>
-            <Send className="h-8 w-8 text-green-600 opacity-50" />
+            <Send className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
       </div>
@@ -141,7 +141,7 @@ export default function MessagesPage() {
             >
               <div className="flex items-start gap-4">
                 {/* Avatar */}
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="h-5 w-5 text-blue-600" />
                 </div>
 

@@ -298,7 +298,7 @@ export default function BulkPositionsPage() {
       <div dir="rtl" className="min-h-screen p-6 space-y-6 max-w-4xl mx-auto">
         {/* כותרת */}
         <div className="t22-card-soft p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+          <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center shadow-sm shadow-orange-500/30">
             <Briefcase className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -480,7 +480,7 @@ export default function BulkPositionsPage() {
         <Button
           onClick={handleParse}
           disabled={isParsing || !inputText.trim() || !selectedEmployerId}
-          className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-sm shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isParsing ? (
             <>
@@ -507,7 +507,7 @@ export default function BulkPositionsPage() {
         {/* כותרת */}
         <div className="t22-card-soft p-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+            <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center shadow-sm shadow-orange-500/30">
               <Edit3 className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -854,7 +854,7 @@ export default function BulkPositionsPage() {
           <Button
             onClick={handleSave}
             disabled={isSaving || confirmedCount === 0}
-            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-8 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 disabled:opacity-50"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-8 py-2.5 rounded-xl shadow-sm shadow-orange-500/20 disabled:opacity-50"
           >
             {isSaving ? (
               <>
@@ -879,7 +879,7 @@ export default function BulkPositionsPage() {
   return (
     <div dir="rtl" className="min-h-screen p-6 flex items-center justify-center">
       <div className="text-center space-y-6 max-w-md">
-        <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/30">
+        <div className="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm shadow-emerald-500/30">
           <CheckCircle2 className="w-10 h-10 text-white" />
         </div>
         <div>

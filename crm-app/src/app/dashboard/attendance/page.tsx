@@ -423,7 +423,7 @@ export default function AttendancePage() {
 
           {/* ⏱️ שעון חי - מוצג כשהמשתמש בעבודה (מתעדכן כל שנייה) */}
           {isClockedIn && (
-            <div className="mt-4 rounded-xl border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 p-4">
+            <div className="mt-4 rounded-xl border-2 border-green-300 bg-emerald-50 p-4">
               <div className="flex flex-col md:flex-row items-center justify-between gap-3">
                 <div className="text-center md:text-right">
                   <div className="text-xs text-green-700 font-semibold uppercase tracking-wide">
@@ -458,7 +458,7 @@ export default function AttendancePage() {
 
           {/* 📊 סיכום סוף יום - מוצג אחרי יציאה */}
           {isClockedOutToday && todayRow && (
-            <div className="mt-4 rounded-xl border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+            <div className="mt-4 rounded-xl border-2 border-blue-300 bg-slate-50 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600" />
                 <div className="font-bold text-blue-900">סיכום יום העבודה</div>
@@ -505,7 +505,7 @@ export default function AttendancePage() {
         const pct = Math.min(100, Math.round((done / MONTHLY_TARGET_MIN) * 100))
         const overTarget = done > MONTHLY_TARGET_MIN
         return (
-          <Card className={`border-2 ${overTarget ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50' : 'border-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50'}`}>
+          <Card className={`border-2 ${overTarget ? 'border-green-400 bg-emerald-50' : 'border-indigo-300 bg-slate-50'}`}>
             <CardContent className="p-5">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -602,7 +602,7 @@ export default function AttendancePage() {
             <div className="text-xs text-gray-500 mt-1">{data?.bonus.tier.label}</div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-emerald-50 to-green-100 border-green-200">
+        <Card className="bg-emerald-50 border-green-200">
           <CardContent className="p-4">
             <div className="text-xs text-green-800">בונוס החודש</div>
             <div className="text-2xl font-bold text-green-900 flex items-center gap-2 mt-1">

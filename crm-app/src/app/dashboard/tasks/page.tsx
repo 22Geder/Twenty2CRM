@@ -140,7 +140,7 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 ">
             משימות ותזכורות
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -151,7 +151,7 @@ export default function TasksPage() {
           <Button variant="outline" size="sm" onClick={fetchReminders} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
-          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600" onClick={() => setShowAdd(true)}>
+          <Button className="bg-teal-700" onClick={() => setShowAdd(true)}>
             <Plus className="ml-2 h-4 w-4" />
             משימה חדשה
           </Button>
@@ -169,46 +169,46 @@ export default function TasksPage() {
               <p className="text-sm text-muted-foreground">באיחור</p>
               <p className="text-3xl font-bold text-red-600">{stats.overdue}</p>
             </div>
-            <AlertCircle className="h-8 w-8 text-red-600 opacity-50" />
+            <AlertCircle className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
 
         <Card
-          className="p-4 border-r-4 border-orange-500 cursor-pointer hover:shadow-md transition-shadow"
+          className="p-4 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setFilter("pending")}
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">דחוף/גבוה</p>
-              <p className="text-3xl font-bold text-orange-600">{stats.urgent}</p>
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats.urgent}</p>
             </div>
-            <Clock className="h-8 w-8 text-orange-600 opacity-50" />
+            <Clock className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
 
         <Card
-          className="p-4 border-r-4 border-blue-500 cursor-pointer hover:shadow-md transition-shadow"
+          className="p-4 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setFilter("pending")}
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">סה״כ פתוחות</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.pending}</p>
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats.pending}</p>
             </div>
-            <CheckSquare className="h-8 w-8 text-blue-600 opacity-50" />
+            <CheckSquare className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
 
         <Card
-          className="p-4 border-r-4 border-green-500 cursor-pointer hover:shadow-md transition-shadow"
+          className="p-4 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setFilter("completed")}
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">הושלמו</p>
-              <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats.completed}</p>
             </div>
-            <CheckCircle2 className="h-8 w-8 text-green-600 opacity-50" />
+            <CheckCircle2 className="h-8 w-8 text-slate-400" />
           </div>
         </Card>
       </div>
@@ -229,7 +229,7 @@ export default function TasksPage() {
 
       {/* Add reminder dialog */}
       {showAdd && (
-        <Card className="mb-6 p-6 border-2 border-blue-300 bg-blue-50">
+        <Card className="mb-6 p-6 border border-slate-200 bg-slate-50">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">משימה חדשה</h3>
             <Button variant="ghost" size="sm" onClick={() => setShowAdd(false)}>
@@ -292,7 +292,7 @@ export default function TasksPage() {
             </div>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>ביטול</Button>
-              <Button type="submit" disabled={submitting} className="bg-gradient-to-r from-blue-600 to-indigo-600">
+              <Button type="submit" disabled={submitting} className="bg-teal-700">
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "הוסף משימה"}
               </Button>
             </div>
@@ -315,7 +315,7 @@ export default function TasksPage() {
                filter === "completed" ? "אין משימות שהושלמו" :
                filter === "overdue" ? "אין משימות באיחור 👍" : "אין משימות"}
             </p>
-            <Button className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600" onClick={() => setShowAdd(true)}>
+            <Button className="mt-4 bg-teal-700" onClick={() => setShowAdd(true)}>
               <Plus className="ml-2 h-4 w-4" />
               הוסף משימה ראשונה
             </Button>

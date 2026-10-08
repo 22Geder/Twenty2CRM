@@ -116,7 +116,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 ">
             דוחות וסטטיסטיקות
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -133,7 +133,7 @@ export default function ReportsPage() {
             <RefreshCw className={`ml-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             רענן
           </Button>
-          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600" onClick={() => window.print()}>
+          <Button className="bg-teal-700" onClick={() => window.print()}>
             <Download className="ml-2 h-4 w-4" />
             הדפס
           </Button>
@@ -142,43 +142,43 @@ export default function ReportsPage() {
 
       {/* KPIs Row 1 */}
       <div className="grid grid-cols-4 gap-4 mb-4">
-        <Card className="p-6 border-r-4 border-blue-500">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-2">
-            <Users className="h-8 w-8 text-blue-600 opacity-50" />
+            <Users className="h-8 w-8 text-slate-400" />
             <Badge className="bg-blue-100 text-blue-600">+{stats?.newThisWeek || 0} השבוע</Badge>
           </div>
           <p className="text-sm text-muted-foreground">סה״כ מועמדים</p>
-          <p className="text-3xl font-bold text-blue-600">{stats?.totalCandidates ?? "—"}</p>
+          <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats?.totalCandidates ?? "—"}</p>
           <p className="text-xs text-muted-foreground mt-1">{stats?.newThisMonth ?? 0} חדשים החודש</p>
         </Card>
 
-        <Card className="p-6 border-r-4 border-green-500">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-2">
-            <Briefcase className="h-8 w-8 text-green-600 opacity-50" />
+            <Briefcase className="h-8 w-8 text-slate-400" />
             <Badge className="bg-green-100 text-green-600">פעיל</Badge>
           </div>
           <p className="text-sm text-muted-foreground">משרות פעילות</p>
-          <p className="text-3xl font-bold text-green-600">{stats?.activePositions ?? "—"}</p>
+          <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats?.activePositions ?? "—"}</p>
           <p className="text-xs text-muted-foreground mt-1">מתוך {stats?.totalPositions ?? 0} סה״כ</p>
         </Card>
 
-        <Card className="p-6 border-r-4 border-purple-500">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-2">
-            <Calendar className="h-8 w-8 text-purple-600 opacity-50" />
+            <Calendar className="h-8 w-8 text-slate-400" />
             <Badge className="bg-purple-100 text-purple-600">קרובים</Badge>
           </div>
           <p className="text-sm text-muted-foreground">ראיונות קרובים</p>
-          <p className="text-3xl font-bold text-purple-600">{stats?.upcomingInterviews ?? "—"}</p>
+          <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats?.upcomingInterviews ?? "—"}</p>
           <p className="text-xs text-muted-foreground mt-1">מתוך {stats?.totalInterviews ?? 0} סה״כ</p>
         </Card>
 
-        <Card className="p-6 border-r-4 border-orange-500">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="h-8 w-8 text-orange-600 opacity-50" />
+            <TrendingUp className="h-8 w-8 text-slate-400" />
             <Badge className="bg-orange-100 text-orange-600">שיעור הצבה</Badge>
           </div>
           <p className="text-sm text-muted-foreground">מועמדים שהתקבלו</p>
-          <p className="text-3xl font-bold text-orange-600">{stats?.placementRate ?? 0}%</p>
+          <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats?.placementRate ?? 0}%</p>
           <p className="text-xs text-muted-foreground mt-1">
             {stats?.avgTimeToHire ? `${stats.avgTimeToHire} ימים ממוצע לגיוס` : "אין נתון"}
           </p>
@@ -187,45 +187,45 @@ export default function ReportsPage() {
 
       {/* KPIs Row 2 */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <Card className="p-4 border-r-4 border-emerald-500">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <Users className="h-7 w-7 text-emerald-600 opacity-60" />
             <div>
               <p className="text-xs text-muted-foreground">התקבלו החודש</p>
-              <p className="text-2xl font-bold text-emerald-600">{stats?.hiredThisMonth ?? 0}</p>
+              <p className="text-2xl font-semibold text-slate-900 tabular-nums">{stats?.hiredThisMonth ?? 0}</p>
               <p className="text-xs text-muted-foreground">סה״כ: {stats?.hiredTotal ?? 0}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4 border-r-4 border-cyan-500">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <Building2 className="h-7 w-7 text-cyan-600 opacity-60" />
             <div>
               <p className="text-xs text-muted-foreground">מעסיקים</p>
-              <p className="text-2xl font-bold text-cyan-600">{stats?.totalEmployers ?? 0}</p>
+              <p className="text-2xl font-semibold text-slate-900 tabular-nums">{stats?.totalEmployers ?? 0}</p>
               <p className="text-xs text-muted-foreground">{stats?.totalApplications ?? 0} מועמדויות</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4 border-r-4 border-green-400">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <MessageCircle className="h-7 w-7 text-green-600 opacity-60" />
             <div>
               <p className="text-xs text-muted-foreground">הודעות WhatsApp</p>
-              <p className="text-2xl font-bold text-green-600">{stats?.whatsappTotal ?? 0}</p>
+              <p className="text-2xl font-semibold text-slate-900 tabular-nums">{stats?.whatsappTotal ?? 0}</p>
               <p className="text-xs text-muted-foreground">נשלחו בסה״כ</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4 border-r-4 border-indigo-500">
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <Mail className="h-7 w-7 text-indigo-600 opacity-60" />
             <div>
               <p className="text-xs text-muted-foreground">מיילים למעסיקים</p>
-              <p className="text-2xl font-bold text-indigo-600">{stats?.emailsToEmployers ?? 0}</p>
+              <p className="text-2xl font-semibold text-slate-900 tabular-nums">{stats?.emailsToEmployers ?? 0}</p>
               <p className="text-xs text-muted-foreground">נשלחו בסה״כ</p>
             </div>
           </div>
@@ -300,12 +300,12 @@ export default function ReportsPage() {
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full flex gap-0.5 items-end" style={{ height: "180px" }}>
                 <div
-                  className="flex-1 bg-gradient-to-t from-blue-600 to-indigo-400 rounded-t hover:opacity-80 transition-opacity cursor-pointer min-h-[2px]"
+                  className="flex-1 bg-teal-700 rounded-t hover:opacity-80 transition-opacity cursor-pointer min-h-[2px]"
                   style={{ height: `${(month.new / chartMax) * 180}px` }}
                   title={`${month.label}: ${month.new} חדשים`}
                 />
                 <div
-                  className="flex-1 bg-gradient-to-t from-green-600 to-emerald-400 rounded-t hover:opacity-80 transition-opacity cursor-pointer min-h-[2px]"
+                  className="flex-1 bg-emerald-600 rounded-t hover:opacity-80 transition-opacity cursor-pointer min-h-[2px]"
                   style={{ height: `${(month.hired / chartMax) * 180}px` }}
                   title={`${month.label}: ${month.hired} התקבלו`}
                 />
@@ -389,12 +389,12 @@ export default function ReportsPage() {
 
       {/* Time to hire highlight */}
       {stats?.avgTimeToHire !== undefined && stats.avgTimeToHire > 0 && (
-        <Card className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <Card className="mt-6 p-6 bg-slate-50 border-blue-200">
           <div className="flex items-center gap-4">
             <Clock className="h-10 w-10 text-blue-600" />
             <div>
               <p className="text-sm text-muted-foreground">זמן ממוצע לגיוס (Time to Hire)</p>
-              <p className="text-3xl font-bold text-blue-700">{stats.avgTimeToHire} ימים</p>
+              <p className="text-3xl font-semibold text-slate-900 tabular-nums">{stats.avgTimeToHire} ימים</p>
               <p className="text-xs text-muted-foreground">מרגע יצירת כרטיס מועמד ועד קבלה לעבודה</p>
             </div>
           </div>

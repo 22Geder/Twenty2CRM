@@ -303,6 +303,72 @@ export async function syncTaggedCalendarEvent(
   })
 }
 
+export type AllDayCalendarEventInput = {
+  title: string
+  description?: string
+  date: Date
+  colorId?: string
+  attendeeEmails?: string[]
+  organizerEmail?: string
+}
+
+/** Create or update one CRM-owned all-day event (Asia/Jerusalem date) without creating duplicates. */
+export async function syncTaggedAllDayCalendarEvent(
+  refreshToken: string,
+  privateKey: string,
+  input: AllDayCalendarEventInput
+): Promise<void> {
+  const auth = createOAuth2Client(refreshToken)
+  const calendar = google.calendar({ version: "v3", auth })
+  const response = await calendar.events.list({
+    calendarId: "primary",
+    privateExtendedProperty: [`twenty2crmKey=${privateKey}`],
+    showDeleted: false,
+    maxResults: 10,
+  })
+  const existingEvents = (response.data.items || []).filter(event => event.id)
+
+  const startDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(input.date)
+  const [year, month, day] = startDate.split("-").map(Number)
+  const endDate = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10)
+  const attendees = (input.attendeeEmails || []).map(email => ({ email }))
+
+  const requestBody = {
+    summary: input.title,
+    description: input.description,
+    start: { date: startDate },
+    end: { date: endDate },
+    colorId: input.colorId,
+    attendees: attendees.length > 0 ? attendees : undefined,
+    extendedProperties: {
+      private: { twenty2crmKey: privateKey },
+    },
+  }
+  const sendUpdates = attendees.length > 0 ? "all" : "none"
+
+  const primaryEvent = existingEvents[0]
+  if (primaryEvent?.id) {
+    await calendar.events.update({
+      calendarId: "primary",
+      eventId: primaryEvent.id,
+      sendUpdates,
+      requestBody,
+    })
+    await Promise.all(existingEvents.slice(1).map(event => calendar.events.delete({
+      calendarId: "primary",
+      eventId: event.id!,
+      sendUpdates,
+    })))
+    return
+  }
+
+  await calendar.events.insert({
+    calendarId: "primary",
+    sendUpdates,
+    requestBody,
+  })
+}
+
 /** Update an existing Google Calendar event */
 export async function updateCalendarEvent(
   refreshToken: string,

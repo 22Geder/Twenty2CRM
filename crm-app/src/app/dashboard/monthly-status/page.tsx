@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateHe, isStatusPeriodCandidate } from '@/lib/candidate-hired-dates';
+import { buildCandidateStatusPayload, updateCandidateStatusBatch, type CandidateQuickStatus } from '@/lib/candidate-bulk-status';
 
 interface Application {
   id: string;
@@ -59,6 +60,12 @@ interface Employer {
 
 type StatusKey = 'hired' | 'in-process' | 'rejected' | 'new';
 type FilterKey = 'all' | StatusKey;
+
+const BULK_STATUS_LABELS: Record<CandidateQuickStatus, string> = {
+  EMPLOYED: 'התקבלו',
+  IN_PROCESS: 'בתהליך',
+  REJECTED: 'לא התקבלו / נדחו',
+};
 
 function toIsraelDateTimeInput(value: string | null): string {
   if (!value) return '';
@@ -155,6 +162,16 @@ export default function MonthlyStatusPage() {
   const [saving, setSaving] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [paymentSavingId, setPaymentSavingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<CandidateQuickStatus>('EMPLOYED');
+  const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
+  const [bulkMessage, setBulkMessage] = useState('');
+  const bulkLock = useRef(false);
+  const fetchVersion = useRef(0);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  const mutationsBusy = bulkSaving || saving || savingId !== null || paymentSavingId !== null;
   const [filter, setFilter] = useState<FilterKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [periodMode, setPeriodMode] = useState<'month' | 'year'>('month');
@@ -171,14 +188,24 @@ export default function MonthlyStatusPage() {
     fetchData();
   }, [selectedPeriod]);
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setBulkConfirming(false);
+    setBulkMessage('');
+  }, [selectedPeriod, filter, searchQuery]);
+
   const fetchData = async (options?: { silent?: boolean }) => {
+    if (bulkLock.current) return;
+    const version = ++fetchVersion.current;
     if (!options?.silent) setLoading(true);
     try {
       const response = await fetch('/api/candidates?period=' + encodeURIComponent(selectedPeriod) + '&limit=5000');
       if (response.ok) {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
-        setCandidates(allCandidates.filter((c: Candidate) => isStatusPeriodCandidate(c, selectedPeriod)));
+        if (version === fetchVersion.current && !bulkLock.current) {
+          setCandidates(allCandidates.filter((c: Candidate) => isStatusPeriodCandidate(c, selectedPeriod)));
+        }
       }
 
       const empResponse = await fetch('/api/employers');
@@ -189,7 +216,7 @@ export default function MonthlyStatusPage() {
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      if (version === fetchVersion.current) setLoading(false);
     }
   };
 
@@ -201,6 +228,8 @@ export default function MonthlyStatusPage() {
   };
 
   const startEdit = (candidate: Candidate) => {
+    if (bulkLock.current) return;
+    setBulkConfirming(false);
     setEditingId(candidate.id);
     setEditData({
       [candidate.id]: {
@@ -274,27 +303,12 @@ export default function MonthlyStatusPage() {
     }
   };
 
-  const quickStatusUpdate = async (candidateId: string, newStatus: string) => {
+  const quickStatusUpdate = async (candidateId: string, newStatus: CandidateQuickStatus) => {
+    if (bulkLock.current) return;
     const current = candidates.find(c => c.id === candidateId);
     if (!current) return;
     const previous = candidates;
-    const now = new Date().toISOString();
-    const updatePayload: any = { employmentStatus: newStatus };
-
-    if (newStatus === 'EMPLOYED') {
-      if (!current.hiredAt) updatePayload.hiredAt = now;
-      updatePayload.inProcessPositionId = null;
-      updatePayload.inProcessAt = null;
-    } else if (newStatus === 'REJECTED') {
-      updatePayload.hiredAt = null;
-      updatePayload.hiredToEmployerId = null;
-      updatePayload.inProcessPositionId = null;
-      updatePayload.inProcessAt = null;
-    } else {
-      updatePayload.hiredAt = null;
-      updatePayload.hiredToEmployerId = null;
-      if (!current.inProcessAt) updatePayload.inProcessAt = now;
-    }
+    const updatePayload = buildCandidateStatusPayload(current, newStatus);
 
     setSavingId(candidateId);
     setCandidates(list => list.map(candidate => (
@@ -322,7 +336,7 @@ export default function MonthlyStatusPage() {
   };
 
   const markPlacementFee = async (candidateId: string, paid: boolean | null) => {
-    if (!isAdmin) return;
+    if (!isAdmin || bulkLock.current) return;
     const previous = candidates;
     setPaymentSavingId(candidateId);
     setCandidates(current => current.map(candidate => (
@@ -353,6 +367,70 @@ export default function MonthlyStatusPage() {
       c.email?.toLowerCase().includes(query);
     return matchesFilter && matchesSearch;
   }), [candidates, filter, searchQuery]);
+
+  const selectedCandidates = filteredCandidates.filter(candidate => selectedIds.has(candidate.id));
+  const allSelected = filteredCandidates.length > 0 && selectedCandidates.length === filteredCandidates.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = selectedCandidates.length > 0 && !allSelected;
+    }
+  }, [selectedCandidates.length, allSelected]);
+
+  const toggleCandidateSelection = (id: string) => {
+    if (bulkLock.current) return;
+    setBulkConfirming(false);
+    setSelectedIds(current => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkStatusUpdate = async () => {
+    if (bulkLock.current || mutationsBusy || editingId || selectedCandidates.length === 0) return;
+    bulkLock.current = true;
+    fetchVersion.current++;
+    const originals = new Map(selectedCandidates.map(candidate => [candidate.id, candidate]));
+    const now = new Date().toISOString();
+    const payloads = new Map(selectedCandidates.map(candidate => [
+      candidate.id, buildCandidateStatusPayload(candidate, bulkStatus, now),
+    ]));
+    setBulkSaving(true);
+    setBulkConfirming(false);
+    setBulkProgress(0);
+    setBulkMessage('');
+    setCandidates(current => current.map(candidate => {
+      const payload = payloads.get(candidate.id);
+      return payload ? { ...candidate, ...payload } : candidate;
+    }));
+
+    try {
+      const result = await updateCandidateStatusBatch([...originals.keys()], async id => {
+        const response = await fetch(`/api/candidates/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payloads.get(id)),
+        });
+        return response.ok;
+      }, setBulkProgress);
+      const failures = new Set(result.failed);
+      setCandidates(current => current.map(candidate => (
+        failures.has(candidate.id) ? originals.get(candidate.id)! : candidate
+      )));
+      setSelectedIds(failures);
+      setBulkMessage(result.failed.length > 0
+        ? `${result.succeeded.length} מועמדים עודכנו. ${result.failed.length} לא נשמרו ונשארו מסומנים לניסיון חוזר.`
+        : `הסטטוס עודכן ל״${BULK_STATUS_LABELS[bulkStatus]}״ עבור ${result.succeeded.length} מועמדים.`);
+    } catch {
+      setCandidates(current => current.map(candidate => originals.get(candidate.id) || candidate));
+      setBulkMessage('העדכון לא הושלם. המועמדים נשארו מסומנים; ניתן לנסות שוב.');
+    } finally {
+      bulkLock.current = false;
+      setBulkSaving(false);
+    }
+  };
 
   const stats = useMemo(() => ({
     total: candidates.length,
@@ -385,6 +463,7 @@ export default function MonthlyStatusPage() {
   return (
     <div className="min-h-full p-4 md:p-6">
       <div className="mx-auto max-w-6xl space-y-5">
+        <fieldset disabled={bulkSaving} className="min-w-0 space-y-5">
         <header className="overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900">
           <div className="flex flex-col gap-5 p-5 md:flex-row md:items-end md:justify-between md:p-7">
             <div className="space-y-2">
@@ -445,7 +524,7 @@ export default function MonthlyStatusPage() {
                 </div>
               )}
 
-              <Button variant="secondary" onClick={() => { void fetchData(); }} disabled={loading} className="h-11 rounded-full bg-slate-900 text-white hover:bg-slate-800">
+              <Button variant="secondary" onClick={() => { void fetchData(); }} disabled={loading || mutationsBusy || bulkConfirming} className="h-11 rounded-full bg-slate-900 text-white hover:bg-slate-800">
                 <RefreshCw className={loading ? 'animate-spin' : ''} />
                 רענון
               </Button>
@@ -489,6 +568,7 @@ export default function MonthlyStatusPage() {
             );
           })}
         </section>
+        </fieldset>
 
         <Card className="overflow-hidden rounded-3xl border-slate-200 bg-white shadow-none">
           <div className="flex flex-col gap-3 border-b border-slate-100 p-4 md:flex-row md:items-center md:justify-between md:px-5">
@@ -506,10 +586,75 @@ export default function MonthlyStatusPage() {
                 placeholder="שם, טלפון או אימייל"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={bulkSaving}
                 className="h-10 rounded-full border-slate-200 bg-slate-50 pr-9"
                 aria-label="חיפוש מועמדים"
               />
             </div>
+          </div>
+
+          <div className="space-y-3 border-b border-slate-100 p-4 md:px-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label className="inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-slate-700">
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  checked={allSelected}
+                  disabled={loading || mutationsBusy || editingId !== null || filteredCandidates.length === 0}
+                  onChange={() => {
+                    setBulkConfirming(false);
+                    setSelectedIds(allSelected ? new Set() : new Set(filteredCandidates.map(candidate => candidate.id)));
+                  }}
+                  className="h-5 w-5 accent-[var(--t22-teal)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--t22-teal)]"
+                />
+                בחר את כל המוצגים
+              </label>
+              <span className="text-sm tabular-nums text-slate-500">
+                {bulkSaving ? `מעדכן: ${bulkProgress} מתוך ${selectedIds.size}` : `${selectedCandidates.length} מסומנים`}
+              </span>
+            </div>
+            {(selectedCandidates.length > 0 || bulkSaving) && (
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 p-4">
+                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  סטטוס לכולם
+                  <select
+                    aria-label="סטטוס למועמדים המסומנים"
+                    value={bulkStatus}
+                    disabled={mutationsBusy || bulkConfirming || editingId !== null}
+                    onChange={event => setBulkStatus(event.target.value as CandidateQuickStatus)}
+                    className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-[var(--t22-teal)]"
+                  >
+                    {Object.entries(BULK_STATUS_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+                {!bulkConfirming && (
+                  <Button
+                    onClick={() => setBulkConfirming(true)}
+                    disabled={loading || mutationsBusy || editingId !== null}
+                    className="h-11 rounded-xl"
+                  >
+                    {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {bulkSaving ? 'שומר את הבחירה' : `עדכון ${selectedCandidates.length} מועמדים`}
+                  </Button>
+                )}
+                <Button variant="outline" className="h-11 rounded-xl" disabled={bulkSaving} onClick={() => {
+                  setSelectedIds(new Set());
+                  setBulkConfirming(false);
+                }}>נקה בחירה</Button>
+                {bulkConfirming && (
+                  <div className="flex w-full flex-wrap items-center gap-3" role="group" aria-label="אישור עדכון מרובה">
+                    <p className="text-sm text-slate-700">לעדכן {selectedCandidates.length} מועמדים ל״{BULK_STATUS_LABELS[bulkStatus]}״?</p>
+                    <Button className="h-11 rounded-xl" onClick={() => { void bulkStatusUpdate(); }}>אישור עדכון לכולם</Button>
+                    <Button variant="outline" className="h-11 rounded-xl" onClick={() => setBulkConfirming(false)}>ביטול</Button>
+                  </div>
+                )}
+              </div>
+            )}
+            <p role="status" aria-live="polite" className="text-sm text-slate-700">
+              {bulkMessage || (bulkSaving ? 'הסטטוסים מוצגים מיד; השמירה מתבצעת בקבוצות של עד 10 מועמדים.' : 'הבחירה חלה רק על הרשימה המוצגת בחודש או בשנה שנבחרו.')}
+            </p>
           </div>
 
           <CardContent className="p-3 md:p-4">
@@ -535,7 +680,7 @@ export default function MonthlyStatusPage() {
                   return (
                     <article
                       key={candidate.id}
-                      className={`rounded-2xl border p-4 transition ${isEditing ? 'border-amber-200 bg-amber-50/70' : 'border-slate-100 bg-white hover:border-slate-200'}`}
+                      className={`rounded-2xl border p-4 transition ${isEditing ? 'border-amber-200 bg-amber-50/70' : selectedIds.has(candidate.id) ? 'border-[var(--t22-teal)] bg-white ring-1 ring-[var(--t22-teal)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}
                     >
                       {isEditing ? (
                         <EditPanel
@@ -551,6 +696,16 @@ export default function MonthlyStatusPage() {
                         <div className="flex flex-col gap-3">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="flex min-w-0 gap-3">
+                              <label className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`בחר את ${candidate.name}`}
+                                  checked={selectedIds.has(candidate.id)}
+                                  disabled={mutationsBusy || editingId !== null}
+                                  onChange={() => toggleCandidateSelection(candidate.id)}
+                                  className="h-5 w-5 accent-[var(--t22-teal)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--t22-teal)]"
+                                />
+                              </label>
                               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-sm font-semibold ring-1 ring-inset ${meta.chip}`}>
                                 {initial}
                               </span>
@@ -573,16 +728,16 @@ export default function MonthlyStatusPage() {
                             </div>
 
                             <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
-                              <QuickAction label="סמן בתהליך" active={status === 'in-process'} activeClass={STATUS_META['in-process'].action} disabled={saving || savingId === candidate.id} onClick={() => quickStatusUpdate(candidate.id, 'IN_PROCESS')}>
+                              <QuickAction label="סמן בתהליך" active={status === 'in-process'} activeClass={STATUS_META['in-process'].action} disabled={mutationsBusy || bulkConfirming} onClick={() => quickStatusUpdate(candidate.id, 'IN_PROCESS')}>
                                 <Clock className="h-3.5 w-3.5" />
                               </QuickAction>
-                              <QuickAction label="סמן התקבל" active={status === 'hired'} activeClass={STATUS_META.hired.action} disabled={saving || savingId === candidate.id} onClick={() => quickStatusUpdate(candidate.id, 'EMPLOYED')}>
+                              <QuickAction label="סמן התקבל" active={status === 'hired'} activeClass={STATUS_META.hired.action} disabled={mutationsBusy || bulkConfirming} onClick={() => quickStatusUpdate(candidate.id, 'EMPLOYED')}>
                                 <CheckCircle className="h-3.5 w-3.5" />
                               </QuickAction>
-                              <QuickAction label="סמן לא התקבל" active={status === 'rejected'} activeClass={STATUS_META.rejected.action} disabled={saving || savingId === candidate.id} onClick={() => quickStatusUpdate(candidate.id, 'REJECTED')}>
+                              <QuickAction label="סמן לא התקבל" active={status === 'rejected'} activeClass={STATUS_META.rejected.action} disabled={mutationsBusy || bulkConfirming} onClick={() => quickStatusUpdate(candidate.id, 'REJECTED')}>
                                 <XCircle className="h-3.5 w-3.5" />
                               </QuickAction>
-                              <Button size="sm" variant="outline" onClick={() => startEdit(candidate)} className="h-8 rounded-full px-3" aria-label={`עריכת ${candidate.name}`}>
+                              <Button size="sm" variant="outline" disabled={mutationsBusy || bulkConfirming} onClick={() => startEdit(candidate)} className="h-8 rounded-full px-3" aria-label={`עריכת ${candidate.name}`}>
                                 <Edit3 className="h-3.5 w-3.5" />
                                 עריכה
                               </Button>
@@ -595,14 +750,14 @@ export default function MonthlyStatusPage() {
                             {isAdmin && status === 'hired' && (
                               <PaymentMark
                                 paid={candidate.placementFeePaid}
-                                saving={paymentSavingId === candidate.id}
+                                saving={mutationsBusy || bulkConfirming}
                                 onChange={(paid) => markPlacementFee(candidate.id, paid)}
                               />
                             )}
                             {candidate.inProcessAt && <DatePill tone="sky" icon={<Clock className="h-3 w-3" />} label={`נכנס לתהליך ${formatDateHe(candidate.inProcessAt)}`} />}
                             {candidate.interviewDate && <DatePill tone="violet" icon={<Calendar className="h-3 w-3" />} label={`ראיון ${formatInterviewDate(candidate.interviewDate)}`} />}
                             {status === 'in-process' && !candidate.interviewDate && (
-                              <button type="button" onClick={() => startEdit(candidate)} className="rounded-full px-2.5 py-1 font-medium text-violet-700 hover:bg-violet-50">
+                              <button type="button" disabled={mutationsBusy || bulkConfirming} onClick={() => startEdit(candidate)} className="rounded-full px-2.5 py-1 font-medium text-violet-700 hover:bg-violet-50">
                                 קביעת ראיון
                               </button>
                             )}

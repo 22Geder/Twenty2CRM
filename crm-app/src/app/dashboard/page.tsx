@@ -371,17 +371,17 @@ export default async function CiviDashboardPage() {
     <div className="min-h-screen" dir="rtl">
 
       <div className="max-w-[1600px] mx-auto px-3 md:px-6 pt-5">
-        <div className="relative mb-5 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 text-white">
+        <div className="relative mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900">
           <div className="relative flex items-start gap-4 px-5 py-5 md:px-6">
-            <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white/10">
-              <Sparkles className="h-5 w-5 text-indigo-200" />
+            <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-100">
+              <Sparkles className="h-5 w-5 text-slate-600" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-white">תקציר יומי</span>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200">היום</span>
+                <span className="text-sm font-semibold text-slate-900">תקציר יומי</span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">היום</span>
               </div>
-              <p className="text-sm leading-relaxed text-slate-300">
+              <p className="text-sm leading-relaxed text-slate-600">
                 {(() => {
                   const parts: string[] = []
                   if (stats.inProcess > 0) parts.push(`${stats.inProcess} מועמדים בתהליך פעיל`)
@@ -396,8 +396,8 @@ export default async function CiviDashboardPage() {
               </p>
             </div>
             <div className="hidden md:flex flex-col items-end flex-shrink-0">
-              <span className="text-xs text-slate-400">שלום,</span>
-              <span className="text-sm font-semibold text-white">{session.user?.name?.split(' ')[0] || 'משתמש'}</span>
+              <span className="text-xs text-slate-500">שלום,</span>
+              <span className="text-sm font-semibold text-slate-900">{session.user?.name?.split(' ')[0] || 'משתמש'}</span>
             </div>
           </div>
         </div>
@@ -411,50 +411,50 @@ export default async function CiviDashboardPage() {
 
           overviewContent={
             <div className="space-y-4 md:space-y-5">
-              <div className="grid grid-cols-2 gap-3 rounded-3xl bg-slate-950 p-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-3">
-                <Link href="/dashboard/candidates?status=hired" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+              <div className="grid grid-cols-2 gap-3 rounded-3xl border border-slate-200 bg-white p-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-3">
+                <Link href="/dashboard/candidates?status=hired" className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100">
                   <div className="flex flex-col gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 text-cyan-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200/70 text-slate-600">
                       <UserCheck className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.startedWorkThisMonth}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-400">התחילו לעבוד החודש</div>
+                    <div className="text-4xl font-semibold tabular-nums text-slate-900">{stats.startedWorkThisMonth}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-500">התחילו לעבוד החודש</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/interviews" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                <Link href="/dashboard/interviews" className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100">
                   <div className="flex flex-col gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-400/15 text-orange-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200/70 text-slate-600">
                       <Bell className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.upcomingInterviews}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-400">ראיונות קרובים</div>
+                    <div className="text-4xl font-semibold tabular-nums text-slate-900">{stats.upcomingInterviews}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-500">ראיונות קרובים</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/candidates?status=hired" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                <Link href="/dashboard/candidates?status=hired" className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100">
                   <div className="flex flex-col gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200/70 text-slate-600">
                       <CheckCircle className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.hiredThisMonth}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-400">התקבלו לעבודה החודש</div>
+                    <div className="text-4xl font-semibold tabular-nums text-slate-900">{stats.hiredThisMonth}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-500">התקבלו לעבודה החודש</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/candidates?status=in-process" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                <Link href="/dashboard/candidates?status=in-process" className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100">
                   <div className="flex flex-col gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 text-violet-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200/70 text-slate-600">
                       <Send className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.applicationsThisMonth}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-400">הפניות החודש</div>
+                    <div className="text-4xl font-semibold tabular-nums text-slate-900">{stats.applicationsThisMonth}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-500">הפניות החודש</div>
                   </div>
                 </Link>
-                <Link href="/dashboard/candidates?status=in-process" className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.08]">
+                <Link href="/dashboard/candidates?status=in-process" className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100">
                   <div className="flex flex-col gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/15 text-sky-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200/70 text-slate-600">
                       <Users className="h-4 w-4" />
                     </div>
-                    <div className="text-4xl font-semibold tabular-nums text-white">{stats.inProcess}</div>
-                    <div className="text-xs font-medium leading-tight text-slate-400">מועמדים בתהליך</div>
+                    <div className="text-4xl font-semibold tabular-nums text-slate-900">{stats.inProcess}</div>
+                    <div className="text-xs font-medium leading-tight text-slate-500">מועמדים בתהליך</div>
                   </div>
                 </Link>
               </div>
@@ -688,8 +688,8 @@ export default async function CiviDashboardPage() {
                             <div className="text-[10px] text-red-400 font-medium">לא גויסו</div>
                           </div>
                         </div>
-                        <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-950 px-3 py-2 text-white">
-                          <span className="text-xs text-slate-300">מדד החודש</span>
+                        <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 text-slate-900">
+                          <span className="text-xs text-slate-500">מדד החודש</span>
                           <span className="text-lg font-semibold tabular-nums">{r.monthScore}</span>
                         </div>
                       </Link>
@@ -703,18 +703,18 @@ export default async function CiviDashboardPage() {
           actionsContent={
             <div className="space-y-4">
               <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white px-5 py-4 flex items-center justify-between">
+                <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-5 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="h-5 w-5" />
                     <span className="font-bold text-lg">מעקב מועמדים בתהליך — ממתינים לטיפול</span>
                   </div>
                   <div className="flex items-center gap-3">
                     {untreatedInProcess.length > 0 && (
-                      <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full animate-pulse">
+                      <span className="bg-red-600 text-white text-sm font-semibold px-3 py-1 rounded-full">
                         {untreatedInProcess.length} לא טופלו!
                       </span>
                     )}
-                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                    <span className="bg-white border border-amber-200 text-amber-800 px-3 py-1 rounded-full text-sm">
                       סה&quot;כ {inProcessCandidates.length} בתהליך
                     </span>
                   </div>
@@ -923,7 +923,7 @@ export default async function CiviDashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-5 md:p-8 text-white shadow-xl border border-white/5">
+              <div className="bg-white rounded-2xl p-5 md:p-8 border border-slate-200">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 text-center">
                   {[
                     { val: stats.totalCandidates, label: 'סה"כ מועמדים', color: '#00D4D4' },
@@ -933,8 +933,8 @@ export default async function CiviDashboardPage() {
                     { val: stats.totalEmployers, label: 'סה"כ לקוחות', color: '#3B82F6' },
                   ].map((item, i) => (
                     <div key={i}>
-                      <div className="text-3xl font-bold" style={{ color: item.color }}>{item.val}</div>
-                      <div className="text-sm text-slate-300">{item.label}</div>
+                      <div className="text-3xl font-semibold tabular-nums text-slate-900">{item.val}</div>
+                      <div className="text-sm text-slate-500">{item.label}</div>
                     </div>
                   ))}
                 </div>
@@ -1191,20 +1191,20 @@ export default async function CiviDashboardPage() {
           })()}
         </div>
 
-        <div className="mt-4 bg-gradient-to-r from-[#0f0b2e] via-[#1a1444] to-[#0f0b2e] rounded-2xl p-5 md:p-8 text-white shadow-xl border border-white/5">
-          <div className="text-center text-slate-400 text-xs mb-5 font-medium">סיכום שנתי — 12 חודשים אחרונים</div>
+        <div className="mt-4 bg-white rounded-2xl p-5 md:p-8 border border-slate-200">
+          <div className="text-center text-slate-500 text-xs mb-5 font-medium">סיכום שנתי — 12 חודשים אחרונים</div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-4xl font-semibold text-[#60A5FA]">{ytdCandidates}</div>
-              <div className="text-sm text-slate-300 mt-1">סה"כ מועמדים השנה</div>
+              <div className="text-4xl font-semibold tabular-nums text-slate-900">{ytdCandidates}</div>
+              <div className="text-sm text-slate-500 mt-1">סה"כ מועמדים השנה</div>
             </div>
             <div>
-              <div className="text-4xl font-semibold text-[#34D399]">{ytdHired}</div>
-              <div className="text-sm text-slate-300 mt-1">סה"כ התקבלו השנה</div>
+              <div className="text-4xl font-semibold tabular-nums text-slate-900">{ytdHired}</div>
+              <div className="text-sm text-slate-500 mt-1">סה"כ התקבלו השנה</div>
             </div>
             <div>
-              <div className="text-4xl font-semibold text-[#FB923C]">{ytdInProcess}</div>
-              <div className="text-sm text-slate-300 mt-1">סה"כ נכנסו לתהליך השנה</div>
+              <div className="text-4xl font-semibold tabular-nums text-slate-900">{ytdInProcess}</div>
+              <div className="text-sm text-slate-500 mt-1">סה"כ נכנסו לתהליך השנה</div>
             </div>
           </div>
         </div>

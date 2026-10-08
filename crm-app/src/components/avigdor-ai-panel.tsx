@@ -167,18 +167,18 @@ export function AvigdorAiPanel() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="hidden xl:flex flex-col w-[min(325px,22vw)] h-full flex-shrink-0 relative overflow-hidden ml-[min(2cm,3.5vw)]
-        border-r border-white/[0.06]"
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #111c34 45%, #0d1526 100%)' }}
+      className="t22-avigdor hidden xl:flex flex-col w-[min(325px,22vw)] h-full flex-shrink-0 relative overflow-hidden ml-[min(2cm,3.5vw)]
+        border-r border-[var(--sb-border)]"
+      style={{ background: 'var(--sb-bg)' }}
     >
       {/* 🖐️ שכבת גרירה - מופיעה כשגוררים קובץ מעל הפאנל */}
       {dragActive && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3
-          bg-[#0F172A]/85 backdrop-blur-sm border-2 border-dashed border-[#22D3EE] rounded-lg m-2 pointer-events-none">
+          bg-[var(--sb-bg)]/90 backdrop-blur-sm border-2 border-dashed border-[var(--sb-accent)] rounded-lg m-2 pointer-events-none">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[#0891B2]">
             <FileText className="h-8 w-8 text-white" />
           </div>
-          <div className="text-slate-100 text-[15px] font-semibold text-center px-4">
+          <div className="text-[var(--sb-text-active)] text-[15px] font-semibold text-center px-4">
             שחרר כאן ואביגדור ינתח
           </div>
           <div className="text-slate-400 text-[12px] text-center px-4">
@@ -188,12 +188,12 @@ export function AvigdorAiPanel() {
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-2.5 h-28 px-3.5 border-b border-white/[0.06] flex-shrink-0 relative z-10">
+      <div className="flex items-center gap-2.5 h-28 px-3.5 border-b border-[var(--sb-border)] flex-shrink-0 relative z-10">
         <div className="relative w-[72px] h-[72px] flex-shrink-0">
           <Image src="/logo-22jobs-clean.png" alt="אביגדור" width={72} height={72} className="object-contain w-full h-full drop-shadow-lg" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[18px] font-bold text-slate-100 leading-tight">
+          <div className="flex items-center gap-1.5 text-[18px] font-bold text-[var(--sb-text-active)] leading-tight">
             אביגדור
             <Sparkles className="h-4 w-4 text-slate-400" />
           </div>
@@ -219,12 +219,12 @@ export function AvigdorAiPanel() {
                 className={`flex flex-col max-w-[80%] overflow-hidden px-3.5 py-2.5 ${
                   isUser
                     ? "bg-[#0E7490] rounded-2xl rounded-tr-md"
-                    : "bg-white/[0.07] border border-white/[0.08] rounded-2xl rounded-tl-md"
+                    : "bg-[var(--sb-bubble-bg)] border border-[var(--sb-border)] rounded-2xl rounded-tl-md"
                 }`}
               >
                 <span
                   className={`text-[13.5px] leading-[1.65] whitespace-pre-wrap break-words text-right ${
-                    isUser ? "text-white" : "text-slate-100"
+                    isUser ? "text-white" : "text-[var(--sb-bubble-text)]"
                   }`}
                 >
                   {m.content}
@@ -240,7 +240,7 @@ export function AvigdorAiPanel() {
         })}
         {loading && (
           <div className="flex justify-end mt-4">
-            <div className="rounded-2xl rounded-tl-md px-3.5 py-2.5 text-slate-100 flex items-center gap-2 bg-white/[0.07] border border-white/[0.08]">
+            <div className="rounded-2xl rounded-tl-md px-3.5 py-2.5 text-[var(--sb-bubble-text)] flex items-center gap-2 bg-[var(--sb-bubble-bg)] border border-[var(--sb-border)]">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-[13px]">אביגדור עובד על זה...</span>
             </div>
@@ -249,7 +249,7 @@ export function AvigdorAiPanel() {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-white/[0.06] flex-shrink-0 relative z-10">
+      <div className="p-3 border-t border-[var(--sb-border)] flex-shrink-0 relative z-10">
         <input
           ref={fileInputRef}
           type="file"
@@ -257,12 +257,12 @@ export function AvigdorAiPanel() {
           className="hidden"
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
         />
-        <div className="flex items-center gap-1.5 bg-white/[0.06] border border-white/[0.1] rounded-xl px-2 py-1.5 focus-within:border-[#22D3EE]/50 transition-colors">
+        <div className="flex items-center gap-1.5 bg-[var(--sb-input-bg)] border border-[var(--sb-border)] rounded-xl px-2 py-1.5 focus-within:border-[var(--sb-accent)] transition-colors">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
             title="העלה קורות חיים"
-            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-40 transition-colors"
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-slate-500 hover:text-[var(--sb-text-active)] hover:bg-[var(--sb-hover-bg)] disabled:opacity-40 transition-colors"
           >
             <Paperclip className="h-4 w-4" />
           </button>
@@ -271,8 +271,8 @@ export function AvigdorAiPanel() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") sendMessage() }}
             placeholder="שאל את אביגדור..."
-            style={{ backgroundColor: 'transparent', color: '#f1f5f9', WebkitTextFillColor: '#f1f5f9', borderColor: 'transparent' }}
-            className="flex-1 min-w-0 bg-transparent text-[13.5px] text-slate-100 placeholder:text-slate-500 outline-none px-1 py-1.5"
+            style={{ backgroundColor: 'transparent', color: 'var(--sb-text-active)', WebkitTextFillColor: 'var(--sb-text-active)', borderColor: 'transparent' }}
+            className="flex-1 min-w-0 bg-transparent text-[13.5px] placeholder:text-slate-400 outline-none px-1 py-1.5"
           />
           <button
             onClick={sendMessage}
@@ -286,7 +286,7 @@ export function AvigdorAiPanel() {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={loading}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11.5px] text-slate-400 hover:text-slate-200 disabled:opacity-40 transition-colors text-center leading-tight"
+          className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11.5px] text-slate-500 hover:text-[var(--sb-text-active)] disabled:opacity-40 transition-colors text-center leading-tight"
         >
           <FileText className="h-3.5 w-3.5 flex-shrink-0" />
           גרור או העלה קורות חיים להמלצת משרות אוטומטית

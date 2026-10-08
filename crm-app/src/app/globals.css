@@ -955,13 +955,16 @@ body {
   background-attachment: fixed;
 }
 
-/* === 3. Dashboard canvas — one dark product surface on every screen === */
+/* === 3. Dashboard canvas — בהיר כברירת מחדל (החלטת בעלים), כהה רק עם html.dark === */
 .t22-dashboard-shell {
-  --app-bg: #070b14;
-  background:
-    radial-gradient(ellipse 55% 40% at 100% 0%, rgba(34,211,238,0.16) 0%, transparent 58%),
-    radial-gradient(ellipse 40% 35% at 0% 100%, rgba(249,115,22,0.10) 0%, transparent 55%),
-    #070b14 !important;
+  --app-bg: #F1F5F9;
+  background: #F1F5F9 !important;
+  color: #0f172a;
+}
+
+.dark .t22-dashboard-shell {
+  --app-bg: #0b1220;
+  background: #0b1220 !important;
   color: #e2e8f0;
 }
 
@@ -1456,9 +1459,51 @@ button.bg-orange-500, button.bg-blue-600, button[class*="from-orange"], button[c
   --dur-base: 200ms;
 }
 
+/* משטחי סרגל הצד ופאנל אביגדור — בהיר כברירת מחדל, כהה תחת html.dark */
+.t22-sidebar,
+.t22-avigdor {
+  --sb-bg: #FFFFFF;
+  --sb-border: #E2E8F0;
+  --sb-text: #475569;
+  --sb-text-active: #0F172A;
+  --sb-icon: #64748B;
+  --sb-icon-bg: rgba(15, 23, 42, 0.04);
+  --sb-hover-bg: rgba(15, 23, 42, 0.04);
+  --sb-accent: #0891B2;
+  --sb-active-bg: rgba(8, 145, 178, 0.08);
+  --sb-active-border: rgba(8, 145, 178, 0.18);
+  --sb-active-icon-bg: rgba(8, 145, 178, 0.14);
+  --sb-bubble-bg: #F1F5F9;
+  --sb-bubble-text: #0F172A;
+  --sb-input-bg: #F1F5F9;
+}
+.dark .t22-sidebar,
+.dark .t22-avigdor {
+  --sb-bg: #0F172A;
+  --sb-border: rgba(255, 255, 255, 0.08);
+  --sb-text: #B4C0D3;
+  --sb-text-active: #F1F5F9;
+  --sb-icon: #94A3B8;
+  --sb-icon-bg: rgba(255, 255, 255, 0.04);
+  --sb-hover-bg: rgba(255, 255, 255, 0.05);
+  --sb-accent: #22D3EE;
+  --sb-active-bg: rgba(34, 211, 238, 0.08);
+  --sb-active-border: rgba(34, 211, 238, 0.14);
+  --sb-active-icon-bg: rgba(34, 211, 238, 0.14);
+  --sb-bubble-bg: rgba(255, 255, 255, 0.07);
+  --sb-bubble-text: #F1F5F9;
+  --sb-input-bg: rgba(255, 255, 255, 0.06);
+}
+
 /* כותרות: semibold במקום bold — ההיררכיה נבנית מגודל ורווח */
 h1, h2, h3, h4, h5, h6 { font-weight: 600; }
 .t22-h1 { font-weight: 700 !important; }
+
+/* טקסט turquoise/emerald בהיר על לבן לא עומד בניגודיות — מכהים במצב בהיר בלבד */
+.text-\[\#06B6D4\], .text-\[\#00A8A8\] { color: #0E7490; }
+.text-\[\#10B981\] { color: #047857; }
+.dark .text-\[\#06B6D4\], .dark .text-\[\#00A8A8\] { color: #22D3EE; }
+.dark .text-\[\#10B981\] { color: #34D399; }
 
 /* כניסת עמוד: fade בלבד, בלי הזזה — מסכי עבודה נשארים שקטים */
 @keyframes t22-fade-only {
@@ -1537,6 +1582,33 @@ main > * {
   :root { --hairline: rgba(15, 23, 42, 0.28); --hairline-strong: rgba(15, 23, 42, 0.5); }
   *:focus-visible { outline-width: 3px; }
 }
+
+/* ========================================================================
+   Apple Restraint Layer v6.1 — כללים שחלים על כל המסכים בלי לערוך כל קובץ
+   ======================================================================== */
+
+/* סולם משקלים: אין extrabold/black */
+.font-extrabold,
+.font-black { font-weight: 700 !important; }
+
+/* תנועת hover שקטה: בלי הגדלה, הרמה עד 2px */
+[class*="hover:scale-"]:hover { scale: none !important; }
+[class*="hover:-translate-y-"]:hover { translate: 0 -2px !important; }
+
+/* בלי אנימציות קישוט אינסופיות על תוכן */
+.animate-bounce,
+.animate-ping { animation: none !important; }
+
+/* בלי טקסט גרדיאנט: צבע יציב שנגזר מהרקע */
+.bg-clip-text.text-transparent {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: inherit !important;
+}
+
+/* צללים: רמה רכה אחת במקום צללים כבדים או צבעוניים */
+.shadow-xl,
+.shadow-2xl { --tw-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.30) !important; }
 
 
 

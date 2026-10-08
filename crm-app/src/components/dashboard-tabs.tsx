@@ -42,7 +42,7 @@ export function DashboardTabs({
     <div>
       {/* Floating Pill Tabs */}
       <div className="flex justify-center mb-6">
-        <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950 p-1.5">
+        <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 p-1.5">
           {TABS.map(tab => {
             const Icon = tab.icon
             const badgeCount = tab.badge ? tab.badge(alertCount) : null
@@ -53,14 +53,14 @@ export function DashboardTabs({
                 onClick={() => setActiveTab(tab.id)}
                 className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   isActive
-                    ? "bg-white text-slate-950"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
                 }`}
               >
-                <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-slate-950" : "text-slate-400"}`} />
+                <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-slate-900" : "text-slate-500"}`} />
                 <span className="hidden sm:inline">{tab.label}</span>
                 {badgeCount && (
-                  <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     isActive ? "bg-orange-400 text-white" : "bg-red-500 text-white"
                   }`}>
                     {badgeCount > 9 ? "9+" : badgeCount}

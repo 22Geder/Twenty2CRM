@@ -14,7 +14,7 @@ import {
 
 type NavItem = DashboardNavItem
 
-const sidebarFocusClass = "focus-visible:[outline:2px_solid_#22D3EE]! focus-visible:outline-offset-2"
+const sidebarFocusClass = "focus-visible:[outline:2px_solid_#0891B2]! focus-visible:outline-offset-2"
 
 const navGroups = dashboardNavGroups
 
@@ -94,34 +94,34 @@ export function Sidebar() {
       initial={false}
       animate={{ width: collapsed ? 70 : expandedWidth }}
       transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-      className="flex-shrink-0 h-full flex flex-col z-40 relative
-        border-l border-white/[0.06]
+      className="t22-sidebar flex-shrink-0 h-full flex flex-col z-40 relative
+        border-l border-[var(--sb-border)]
         hidden lg:flex"
       style={{
-        background: 'linear-gradient(180deg, #0F172A 0%, #111c34 45%, #0d1526 100%)',
+        background: 'var(--sb-bg)',
       }}
     >
       {/* Logo Section */}
-      <div className={`flex items-center h-20 px-4 border-b border-white/[0.06] flex-shrink-0 relative z-10
+      <div className={`flex items-center h-20 px-4 border-b border-[var(--sb-border)] flex-shrink-0 relative z-10
         ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed ? (
           <Link href="/dashboard" aria-label="Twenty2CRM — לוח בקרה" className={`flex items-center gap-3 group rounded-lg ${sidebarFocusClass}`}>
             <div className="relative w-12 h-12 flex-shrink-0">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm transition-all overflow-hidden p-0.5">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-slate-200 transition-all overflow-hidden p-0.5">
                 <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
               </div>
-              <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-[#F97316] rounded-full border-2 border-[#0F172A]" />
+              <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-[#F97316] rounded-full border-2 border-[var(--sb-bg)]" />
             </div>
             <div className="leading-none">
               <div className="text-[18px] font-bold tracking-tight">
-                <span className="text-[#22D3EE]">Twenty</span><span className="text-[#F97316]">2</span>
+                <span className="text-[var(--sb-accent)]">Twenty</span><span className="text-[#F97316]">2</span>
               </div>
               <div className="text-[10px] text-slate-400 font-semibold tracking-[0.15em] uppercase mt-1">CRM Platform</div>
             </div>
           </Link>
         ) : (
           <Link href="/dashboard" aria-label="Twenty2CRM — לוח בקרה" className={`rounded-full ${sidebarFocusClass}`}>
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm transition-all overflow-hidden p-0.5">
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-slate-200 transition-all overflow-hidden p-0.5">
               <Image src="/logo-22jobs.png" alt="22JOBS" width={48} height={48} className="object-cover w-full h-full rounded-full" />
             </div>
           </Link>
@@ -135,7 +135,7 @@ export function Sidebar() {
             title="כווץ את סרגל הניווט"
             aria-expanded={!collapsed}
             aria-controls="dashboard-sidebar-navigation"
-            className={`w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/8 transition-all border border-white/5 hover:border-white/10 ${sidebarFocusClass}`}
+            className={`w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[var(--sb-text-active)] hover:bg-[var(--sb-hover-bg)] transition-all border border-[var(--sb-border)] ${sidebarFocusClass}`}
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -153,18 +153,18 @@ export function Sidebar() {
           <div key={group.label}>
             {!collapsed && (
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-2 mb-2 flex items-center gap-2">
-                <div className="h-px flex-1 bg-white/5" />
+                <div className="h-px flex-1 bg-[var(--sb-border)]" />
                 <span>{group.label}</span>
-                <div className="h-px flex-1 bg-white/5" />
+                <div className="h-px flex-1 bg-[var(--sb-border)]" />
               </div>
             )}
-            {collapsed && <div className="h-px bg-white/5 mx-1 my-1" />}
+            {collapsed && <div className="h-px bg-[var(--sb-border)] mx-1 my-1" />}
 
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon
                 const isActive = activeHref === item.href
-                const color = '#22D3EE' // accent יחיד לפריט פעיל
+                const color = 'var(--sb-accent)' // accent יחיד לפריט פעיל
 
                 return (
                   <Link
@@ -190,15 +190,15 @@ export function Sidebar() {
                         ${collapsed ? 'justify-center' : ''}
                       `}
                       style={isActive ? {
-                        background: `${color}14`,
-                        border: `1px solid ${color}22`,
+                        background: 'var(--sb-active-bg)',
+                        border: '1px solid var(--sb-active-border)',
                       } : {
                         border: '1px solid transparent',
                       }}
                       onMouseEnter={e => {
                         if (!isActive) {
-                          (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)'
-                          ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.05)'
+                          (e.currentTarget as HTMLDivElement).style.background = 'var(--sb-hover-bg)'
+                          ;(e.currentTarget as HTMLDivElement).style.borderColor = 'var(--sb-border)'
                         }
                         if (collapsed) {
                           const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
@@ -224,13 +224,13 @@ export function Sidebar() {
                         aria-hidden="true"
                         className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200"
                         style={isActive
-                          ? { background: `${color}22` }
-                          : { background: 'rgba(255,255,255,0.04)' }
+                          ? { background: 'var(--sb-active-icon-bg)' }
+                          : { background: 'var(--sb-icon-bg)' }
                         }
                       >
                         <Icon
                           className="h-[17px] w-[17px] transition-colors"
-                          style={{ color: isActive ? color : '#94A3B8' }}
+                          style={{ color: isActive ? color : 'var(--sb-icon)' }}
                         />
                       </div>
 
@@ -238,7 +238,7 @@ export function Sidebar() {
                         <>
                           <span
                             className="text-[15px] font-semibold truncate flex-1 transition-colors"
-                            style={{ color: isActive ? '#F1F5F9' : '#B4C0D3' }}
+                            style={{ color: isActive ? 'var(--sb-text-active)' : 'var(--sb-text)' }}
                           >
                             {item.name}
                           </span>
@@ -286,7 +286,7 @@ export function Sidebar() {
           aria-label="הרחב את סרגל הניווט"
           aria-expanded={!collapsed}
           aria-controls="dashboard-sidebar-navigation"
-          className={`mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-all border border-white/5 relative z-10 ${sidebarFocusClass}`}
+          className={`mx-auto mb-3 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-[var(--sb-text-active)] rounded-xl hover:bg-[var(--sb-hover-bg)] transition-all border border-[var(--sb-border)] relative z-10 ${sidebarFocusClass}`}
           title="הרחב את סרגל הניווט"
         >
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
@@ -294,7 +294,7 @@ export function Sidebar() {
       )}
 
       {/* User Section */}
-      <div className="border-t border-white/[0.06] p-3 flex-shrink-0 relative z-10">
+      <div className="border-t border-[var(--sb-border)] p-3 flex-shrink-0 relative z-10">
         <button
           type="button"
           onClick={handleSignOut}
@@ -303,25 +303,25 @@ export function Sidebar() {
           aria-label={signingOut ? "מתנתק..." : `התנתקות מהחשבון של ${firstName}`}
           title={signOutError ? "ההתנתקות נכשלה. נסו שוב." : "התנתקות"}
           className={`w-full flex items-center gap-3 rounded-xl p-2.5 text-start transition-all cursor-pointer group
-            hover:bg-white/[0.04] border border-transparent hover:border-white/5
+            hover:bg-[var(--sb-hover-bg)] border border-transparent hover:border-[var(--sb-border)]
             disabled:cursor-wait disabled:opacity-60 ${sidebarFocusClass}
             ${collapsed ? 'justify-center' : ''}`}
         >
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-              <span className="text-slate-100 text-xs font-semibold">{initials}</span>
+            <div className="w-8 h-8 rounded-xl bg-[var(--sb-icon-bg)] flex items-center justify-center">
+              <span className="text-[var(--sb-text-active)] text-xs font-semibold">{initials}</span>
             </div>
-            <div className="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 bg-[#10B981] rounded-full border-2 border-[#0F172A]" />
+            <div className="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 bg-[#10B981] rounded-full border-2 border-[var(--sb-bg)]" />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-semibold text-slate-200 truncate">{firstName}</div>
+              <div className="text-[13px] font-semibold text-[var(--sb-text-active)] truncate">{firstName}</div>
               <div className="text-[10px] text-[#10B981] font-medium">● מחובר</div>
             </div>
           )}
           {!collapsed && (
-            <LogOut className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-200 flex-shrink-0 transition-colors" aria-hidden="true" />
+            <LogOut className="h-3.5 w-3.5 text-slate-400 group-hover:text-[var(--sb-text-active)] flex-shrink-0 transition-colors" aria-hidden="true" />
           )}
         </button>
         {signOutError && (

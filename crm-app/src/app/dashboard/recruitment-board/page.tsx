@@ -1206,11 +1206,11 @@ export default function RecruitmentBoard() {
         
         {/* ========== AI TAB ========== */}
         {tab === 'ai' && (
-          <div className="flex gap-8">
+          <div className="flex flex-col 2xl:flex-row gap-8">
             
             {/* Input Panel - Fixed Width */}
-            <div className="w-[520px] flex-shrink-0">
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 sticky top-[170px]">
+            <div className="w-full 2xl:w-[520px] flex-shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 2xl:sticky 2xl:top-[170px]">
                 <div className="mb-4">
                   <h2 className="text-xl font-semibold text-slate-900 mb-1">הדבק קורות חיים</h2>
                   <p className="text-slate-500 text-sm">העתק את תוכן קורות החיים והדבק בתיבה למטה</p>

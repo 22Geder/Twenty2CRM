@@ -23,16 +23,6 @@ export default async function DashboardLayout({
       
       {/* Main content — scrolls independently, never under the sidebar */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative" style={{ background: 'var(--app-bg)' }}>
-        {/* רקע לוגו 22JOBS - לוגו יחיד גדול פרוס על כל שטח התוכן, שקוף ועדין, מאחורי הטקסט, מופיע בכל דף של ה-CRM */}
-        <div
-          className="pointer-events-none fixed inset-0 opacity-[0.05] z-0"
-          style={{
-            backgroundImage: "url(/logo-22jobs-clean.png)",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "contain",
-            backgroundPosition: "center",
-          }}
-        />
         <TopNavbar />
         <main
           className="flex-1 overflow-y-auto p-4 md:p-6 relative z-10"

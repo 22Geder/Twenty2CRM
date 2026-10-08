@@ -383,27 +383,27 @@ export default function MonthlyStatusPage() {
   ];
 
   return (
-    <div className="min-h-full bg-[radial-gradient(1100px_420px_at_100%_-8%,rgba(99,102,241,0.18),transparent),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 md:p-6">
+    <div className="min-h-full p-4 md:p-6">
       <div className="mx-auto max-w-6xl space-y-5">
-        <header className="overflow-hidden rounded-3xl bg-slate-950 text-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.8)]">
+        <header className="overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900">
           <div className="flex flex-col gap-5 p-5 md:flex-row md:items-end md:justify-between md:p-7">
             <div className="space-y-2">
-              <p className="text-xs font-medium tracking-[0.18em] text-indigo-200">PIPELINE</p>
+              <p className="text-xs font-medium tracking-[0.18em] text-slate-500">PIPELINE</p>
               <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">סטטוס גיוס</h1>
-              <p className="max-w-xl text-sm text-slate-300">
+              <p className="max-w-xl text-sm text-slate-600">
                 {periodLabel}. המספרים נספרים לפי תאריך העלאה, כניסה לתהליך או קבלה.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex rounded-full bg-white/10 p-1" role="group" aria-label="תקופת מעקב">
+              <div className="flex rounded-full bg-slate-100 p-1" role="group" aria-label="תקופת מעקב">
                 {(['month', 'year'] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => setPeriodMode(mode)}
                     aria-pressed={periodMode === mode}
-                    className={`h-9 rounded-full px-4 text-sm transition ${periodMode === mode ? 'bg-white text-slate-950 shadow' : 'text-slate-200 hover:text-white'}`}
+                    className={`h-9 rounded-full px-4 text-sm transition ${periodMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     {mode === 'month' ? 'חודש' : 'שנה'}
                   </button>
@@ -411,12 +411,12 @@ export default function MonthlyStatusPage() {
               </div>
 
               {periodMode === 'year' ? (
-                <label className="flex h-11 items-center gap-2 rounded-full bg-white/10 px-3 text-sm">
-                  <span className="text-slate-300">שנה</span>
+                <label className="flex h-11 items-center gap-2 rounded-full bg-slate-100 px-3 text-sm">
+                  <span className="text-slate-500">שנה</span>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
-                    className="bg-transparent font-medium text-white outline-none"
+                    className="bg-transparent font-medium text-slate-900 outline-none"
                     aria-label="בחירת שנה"
                   >
                     {yearOptions.map((year) => (
@@ -425,8 +425,8 @@ export default function MonthlyStatusPage() {
                   </select>
                 </label>
               ) : (
-                <div className="flex h-11 items-center rounded-full bg-white/10 px-1">
-                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10" aria-label="חודש קודם" onClick={() => setSelectedMonth(shiftMonth(selectedMonth, -1))}>
+                <div className="flex h-11 items-center rounded-full bg-slate-100 px-1">
+                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full hover:bg-slate-200" aria-label="חודש קודם" onClick={() => setSelectedMonth(shiftMonth(selectedMonth, -1))}>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                   <label className="relative min-w-36 px-2 text-center text-sm font-medium">
@@ -439,29 +439,29 @@ export default function MonthlyStatusPage() {
                       aria-label="בחירת חודש"
                     />
                   </label>
-                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10" aria-label="חודש הבא" onClick={() => setSelectedMonth(shiftMonth(selectedMonth, 1))}>
+                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full hover:bg-slate-200" aria-label="חודש הבא" onClick={() => setSelectedMonth(shiftMonth(selectedMonth, 1))}>
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                 </div>
               )}
 
-              <Button variant="secondary" onClick={() => { void fetchData(); }} disabled={loading} className="h-11 rounded-full bg-white text-slate-950 hover:bg-slate-100">
+              <Button variant="secondary" onClick={() => { void fetchData(); }} disabled={loading} className="h-11 rounded-full bg-slate-900 text-white hover:bg-slate-800">
                 <RefreshCw className={loading ? 'animate-spin' : ''} />
                 רענון
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-3 border-t border-white/10 text-center text-xs text-slate-300">
+          <div className="grid grid-cols-3 border-t border-slate-200 text-center text-xs text-slate-500">
             <div className="px-4 py-3">
-              <span className="block text-lg font-semibold tabular-nums text-white">{stats.total}</span>
+              <span className="block text-lg font-semibold tabular-nums text-slate-900">{stats.total}</span>
               רשומות
             </div>
-            <div className="border-x border-white/10 px-4 py-3">
-              <span className="block text-lg font-semibold tabular-nums text-white">{conversion === null ? '—' : `${conversion}%`}</span>
+            <div className="border-x border-slate-200 px-4 py-3">
+              <span className="block text-lg font-semibold tabular-nums text-slate-900">{conversion === null ? '—' : `${conversion}%`}</span>
               המרה לקבלה
             </div>
             <div className="px-4 py-3">
-              <span className="block text-lg font-semibold text-white">{periodMode === 'year' ? '12 חודשים' : 'חודש אחד'}</span>
+              <span className="block text-lg font-semibold text-slate-900">{periodMode === 'year' ? '12 חודשים' : 'חודש אחד'}</span>
               חלון זמן
             </div>
           </div>
@@ -477,7 +477,7 @@ export default function MonthlyStatusPage() {
                 type="button"
                 onClick={() => setFilter(metric.key)}
                 aria-pressed={selected}
-                className={`rounded-2xl border border-white/80 p-4 text-right shadow-[0_12px_36px_-28px_rgba(15,23,42,0.7)] transition hover:-translate-y-0.5 ${selected ? `ring-2 ${metric.ring} ${metric.tint}` : 'bg-white/80 backdrop-blur'}`}
+                className={`rounded-2xl border border-slate-200 p-4 text-right transition hover:-translate-y-0.5 ${selected ? `ring-2 ${metric.ring} ${metric.tint}` : 'bg-white'}`}
               >
                 <span className="flex items-center justify-between">
                   <span className="text-sm text-slate-500">{metric.label}</span>
@@ -490,7 +490,7 @@ export default function MonthlyStatusPage() {
           })}
         </section>
 
-        <Card className="overflow-hidden rounded-3xl border-white/70 bg-white/85 shadow-[0_18px_50px_-36px_rgba(15,23,42,0.65)] backdrop-blur">
+        <Card className="overflow-hidden rounded-3xl border-slate-200 bg-white shadow-none">
           <div className="flex flex-col gap-3 border-b border-slate-100 p-4 md:flex-row md:items-center md:justify-between md:px-5">
             <div>
               <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950">

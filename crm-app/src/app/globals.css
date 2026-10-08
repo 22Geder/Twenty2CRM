@@ -113,7 +113,9 @@ body {
   color: var(--t22-gray-900);
   line-height: 1.6;
   letter-spacing: -0.011em;
-  font-feature-settings: "ss01", "tnum";
+  font-feature-settings: "tnum";
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
@@ -211,6 +213,12 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
+
+/* Apple SF tracking tightens as size grows */
+h1 { letter-spacing: -0.026em; line-height: 1.15; }
+h2 { letter-spacing: -0.022em; line-height: 1.2; }
+h3 { letter-spacing: -0.016em; line-height: 1.3; }
+h4, h5, h6 { letter-spacing: -0.01em; line-height: 1.35; }
 
 /* RTL Support */
 [dir="rtl"] {

@@ -78,16 +78,16 @@ interface EmailPreview {
     id: string
     title: string
     location: string | null
-    contactEmail?: string | null     // 📧 מייל ספציפי למשרה
-    contactName?: string | null       // 📧 שם איש קשר
+    contactEmail?: string | null     // מייל ספציפי למשרה
+    contactName?: string | null       // שם איש קשר
   }
   employer: {
     id: string
     name: string
     email: string | null
   }
-  targetEmail?: string    // 📧 המייל שנבחר לשליחה
-  targetName?: string     // 📧 השם שנבחר לפניה
+  targetEmail?: string    // המייל שנבחר לשליחה
+  targetName?: string     // השם שנבחר לפניה
 }
 
 // 📧 ממשק למיילים קודמים
@@ -178,7 +178,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   
   // 🆕 מיון והצגה
   const [sortBy, setSortBy] = useState<'score' | 'location' | 'date'>('score')
-  const [displayCount, setDisplayCount] = useState(500) // ✅ הצג הכל (לא מוגבל)
+  const [displayCount, setDisplayCount] = useState(500) // הצג הכל (לא מוגבל)
 
   // 📧 State לתצוגה מקדימה של מייל
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null)
@@ -384,7 +384,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   // 📧 פתיחת תצוגה מקדימה של המייל לפני שליחה
   const openEmailPreview = async (position: MatchingPosition) => {
     if (position.isBlocked) {
-      alert(`❌ לא ניתן לשלוח - ${candidateName || 'המועמד/ת'} כבר עבד/ה ב-${position.employer.name}`)
+      alert(`לא ניתן לשלוח - ${candidateName || 'המועמד/ת'} כבר עבד/ה ב-${position.employer.name}`)
       return
     }
 
@@ -426,7 +426,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       
       setShowEmailModal(true)
     } catch (err: any) {
-      alert(`❌ שגיאה בטעינת התצוגה המקדימה: ${err.message}`)
+      alert(`שגיאה בטעינת התצוגה המקדימה: ${err.message}`)
     } finally {
       setLoadingPreview(false)
       setSending(null)
@@ -442,7 +442,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     const finalName = customName || selectedName
     
     if (!finalEmail) {
-      alert('❌ יש לבחור או להזין מייל יעד')
+      alert('יש לבחור או להזין מייל יעד')
       return
     }
 
@@ -457,8 +457,8 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
           positionId: emailPreview.position.id,
           customSubject: editedSubject,
           customMatchingPoints: editedPoints,
-          targetEmail: finalEmail,               // 📧 המייל שנבחר
-          targetName: finalName,                 // 📧 השם שנבחר
+          targetEmail: finalEmail,               // המייל שנבחר
+          targetName: finalName,                 // השם שנבחר
           saveEmailToPosition: saveEmailToPosition && (customEmail || selectedEmail !== emailPreview.position.contactEmail),
         }),
       })
@@ -478,7 +478,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       setEmailPreview(null)
       await fetchMatchingPositions()
     } catch (err: any) {
-      alert(`❌ שגיאה בשליחה: ${err.message}`)
+      alert(`שגיאה בשליחה: ${err.message}`)
     } finally {
       setSendingEmail(false)
     }
@@ -586,8 +586,8 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-500 mb-3" />
-            <p className="text-sm text-gray-600 font-medium">🚀 סריקה מהירה במקביל...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-teal-500 mb-3" />
+            <p className="text-sm text-gray-600 font-medium">סריקה מהירה במקביל...</p>
             <p className="text-xs text-gray-400 mt-1">בודק 5 משרות במקביל</p>
           </div>
         </CardContent>
@@ -606,11 +606,11 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="border-b bg-gradient-to-r from-purple-50 to-blue-50">
+    <Card className="shadow-sm">
+      <CardHeader className="border-b bg-slate-50">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-purple-600" />
+            <Briefcase className="h-5 w-5 text-teal-600" />
             <span>משרות מתאימות</span>
           </div>
           <Badge variant="secondary" className="font-bold text-base px-3">
@@ -619,7 +619,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
         </CardTitle>
         
         {/* 🆕 אפשרויות מיון */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-100">
           <div className="flex items-center gap-2">
             <SortAsc className="h-4 w-4 text-gray-500" />
             <span className="text-xs text-gray-600">מיון:</span>
@@ -628,36 +628,36 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 variant={sortBy === 'score' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSortBy('score')}
-                className={`h-7 text-xs ${sortBy === 'score' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                className={`h-7 text-xs ${sortBy === 'score' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
               >
-                📊 ציון
+                ציון
               </Button>
               <Button
                 variant={sortBy === 'location' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSortBy('location')}
-                className={`h-7 text-xs ${sortBy === 'location' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                className={`h-7 text-xs ${sortBy === 'location' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
               >
-                📍 מיקום
+                מיקום
               </Button>
               <Button
                 variant={sortBy === 'date' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSortBy('date')}
-                className={`h-7 text-xs ${sortBy === 'date' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                className={`h-7 text-xs ${sortBy === 'date' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
               >
-                📅 תאריך
+                תאריך
               </Button>
             </div>
           </div>
-          <Badge className="bg-purple-100 text-purple-700">
+          <Badge className="bg-teal-100 text-teal-700">
             {positions.length} משרות מתאימות
           </Badge>
         </div>
         
         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
-          🤖 סריקת Gemini AI - האלגוריתם: 50% מיקום | 25% תגיות | 25% AI
+          סריקת Gemini AI - האלגוריתם: 50% מיקום | 25% תגיות | 25% AI
         </p>
       </CardHeader>
 
@@ -724,7 +724,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       >
                         <Button
                           size="sm"
-                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                          className="bg-emerald-600 hover:bg-emerald-700"
                         >
                           <MessageCircle className="h-4 w-4 ml-1" />
                           וואטסאפ
@@ -764,10 +764,10 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
 
                 {/* Score Breakdown */}
                 {showScoreDetails === position.id && (
-                  <div className="mb-3 p-3 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-teal-200">
                     {/* 🆕 פירוט ציון ויזואלי 50/25/25 */}
-                    <p className="text-xs font-bold mb-3 text-purple-900 flex items-center gap-1">
-                      📊 פירוט ציון - אלגוריתם מאוחד
+                    <p className="text-xs font-bold mb-3 text-teal-900 flex items-center gap-1">
+                      פירוט ציון - אלגוריתם מאוחד
                     </p>
                     
                     <div className="space-y-2 mb-3">
@@ -775,7 +775,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-medium flex items-center gap-1">
-                            📍 מיקום {position.distanceKm != null && position.distanceKm > 0 && (
+                            מיקום {position.distanceKm != null && position.distanceKm > 0 && (
                               <span className="text-gray-500 font-normal">({position.distanceKm} ק"מ)</span>
                             )}
                           </span>
@@ -795,7 +795,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-medium flex items-center gap-1">
-                            🏷️ תגיות תואמות
+                            תגיות תואמות
                           </span>
                           <span className="font-bold text-blue-600">
                             {(position.scoreBreakdown?.tags || 0) + (position.scoreBreakdown?.partial || 0)} / 25
@@ -813,15 +813,15 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-medium flex items-center gap-1">
-                            🤖 AI / פרופיל
+                            AI / פרופיל
                           </span>
-                          <span className="font-bold text-purple-600">
+                          <span className="font-bold text-teal-600">
                             {position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)} / 25
                           </span>
                         </div>
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-purple-500 transition-all"
+                            className="h-full bg-teal-500 transition-all"
                             style={{ width: `${((position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)) / 25) * 100}%` }}
                           />
                         </div>
@@ -836,7 +836,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     {/* AI המלצה */}
                     {position.aiRecommendation && (
                       <p className="text-xs font-semibold mt-2 text-blue-900">
-                        🤖 המלצת AI: {position.aiRecommendation}
+                        המלצת AI: {position.aiRecommendation}
                       </p>
                     )}
                     
@@ -867,7 +867,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     )}
                     
                     {position.locationMatch && (
-                      <p className="text-xs text-green-600 font-medium mt-2">✅ מיקום המועמד תואם למשרה!</p>
+                      <p className="text-xs text-green-600 font-medium mt-2">מיקום המועמד תואם למשרה!</p>
                     )}
                   </div>
                 )}
@@ -875,7 +875,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 {/* Location Match Badge */}
                 {position.locationMatch && !showScoreDetails && (
                   <div className="mb-2">
-                    <Badge className="bg-blue-100 text-blue-700 text-xs">📍 מיקום קרוב</Badge>
+                    <Badge className="bg-blue-100 text-blue-700 text-xs">מיקום קרוב</Badge>
                   </div>
                 )}
 
@@ -900,9 +900,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
 
                 {/* AI Analysis */}
                 {aiAnalysis && aiAnalysis.positionId === position.id && (
-                  <div className="mb-3 p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200">
-                    <p className="font-bold text-sm mb-3 text-purple-900">
-                      🤖 ניתוח AI מלא - {aiAnalysis.recommendation}
+                  <div className="mb-3 p-4 bg-slate-50 rounded-lg border border-teal-200">
+                    <p className="font-bold text-sm mb-3 text-teal-900">
+                      ניתוח AI מלא - {aiAnalysis.recommendation}
                     </p>
                     
                     <div className="mb-3">
@@ -933,7 +933,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       <div className="mt-3 p-2 bg-red-100 border border-red-300 rounded">
                         <p className="text-xs text-red-700 font-semibold flex items-center gap-1">
                           <XCircle className="h-4 w-4" />
-                          ⚠️ המועמד/ת כבר עבד/ה בחברה זו - לא מומלץ לשלוח
+                          המועמד/ת כבר עבד/ה בחברה זו - לא מומלץ לשלוח
                         </p>
                       </div>
                     )}
@@ -971,7 +971,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       className="flex-1"
                     >
                       <Button
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700"
                         size="sm"
                       >
                         <MessageCircle className="h-4 w-4 ml-2" />
@@ -985,7 +985,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     className={`flex-1 ${
                       position.isBlocked
                         ? 'bg-gray-400'
-                        : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+                        : 'bg-teal-700 hover:bg-teal-800'
                     }`}
                     size="sm"
                     disabled={sending === position.id || position.isBlocked}
@@ -1014,9 +1014,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       {/* 📧 מודל תצוגה מקדימה של המייל */}
       {showEmailModal && emailPreview && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" dir="rtl">
+          <div className="bg-white rounded-xl shadow-sm w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" dir="rtl">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 flex items-center justify-between">
+            <div className="bg-teal-700 text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
                 <h2 className="text-lg font-bold">תצוגה מקדימה - ערוך לפני שליחה</h2>
@@ -1037,7 +1037,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-blue-800 flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    📧 מייל לשליחה:
+                    מייל לשליחה:
                   </div>
                   <button
                     onClick={() => setShowEmailSelector(!showEmailSelector)}
@@ -1145,7 +1145,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                           className="accent-yellow-600"
                         />
                         <span className="text-sm text-yellow-800">
-                          💾 שמור מייל זה למשרה (לשליחות עתידיות)
+                          שמור מייל זה למשרה (לשליחות עתידיות)
                         </span>
                       </label>
                     )}
@@ -1159,7 +1159,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               {/* נושא המייל */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📝 נושא המייל:
+                  נושא המייל:
                 </label>
                 <Input
                   value={editedSubject}
@@ -1170,9 +1170,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               </div>
 
               {/* פרטי המועמד */}
-              <div className="bg-purple-50 rounded-lg p-3">
-                <div className="font-semibold text-purple-900 mb-2">📋 פרטי המועמד/ת:</div>
-                <div className="grid gap-1 text-sm text-purple-800">
+              <div className="bg-teal-50 rounded-lg p-3">
+                <div className="font-semibold text-teal-900 mb-2">פרטי המועמד/ת:</div>
+                <div className="grid gap-1 text-sm text-teal-800">
                   <div><strong>שם:</strong> {emailPreview.candidate.name}</div>
                   {emailPreview.candidate.currentTitle && (
                     <div><strong>תפקיד:</strong> {emailPreview.candidate.currentTitle}</div>
@@ -1186,7 +1186,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                   {emailPreview.candidate.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {emailPreview.candidate.tags.slice(0, 5).map((tag, i) => (
-                        <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                        <Badge key={i} variant="secondary" className="bg-teal-100 text-teal-700 text-xs">
                           {tag}
                         </Badge>
                       ))}
@@ -1204,7 +1204,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                   >
                     <div className="flex items-center gap-2 text-blue-700 font-medium">
                       <History className="h-4 w-4" />
-                      📧 היסטוריית מיילים למשרה זו ({previousEmails.length})
+                      היסטוריית מיילים למשרה זו ({previousEmails.length})
                     </div>
                     <ChevronDown className={`h-4 w-4 text-blue-600 transition ${showPreviousEmails ? 'rotate-180' : ''}`} />
                   </button>
@@ -1260,11 +1260,11 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    ✨ 5 משפטי ההתאמה (ערוך לפי הצורך):
+                    5 משפטי ההתאמה (ערוך לפי הצורך):
                   </label>
                   {generatedByAI && (
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      🤖 נוצר ע"י Gemini AI
+                    <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      נוצר ע"י Gemini AI
                     </span>
                   )}
                 </div>
@@ -1288,7 +1288,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               {/* הערה על קו"ח */}
               {emailPreview.candidate.resumeUrl && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-                  📄 קורות החיים יצורפו אוטומטית למייל
+                  קורות החיים יצורפו אוטומטית למייל
                 </div>
               )}
             </div>
@@ -1298,17 +1298,17 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               {/* כפתור העתק הכל - בולט */}
               <Button
                 onClick={copyAllMessage}
-                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold text-base py-3"
+                className="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold text-base py-3"
               >
                 {copied ? (
                   <>
                     <CheckCircle className="h-5 w-5 ml-2" />
-                    ✅ ההודעה הועתקה! עשה הדבק (Ctrl+V)
+                    ההודעה הועתקה! עשה הדבק (Ctrl+V)
                   </>
                 ) : (
                   <>
                     <Copy className="h-5 w-5 ml-2" />
-                    📋 העתק הכל - מוכן להדבקה (מייל / וואטסאפ / כל ערוץ)
+                    העתק הכל - מוכן להדבקה (מייל / וואטסאפ / כל ערוץ)
                   </>
                 )}
               </Button>
@@ -1323,7 +1323,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 <Button
                   onClick={sendEmailWithPreview}
                   disabled={sendingEmail}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                 >
                   {sendingEmail ? (
                     <>

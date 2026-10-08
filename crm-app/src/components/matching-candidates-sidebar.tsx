@@ -231,7 +231,7 @@ export function MatchingCandidatesSidebar({
 
       if (!response.ok) {
         if (response.status === 409) {
-          alert("✅ המועמד כבר נמצא בתהליך למשרה זו")
+          alert("המועמד כבר נמצא בתהליך למשרה זו")
         } else {
           throw new Error(data.error || "Failed to create application")
         }
@@ -239,11 +239,11 @@ export function MatchingCandidatesSidebar({
       }
 
       // רענון הרשימה
-      alert("✅ המועמד נוסף למשרה בהצלחה!")
+      alert("המועמד נוסף למשרה בהצלחה!")
       await fetchMatchingCandidates()
     } catch (err: any) {
       console.error('Error creating application:', err)
-      alert("❌ שגיאה: " + err.message)
+      alert("שגיאה: " + err.message)
     } finally {
       setApplying(null)
     }
@@ -291,12 +291,12 @@ export function MatchingCandidatesSidebar({
       const result = await response.json()
 
       if (response.ok) {
-        alert(`✅ המייל נשלח בהצלחה למעסיק!\n\n📧 נשלח ל: ${result.employerEmail || result.sentTo?.join(', ') || 'המעסיק'}\n\n${result.candidateMovedToProcess ? '🔄 המועמד הועבר לסטטוס "בתהליך"\n' : ''}💡 המייל כולל:\n- פרטי המועמד\n- 5 משפטי התאמה מדויקים\n- קורות חיים (אם קיימים)`)
+        alert(`המייל נשלח בהצלחה למעסיק!\n\nנשלח ל: ${result.employerEmail || result.sentTo?.join(', ') || 'המעסיק'}\n\n${result.candidateMovedToProcess ? 'המועמד הועבר לסטטוס "בתהליך"\n' : ''}המייל כולל:\n- פרטי המועמד\n- 5 משפטי התאמה מדויקים\n- קורות חיים (אם קיימים)`)
       } else {
         throw new Error(result.error || result.details || 'Failed to send email')
       }
     } catch (error: any) {
-      alert(`❌ שגיאה בשליחת המייל: ${error.message}`)
+      alert(`שגיאה בשליחת המייל: ${error.message}`)
     } finally {
       setSendingToEmployer(null)
     }
@@ -497,12 +497,12 @@ export function MatchingCandidatesSidebar({
       const result = await response.json()
 
       if (response.ok) {
-        alert(`✅ נשלחו ${result.successful} הודעות בהצלחה!\n${result.failed > 0 ? `⚠️ ${result.failed} הודעות נכשלו` : ''}`)
+        alert(`נשלחו ${result.successful} הודעות בהצלחה!\n${result.failed > 0 ? `${result.failed} הודעות נכשלו` : ''}`)
       } else {
         throw new Error(result.error || 'Failed to send SMS')
       }
     } catch (error: any) {
-      alert(`❌ שגיאה בשליחת הודעות: ${error.message}`)
+      alert(`שגיאה בשליחת הודעות: ${error.message}`)
     } finally {
       setSending(null)
     }
@@ -548,12 +548,12 @@ export function MatchingCandidatesSidebar({
       const result = await response.json()
 
       if (response.ok) {
-        alert(`✅ נשלחו ${result.successful} מיילים בהצלחה!\n${result.failed > 0 ? `⚠️ ${result.failed} מיילים נכשלו` : ''}`)
+        alert(`נשלחו ${result.successful} מיילים בהצלחה!\n${result.failed > 0 ? `${result.failed} מיילים נכשלו` : ''}`)
       } else {
         throw new Error(result.error || 'Failed to send emails')
       }
     } catch (error: any) {
-      alert(`❌ שגיאה בשליחת מיילים: ${error.message}`)
+      alert(`שגיאה בשליחת מיילים: ${error.message}`)
     } finally {
       setSending(null)
     }
@@ -565,7 +565,7 @@ export function MatchingCandidatesSidebar({
       <div className="fixed left-4 top-20 z-10">
         <Button
           onClick={handleExpand}
-          className="h-12 w-12 rounded-full shadow-lg"
+          className="h-12 w-12 rounded-full shadow-sm"
           variant="default"
           title="הצג מועמדים מתאימים"
         >
@@ -573,7 +573,7 @@ export function MatchingCandidatesSidebar({
         </Button>
         <div className="mt-2 text-center">
           <Badge variant="secondary" className="text-xs">
-            👥
+            
           </Badge>
         </div>
       </div>
@@ -608,11 +608,11 @@ export function MatchingCandidatesSidebar({
 
   return (
     <div className="fixed left-4 top-20 bottom-4 z-10 w-96 hidden xl:flex flex-col">
-      <Card className="h-full overflow-hidden flex flex-col shadow-xl border border-slate-200/80 rounded-2xl">
+      <Card className="h-full overflow-hidden flex flex-col shadow-sm border border-slate-200/80 rounded-2xl">
         <CardHeader className="border-b border-slate-100 bg-white flex-shrink-0 pb-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center">
                 <Users className="h-4 w-4 text-white" />
               </div>
               <div>
@@ -621,7 +621,7 @@ export function MatchingCandidatesSidebar({
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="bg-indigo-100 text-indigo-700 font-bold text-sm px-2.5 py-1 rounded-full">
+              <span className="bg-teal-100 text-teal-700 font-bold text-sm px-2.5 py-1 rounded-full">
                 {totalCount}
               </span>
               <Button
@@ -641,11 +641,11 @@ export function MatchingCandidatesSidebar({
             <select 
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
             >
-              <option value="score">⭐ התאמה גבוהה</option>
-              <option value="location">📍 מיקום קרוב</option>
-              <option value="date">📅 חדש ביותר</option>
+              <option value="score">התאמה גבוהה</option>
+              <option value="location">מיקום קרוב</option>
+              <option value="date">חדש ביותר</option>
             </select>
           </div>
         
@@ -757,7 +757,7 @@ export function MatchingCandidatesSidebar({
             {displayedCandidates.map((candidate) => (
               <div 
                 key={candidate.id} 
-                className={`p-3 transition-all duration-200 ${selectedCandidates.has(candidate.id) ? 'bg-indigo-50/80' : 'hover:bg-slate-50/80'}`}
+                className={`p-3 transition-all duration-200 ${selectedCandidates.has(candidate.id) ? 'bg-teal-50/80' : 'hover:bg-slate-50/80'}`}
               >
                 <div className="space-y-2.5">
                   {/* Checkbox and Header with Match Score */}
@@ -765,10 +765,10 @@ export function MatchingCandidatesSidebar({
                     {/* Checkbox */}
                     <button 
                       onClick={() => toggleCandidateSelection(candidate.id)}
-                      className={`mt-1 flex-shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
+                      className={`mt-1 flex-shrink-0 h-4 w-4 rounded border flex items-center justify-center transition-colors ${
                         selectedCandidates.has(candidate.id) 
-                          ? 'bg-indigo-500 border-indigo-500 text-white' 
-                          : 'border-slate-300 hover:border-indigo-400'
+                          ? 'bg-teal-500 border-teal-500 text-white' 
+                          : 'border-slate-300 hover:border-teal-400'
                       }`}
                     >
                       {selectedCandidates.has(candidate.id) && (
@@ -780,7 +780,7 @@ export function MatchingCandidatesSidebar({
                     
                     {/* Avatar */}
                     <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-                      style={{ background: `linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)` }}>
+                      style={{ background: '#0E7490' }}>
                       {candidate.name.charAt(0)}
                     </div>
                     
@@ -788,7 +788,7 @@ export function MatchingCandidatesSidebar({
                       <div className="flex-1 min-w-0">
                         <Link 
                           href={`/dashboard/candidates/${candidate.id}`}
-                          className="font-semibold text-slate-800 hover:text-indigo-600 transition-colors flex items-center gap-1 text-sm truncate"
+                          className="font-semibold text-slate-800 hover:text-teal-600 transition-colors flex items-center gap-1 text-sm truncate"
                         >
                           {candidate.name}
                           <ExternalLink className="h-3 w-3 flex-shrink-0 text-slate-400" />
@@ -809,7 +809,7 @@ export function MatchingCandidatesSidebar({
                       {candidate.matchScore > 0 && (
                         <div className="flex flex-col items-center flex-shrink-0">
                           <div 
-                            className={`rounded-full w-12 h-12 flex flex-col items-center justify-center border-2 text-center ${
+                            className={`rounded-full w-12 h-12 flex flex-col items-center justify-center border text-center ${
                               candidate.matchScore >= 80
                                 ? 'bg-green-50 border-green-400 text-green-700'
                                 : candidate.matchScore >= 60
@@ -819,10 +819,10 @@ export function MatchingCandidatesSidebar({
                                 : 'bg-slate-50 border-slate-300 text-slate-600'
                             }`}
                           >
-                            <div className="text-sm font-black leading-none">{candidate.matchScore}%</div>
+                            <div className="text-sm font-bold leading-none">{candidate.matchScore}%</div>
                           </div>
                           <button
-                            className="text-[10px] text-slate-400 hover:text-indigo-500 mt-0.5"
+                            className="text-[10px] text-slate-400 hover:text-teal-500 mt-0.5"
                             onClick={() => setShowScoreDetails(
                               showScoreDetails === candidate.id ? null : candidate.id
                             )}
@@ -835,7 +835,7 @@ export function MatchingCandidatesSidebar({
                   </div>
                   {/* Score Breakdown - פירוט הציון 50/25/25 */}
                   {showScoreDetails === candidate.id && candidate.scoreBreakdown && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 text-xs space-y-2 border border-blue-200">
+                    <div className="bg-slate-50 rounded-lg p-3 text-xs space-y-2 border border-blue-200">
                       <div className="font-bold text-blue-900 mb-3 flex items-center gap-1 text-sm">
                         <TrendingUp className="h-4 w-4" />
                         פירוט ציון ההתאמה (אלגוריתם 50/25/25):
@@ -845,7 +845,7 @@ export function MatchingCandidatesSidebar({
                       <div className="bg-white rounded p-2 border">
                         <div className="flex justify-between items-center">
                           <span className="flex items-center gap-1">
-                            <span className="text-lg">📍</span>
+                            
                             <span className="font-medium">מיקום (50%)</span>
                             {candidate.distanceKm != null && candidate.distanceKm > 0 && (
                               <span className="text-gray-500 font-normal">({candidate.distanceKm} ק"מ)</span>
@@ -867,7 +867,7 @@ export function MatchingCandidatesSidebar({
                       <div className="bg-white rounded p-2 border">
                         <div className="flex justify-between items-center">
                           <span className="flex items-center gap-1">
-                            <span className="text-lg">🏷️</span>
+                            
                             <span className="font-medium">תגיות (25%)</span>
                           </span>
                           <span className="font-bold text-lg text-blue-600">
@@ -886,16 +886,16 @@ export function MatchingCandidatesSidebar({
                       <div className="bg-white rounded p-2 border">
                         <div className="flex justify-between items-center">
                           <span className="flex items-center gap-1">
-                            <span className="text-lg">🤖</span>
+                            
                             <span className="font-medium">AI Gemini (25%)</span>
                           </span>
-                          <span className="font-bold text-lg text-purple-600">
+                          <span className="font-bold text-lg text-teal-600">
                             {candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || (candidate.scoreBreakdown as any).geminiAI || 0}/25
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div 
-                            className="bg-purple-500 h-2 rounded-full" 
+                            className="bg-teal-500 h-2 rounded-full" 
                             style={{ width: `${((candidate.scoreBreakdown.recruitmentTags || candidate.scoreBreakdown.categories || (candidate.scoreBreakdown as any).geminiAI || 0) / 25) * 100}%` }}
                           />
                         </div>
@@ -914,7 +914,7 @@ export function MatchingCandidatesSidebar({
                   {/* Location Match Indicator */}
                   {candidate.locationMatch && (
                     <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
-                      <span className="text-lg">📍</span>
+                      
                       <span className="font-medium">מתגורר באזור המשרה!</span>
                     </div>
                   )}
@@ -922,16 +922,16 @@ export function MatchingCandidatesSidebar({
                   {/* 🎓 Education Status - השכלה */}
                   {candidate.educationStatus?.details && (
                     <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                      <span className="text-lg">🎓</span>
+                      
                       <span className="font-medium">{candidate.educationStatus.details}</span>
                     </div>
                   )}
 
                   {/* 📝 Why Suitable - למה מתאים */}
                   {Array.isArray(candidate.whySuitable) && candidate.whySuitable.length > 0 && (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
+                    <div className="bg-emerald-50 rounded-lg p-3 border border-green-200">
                       <div className="text-sm font-bold text-green-800 mb-2 flex items-center gap-1">
-                        <span>💡</span>
+                        
                         למה מתאים למשרה:
                       </div>
                       <ul className="space-y-1">
@@ -1109,14 +1109,14 @@ export function MatchingCandidatesSidebar({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => logWhatsAppSend(candidate.id, candidate.name, candidate.phone!)}
-                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold"
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all text-sm font-semibold"
                           >
                             <MessageCircle className="h-4 w-4" />
                             <span>וואטסאפ</span>
                           </a>
                           {whatsAppLastSent[candidate.id] && (
                             <span className="text-[10px] text-orange-600 font-medium mt-0.5">
-                              📤 {formatLastSent(whatsAppLastSent[candidate.id])}
+                              {formatLastSent(whatsAppLastSent[candidate.id])}
                             </span>
                           )}
                         </div>
@@ -1126,7 +1126,7 @@ export function MatchingCandidatesSidebar({
                       <Button
                         size="sm"
                         variant="default"
-                        className={`flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md ${!candidate.phone ? 'col-span-2' : ''}`}
+                        className={`flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white shadow-sm ${!candidate.phone ? 'col-span-2' : ''}`}
                         onClick={() => sendCandidateToEmployer(candidate.id, candidate.name)}
                         disabled={sendingToEmployer === candidate.id}
                       >
@@ -1138,7 +1138,7 @@ export function MatchingCandidatesSidebar({
                         ) : (
                           <>
                             <Briefcase className="h-4 w-4" />
-                            <span className="text-sm font-semibold">🤖 למעסיק</span>
+                            <span className="text-sm font-semibold">למעסיק</span>
                           </>
                         )}
                       </Button>
@@ -1150,7 +1150,7 @@ export function MatchingCandidatesSidebar({
             
             {/* 🔥 כפתור "הצג עוד" אם יש עוד מועמדים */}
             {sortedCandidates.length > displayCount && (
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-t">
+              <div className="p-4 bg-slate-50 border-t">
                 <Button
                   onClick={() => setDisplayCount(prev => prev + 30)}
                   variant="outline"

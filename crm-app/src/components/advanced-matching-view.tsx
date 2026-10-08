@@ -254,7 +254,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
     <div className="space-y-4" dir="rtl">
       {/* כרטיס ניתוח מועמד */}
       <Card className="overflow-hidden">
-        <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-4 text-white">
+        <div className="bg-teal-700 p-4 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-full">
@@ -314,7 +314,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
           {/* מילות מפתח חמות */}
           {resumeAnalysis.hotKeywords.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1 font-medium">🔥 מילות מפתח חמות:</p>
+              <p className="text-xs text-gray-500 mb-1 font-medium">מילות מפתח חמות:</p>
               <div className="flex flex-wrap gap-1">
                 {resumeAnalysis.hotKeywords.slice(0, 8).map((kw, i) => (
                   <Badge key={i} className="text-xs bg-orange-100 text-orange-700">
@@ -342,10 +342,10 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
           {/* הסמכות */}
           {resumeAnalysis.skills.certifications.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 mb-1 font-medium">📜 הסמכות ותעודות:</p>
+              <p className="text-xs text-gray-500 mb-1 font-medium">הסמכות ותעודות:</p>
               <div className="flex flex-wrap gap-1">
                 {resumeAnalysis.skills.certifications.map((cert, i) => (
-                  <Badge key={i} className="text-xs bg-purple-100 text-purple-700">
+                  <Badge key={i} className="text-xs bg-teal-100 text-teal-700">
                     {cert}
                   </Badge>
                 ))}
@@ -381,7 +381,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
             <Card 
               key={match.positionId}
               className={`overflow-hidden transition-all ${
-                index === 0 ? 'border-2 border-green-400 shadow-lg' : ''
+                index === 0 ? 'border border-green-400 shadow-sm' : ''
               }`}
             >
               {/* Header */}
@@ -440,9 +440,9 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       <div className="text-xs text-blue-600">כישורים</div>
                       <div className="font-bold text-blue-700">{match.breakdown.skillsMatch}/25</div>
                     </div>
-                    <div className="bg-purple-50 p-2 rounded text-center">
-                      <div className="text-xs text-purple-600">ניסיון</div>
-                      <div className="font-bold text-purple-700">{match.breakdown.experienceMatch}/15</div>
+                    <div className="bg-teal-50 p-2 rounded text-center">
+                      <div className="text-xs text-teal-600">ניסיון</div>
+                      <div className="font-bold text-teal-700">{match.breakdown.experienceMatch}/15</div>
                     </div>
                     <div className="bg-teal-50 p-2 rounded text-center">
                       <div className="text-xs text-teal-600">תחום</div>
@@ -461,22 +461,22 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       <div className="font-bold text-yellow-700">{match.breakdown.aiLogicScore}/10</div>
                     </div>
                     {match.breakdown.humanReadingScore !== undefined && (
-                      <div className="bg-indigo-50 p-2 rounded text-center col-span-2 md:col-span-1">
-                        <div className="text-xs text-indigo-600 flex items-center justify-center gap-1">
+                      <div className="bg-teal-50 p-2 rounded text-center col-span-2 md:col-span-1">
+                        <div className="text-xs text-teal-600 flex items-center justify-center gap-1">
                           <Brain className="h-3 w-3" />
                           קריאה אנושית
                         </div>
-                        <div className="font-bold text-indigo-700">{match.breakdown.humanReadingScore}/15</div>
+                        <div className="font-bold text-teal-700">{match.breakdown.humanReadingScore}/15</div>
                       </div>
                     )}
                   </div>
 
                   {/* 🧠 Human Reading ULTRA Section */}
                   {match.humanReading && (
-                    <div className="mb-4 p-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl border-2 border-indigo-200 shadow-lg">
-                      <h5 className="font-bold text-indigo-800 flex items-center gap-2 mb-4 text-lg">
+                    <div className="mb-4 p-4 bg-slate-50 rounded-xl border border-teal-200 shadow-sm">
+                      <h5 className="font-bold text-teal-800 flex items-center gap-2 mb-4 text-lg">
                         <Brain className="h-6 w-6" />
-                        🧠 ניתוח AI ULTRA - קריאה אנושית מתקדמת
+                        ניתוח AI ULTRA - קריאה אנושית מתקדמת
                         {match.humanReading.jobFitAnalysis.fitScore && (
                           <Badge className={`mr-2 ${
                             match.humanReading.jobFitAnalysis.fitScore >= 8 ? 'bg-green-500 text-white' :
@@ -490,7 +490,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       </h5>
                       
                       {/* Main Summary - Highlighted */}
-                      <div className="bg-white p-4 rounded-lg mb-4 border-r-4 border-indigo-500 shadow-sm">
+                      <div className="bg-white p-4 rounded-lg mb-4 border-r-4 border-teal-500 shadow-sm">
                         <p className="text-gray-800 text-sm font-medium leading-relaxed">
                           {match.humanReading.humanSummary}
                         </p>
@@ -500,7 +500,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       <div className="grid md:grid-cols-2 gap-4 mb-4">
                         {/* Who is this person */}
                         <div className="bg-white p-3 rounded-lg shadow-sm">
-                          <p className="text-xs font-bold text-indigo-700 mb-2 flex items-center gap-1">
+                          <p className="text-xs font-bold text-teal-700 mb-2 flex items-center gap-1">
                             <User className="h-4 w-4" /> מי המועמד הזה?
                           </p>
                           <p className="text-sm text-gray-700">
@@ -510,7 +510,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
 
                         {/* Career Path */}
                         <div className="bg-white p-3 rounded-lg shadow-sm">
-                          <p className="text-xs font-bold text-indigo-700 mb-2 flex items-center gap-1">
+                          <p className="text-xs font-bold text-teal-700 mb-2 flex items-center gap-1">
                             <TrendingUp className="h-4 w-4" /> מסלול קריירה
                           </p>
                           <p className="text-sm text-gray-700">
@@ -521,8 +521,8 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
 
                       {/* Psychological Profile - If exists */}
                       {match.humanReading.candidateUnderstanding.psychologicalProfile && (
-                        <div className="bg-purple-50 p-3 rounded-lg mb-4 border border-purple-200">
-                          <p className="text-xs font-bold text-purple-700 mb-2">🧩 פרופיל פסיכולוגי-מקצועי</p>
+                        <div className="bg-teal-50 p-3 rounded-lg mb-4 border border-teal-200">
+                          <p className="text-xs font-bold text-teal-700 mb-2">פרופיל פסיכולוגי-מקצועי</p>
                           <p className="text-sm text-gray-700">
                             {match.humanReading.candidateUnderstanding.psychologicalProfile}
                           </p>
@@ -531,7 +531,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
 
                       {/* Motivation */}
                       <div className="bg-amber-50 p-3 rounded-lg mb-4 border border-amber-200">
-                        <p className="text-xs font-bold text-amber-700 mb-2">🎯 מוטיבציה משוערת</p>
+                        <p className="text-xs font-bold text-amber-700 mb-2">מוטיבציה משוערת</p>
                         <p className="text-sm text-gray-700">
                           {match.humanReading.candidateUnderstanding.motivationGuess}
                         </p>
@@ -550,7 +550,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             : 'bg-gray-50 border-gray-200'
                         }`}>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-bold text-gray-700">📚 סטטוס לימודים</p>
+                            <p className="text-xs font-bold text-gray-700">סטטוס לימודים</p>
                             <Badge className={`text-xs ${
                               match.humanReading.currentStatus.studyStatus === 'completed' 
                                 ? 'bg-green-500 text-white' 
@@ -562,7 +562,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             }`}>
                               {match.humanReading.currentStatus.studyStatus === 'completed' && '✓ סיים לימודים'}
                               {match.humanReading.currentStatus.studyStatus === 'in_progress' && '⏳ באמצע לימודים'}
-                              {match.humanReading.currentStatus.studyStatus === 'dropped_out' && '⚠️ הפסיק לימודים'}
+                              {match.humanReading.currentStatus.studyStatus === 'dropped_out' && 'הפסיק לימודים'}
                               {match.humanReading.currentStatus.studyStatus === 'unknown' && '? לא ברור'}
                               {match.humanReading.currentStatus.studyStatus === 'not_studying' && 'לא לומד'}
                             </Badge>
@@ -582,7 +582,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             match.humanReading.currentStatus.jobHoppingRisk === 'medium' ? 'bg-yellow-100' :
                             'bg-green-100'
                           }`}>
-                            <p className="text-xs font-bold mb-1">🚀 סיכון עזיבה</p>
+                            <p className="text-xs font-bold mb-1">סיכון עזיבה</p>
                             <Badge className={`text-xs ${
                               match.humanReading.currentStatus.jobHoppingRisk === 'high' ? 'bg-red-500 text-white' :
                               match.humanReading.currentStatus.jobHoppingRisk === 'medium' ? 'bg-yellow-500 text-white' :
@@ -602,7 +602,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             match.humanReading.jobFitAnalysis.overqualifiedRisk === 'high' ? 'bg-orange-100' :
                             'bg-yellow-50'
                           }`}>
-                            <p className="text-xs font-bold mb-1">📈 מתאים מדי?</p>
+                            <p className="text-xs font-bold mb-1">מתאים מדי?</p>
                             <Badge className="text-xs bg-orange-500 text-white">
                               {match.humanReading.jobFitAnalysis.overqualifiedRisk}
                             </Badge>
@@ -616,7 +616,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             match.humanReading.jobFitAnalysis.underqualifiedRisk === 'high' ? 'bg-red-100' :
                             'bg-yellow-50'
                           }`}>
-                            <p className="text-xs font-bold mb-1">📉 חסר ניסיון?</p>
+                            <p className="text-xs font-bold mb-1">חסר ניסיון?</p>
                             <Badge className="text-xs bg-red-500 text-white">
                               {match.humanReading.jobFitAnalysis.underqualifiedRisk}
                             </Badge>
@@ -647,8 +647,8 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             </div>
                           )}
                           {match.humanReading.jobFitAnalysis.cultureFitGuess && (
-                            <div className="bg-violet-50 p-3 rounded-lg border border-violet-200">
-                              <p className="text-xs font-bold text-violet-700 mb-1">🤝 התאמה תרבותית</p>
+                            <div className="bg-teal-50 p-3 rounded-lg border border-teal-200">
+                              <p className="text-xs font-bold text-teal-700 mb-1">התאמה תרבותית</p>
                               <p className="text-sm text-gray-700">
                                 {match.humanReading.jobFitAnalysis.cultureFitGuess}
                               </p>
@@ -659,8 +659,8 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
 
                       {/* Unique Value */}
                       {match.humanReading.jobFitAnalysis.uniqueValue && (
-                        <div className="mb-4 bg-gradient-to-r from-yellow-50 to-amber-50 p-3 rounded-lg border border-yellow-300">
-                          <p className="text-xs font-bold text-amber-700 mb-1">⭐ ערך ייחודי</p>
+                        <div className="mb-4 bg-amber-50 p-3 rounded-lg border border-yellow-300">
+                          <p className="text-xs font-bold text-amber-700 mb-1">ערך ייחודי</p>
                           <p className="text-sm text-gray-700 font-medium">
                             {match.humanReading.jobFitAnalysis.uniqueValue}
                           </p>
@@ -671,7 +671,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
                         {/* Green Flags */}
                         <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                          <p className="text-xs font-bold text-green-700 mb-2">🟢 דגלים ירוקים</p>
+                          <p className="text-xs font-bold text-green-700 mb-2">דגלים ירוקים</p>
                           <ul className="text-xs space-y-1">
                             {match.humanReading.flags.greenFlags.slice(0, 4).map((flag, i) => (
                               <li key={i} className="text-green-600 flex items-start gap-1">
@@ -684,7 +684,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                         
                         {/* Yellow Flags */}
                         <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                          <p className="text-xs font-bold text-yellow-700 mb-2">🟡 לתשומת לב</p>
+                          <p className="text-xs font-bold text-yellow-700 mb-2">לתשומת לב</p>
                           <ul className="text-xs space-y-1">
                             {match.humanReading.flags.yellowFlags.slice(0, 4).map((flag, i) => (
                               <li key={i} className="text-yellow-600 flex items-start gap-1">
@@ -697,7 +697,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                         
                         {/* Red Flags */}
                         <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                          <p className="text-xs font-bold text-red-700 mb-2">🔴 דגלים אדומים</p>
+                          <p className="text-xs font-bold text-red-700 mb-2">דגלים אדומים</p>
                           <ul className="text-xs space-y-1">
                             {match.humanReading.flags.redFlags.slice(0, 4).map((flag, i) => (
                               <li key={i} className="text-red-600 flex items-start gap-1">
@@ -711,11 +711,11 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                         {/* Hidden Signals */}
                         {match.humanReading.flags.hiddenSignals && 
                          match.humanReading.flags.hiddenSignals.length > 0 && (
-                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                            <p className="text-xs font-bold text-purple-700 mb-2">🔮 סימנים מוסתרים</p>
+                          <div className="bg-teal-50 p-3 rounded-lg border border-teal-200">
+                            <p className="text-xs font-bold text-teal-700 mb-2">סימנים מוסתרים</p>
                             <ul className="text-xs space-y-1">
                               {match.humanReading.flags.hiddenSignals.slice(0, 4).map((signal, i) => (
-                                <li key={i} className="text-purple-600 flex items-start gap-1">
+                                <li key={i} className="text-teal-600 flex items-start gap-1">
                                   <Sparkles className="h-3 w-3 flex-shrink-0 mt-0.5" />
                                   <span>{signal}</span>
                                 </li>
@@ -730,7 +730,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                         {/* Strengths from Reading */}
                         {match.humanReading.candidateUnderstanding.strengthsFromReading.length > 0 && (
                           <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-                            <p className="text-xs font-bold text-emerald-700 mb-2">💪 חוזקות שעולות מהקריאה</p>
+                            <p className="text-xs font-bold text-emerald-700 mb-2">חוזקות שעולות מהקריאה</p>
                             <ul className="text-xs space-y-1">
                               {match.humanReading.candidateUnderstanding.strengthsFromReading.map((str, i) => (
                                 <li key={i} className="text-emerald-600">• {str}</li>
@@ -742,7 +742,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                         {/* Concerns */}
                         {match.humanReading.candidateUnderstanding.concernsFromReading.length > 0 && (
                           <div className="bg-rose-50 p-3 rounded-lg border border-rose-200">
-                            <p className="text-xs font-bold text-rose-700 mb-2">🤔 שאלות/דאגות</p>
+                            <p className="text-xs font-bold text-rose-700 mb-2">שאלות/דאגות</p>
                             <ul className="text-xs space-y-1">
                               {match.humanReading.candidateUnderstanding.concernsFromReading.map((con, i) => (
                                 <li key={i} className="text-rose-600">• {con}</li>
@@ -769,8 +769,8 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
 
                       {/* Deal Breakers - Critical */}
                       {match.humanReading.jobFitAnalysis.dealBreakers.length > 0 && (
-                        <div className="mb-4 bg-red-100 p-3 rounded-lg border-2 border-red-400 shadow-sm">
-                          <p className="text-sm font-bold text-red-800 mb-2">🚫 עלול לפסול!</p>
+                        <div className="mb-4 bg-red-100 p-3 rounded-lg border border-red-400 shadow-sm">
+                          <p className="text-sm font-bold text-red-800 mb-2">עלול לפסול!</p>
                           <ul className="text-xs space-y-1">
                             {match.humanReading.jobFitAnalysis.dealBreakers.map((db, i) => (
                               <li key={i} className="text-red-700 font-medium flex items-start gap-1">
@@ -785,7 +785,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       {/* Fit Explanation */}
                       {match.humanReading.jobFitAnalysis.fitExplanation && (
                         <div className="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                          <p className="text-xs font-bold text-slate-700 mb-2">📊 הסבר ציון ההתאמה</p>
+                          <p className="text-xs font-bold text-slate-700 mb-2">הסבר ציון ההתאמה</p>
                           <p className="text-sm text-gray-700">
                             {match.humanReading.jobFitAnalysis.fitExplanation}
                           </p>
@@ -793,9 +793,9 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                       )}
 
                       {/* Recruiter Recommendation - Final Verdict */}
-                      <div className="bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 p-4 rounded-xl border-2 border-indigo-300">
-                        <p className="text-sm font-bold text-indigo-800 mb-2">💡 המלצת המגייס ULTRA</p>
-                        <p className="text-base text-indigo-900 font-bold mb-2">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-teal-300">
+                        <p className="text-sm font-bold text-teal-800 mb-2">המלצת המגייס ULTRA</p>
+                        <p className="text-base text-teal-900 font-bold mb-2">
                           {match.humanReading.recruiterRecommendation}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -811,7 +811,7 @@ export function AdvancedMatchingView({ candidateId, onSendToEmployer }: Advanced
                             {match.humanReading.confidenceLevel === 'very_confident' && '✓✓ מאוד בטוח'}
                             {match.humanReading.confidenceLevel === 'confident' && '✓ בטוח'}
                             {match.humanReading.confidenceLevel === 'uncertain' && '? לא בטוח'}
-                            {match.humanReading.confidenceLevel === 'need_more_info' && '⚠ צריך עוד מידע'}
+                            {match.humanReading.confidenceLevel === 'need_more_info' && 'צריך עוד מידע'}
                           </Badge>
                           {match.humanReading.confidenceExplanation && (
                             <span className="text-xs text-gray-600">

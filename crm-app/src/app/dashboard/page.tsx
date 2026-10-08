@@ -12,11 +12,36 @@ import { canSeeAllRecruiters, recruiterStatsUserWhere } from "@/lib/recruiter-st
 import { currentYearMonth, scoreRecruiterMonth } from "@/lib/recruiter-performance"
 import { toYearMonth } from "@/lib/candidate-hired-dates"
 
+// גבולות חודש לפי אזור ישראל (UTC+3) — זהה ל-/api/candidates?period כדי שהמספרים יתאימו לסטטוס חודשי.
+const ISRAEL_OFFSET_HOURS = 3
+const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+
+function monthStartUtc(year: number, monthIndex: number) {
+  return new Date(Date.UTC(year, monthIndex, 1, -ISRAEL_OFFSET_HOURS))
+}
+
+function shiftYearMonth(yearMonth: string, delta: number) {
+  const [y, m] = yearMonth.split('-').map(Number)
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1))
+  return { key: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, monthIndex: d.getUTCMonth() }
+}
+
+// אותו סיווג כמו בעמוד סטטוס חודשי/שנתי.
+function monthlyStatusOf(c: { hiredAt: Date | null; employmentStatus: string | null; inProcessPositionId: string | null }) {
+  if (c.hiredAt || c.employmentStatus === 'EMPLOYED') return 'hired' as const
+  if (c.employmentStatus === 'REJECTED') return 'rejected' as const
+  if (c.employmentStatus === 'IN_PROCESS' || c.inProcessPositionId) return 'in-process' as const
+  return 'new' as const
+}
+
 async function getDashboardStats() {
   const now = new Date()
-  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+  const currentKey = toYearMonth(now) || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const [cy, cm] = currentKey.split('-').map(Number)
+  const monthStart = monthStartUtc(cy, cm - 1)
+  const monthEnd = monthStartUtc(cy, cm)
+  const windowStart = monthStartUtc(cy, cm - 12)
 
   const [
     totalCandidates,
@@ -28,16 +53,11 @@ async function getDashboardStats() {
     totalEmployers,
     applicationsThisMonth,
     statusCounts,
-    hiredThisMonth,
-    startedWorkThisMonth,
-    candidatesThisMonth,
     inProcessCount,
     totalHired,
     totalRejected,
-    monthlyCandidatesRaw,
     monthlyPositionsRaw,
-    monthlyHiredRaw,
-    monthlyInProcessRaw,
+    periodRows,
   ] = await Promise.all([
     prisma.candidate.count(),
     prisma.position.count(),
@@ -48,83 +68,73 @@ async function getDashboardStats() {
       where: { scheduledAt: { gte: new Date() }, status: "SCHEDULED" }
     }),
     prisma.employer.count(),
-    prisma.application.count({ where: { appliedAt: { gte: monthAgo } } }),
+    prisma.application.count({ where: { appliedAt: { gte: monthStart, lt: monthEnd } } }),
     prisma.application.groupBy({ by: ['status'], _count: true }),
-    prisma.candidate.count({ where: { hiredAt: { gte: monthAgo } } }),
-    prisma.candidate.count({ where: { employmentStatus: "EMPLOYED", hiredAt: { gte: monthAgo } } }),
-    prisma.candidate.count({ where: { createdAt: { gte: monthAgo } } }),
-    prisma.candidate.count({
-      where: {
-        OR: [
-          { employmentStatus: 'IN_PROCESS' },
-          { inProcessPositionId: { not: null }, employmentStatus: { notIn: ['EMPLOYED', 'REJECTED'] } },
-        ]
-      }
-    }),
+    prisma.candidate.count({ where: CANDIDATE_IN_PROCESS_WHERE }),
     prisma.candidate.count({ where: CANDIDATE_HIRED_WHERE }),
     prisma.candidate.count({ where: CANDIDATE_REJECTED_WHERE }),
-    prisma.candidate.findMany({ where: { createdAt: { gte: twelveMonthsAgo } }, select: { createdAt: true } }),
-    prisma.position.findMany({ where: { createdAt: { gte: twelveMonthsAgo } }, select: { createdAt: true } }),
-    prisma.candidate.findMany({ where: { hiredAt: { gte: twelveMonthsAgo, not: null } }, select: { hiredAt: true } }),
-    prisma.candidate.findMany({ where: { inProcessAt: { gte: twelveMonthsAgo, not: null } }, select: { inProcessAt: true } }),
+    prisma.position.findMany({ where: { createdAt: { gte: windowStart } }, select: { createdAt: true } }),
+    prisma.candidate.findMany({
+      where: {
+        OR: [
+          { createdAt: { gte: windowStart } },
+          { hiredAt: { gte: windowStart } },
+          { inProcessAt: { gte: windowStart } },
+        ],
+      },
+      select: { createdAt: true, hiredAt: true, inProcessAt: true, employmentStatus: true, inProcessPositionId: true },
+    }),
   ])
 
-  const monthlyLabels: string[] = []
-  const monthlyHebrewLabels: string[] = []
-  const monthlyCandidatesCounts: number[] = []
-  const monthlyPositionsCounts: number[] = []
-  const monthlyHiredCounts: number[] = []
-  const monthlyInProcessCounts: number[] = []
-  const hebrewMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+  // 12 חודשים אחרונים — כל חודש נספר כמו בסטטוס חודשי: מועמד נכלל אם עלה / נכנס לתהליך / התקבל בחודש.
+  const perMonth = Array.from({ length: 12 }, (_, i) => {
+    const { key, monthIndex } = shiftYearMonth(currentKey, i - 11)
+    return { key, monthIndex, uploaded: 0, inProcessEntered: 0, startedWork: 0, records: 0, hired: 0, inProcess: 0, rejected: 0, isNew: 0, positions: 0 }
+  })
+  const idxByKey = new Map(perMonth.map((m, i) => [m.key, i]))
+  const yearly = { uploaded: 0, inProcessEntered: 0, hired: 0 }
 
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    monthlyLabels.push(key)
-    monthlyHebrewLabels.push(hebrewMonths[d.getMonth()])
-    monthlyCandidatesCounts.push(0)
-    monthlyPositionsCounts.push(0)
-    monthlyHiredCounts.push(0)
-    monthlyInProcessCounts.push(0)
-  }
+  periodRows.forEach(row => {
+    const createdKey = toYearMonth(row.createdAt)
+    const hiredKey = toYearMonth(row.hiredAt)
+    const inProcessKey = toYearMonth(row.inProcessAt)
+    const status = monthlyStatusOf(row)
+    const keys = new Set([createdKey, hiredKey, inProcessKey].filter((k): k is string => !!k && idxByKey.has(k)))
 
-  monthlyCandidatesRaw.forEach(c => {
-    const key = `${c.createdAt.getFullYear()}-${String(c.createdAt.getMonth() + 1).padStart(2, '0')}`
-    const idx = monthlyLabels.indexOf(key)
-    if (idx !== -1) monthlyCandidatesCounts[idx]++
+    keys.forEach(k => {
+      const m = perMonth[idxByKey.get(k)!]
+      m.records++
+      if (status === 'hired') m.hired++
+      else if (status === 'in-process') m.inProcess++
+      else if (status === 'rejected') m.rejected++
+      else m.isNew++
+    })
+    if (createdKey && idxByKey.has(createdKey)) { perMonth[idxByKey.get(createdKey)!].uploaded++; yearly.uploaded++ }
+    if (inProcessKey && idxByKey.has(inProcessKey)) { perMonth[idxByKey.get(inProcessKey)!].inProcessEntered++; yearly.inProcessEntered++ }
+    if (hiredKey && idxByKey.has(hiredKey) && row.employmentStatus === 'EMPLOYED') perMonth[idxByKey.get(hiredKey)!].startedWork++
+    if (keys.size > 0 && status === 'hired') yearly.hired++
   })
 
-  monthlyPositionsRaw.forEach(p => {
-    const key = `${p.createdAt.getFullYear()}-${String(p.createdAt.getMonth() + 1).padStart(2, '0')}`
-    const idx = monthlyLabels.indexOf(key)
-    if (idx !== -1) monthlyPositionsCounts[idx]++
+  monthlyPositionsRaw.forEach(pos => {
+    const k = toYearMonth(pos.createdAt)
+    if (k && idxByKey.has(k)) perMonth[idxByKey.get(k)!].positions++
   })
 
-  monthlyHiredRaw.forEach((c: any) => {
-    if (!c.hiredAt) return
-    const d = new Date(c.hiredAt)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const idx = monthlyLabels.indexOf(key)
-    if (idx !== -1) monthlyHiredCounts[idx]++
-  })
-
-  monthlyInProcessRaw.forEach((c: any) => {
-    if (!c.inProcessAt) return
-    const d = new Date(c.inProcessAt)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const idx = monthlyLabels.indexOf(key)
-    if (idx !== -1) monthlyInProcessCounts[idx]++
-  })
-
-  const monthlyData = monthlyLabels.map((key, i) => ({
-    month: monthlyHebrewLabels[i],
-    candidates: monthlyCandidatesCounts[i],
-    positions: monthlyPositionsCounts[i],
-    hired: monthlyHiredCounts[i],
-    inProcess: monthlyInProcessCounts[i],
-    candidatesDelta: i > 0 ? monthlyCandidatesCounts[i] - monthlyCandidatesCounts[i - 1] : 0,
-    hiredDelta: i > 0 ? monthlyHiredCounts[i] - monthlyHiredCounts[i - 1] : 0,
+  const monthlyData = perMonth.map((m, i) => ({
+    month: HEBREW_MONTHS[m.monthIndex],
+    candidates: m.uploaded,
+    positions: m.positions,
+    hired: m.hired,
+    inProcess: m.inProcessEntered,
+    candidatesDelta: i > 0 ? m.uploaded - perMonth[i - 1].uploaded : 0,
+    hiredDelta: i > 0 ? m.hired - perMonth[i - 1].hired : 0,
   }))
+
+  const current = perMonth[perMonth.length - 1]
+  const month = { records: current.records, hired: current.hired, inProcess: current.inProcess, rejected: current.rejected, isNew: current.isNew }
+  const hiredThisMonth = current.hired
+  const startedWorkThisMonth = current.startedWork
+  const candidatesThisMonth = current.uploaded
 
   const candidatesByDay = await prisma.candidate.groupBy({
     by: ['createdAt'],
@@ -165,6 +175,7 @@ async function getDashboardStats() {
     inProcess, waitingForScreening, totalHired, totalRejected,
     dailyCounts: Object.entries(dailyCounts).map(([date, count]) => ({ date, count })),
     monthlyData,
+    month, yearly, currentMonthKey: currentKey,
   }
 }
 
@@ -330,15 +341,14 @@ export default async function CiviDashboardPage() {
     getRecruiterStats(currentUserId, seeAllRecruiters),
   ])
 
-  const totalInProcess = stats.inProcess || 1
-  const pct = (n: number) => Math.min(100, Math.max(0, Math.round((n / totalInProcess) * 100))) || 0
-  const statusPercentages = {
-    referralSent: pct(stats.statusMap.OFFER),
-    frontInterview: pct(stats.statusMap.INTERVIEW),
-    formsFiled: pct(stats.statusMap.SCREENING),
-    emailSent: pct(stats.statusMap.NEW * 0.3),
-    whatsappSent: pct(stats.statusMap.NEW * 0.2),
-  }
+  const stageKeys = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER'] as const
+  const stageTotal = stageKeys.reduce((sum, k) => sum + (stats.statusMap[k] || 0), 0)
+  const stageItems = [
+    { label: 'חדשות', val: stats.statusMap.NEW, color: '#94A3B8' },
+    { label: 'בסינון', val: stats.statusMap.SCREENING, color: '#0891B2' },
+    { label: 'בראיון', val: stats.statusMap.INTERVIEW, color: '#0E7490' },
+    { label: 'הצעה / הפניה', val: stats.statusMap.OFFER, color: '#059669' },
+  ].map(item => ({ ...item, pct: stageTotal > 0 ? Math.round((item.val / stageTotal) * 100) : 0 }))
 
   const totalSources = candidateSources.reduce((sum, s) => sum + s._count, 0) || 1
   const sourcePercentages = candidateSources.map(s => ({
@@ -363,16 +373,21 @@ export default async function CiviDashboardPage() {
   const momInProcess = calcDelta(currentMonth?.inProcess ?? 0, prevMonth?.inProcess)
   const momHired = calcDelta(currentMonth?.hired ?? 0, prevMonth?.hired)
 
-  const ytdCandidates = stats.monthlyData.reduce((s, m) => s + m.candidates, 0)
-  const ytdHired = stats.monthlyData.reduce((s, m) => s + m.hired, 0)
-  const ytdInProcess = stats.monthlyData.reduce((s, m) => s + m.inProcess, 0)
+  const ytdCandidates = stats.yearly.uploaded
+  const ytdHired = stats.yearly.hired
+  const ytdInProcess = stats.yearly.inProcessEntered
 
+  const [monthYear, monthNum] = stats.currentMonthKey.split('-').map(Number)
+  const monthLabel = new Date(monthYear, monthNum - 1, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+  const monthConversion = stats.month.records > 0 ? Math.round((stats.month.hired / stats.month.records) * 100) : null
+
+  // אותם חמשת המדדים כמו בעמוד סטטוס חודשי — לחודש הנוכחי.
   const kpiMetrics = [
-    { href: '/dashboard/candidates?status=hired', label: 'התחילו לעבוד', value: stats.startedWorkThisMonth, icon: UserCheck, accent: 'text-emerald-700', hint: 'החודש' },
-    { href: '/dashboard/interviews', label: 'ראיונות קרובים', value: stats.upcomingInterviews, icon: Bell, accent: 'text-sky-700', hint: 'בלוח הזמנים' },
-    { href: '/dashboard/candidates?status=hired', label: 'התקבלו לעבודה', value: stats.hiredThisMonth, icon: CheckCircle, accent: 'text-emerald-700', hint: 'החודש' },
-    { href: '/dashboard/candidates?status=in-process', label: 'הפניות', value: stats.applicationsThisMonth, icon: Send, accent: 'text-slate-900', hint: 'החודש' },
-    { href: '/dashboard/candidates?status=in-process', label: 'בתהליך', value: stats.inProcess, icon: Users, accent: 'text-sky-700', hint: 'מועמדים פעילים' },
+    { href: '/dashboard/monthly-status', label: 'בצינור', value: stats.month.records, icon: Users, accent: 'text-slate-900', hint: 'בתקופה שנבחרה' },
+    { href: '/dashboard/monthly-status', label: 'התקבלו', value: stats.month.hired, icon: CheckCircle, accent: 'text-emerald-700', hint: monthConversion === null ? 'אין בסיס להמרה' : `${monthConversion}% המרה` },
+    { href: '/dashboard/monthly-status', label: 'בתהליך', value: stats.month.inProcess, icon: Clock, accent: 'text-sky-700', hint: 'ממתינים להחלטה' },
+    { href: '/dashboard/monthly-status', label: 'לא התקבלו', value: stats.month.rejected, icon: AlertTriangle, accent: 'text-rose-700', hint: 'נסגרו בלי קבלה' },
+    { href: '/dashboard/monthly-status', label: 'חדשים', value: stats.month.isNew, icon: UserCheck, accent: 'text-slate-900', hint: 'עדיין בלי סטטוס' },
   ]
 
   return (
@@ -395,6 +410,9 @@ export default async function CiviDashboardPage() {
                     : `המערכת מעודכנת — ${stats.totalCandidates} מועמדים, ${stats.activePositions} משרות פתוחות`
                 })()}
               </p>
+              <p className="text-xs text-slate-500">
+                {monthLabel}. המספרים נספרים כמו בסטטוס חודשי — לפי תאריך העלאה, כניסה לתהליך או קבלה.
+              </p>
             </div>
             <div className="text-sm text-slate-500">
               שלום, <span className="font-semibold text-slate-900">{session.user?.name?.split(' ')[0] || 'משתמש'}</span>
@@ -402,16 +420,16 @@ export default async function CiviDashboardPage() {
           </div>
           <div className="grid grid-cols-3 border-t border-slate-200 text-center text-xs text-slate-500">
             <div className="px-4 py-3">
-              <span className="block text-lg font-semibold tabular-nums text-slate-900">{stats.candidatesThisMonth}</span>
-              מועמדים חדשים החודש
+              <span className="block text-lg font-semibold tabular-nums text-slate-900">{stats.month.records}</span>
+              רשומות החודש
             </div>
             <div className="border-x border-slate-200 px-4 py-3">
-              <span className="block text-lg font-semibold tabular-nums text-slate-900">{stats.inProcess}</span>
-              בתהליך כעת
+              <span className="block text-lg font-semibold tabular-nums text-slate-900">{stats.month.hired}</span>
+              התקבלו
             </div>
             <div className="px-4 py-3">
-              <span className="block text-lg font-semibold tabular-nums text-slate-900">{stats.hiredThisMonth}</span>
-              התקבלו החודש
+              <span className="block text-lg font-semibold tabular-nums text-slate-900">{monthConversion === null ? '—' : `${monthConversion}%`}</span>
+              המרה לקבלה
             </div>
           </div>
         </header>
@@ -425,7 +443,7 @@ export default async function CiviDashboardPage() {
 
           overviewContent={
             <div className="space-y-4 md:space-y-5">
-              <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="מדדי החודש">
+              <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label={`מדדי ${monthLabel}`}>
                 {kpiMetrics.map((m) => {
                   const Icon = m.icon
                   return (
@@ -448,18 +466,12 @@ export default async function CiviDashboardPage() {
                       <div className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100">
                         <Info className="h-4 w-4 text-slate-600" />
                       </div>
-                      <span className="text-base font-semibold text-slate-950">מועמדים בתהליך לפי שלב</span>
+                      <span className="text-base font-semibold text-slate-950">הפניות פעילות לפי שלב</span>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-sm font-semibold tabular-nums text-slate-700">{stats.inProcess}</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-sm font-semibold tabular-nums text-slate-700">{stageTotal}</span>
                   </div>
                   <div className="space-y-4">
-                    {[
-                      { label: 'בוצעה הפניה', val: stats.statusMap.OFFER, pct: statusPercentages.referralSent, color: '#06B6D4' },
-                      { label: 'תום ראיון פרונטלי', val: stats.statusMap.INTERVIEW, pct: statusPercentages.frontInterview, color: '#10B981' },
-                      { label: 'הגשת טפסים', val: stats.statusMap.SCREENING, pct: statusPercentages.formsFiled, color: '#F97316' },
-                      { label: 'נשלח מייל ללקוח', val: Math.round(stats.statusMap.NEW * 0.3), pct: statusPercentages.emailSent, color: '#A855F7' },
-                      { label: 'נשלחה הודעת וואטסאפ', val: Math.round(stats.statusMap.NEW * 0.2), pct: statusPercentages.whatsappSent, color: '#3B82F6' },
-                    ].map((item, i) => (
+                    {stageItems.map((item, i) => (
                       <div key={i}>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="flex items-center gap-2 text-sm text-slate-700">

@@ -50,6 +50,25 @@ function fastExtractFromCV(text: string) {
   return { name, email, phone, city, currentTitle, yearsOfExperience };
 }
 
+const PERIOD_RE = /^(\d{4})(?:-(\d{2}))?$/
+
+function getStatusPeriodRange(period: string | null) {
+  const match = period?.trim().match(PERIOD_RE)
+  if (!match) return null
+  const year = Number(match[1])
+  const month = match[2] ? Number(match[2]) : null
+  if (!Number.isInteger(year) || (month !== null && (month < 1 || month > 12))) return null
+
+  // גבולות אזור ישראל (UTC+3, בלי שעון קיץ) כדי שהסינון יתאים לתצוגה.
+  const start = month
+    ? new Date(Date.UTC(year, month - 1, 1, -3))
+    : new Date(Date.UTC(year, 0, 1, -3))
+  const end = month
+    ? new Date(Date.UTC(year, month, 1, -3))
+    : new Date(Date.UTC(year + 1, 0, 1, -3))
+  return { gte: start, lt: end }
+}
+
 // 🎨 צבעים לתגיות
 function getTagColor(tagName: string): string {
   const colors = [
@@ -80,6 +99,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
+    const period = searchParams.get("period")
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
     const skip = (page - 1) * limit
@@ -87,7 +107,8 @@ export async function GET(request: NextRequest) {
     // כדי שטעינת ~1700 מועמדים תהיה מהירה. opt-in בלבד, תאימות מלאה לאחור.
     const light = searchParams.get("light") === "1"
 
-    const where = search
+    const periodRange = getStatusPeriodRange(period)
+    const searchFilter = search
       ? {
           OR: [
             { name: { contains: search, mode: "insensitive" as const } },
@@ -95,7 +116,19 @@ export async function GET(request: NextRequest) {
             { phone: { contains: search, mode: "insensitive" as const } },
           ],
         }
-      : {}
+      : null
+    const periodFilter = periodRange
+      ? {
+          OR: [
+            { createdAt: periodRange },
+            { hiredAt: periodRange },
+            { inProcessAt: periodRange },
+          ],
+        }
+      : null
+    const where = searchFilter && periodFilter
+      ? { AND: [searchFilter, periodFilter] }
+      : searchFilter || periodFilter || {}
 
     // 🆕 include קליל - רק מה שהרשימה באמת מציגה/מסננת לפיו
     const lightInclude = {

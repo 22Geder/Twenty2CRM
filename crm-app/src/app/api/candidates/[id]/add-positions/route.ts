@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { runAfterResponse } from "@/lib/run-after-response"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
 import { buildInProcessCandidateData } from "@/lib/in-process-candidate"
+import { syncInProcessCandidateToTeamCalendars } from "@/lib/in-process-candidate-calendar"
+import { syncCandidateInterviewToTeamCalendars } from "@/lib/candidate-interview-calendar"
 
 // POST /api/candidates/[id]/add-positions - הוספת מועמד למספר משרות בתהליך
 export async function POST(
@@ -112,25 +115,39 @@ export async function POST(
     const firstPositionId = positionIds[0]
     const wasAlreadyInProcess = candidate.employmentStatus === 'IN_PROCESS'
     const firstPos = positions.find(p => p.id === firstPositionId)
+    const processStartedAt = candidate.inProcessAt || new Date()
     await prisma.candidate.update({
       where: { id: candidateId },
       data: buildInProcessCandidateData({
         employmentStatus: 'IN_PROCESS',
         inProcessPositionId: candidate.inProcessPositionId || firstPositionId,
-        inProcessAt: candidate.inProcessAt || new Date(),
+        inProcessAt: processStartedAt,
       }),
     })
 
-    // 🆕 שליחת מייל כניסה לתהליך (רק אם לא היה בתהליך לפני כן)
+    // המייל נשלח אחרי שהסטטוס כבר נשמר, כדי שהמסך לא יחכה ל-SMTP.
     if (!wasAlreadyInProcess) {
-      await sendProcessEntryEmail({
+      const emailInput = {
         candidateName: candidate.name,
         positionTitle: firstPos?.title || null,
         employerName: (firstPos as any)?.employer?.name || null,
         phone: candidate.phone,
         recruiterName: session.user?.name || session.user?.email || null,
-      })
+      }
+      runAfterResponse(() => sendProcessEntryEmail(emailInput).catch((emailError) => {
+        console.error("Process-entry email failed:", emailError)
+      }))
     }
+    runAfterResponse(() => syncAddedPositionCalendars({
+      candidateId,
+      candidateName: candidate.name,
+      inProcessAt: processStartedAt,
+      interviewDate: candidate.interviewDate,
+      positionTitle: firstPos?.title || null,
+      employerName: (firstPos as { employer?: { name?: string | null } }).employer?.name || null,
+    }).catch((calendarError) => {
+      console.error("Process calendar sync failed:", calendarError)
+    }))
 
     return NextResponse.json({
       success: true,
@@ -144,6 +161,20 @@ export async function POST(
       { error: "Failed to add positions" },
       { status: 500 }
     )
+  }
+}
+
+async function syncAddedPositionCalendars(input: {
+  candidateId: string
+  candidateName: string
+  inProcessAt: Date
+  interviewDate: Date | null
+  positionTitle: string | null
+  employerName: string | null
+}) {
+  await syncInProcessCandidateToTeamCalendars(input)
+  if (input.interviewDate) {
+    await syncCandidateInterviewToTeamCalendars(input)
   }
 }
 
@@ -255,13 +286,16 @@ export async function DELETE(
       })
 
       if (!nextApplication && candidate.employmentStatus === 'IN_PROCESS') {
-        await sendCandidateStatusChangeEmail({
+        const emailInput = {
           candidateName: candidate.name,
           phone: candidate.phone,
-          newStatus: 'WITHDRAWN',
+          newStatus: 'WITHDRAWN' as const,
           oldStatus: 'IN_PROCESS',
           candidateId: candidate.id,
-        })
+        }
+        runAfterResponse(() => sendCandidateStatusChangeEmail(emailInput).catch((emailError) => {
+          console.error("Status-change email failed:", emailError)
+        }))
       }
     }
 

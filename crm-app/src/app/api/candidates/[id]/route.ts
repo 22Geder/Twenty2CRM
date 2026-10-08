@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { runAfterResponse } from "@/lib/run-after-response"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/process-notifications"
-import { resolveHiredAtForUpdate } from "@/lib/candidate-hired-dates"
-import { addHiredCandidateToTeamCalendars } from "@/lib/hired-candidate-calendar"
+import { syncInProcessCandidateToTeamCalendars } from "@/lib/in-process-candidate-calendar"
 import { syncCandidateInterviewToTeamCalendars } from "@/lib/candidate-interview-calendar"
-import { createCandidateUpdate } from "@/lib/candidate-updates"
+import { syncCandidateStatusToTeamCalendars } from "@/lib/candidate-status-calendar"
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -36,7 +36,7 @@ export async function GET(
         interviews: {
           include: {
             position: true,
-            scheduler: { select: { id: true, name: true, email: true } },
+            scheduler: true,
           },
           orderBy: { scheduledAt: "desc" },
         },
@@ -45,7 +45,7 @@ export async function GET(
         },
         communications: {
           include: {
-            user: { select: { id: true, name: true, email: true } },
+            user: true,
           },
           orderBy: { createdAt: "desc" },
         },
@@ -135,7 +135,6 @@ export async function PUT(
       inProcessAt,  // 🆕 מתי נכנס לתהליך
       interviewDate,  // 🆕 תאריך ראיון מתוכנן
       manualSummary,  // 🆕 תקציר ידני של המשתמש
-      placementFeePaid, // סימון תשלום עמלה — אדמין בלבד
     } = body
 
     // Check if candidate exists
@@ -164,29 +163,6 @@ export async function PUT(
       }
     }
 
-    const resolvedHiredAt = resolveHiredAtForUpdate({
-      existingHiredAt: existingCandidate.hiredAt,
-      requestedHiredAt: hiredAt,
-      hiredAtProvided: 'hiredAt' in body,
-      employmentStatus,
-      employmentStatusProvided: 'employmentStatus' in body,
-    })
-
-    const resolvedInterviewDate = interviewDate ? new Date(interviewDate) : null
-    if ('interviewDate' in body && interviewDate && resolvedInterviewDate && !Number.isFinite(resolvedInterviewDate.getTime())) {
-      return NextResponse.json({ error: "Invalid interview date" }, { status: 400 })
-    }
-
-    if ('placementFeePaid' in body) {
-      const role = (session.user as { role?: string } | undefined)?.role
-      if (role !== 'ADMIN') {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-      }
-      if (placementFeePaid !== null && typeof placementFeePaid !== 'boolean') {
-        return NextResponse.json({ error: "Invalid payment status" }, { status: 400 })
-      }
-    }
-
     const candidate = await prisma.candidate.update({
       where: { id },
       data: {
@@ -210,10 +186,13 @@ export async function PUT(
         ...(notes !== undefined && { notes }),
         ...(rating !== undefined && { rating: rating ? parseInt(rating) : null }),
         ...(source !== undefined && { source }),
-        // תאריך קבלה: נשמר בפעם הראשונה, לא נדרס בלחיצה חוזרת על "התקבל"
-        ...(resolvedHiredAt !== undefined && { hiredAt: resolvedHiredAt }),
+        // 🆕 שדות סטטוס - תומך גם ב-null מפורש
+        ...('hiredAt' in body && { hiredAt: hiredAt ? new Date(hiredAt) : null }),
         ...('employmentType' in body && { employmentType: employmentType || null }),
         ...('employmentStatus' in body && { employmentStatus: employmentStatus || null }),
+        ...('employmentStatus' in body && employmentStatus === 'IN_PROCESS' && !('inProcessAt' in body) && !existingCandidate.inProcessAt && {
+          inProcessAt: new Date(),
+        }),
         // 🔄 סנכרון אוטומטי: כשמועמד התקבל/נדחה - מנקה את שדות "בתהליך"
         ...('employmentStatus' in body && (employmentStatus === 'EMPLOYED' || employmentStatus === 'REJECTED') && {
           inProcessPositionId: null,
@@ -225,7 +204,7 @@ export async function PUT(
         ...('hiredToEmployerId' in body && { hiredToEmployerId: hiredToEmployerId || null }),
         ...('inProcessPositionId' in body && { inProcessPositionId: inProcessPositionId || null }),
         ...('inProcessAt' in body && { inProcessAt: inProcessAt ? new Date(inProcessAt) : null }),
-        ...('interviewDate' in body && { interviewDate: resolvedInterviewDate }),
+        ...('interviewDate' in body && { interviewDate: interviewDate ? new Date(interviewDate) : null }),
         ...('interviewDate' in body && interviewDate && { interviewReminderSent: false }),  // איפוס תזכורת כשמעדכנים תאריך
         // 🆕 תקציר ידני - מעדכן גם את timestamp העריכה רק כשהתוכן באמת משתנה
         ...('manualSummary' in body && {
@@ -233,10 +212,6 @@ export async function PUT(
           manualSummaryUpdatedAt: (manualSummary || null) !== (existingCandidate.manualSummary || null)
             ? new Date()
             : existingCandidate.manualSummaryUpdatedAt,
-        }),
-        ...('placementFeePaid' in body && {
-          placementFeePaid,
-          placementFeePaidAt: placementFeePaid === null ? null : new Date(),
         }),
       },
       include: {
@@ -249,246 +224,170 @@ export async function PUT(
       },
     })
 
-    if ('interviewDate' in body) {
-      try {
-        const positionId = candidate.inProcessPositionId || existingCandidate.inProcessPositionId
-        const schedulerId = (session.user as { id?: string } | undefined)?.id
-
-        if (positionId && schedulerId) {
-          const application = await prisma.application.findFirst({
-            where: { candidateId: candidate.id, positionId },
-            orderBy: { appliedAt: 'desc' },
-            select: { id: true },
-          })
-          const existingInterview = existingCandidate.interviewDate
-            ? await prisma.interview.findFirst({
-                where: {
-                  candidateId: candidate.id,
-                  positionId,
-                  scheduledAt: existingCandidate.interviewDate,
-                  status: { not: 'CANCELLED' },
-                },
-                orderBy: { createdAt: 'desc' },
-                select: { id: true },
-              })
-            : null
-
-          if (application && resolvedInterviewDate) {
-            if (existingInterview) {
-              await prisma.interview.update({
-                where: { id: existingInterview.id },
-                data: { scheduledAt: resolvedInterviewDate, status: 'SCHEDULED' },
-              })
-            } else {
-              await prisma.interview.create({
-                data: {
-                  title: `ראיון עם ${candidate.name}`,
-                  type: 'HR',
-                  scheduledAt: resolvedInterviewDate,
-                  duration: 60,
-                  applicationId: application.id,
-                  positionId,
-                  candidateId: candidate.id,
-                  schedulerId,
-                },
-              })
-            }
-          } else if (existingInterview && !resolvedInterviewDate) {
-            await prisma.interview.update({
-              where: { id: existingInterview.id },
-              data: { status: 'CANCELLED' },
-            })
-          }
-        }
-      } catch (interviewError) {
-        console.error("Candidate interview record sync failed:", interviewError)
-      }
-
-      try {
-        const positionId = candidate.inProcessPositionId || existingCandidate.inProcessPositionId
-        const position = positionId
-          ? await prisma.position.findUnique({
-              where: { id: positionId },
-              select: { title: true, employer: { select: { name: true } } },
-            })
-          : null
-
-        await syncCandidateInterviewToTeamCalendars({
-          candidateId: candidate.id,
-          candidateName: candidate.name,
-          interviewDate: candidate.interviewDate,
-          positionTitle: position?.title,
-          employerName: position?.employer?.name,
-        })
-      } catch (calendarError) {
-        console.error("Candidate interview calendar sync failed:", calendarError)
-      }
-    }
-
-    // 🔄 סנכרון בין employmentStatus לבין Application.status (לעקביות נתונים)
-    if ('employmentStatus' in body) {
-      const activeStatuses = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER']
-      if (employmentStatus === 'EMPLOYED') {
-        // כשמועמד התקבל - סגור את כל הפניות הפעילות שלו כ-HIRED
-        await prisma.application.updateMany({
-          where: { candidateId: id, status: { in: activeStatuses } },
-          data: { status: 'HIRED' },
-        })
-      } else if (employmentStatus === 'REJECTED') {
-        // כשמועמד נדחה - סגור את כל הפניות הפעילות שלו כ-REJECTED
-        await prisma.application.updateMany({
-          where: { candidateId: id, status: { in: activeStatuses } },
-          data: { status: 'REJECTED' },
-        })
-      } else if (employmentStatus === 'IN_PROCESS') {
-        // כשמועמד בתהליך - עדכן את הפנייה האחרונה ב-NEW ל-SCREENING
-        const latestNewApp = await prisma.application.findFirst({
-          where: { candidateId: id, status: 'NEW' },
-          orderBy: { appliedAt: 'desc' },
-        })
-        if (latestNewApp) {
-          await prisma.application.update({
-            where: { id: latestNewApp.id },
-            data: { status: 'SCREENING' },
-          })
-        }
-      }
-    }
-
-    // 🆕 שליחת מייל כניסה לתהליך - רק כשהסטטוס עכשיו שונה ל-IN_PROCESS
-    if (
-      'employmentStatus' in body &&
-      employmentStatus === 'IN_PROCESS' &&
-      existingCandidate.employmentStatus !== 'IN_PROCESS'
-    ) {
-      const posIdForEmail = (inProcessPositionId as string | undefined) || candidate.inProcessPositionId
-      let posTitle: string | null = null
-      let empName: string | null = null
-      if (posIdForEmail) {
-        try {
-          const pos = await prisma.position.findUnique({
-            where: { id: posIdForEmail },
-            include: { employer: true },
-          })
-          posTitle = pos?.title || null
-          empName = pos?.employer?.name || null
-        } catch { /* ignore */ }
-      }
-      await sendProcessEntryEmail({
+    // הסטטוס כבר נשמר. סנכרון הפניות והמייל רצים אחרי התשובה
+    // כדי שסימון בסטטוס חודשי/שנתי יתעדכן מיד ולא יחכה ל-SMTP.
+    if ('employmentStatus' in body && employmentStatus !== existingCandidate.employmentStatus) {
+      const statusContext = {
+        candidateId: id,
         candidateName: candidate.name,
-        positionTitle: posTitle,
-        employerName: empName,
         phone: candidate.phone,
+        employmentStatus: employmentStatus as string | null,
+        previousStatus: existingCandidate.employmentStatus,
+        previousPositionId: existingCandidate.inProcessPositionId,
+        positionId: (inProcessPositionId as string | undefined) || candidate.inProcessPositionId,
+        inProcessAt: candidate.inProcessAt,
+        hiredAt: candidate.hiredAt,
+        interviewDate: candidate.interviewDate,
         recruiterName: session.user?.name || session.user?.email || null,
-      })
-    }
-
-    // 📧 מייל שינוי סטטוס - התקבל / נדחה
-    if (
-      'employmentStatus' in body &&
-      (employmentStatus === 'EMPLOYED' || employmentStatus === 'REJECTED') &&
-      existingCandidate.employmentStatus !== employmentStatus
-    ) {
-      // מביא פרטי המשרה האחרונה בתהליך (אם ידועה)
-      let posTitle: string | null = null
-      let empName: string | null = null
-      const posId = existingCandidate.inProcessPositionId || candidate.inProcessPositionId
-      if (posId) {
-        try {
-          const pos = await prisma.position.findUnique({
-            where: { id: posId },
-            include: { employer: true },
-          })
-          posTitle = pos?.title || null
-          empName = pos?.employer?.name || null
-        } catch { /* ignore */ }
       }
-      await sendCandidateStatusChangeEmail({
-        candidateName: candidate.name,
-        phone: candidate.phone,
-        positionTitle: posTitle,
-        employerName: empName,
-        newStatus: employmentStatus,
-        oldStatus: existingCandidate.employmentStatus,
-        candidateId: candidate.id,
-      })
-
-      if (employmentStatus === 'EMPLOYED') {
-        await addHiredCandidateToTeamCalendars({
-          candidateId: candidate.id,
-          candidateName: candidate.name,
-          hiredAt: candidate.hiredAt || new Date(),
-          positionTitle: posTitle,
-          employerName: empName,
-        })
-      }
-    }
-
-    // 📧 מועמד ירד מתהליך (חזרה לחדש - ללא דחייה רשמית)
-    if (
-      'employmentStatus' in body &&
-      existingCandidate.employmentStatus === 'IN_PROCESS' &&
-      employmentStatus !== 'IN_PROCESS' &&
-      employmentStatus !== 'EMPLOYED' &&
-      employmentStatus !== 'REJECTED'
-    ) {
-      const prevPosId = existingCandidate.inProcessPositionId
-      let prevPosTitle: string | null = null
-      let prevEmpName: string | null = null
-      if (prevPosId) {
-        try {
-          const pos = await prisma.position.findUnique({
-            where: { id: prevPosId },
-            include: { employer: true },
-          })
-          prevPosTitle = pos?.title || null
-          prevEmpName = pos?.employer?.name || null
-        } catch { /* ignore */ }
-      }
-      await sendCandidateStatusChangeEmail({
-        candidateName: candidate.name,
-        phone: candidate.phone,
-        positionTitle: prevPosTitle,
-        employerName: prevEmpName,
-        newStatus: 'WITHDRAWN',
-        oldStatus: 'IN_PROCESS',
-        candidateId: candidate.id,
-      })
-    }
-
-    if (
-      'employmentStatus' in body &&
-      employmentStatus !== existingCandidate.employmentStatus
-    ) {
-      const positionId = existingCandidate.inProcessPositionId || candidate.inProcessPositionId
-      const position = positionId
-        ? await prisma.position.findUnique({ where: { id: positionId }, select: { recruiterId: true } })
-        : null
-      const statusLabels: Record<string, string> = {
-        EMPLOYED: "התקבל",
-        REJECTED: "נדחה",
-        IN_PROCESS: "בתהליך",
-      }
-      await createCandidateUpdate({
-        type: "STATUS_CHANGED",
-        source: "CRM",
-        title: `${candidate.name}: ${statusLabels[employmentStatus] || "חדש"}`,
-        summary: `הסטטוס עודכן על ידי ${session.user?.name || session.user?.email || "משתמש"}`,
-        candidateId: candidate.id,
-        positionId,
-        uploaderId: candidate.uploadedById,
-        recruiterId: position?.recruiterId || null,
-        resolved: true,
-      })
+      runAfterResponse(() => syncEmploymentStatusSideEffects(statusContext).catch((sideEffectError) => {
+        console.error("Employment status side effects failed:", sideEffectError)
+      }))
     }
 
     return NextResponse.json(candidate)
   } catch (error) {
-    console.error("Error updating candidate:", error)
+    console.error("Error updating candidate:", error instanceof Error ? error.stack : error)
     return NextResponse.json(
       { error: "Failed to update candidate" },
       { status: 500 }
     )
+  }
+}
+
+async function syncEmploymentStatusSideEffects(input: {
+  candidateId: string
+  candidateName: string
+  phone: string | null
+  employmentStatus: string | null
+  previousStatus: string | null
+  previousPositionId: string | null
+  positionId: string | null
+  inProcessAt: Date | null
+  hiredAt: Date | null
+  interviewDate: Date | null
+  recruiterName: string | null
+}) {
+  const {
+    candidateId,
+    candidateName,
+    phone,
+    employmentStatus,
+    previousStatus,
+    previousPositionId,
+    positionId,
+    inProcessAt,
+    hiredAt,
+    interviewDate,
+    recruiterName,
+  } = input
+  const activeStatuses = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER']
+
+  try {
+    if (employmentStatus === 'EMPLOYED') {
+      await prisma.application.updateMany({
+        where: { candidateId, status: { in: activeStatuses } },
+        data: { status: 'HIRED' },
+      })
+    } else if (employmentStatus === 'REJECTED') {
+      await prisma.application.updateMany({
+        where: { candidateId, status: { in: activeStatuses } },
+        data: { status: 'REJECTED' },
+      })
+    } else if (employmentStatus === 'IN_PROCESS') {
+      const latestNewApp = await prisma.application.findFirst({
+        where: { candidateId, status: 'NEW' },
+        orderBy: { appliedAt: 'desc' },
+      })
+      if (latestNewApp) {
+        await prisma.application.update({
+          where: { id: latestNewApp.id },
+          data: { status: 'SCREENING' },
+        })
+      }
+    }
+
+    const emailPositionId = employmentStatus === 'IN_PROCESS'
+      ? positionId
+      : previousPositionId || positionId
+    let positionTitle: string | null = null
+    let employerName: string | null = null
+    if (emailPositionId) {
+      const position = await prisma.position.findUnique({
+        where: { id: emailPositionId },
+        include: { employer: true },
+      })
+      positionTitle = position?.title || null
+      employerName = position?.employer?.name || null
+    }
+
+    if (employmentStatus === 'IN_PROCESS' && inProcessAt) {
+      await syncInProcessCandidateToTeamCalendars({
+        candidateId,
+        candidateName,
+        inProcessAt,
+        positionTitle,
+        employerName,
+      })
+    } else if (employmentStatus === 'EMPLOYED' || employmentStatus === 'REJECTED') {
+      await syncCandidateStatusToTeamCalendars({
+        candidateId,
+        candidateName,
+        status: employmentStatus,
+        statusDate: employmentStatus === 'EMPLOYED' && hiredAt ? hiredAt : new Date(),
+        positionTitle,
+        employerName,
+      })
+    }
+    if (interviewDate) {
+      await syncCandidateInterviewToTeamCalendars({
+        candidateId,
+        candidateName,
+        interviewDate,
+        positionTitle,
+        employerName,
+      })
+    }
+
+    if (employmentStatus === 'IN_PROCESS' && previousStatus !== 'IN_PROCESS') {
+      await sendProcessEntryEmail({
+        candidateName,
+        positionTitle,
+        employerName,
+        phone,
+        recruiterName,
+      })
+    } else if (employmentStatus === 'EMPLOYED' || employmentStatus === 'REJECTED') {
+      await sendCandidateStatusChangeEmail({
+        candidateName,
+        phone,
+        positionTitle,
+        employerName,
+        newStatus: employmentStatus,
+        oldStatus: previousStatus,
+        candidateId,
+      })
+    } else if (previousStatus === 'IN_PROCESS') {
+      await sendCandidateStatusChangeEmail({
+        candidateName,
+        phone,
+        positionTitle,
+        employerName,
+        newStatus: 'WITHDRAWN',
+        oldStatus: 'IN_PROCESS',
+        candidateId,
+      })
+    } else if (employmentStatus) {
+      await sendCandidateStatusChangeEmail({
+        candidateName,
+        phone,
+        newStatus: employmentStatus,
+        oldStatus: previousStatus,
+        candidateId,
+      })
+    }
+  } catch (sideEffectError) {
+    console.error("Employment status side effects failed:", sideEffectError)
   }
 }
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -146,7 +145,6 @@ const STATUS_META: Record<StatusKey, {
 };
 
 export default function MonthlyStatusPage() {
-  const router = useRouter();
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -155,6 +153,7 @@ export default function MonthlyStatusPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [paymentSavingId, setPaymentSavingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,10 +171,10 @@ export default function MonthlyStatusPage() {
     fetchData();
   }, [selectedPeriod]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setLoading(true);
     try {
-      const response = await fetch('/api/candidates?limit=5000');
+      const response = await fetch('/api/candidates?period=' + encodeURIComponent(selectedPeriod) + '&limit=5000');
       if (response.ok) {
         const data = await response.json();
         const allCandidates = data.candidates || data || [];
@@ -263,8 +262,10 @@ export default function MonthlyStatusPage() {
 
       if (response.ok) {
         setEditingId(null);
-        fetchData();
-        router.refresh();
+        setCandidates(list => list.map(candidate => (
+          candidate.id === candidateId ? { ...candidate, ...updatePayload } : candidate
+        )));
+        void fetchData({ silent: true });
       }
     } catch (error) {
       console.error('Error saving:', error);
@@ -274,39 +275,49 @@ export default function MonthlyStatusPage() {
   };
 
   const quickStatusUpdate = async (candidateId: string, newStatus: string) => {
-    setSaving(true);
+    const current = candidates.find(c => c.id === candidateId);
+    if (!current) return;
+    const previous = candidates;
+    const now = new Date().toISOString();
+    const updatePayload: any = { employmentStatus: newStatus };
+
+    if (newStatus === 'EMPLOYED') {
+      if (!current.hiredAt) updatePayload.hiredAt = now;
+      updatePayload.inProcessPositionId = null;
+      updatePayload.inProcessAt = null;
+    } else if (newStatus === 'REJECTED') {
+      updatePayload.hiredAt = null;
+      updatePayload.hiredToEmployerId = null;
+      updatePayload.inProcessPositionId = null;
+      updatePayload.inProcessAt = null;
+    } else {
+      updatePayload.hiredAt = null;
+      updatePayload.hiredToEmployerId = null;
+      if (!current.inProcessAt) updatePayload.inProcessAt = now;
+    }
+
+    setSavingId(candidateId);
+    setCandidates(list => list.map(candidate => (
+      candidate.id === candidateId ? { ...candidate, ...updatePayload } : candidate
+    )));
+
     try {
-      const updatePayload: any = { employmentStatus: newStatus };
-
-      if (newStatus === 'EMPLOYED') {
-        const current = candidates.find(c => c.id === candidateId);
-        if (!current?.hiredAt) updatePayload.hiredAt = new Date().toISOString();
-        updatePayload.inProcessPositionId = null;
-        updatePayload.inProcessAt = null;
-      } else if (newStatus === 'REJECTED') {
-        updatePayload.hiredAt = null;
-        updatePayload.hiredToEmployerId = null;
-        updatePayload.inProcessPositionId = null;
-        updatePayload.inProcessAt = null;
-      } else {
-        updatePayload.hiredAt = null;
-        updatePayload.hiredToEmployerId = null;
-      }
-
       const res = await fetch(`/api/candidates/${candidateId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatePayload),
       });
 
-      if (res.ok) {
-        fetchData();
-        router.refresh();
+      if (!res.ok) {
+        setCandidates(previous);
+        return;
       }
+      void fetchData({ silent: true });
     } catch (error) {
       console.error('Error updating status:', error);
+      setCandidates(previous);
     } finally {
-      setSaving(false);
+      setSavingId(null);
     }
   };
 
@@ -434,7 +445,7 @@ export default function MonthlyStatusPage() {
                 </div>
               )}
 
-              <Button variant="secondary" onClick={fetchData} disabled={loading} className="h-11 rounded-full bg-white text-slate-950 hover:bg-slate-100">
+              <Button variant="secondary" onClick={() => { void fetchData(); }} disabled={loading} className="h-11 rounded-full bg-white text-slate-950 hover:bg-slate-100">
                 <RefreshCw className={loading ? 'animate-spin' : ''} />
                 רענון
               </Button>
@@ -562,13 +573,13 @@ export default function MonthlyStatusPage() {
                             </div>
 
                             <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
-                              <QuickAction label="סמן בתהליך" active={status === 'in-process'} activeClass={STATUS_META['in-process'].action} disabled={saving} onClick={() => quickStatusUpdate(candidate.id, 'IN_PROCESS')}>
+                              <QuickAction label="סמן בתהליך" active={status === 'in-process'} activeClass={STATUS_META['in-process'].action} disabled={saving || savingId === candidate.id} onClick={() => quickStatusUpdate(candidate.id, 'IN_PROCESS')}>
                                 <Clock className="h-3.5 w-3.5" />
                               </QuickAction>
-                              <QuickAction label="סמן התקבל" active={status === 'hired'} activeClass={STATUS_META.hired.action} disabled={saving} onClick={() => quickStatusUpdate(candidate.id, 'EMPLOYED')}>
+                              <QuickAction label="סמן התקבל" active={status === 'hired'} activeClass={STATUS_META.hired.action} disabled={saving || savingId === candidate.id} onClick={() => quickStatusUpdate(candidate.id, 'EMPLOYED')}>
                                 <CheckCircle className="h-3.5 w-3.5" />
                               </QuickAction>
-                              <QuickAction label="סמן לא התקבל" active={status === 'rejected'} activeClass={STATUS_META.rejected.action} disabled={saving} onClick={() => quickStatusUpdate(candidate.id, 'REJECTED')}>
+                              <QuickAction label="סמן לא התקבל" active={status === 'rejected'} activeClass={STATUS_META.rejected.action} disabled={saving || savingId === candidate.id} onClick={() => quickStatusUpdate(candidate.id, 'REJECTED')}>
                                 <XCircle className="h-3.5 w-3.5" />
                               </QuickAction>
                               <Button size="sm" variant="outline" onClick={() => startEdit(candidate)} className="h-8 rounded-full px-3" aria-label={`עריכת ${candidate.name}`}>

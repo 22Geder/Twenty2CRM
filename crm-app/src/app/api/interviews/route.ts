@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { runAfterResponse } from "@/lib/run-after-response"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
@@ -211,10 +212,39 @@ export async function POST(request: NextRequest) {
       console.error("Candidate interview date sync failed:", candidateSyncError)
     }
 
-    // 📅 Google Calendar event creation (non-blocking)
+    // היומן והזימון רצים אחרי שהראיון כבר נשמר, כדי שהמסך לא יחכה ל-Google/SMTP.
+    runAfterResponse(() => syncInterviewExternally(interview, resolvedSchedulerId, scheduledAt).catch((calendarError) => {
+      console.error("Interview calendar sync failed:", calendarError)
+    }))
+
+    return NextResponse.json(interview, { status: 201 })
+  } catch (error) {
+    console.error("Error creating interview:", error)
+    return NextResponse.json(
+      { error: "Failed to create interview" },
+      { status: 500 }
+    )
+  }
+}
+
+async function syncInterviewExternally(
+  interview: {
+    id: string
+    title: string
+    scheduledAt: Date
+    duration: number
+    location: string | null
+    meetingUrl: string | null
+    notes: string | null
+    candidate: { name: string; email: string | null } | null
+    position: { title: string } | null
+  },
+  schedulerId: string,
+  scheduledAt: string
+) {
     try {
       const scheduler = await prisma.user.findUnique({
-        where: { id: resolvedSchedulerId },
+        where: { id: schedulerId },
         select: { googleCalendarRefreshToken: true, email: true, name: true },
       })
 
@@ -294,13 +324,4 @@ export async function POST(request: NextRequest) {
     } catch (calErr) {
       console.error("Calendar sync error (non-fatal):", calErr)
     }
-
-    return NextResponse.json(interview, { status: 201 })
-  } catch (error) {
-    console.error("Error creating interview:", error)
-    return NextResponse.json(
-      { error: "Failed to create interview" },
-      { status: 500 }
-    )
-  }
 }

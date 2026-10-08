@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { runAfterResponse } from "@/lib/run-after-response"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
@@ -166,21 +167,7 @@ export async function PUT(
         },
       })
 
-      if (
-        status === 'IN_PROCESS' &&
-        existingApplication.status !== 'IN_PROCESS' &&
-        existingApplication.candidate.employmentStatus !== 'IN_PROCESS'
-      ) {
-        await sendProcessEntryEmail({
-          candidateName: existingApplication.candidate.name,
-          positionTitle: existingApplication.position.title,
-          employerName: (existingApplication.position as any).employer?.name ?? null,
-          phone: existingApplication.candidate.phone,
-          recruiterName: session.user?.name || session.user?.email || null,
-        })
-      }
-
-      await sendCandidateStatusChangeEmail({
+      const notification = {
         candidateName: existingApplication.candidate.name,
         phone: existingApplication.candidate.phone,
         positionTitle: existingApplication.position.title,
@@ -189,6 +176,27 @@ export async function PUT(
         oldStatus: existingApplication.status,
         rejectionReason: rejectionReason ?? null,
         candidateId: existingApplication.candidateId,
+        recruiterName: session.user?.name || session.user?.email || null,
+        enteredProcess:
+          status === 'IN_PROCESS' &&
+          existingApplication.status !== 'IN_PROCESS' &&
+          existingApplication.candidate.employmentStatus !== 'IN_PROCESS',
+      }
+      runAfterResponse(async () => {
+        try {
+          if (notification.enteredProcess) {
+            await sendProcessEntryEmail({
+              candidateName: notification.candidateName,
+              positionTitle: notification.positionTitle,
+              employerName: notification.employerName,
+              phone: notification.phone,
+              recruiterName: notification.recruiterName,
+            })
+          }
+          await sendCandidateStatusChangeEmail(notification)
+        } catch (emailError) {
+          console.error("Application status email failed:", emailError)
+        }
       })
     }
 

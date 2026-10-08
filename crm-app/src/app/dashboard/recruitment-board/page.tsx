@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { MessageCircle, Mail } from 'lucide-react';
 import { allJobs, Job, BANKING_GENERAL_REQUIREMENTS, IMPORTANT_NOTES } from './jobs-data';
 import { buildSearchMatcher, buildSemanticMatcher, matchesJob, normalizeHe } from '@/lib/job-search';
 
@@ -1026,7 +1027,7 @@ export default function RecruitmentBoard() {
       }
     }
     if (total > 50 && readable / total < 0.4) {
-      showToast('⚠️ הטקסט מכיל ג\'יבריש - סביר להניח שהעתקת מ-PDF עם פונט מוטבע. העלה את הקובץ ישירות במקום להעתיק.');
+      showToast('הטקסט מכיל ג\'יבריש - סביר להניח שהעתקת מ-PDF עם פונט מוטבע. העלה את הקובץ ישירות במקום להעתיק.');
       return;
     }
     
@@ -1075,7 +1076,7 @@ export default function RecruitmentBoard() {
         }
         
         if (aiData.aiPowered) {
-          showToast('✨ ניתוח AI הושלם בהצלחה!');
+          showToast('ניתוח AI הושלם בהצלחה!');
         }
       } else {
         // Fallback - ניתוח מקומי
@@ -1116,7 +1117,7 @@ export default function RecruitmentBoard() {
       if (response.ok) {
         const data = await response.json();
         setDualLayerResult(data);
-        showToast('🤖 ניתוח AI מתקדם הושלם!');
+        showToast('ניתוח AI מתקדם הושלם!');
       } else {
         const err = await response.json();
         console.error('Dual-layer analysis error:', err);
@@ -1356,76 +1357,73 @@ yossi@email.com
                 </div>
               )}
 
-              {/* BIG WhatsApp Button - After Scanning */}
+              {/* WhatsApp - אחרי סריקה */}
               {candidate && candidate.phone && (
-                <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl p-8">
-                  <div className="flex items-center justify-between">
-                    <div className="text-white">
-                      <h3 className="text-3xl font-black mb-2">📱 צור קשר עם {candidate.name}</h3>
-                      <p className="text-green-100 text-xl">{candidate.phone}</p>
-                    </div>
-                    <a
-                      href={getWhatsAppLink(candidate.phone, `שלום ${candidate.name}! 👋\n\nקיבלתי את קורות החיים שלך ויש לי כמה משרות שיכולות להתאים לך${candidate.city ? ` באזור ${candidate.city}` : ''}.\n\nאשמח לדבר איתך ולספר עוד.\n\nטוונטי טו ג'ובס 🎯`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 bg-white hover:bg-green-50 text-green-600 px-12 py-6 rounded-2xl font-black text-2xl transition-all shadow-xl hover:scale-105"
-                    >
-                      <span className="text-4xl">💬</span>
-                      פתח וואטסאפ
-                    </a>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-center justify-between gap-4 flex-wrap">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">צור קשר עם {candidate.name}</h3>
+                    <p className="text-slate-500 text-sm tabular-nums" dir="ltr">{candidate.phone}</p>
                   </div>
+                  <a
+                    href={getWhatsAppLink(candidate.phone, `שלום ${candidate.name}! 👋\n\nקיבלתי את קורות החיים שלך ויש לי כמה משרות שיכולות להתאים לך${candidate.city ? ` באזור ${candidate.city}` : ''}.\n\nאשמח לדבר איתך ולספר עוד.\n\nטוונטי טו ג'ובס 🎯`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 min-h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors"
+                  >
+                    <MessageCircle className="w-5 h-5" aria-hidden="true" />
+                    פתח וואטסאפ
+                  </a>
                 </div>
               )}
 
-              {/* AI SMART SUMMARY - סיכום חכם */}
+              {/* סיכום AI */}
               {candidate && matches.length > 0 && (
-                <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-3xl shadow-2xl p-8 text-white">
-                  <h3 className="text-2xl font-black mb-4">🧠 סיכום AI חכם</h3>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="bg-white/10 rounded-2xl p-5 text-center">
-                      <div className="text-4xl font-black">{candidate.tags.length}</div>
-                      <div className="text-purple-200">תגיות מקצועיות</div>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">סיכום AI</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-slate-50 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-semibold text-slate-900 tabular-nums">{candidate.tags.length}</div>
+                      <div className="text-sm text-slate-500">תגיות מקצועיות</div>
                     </div>
-                    <div className="bg-white/10 rounded-2xl p-5 text-center">
-                      <div className="text-4xl font-black">{matches.length}</div>
-                      <div className="text-purple-200">משרות מתאימות</div>
+                    <div className="bg-slate-50 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-semibold text-slate-900 tabular-nums">{matches.length}</div>
+                      <div className="text-sm text-slate-500">משרות מתאימות</div>
                     </div>
-                    <div className="bg-white/10 rounded-2xl p-5 text-center">
-                      <div className="text-4xl font-black">{matches[0]?.score || 0}%</div>
-                      <div className="text-purple-200">התאמה מקסימלית</div>
+                    <div className="bg-slate-50 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-semibold text-teal-700 tabular-nums">{matches[0]?.score || 0}%</div>
+                      <div className="text-sm text-slate-500">התאמה מקסימלית</div>
                     </div>
                   </div>
-                  <div className="mt-6 text-purple-100 text-lg">
-                    {candidate.tags.some(t => t.id === 'automotive') && '🚗 המועמד מתאים במיוחד לתחום הרכב! '}
-                    {candidate.tags.some(t => t.id === 'banking') && '🏦 רקע בנקאי מזוהה! '}
-                    {candidate.tags.some(t => t.id === 'logistics') && '📦 ניסיון לוגיסטי מזוהה! '}
-                    {candidate.tags.some(t => t.id === 'service') && '📞 רקע בשירות לקוחות! '}
-                    {candidate.yearsOfExperience >= 5 && `⭐ ${candidate.yearsOfExperience} שנות ניסיון - מועמד בכיר! `}
+                  <div className="mt-4 text-slate-600 text-sm space-y-1">
+                    {candidate.tags.some(t => t.id === 'automotive') && <p>המועמד מתאים במיוחד לתחום הרכב.</p>}
+                    {candidate.tags.some(t => t.id === 'banking') && <p>רקע בנקאי מזוהה.</p>}
+                    {candidate.tags.some(t => t.id === 'logistics') && <p>ניסיון לוגיסטי מזוהה.</p>}
+                    {candidate.tags.some(t => t.id === 'service') && <p>רקע בשירות לקוחות.</p>}
+                    {candidate.yearsOfExperience >= 5 && <p>{candidate.yearsOfExperience} שנות ניסיון - מועמד בכיר.</p>}
                   </div>
                 </div>
               )}
 
-              {/* 🤖 DUAL-LAYER ANALYSIS - ניתוח התאמה כפול */}
+              {/* ניתוח התאמה כפול (Dual-Layer) */}
               {dualLayerLoading && (
-                <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-3xl shadow-2xl p-10 text-white text-center">
-                  <div className="animate-spin w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-6"></div>
-                  <h3 className="text-3xl font-black mb-2">🤖 מנוע AI בפעולה...</h3>
-                  <p className="text-teal-100 text-xl">מבצע ניתוח התאמה כפול (Dual-Layer Matching)</p>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center" role="status" aria-live="polite">
+                  <div className="animate-spin w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">מנוע ה-AI מנתח...</h3>
+                  <p className="text-slate-500 text-sm">מבצע ניתוח התאמה כפול (Dual-Layer Matching)</p>
                 </div>
               )}
 
               {dualLayerResult && (
-                <div className="space-y-8">
+                <div className="space-y-6">
                   {/* הודעה אם אין התאמות */}
                   {dualLayerResult.message && !dualLayerResult.bestMatch && (
-                    <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-8 text-center">
-                      <div className="text-6xl mb-4">⚠️</div>
-                      <h3 className="text-2xl font-bold text-yellow-700 mb-2">לא נמצאו משרות מתאימות</h3>
-                      <p className="text-yellow-600 text-lg">{dualLayerResult.message}</p>
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+                      <h3 className="text-lg font-semibold text-amber-800 mb-1">לא נמצאו משרות מתאימות</h3>
+                      <p className="text-amber-700 text-sm">{dualLayerResult.message}</p>
                       {dualLayerResult.candidateCard.detectedIndustry?.length > 0 && (
                         <div className="mt-4 flex flex-wrap justify-center gap-2">
                           {dualLayerResult.candidateCard.detectedIndustry.map((ind, i) => (
-                            <span key={i} className="bg-yellow-200 text-yellow-800 px-4 py-2 rounded-full font-bold">
+                            <span key={i} className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
                               {ind}
                             </span>
                           ))}
@@ -1435,54 +1433,51 @@ yossi@email.com
                   )}
 
                   {/* כרטיס מועמד מורחב */}
-                  <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl shadow-2xl p-10 text-white">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-16 h-16 bg-teal-500 rounded-2xl flex items-center justify-center text-3xl">🎯</div>
-                      <div>
-                        <h3 className="text-3xl font-black">כרטיס מועמד - {dualLayerResult.candidateCard.fullName}</h3>
-                        <p className="text-slate-400">ניתוח AI מתקדם מבית 2טו-גדר</p>
-                      </div>
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div className="mb-5">
+                      <h3 className="text-xl font-semibold text-slate-900">כרטיס מועמד - {dualLayerResult.candidateCard.fullName}</h3>
+                      <p className="text-slate-500 text-sm">ניתוח AI מתקדם מבית 2טו-גדר</p>
                     </div>
 
                     {/* תחומים שזוהו */}
                     {dualLayerResult.candidateCard.detectedIndustry?.length > 0 && (
-                      <div className="mb-6 p-4 bg-teal-500/20 rounded-xl border border-teal-400">
-                        <div className="text-teal-300 mb-2 text-sm font-bold">🎯 תחומים שזוהו אצל המועמד:</div>
+                      <div className="mb-5 p-4 bg-teal-50 rounded-xl border border-teal-100">
+                        <div className="text-teal-800 mb-2 text-sm font-semibold">תחומים שזוהו אצל המועמד</div>
                         <div className="flex flex-wrap gap-2">
                           {dualLayerResult.candidateCard.detectedIndustry.map((ind, i) => (
-                            <span key={i} className="bg-teal-500 text-white px-4 py-2 rounded-full font-bold text-lg">
+                            <span key={i} className="bg-teal-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
                               {ind}
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-                    
-                    <div className="grid grid-cols-4 gap-6 mb-8">
-                      <div className="bg-white/10 rounded-xl p-5">
-                        <div className="text-slate-400 text-sm mb-1">📍 עיר</div>
-                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.city}</div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                      <div className="bg-slate-50 rounded-xl p-4">
+                        <div className="text-slate-500 text-sm mb-1">עיר</div>
+                        <div className="text-lg font-semibold text-slate-900">{dualLayerResult.candidateCard.city}</div>
                       </div>
-                      <div className="bg-white/10 rounded-xl p-5">
-                        <div className="text-slate-400 text-sm mb-1">🎂 גיל</div>
-                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.age}</div>
+                      <div className="bg-slate-50 rounded-xl p-4">
+                        <div className="text-slate-500 text-sm mb-1">גיל</div>
+                        <div className="text-lg font-semibold text-slate-900 tabular-nums">{dualLayerResult.candidateCard.age}</div>
                       </div>
-                      <div className="bg-white/10 rounded-xl p-5">
-                        <div className="text-slate-400 text-sm mb-1">📱 נייד</div>
-                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.phone}</div>
+                      <div className="bg-slate-50 rounded-xl p-4">
+                        <div className="text-slate-500 text-sm mb-1">נייד</div>
+                        <div className="text-lg font-semibold text-slate-900 tabular-nums" dir="ltr">{dualLayerResult.candidateCard.phone}</div>
                       </div>
-                      <div className="bg-white/10 rounded-xl p-5">
-                        <div className="text-slate-400 text-sm mb-1">⏰ ניסיון</div>
-                        <div className="text-2xl font-bold">{dualLayerResult.candidateCard.yearsExperience} שנים</div>
+                      <div className="bg-slate-50 rounded-xl p-4">
+                        <div className="text-slate-500 text-sm mb-1">ניסיון</div>
+                        <div className="text-lg font-semibold text-slate-900 tabular-nums">{dualLayerResult.candidateCard.yearsExperience} שנים</div>
                       </div>
                     </div>
 
                     {/* תגיות חמות */}
                     <div>
-                      <div className="text-slate-400 mb-4 text-lg">🔥 תגיות חמות (Skills):</div>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="text-slate-500 mb-2 text-sm">תגיות חמות (Skills)</div>
+                      <div className="flex flex-wrap gap-2">
                         {dualLayerResult.candidateCard.hotTags.map((tag, i) => (
-                          <span key={i} className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-bold text-lg shadow-lg">
+                          <span key={i} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-semibold">
                             #{tag}
                           </span>
                         ))}
@@ -1492,78 +1487,72 @@ yossi@email.com
 
                   {/* המשרה הנבחרת */}
                   {dualLayerResult.bestMatch && (
-                    <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                       {/* כותרת המשרה */}
-                      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-8 text-white">
-                        <div className="flex items-center justify-between">
+                      <div className="p-6 border-b border-slate-200 bg-teal-50">
+                        <div className="flex items-center justify-between gap-6 flex-wrap">
                           <div>
-                            <div className="text-teal-200 mb-2">🎯 המשרה הנבחרת:</div>
-                            <h4 className="text-4xl font-black">{dualLayerResult.bestMatch.positionTitle}</h4>
-                            <p className="text-teal-100 text-xl mt-2">🏢 {dualLayerResult.bestMatch.employerName} | 📍 {dualLayerResult.bestMatch.location}</p>
+                            <div className="text-teal-800 text-sm font-semibold mb-1">המשרה הנבחרת</div>
+                            <h4 className="text-2xl font-semibold text-slate-900">{dualLayerResult.bestMatch.positionTitle}</h4>
+                            <p className="text-slate-600 mt-1">{dualLayerResult.bestMatch.employerName} · {dualLayerResult.bestMatch.location}</p>
                             {dualLayerResult.bestMatch.matchReason && (
-                              <p className="text-teal-200 mt-3 bg-white/10 rounded-lg px-4 py-2 inline-block">
-                                ✨ {dualLayerResult.bestMatch.matchReason}
+                              <p className="text-slate-600 text-sm mt-3 bg-white rounded-lg px-3 py-2 inline-block border border-teal-100">
+                                {dualLayerResult.bestMatch.matchReason}
                               </p>
                             )}
                           </div>
                           <div className="text-center">
-                            <div className="text-7xl font-black">{dualLayerResult.bestMatch.weightedScore}%</div>
-                            <div className="text-teal-200 text-lg">ציון התאמה משוקלל</div>
+                            <div className="text-5xl font-semibold text-teal-700 tabular-nums">{dualLayerResult.bestMatch.weightedScore}%</div>
+                            <div className="text-slate-500 text-sm">ציון התאמה משוקלל</div>
                           </div>
                         </div>
                       </div>
 
                       {/* ניתוח התאמה כפול */}
-                      <div className="p-8">
-                        <h5 className="text-2xl font-black text-slate-800 mb-6">⚖️ ניתוח התאמה כפול (Dual Analysis)</h5>
-                        
-                        <div className="grid grid-cols-2 gap-8 mb-8">
+                      <div className="p-6">
+                        <h5 className="text-lg font-semibold text-slate-900 mb-4">ניתוח התאמה כפול (Dual Analysis)</h5>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                           {/* התאמה טכנית */}
-                          <div className="bg-blue-50 rounded-2xl p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                              <span className="text-3xl">🔧</span>
-                              <div>
-                                <h6 className="text-xl font-bold text-blue-800">התאמה טכנית (Tags)</h6>
-                                <div className={`text-3xl font-black ${dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score >= 70 ? 'text-green-600' : dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
-                                  {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score}%
-                                </div>
+                          <div className="bg-slate-50 rounded-2xl p-5">
+                            <div className="mb-3">
+                              <h6 className="text-base font-semibold text-slate-900">התאמה טכנית (Tags)</h6>
+                              <div className={`text-3xl font-semibold tabular-nums ${dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score >= 70 ? 'text-emerald-700' : dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                                {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.score}%
                               </div>
                             </div>
                             <div className="space-y-3">
                               <div>
-                                <div className="text-sm text-blue-600 mb-1 font-medium">✅ מתאים:</div>
+                                <div className="text-sm text-slate-500 mb-1">מתאים</div>
                                 <div className="flex flex-wrap gap-2">
                                   {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.matched.map((m, i) => (
-                                    <span key={i} className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">{m}</span>
+                                    <span key={i} className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm">{m}</span>
                                   ))}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-sm text-blue-600 mb-1 font-medium">❌ חסר:</div>
+                                <div className="text-sm text-slate-500 mb-1">חסר</div>
                                 <div className="flex flex-wrap gap-2">
                                   {dualLayerResult.bestMatch.dualAnalysis.technicalMatch.missing.map((m, i) => (
-                                    <span key={i} className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">{m}</span>
+                                    <span key={i} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">{m}</span>
                                   ))}
                                 </div>
                               </div>
-                              <p className="text-blue-700 text-sm mt-3">{dualLayerResult.bestMatch.dualAnalysis.technicalMatch.explanation}</p>
+                              <p className="text-slate-600 text-sm mt-2">{dualLayerResult.bestMatch.dualAnalysis.technicalMatch.explanation}</p>
                             </div>
                           </div>
 
                           {/* התאמה לוגית AI */}
-                          <div className="bg-purple-50 rounded-2xl p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                              <span className="text-3xl">🧠</span>
-                              <div>
-                                <h6 className="text-xl font-bold text-purple-800">התאמה לוגית (AI Logic)</h6>
-                                <div className={`text-3xl font-black ${dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score >= 70 ? 'text-green-600' : dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
-                                  {dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score}%
-                                </div>
+                          <div className="bg-slate-50 rounded-2xl p-5">
+                            <div className="mb-3">
+                              <h6 className="text-base font-semibold text-slate-900">התאמה לוגית (AI Logic)</h6>
+                              <div className={`text-3xl font-semibold tabular-nums ${dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score >= 70 ? 'text-emerald-700' : dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                                {dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.score}%
                               </div>
                             </div>
                             <div className="space-y-3">
-                              <p className="text-purple-700">{dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.explanation}</p>
-                              <div className="bg-purple-100 rounded-xl p-4 text-purple-800 text-sm">
+                              <p className="text-slate-600 text-sm">{dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.explanation}</p>
+                              <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm">
                                 <strong>הערכה מעמיקה:</strong> {dualLayerResult.bestMatch.dualAnalysis.aiLogicMatch.relevanceAssessment}
                               </div>
                             </div>
@@ -1571,18 +1560,16 @@ yossi@email.com
                         </div>
 
                         {/* מאזן הכוחות 5 מול 5 */}
-                        <h5 className="text-2xl font-black text-slate-800 mb-6">⚔️ מאזן הכוחות (5 מול 5)</h5>
-                        
-                        <div className="grid grid-cols-2 gap-8 mb-8">
+                        <h5 className="text-lg font-semibold text-slate-900 mb-4">מאזן הכוחות (5 מול 5)</h5>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                           {/* יתרונות */}
-                          <div className="bg-green-50 rounded-2xl p-6">
-                            <h6 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                              <span className="text-2xl">✅</span> למה מתאים (Pros)
-                            </h6>
-                            <ul className="space-y-3">
+                          <div className="bg-emerald-50 rounded-2xl p-5">
+                            <h6 className="text-base font-semibold text-emerald-800 mb-3">למה מתאים (Pros)</h6>
+                            <ul className="space-y-2">
                               {dualLayerResult.bestMatch.prosCons.pros.map((pro, i) => (
-                                <li key={i} className="flex items-start gap-3 text-green-700">
-                                  <span className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
+                                <li key={i} className="flex items-start gap-3 text-emerald-900 text-sm">
+                                  <span className="bg-emerald-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0">{i + 1}</span>
                                   <span>{pro}</span>
                                 </li>
                               ))}
@@ -1590,14 +1577,12 @@ yossi@email.com
                           </div>
 
                           {/* חסרונות/סיכונים */}
-                          <div className="bg-red-50 rounded-2xl p-6">
-                            <h6 className="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
-                              <span className="text-2xl">⚠️</span> חסרונות/סיכונים (Cons)
-                            </h6>
-                            <ul className="space-y-3">
+                          <div className="bg-red-50 rounded-2xl p-5">
+                            <h6 className="text-base font-semibold text-red-800 mb-3">חסרונות/סיכונים (Cons)</h6>
+                            <ul className="space-y-2">
                               {dualLayerResult.bestMatch.prosCons.cons.map((con, i) => (
-                                <li key={i} className="flex items-start gap-3 text-red-700">
-                                  <span className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
+                                <li key={i} className="flex items-start gap-3 text-red-900 text-sm">
+                                  <span className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0">{i + 1}</span>
                                   <span>{con}</span>
                                 </li>
                               ))}
@@ -1606,36 +1591,31 @@ yossi@email.com
                         </div>
 
                         {/* שורה תחתונה - המלצה */}
-                        <div className={`rounded-2xl p-8 ${dualLayerResult.bestMatch.recommendation.shouldProceed ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-orange-500 to-red-500'} text-white`}>
-                          <div className="flex items-center gap-4 mb-4">
-                            <span className="text-5xl">{dualLayerResult.bestMatch.recommendation.shouldProceed ? '✅' : '⚠️'}</span>
-                            <div>
-                              <h6 className="text-2xl font-black">שורה תחתונה</h6>
-                              <p className="text-xl opacity-90">
-                                המלצה: {dualLayerResult.bestMatch.recommendation.shouldProceed ? 'להעביר לשלב הבא!' : 'לשקול בזהירות'}
-                              </p>
-                            </div>
+                        <div className={`rounded-2xl p-6 border ${dualLayerResult.bestMatch.recommendation.shouldProceed ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                          <h6 className="text-lg font-semibold text-slate-900">שורה תחתונה</h6>
+                          <p className={`font-semibold mb-3 ${dualLayerResult.bestMatch.recommendation.shouldProceed ? 'text-emerald-800' : 'text-amber-800'}`}>
+                            המלצה: {dualLayerResult.bestMatch.recommendation.shouldProceed ? 'להעביר לשלב הבא' : 'לשקול בזהירות'}
+                          </p>
+                          <div className="bg-white rounded-xl p-4 border border-slate-200">
+                            <p className="text-slate-700 leading-relaxed">{dualLayerResult.bestMatch.recommendation.summaryForEmployer}</p>
                           </div>
-                          <div className="bg-white/20 rounded-xl p-5">
-                            <p className="text-lg leading-relaxed">{dualLayerResult.bestMatch.recommendation.summaryForEmployer}</p>
-                          </div>
-                          
+
                           {/* כפתור שליחה למעסיק */}
-                          <div className="mt-6 flex gap-4">
+                          <div className="mt-4 flex gap-3 flex-wrap">
                             <a
                               href={`mailto:?subject=מועמד מתאים: ${dualLayerResult.candidateCard.fullName || ''} - ${dualLayerResult.bestMatch.positionTitle || ''}&body=${safeEncodeURIComponent(`שלום,\n\nרציתי להציג בפניכם מועמד מתאים למשרה:\n\n📋 פרטי המועמד:\n• שם: ${dualLayerResult.candidateCard.fullName || 'לא זוהה'}\n• טלפון: ${dualLayerResult.candidateCard.phone || 'לא זוהה'}\n• עיר: ${dualLayerResult.candidateCard.city || 'לא זוהה'}\n• ניסיון: ${dualLayerResult.candidateCard.yearsExperience || 0} שנים\n• כישורים: ${(dualLayerResult.candidateCard.hotTags || []).join(', ') || 'לא זוהו'}\n\n🎯 ציון התאמה: ${dualLayerResult.bestMatch.weightedScore || 0}%\n\n📝 סיכום:\n${dualLayerResult.bestMatch.recommendation?.summaryForEmployer || ''}\n\nבברכה,\nטוונטי טו ג'ובס`)}`}
-                              className="flex-1 py-4 bg-white hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-lg text-center transition-all flex items-center justify-center gap-2"
+                              className="flex-1 min-h-11 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-semibold text-center transition-colors inline-flex items-center justify-center gap-2"
                             >
-                              <span className="text-2xl">📧</span> שלח למעסיק במייל
+                              <Mail className="w-5 h-5" aria-hidden="true" /> שלח למעסיק במייל
                             </a>
                             {dualLayerResult.candidateCard.phone && (
                               <a
                                 href={getWhatsAppLink(dualLayerResult.candidateCard.phone, `שלום ${dualLayerResult.candidateCard.fullName}! 👋\n\nקיבלתי את קורות החיים שלך ומצאתי משרה שיכולה להתאים לך מאוד:\n\n🎯 ${dualLayerResult.bestMatch.positionTitle}\n🏢 ${dualLayerResult.bestMatch.employerName}\n📍 ${dualLayerResult.bestMatch.location}\n\nהציון שלך במערכת: ${dualLayerResult.bestMatch.weightedScore}%! 🌟\n\nאשמח לספר לך עוד ולתאם ראיון.\n\nטוונטי טו ג'ובס 🚀`)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex-1 py-4 bg-green-400 hover:bg-green-300 text-green-900 rounded-xl font-bold text-lg text-center transition-all flex items-center justify-center gap-2"
+                                className="flex-1 min-h-11 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-center transition-colors inline-flex items-center justify-center gap-2"
                               >
-                                <span className="text-2xl">💬</span> הודע למועמד בוואטסאפ
+                                <MessageCircle className="w-5 h-5" aria-hidden="true" /> הודע למועמד בוואטסאפ
                               </a>
                             )}
                           </div>
@@ -1646,13 +1626,13 @@ yossi@email.com
 
                   {/* משרות מתאימות נוספות */}
                   {dualLayerResult.topMatches && dualLayerResult.topMatches.length > 0 && (
-                    <div className="bg-slate-100 rounded-3xl p-8">
-                      <h5 className="text-xl font-bold text-slate-700 mb-4">📋 משרות מתאימות נוספות:</h5>
-                      <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                      <h5 className="text-lg font-semibold text-slate-900 mb-4">משרות מתאימות נוספות</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {dualLayerResult.topMatches.filter(m => m.positionId !== dualLayerResult.bestMatch?.positionId).slice(0, 3).map((match, i) => (
-                          <div key={i} className="bg-white rounded-xl p-5 shadow">
-                            <div className="text-2xl font-black text-teal-600 mb-2">{match.score}%</div>
-                            <div className="font-bold text-slate-800">{match.positionTitle}</div>
+                          <div key={i} className="bg-slate-50 rounded-xl p-4">
+                            <div className="text-2xl font-semibold text-teal-700 tabular-nums mb-1">{match.score}%</div>
+                            <div className="font-semibold text-slate-900">{match.positionTitle}</div>
                             <div className="text-sm text-slate-500">{match.employerName} | {match.location}</div>
                           </div>
                         ))}
@@ -1664,19 +1644,19 @@ yossi@email.com
 
               {/* Matches - עד 15 משרות */}
               {matches.length > 0 && (
-                <div className="bg-white rounded-3xl shadow-xl p-10">
-                  <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-3xl font-black text-slate-900">
-                      🎯 {matches.length >= 15 ? '15 המשרות המתאימות ביותר' : `משרות מתאימות (${matches.length})`}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                  <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
+                    <h2 className="text-xl font-semibold text-slate-900">
+                      {matches.length >= 15 ? '15 המשרות המתאימות ביותר' : `משרות מתאימות (${matches.length})`}
                     </h2>
                     {candidate?.city && (
-                      <span className="bg-teal-100 text-teal-700 px-6 py-3 rounded-xl font-bold text-lg">
-                        📍 לפי מגורים: {candidate.city}
+                      <span className="bg-teal-50 text-teal-800 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                        לפי מגורים: {candidate.city}
                       </span>
                     )}
                   </div>
-                  
-                  <div className="space-y-6">
+
+                  <div className="space-y-4">
                     {matches.slice(0, 15).map((m, i) => (
                       <div
                         key={m.job.id}
@@ -1685,60 +1665,58 @@ yossi@email.com
                         tabIndex={0}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedJob(m.job); } }}
                         title="לחץ לצפייה בפרטי המשרה המלאים"
-                        className={`cursor-pointer p-8 rounded-2xl border-3 transition-all hover:shadow-2xl hover:scale-[1.01] ${
-                          i === 0 ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-400 ring-4 ring-green-100' :
-                          i < 3 && m.score >= 70 ? 'bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-400' :
-                          m.score >= 60 ? 'bg-green-50 border-green-300' :
-                          m.score >= 50 ? 'bg-teal-50 border-teal-300' :
-                          'bg-slate-50 border-slate-200'
+                        className={`cursor-pointer p-5 rounded-2xl border transition-colors hover:border-teal-400 hover:bg-slate-50 ${
+                          i === 0 ? 'bg-emerald-50 border-emerald-300' :
+                          m.score >= 60 ? 'bg-white border-emerald-200' :
+                          m.score >= 50 ? 'bg-white border-teal-200' :
+                          'bg-white border-slate-200'
                         }`}
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-4 mb-3">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
                               {i === 0 && (
-                                <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-lg px-6 py-2 rounded-full font-bold shadow-lg animate-pulse">
-                                  🏆 הכי מתאים!
+                                <span className="bg-emerald-700 text-white text-xs px-3 py-1 rounded-full font-semibold">
+                                  הכי מתאים
                                 </span>
                               )}
                               {i === 1 && m.score >= 60 && (
-                                <span className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-lg px-5 py-2 rounded-full font-bold">
-                                  🥈 מקום שני
+                                <span className="bg-teal-100 text-teal-800 text-xs px-3 py-1 rounded-full font-semibold">
+                                  מקום שני
                                 </span>
                               )}
                               {i === 2 && m.score >= 50 && (
-                                <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-lg px-5 py-2 rounded-full font-bold">
-                                  🥉 מקום שלישי
+                                <span className="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded-full font-semibold">
+                                  מקום שלישי
                                 </span>
                               )}
                               {i > 2 && i < 5 && m.score >= 50 && (
-                                <span className="bg-teal-600 text-white text-lg px-5 py-2 rounded-full font-bold">
-                                  ⭐ מומלץ
+                                <span className="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded-full font-semibold">
+                                  מומלץ
                                 </span>
                               )}
-                              <h3 className="text-2xl font-bold text-slate-900">{m.job.title}</h3>
+                              <h3 className="text-lg font-semibold text-slate-900">{m.job.title}</h3>
                             </div>
-                            <div className="text-slate-600 mb-4 text-xl">
-                              📍 {m.job.location} 
-                              {m.job.salary && <span className="text-green-600 mr-3">• {m.job.salary}</span>}
+                            <div className="text-slate-600 mb-3">
+                              {m.job.location}
+                              {m.job.salary && <span className="text-emerald-700 ms-3">· {m.job.salary}</span>}
                             </div>
                             {m.job.description && (
-                              <p className="text-slate-500 mb-4 text-lg">{m.job.description.slice(0, 150)}...</p>
+                              <p className="text-slate-500 mb-3 text-sm">{m.job.description.slice(0, 150)}...</p>
                             )}
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-wrap gap-2">
                               {m.reasons.map((r, j) => (
-                                <span key={j} className="bg-white border-2 border-green-200 px-5 py-3 rounded-xl text-lg text-green-700 font-medium">
+                                <span key={j} className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-sm text-slate-700">
                                   {r}
                                 </span>
                               ))}
                             </div>
                           </div>
-                          <div className={`text-center px-8 py-6 rounded-2xl text-white min-w-[130px] shadow-xl ${
-                            i === 0 ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
-                            m.score >= 60 ? 'bg-green-600' : m.score >= 40 ? 'bg-teal-600' : 'bg-slate-500'
+                          <div className={`text-center px-5 py-4 rounded-xl text-white min-w-[96px] ${
+                            m.score >= 60 ? 'bg-emerald-700' : m.score >= 40 ? 'bg-teal-700' : 'bg-slate-500'
                           }`}>
-                            <div className="text-5xl font-black">{m.score}%</div>
-                            <div className="text-lg opacity-80">התאמה</div>
+                            <div className="text-3xl font-semibold tabular-nums">{m.score}%</div>
+                            <div className="text-sm opacity-90">התאמה</div>
                           </div>
                         </div>
                       </div>
@@ -1746,9 +1724,9 @@ yossi@email.com
                   </div>
 
                   {matches.length > 15 && (
-                    <div className="mt-8 text-center bg-teal-50 rounded-2xl p-6">
-                      <p className="text-teal-700 text-xl font-bold">📋 יש עוד {matches.length - 15} משרות מתאימות במערכת!</p>
-                      <p className="text-teal-500 text-lg mt-2">עבור ללשונית "משרות" לראות את כל המשרות</p>
+                    <div className="mt-6 text-center bg-teal-50 rounded-2xl p-5">
+                      <p className="text-teal-800 font-semibold">יש עוד {matches.length - 15} משרות מתאימות במערכת</p>
+                      <p className="text-teal-700 text-sm mt-1">עבור ללשונית "משרות" לראות את כל המשרות</p>
                     </div>
                   )}
                 </div>
@@ -1762,19 +1740,19 @@ yossi@email.com
           <div className="space-y-10">
             {/* Add Job Button */}
             <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-black text-slate-900">💼 ניהול משרות</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">ניהול משרות</h2>
               <button
                 onClick={() => setShowAddJob(!showAddJob)}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-bold text-xl transition-all shadow-lg"
+                className="bg-teal-700 hover:bg-teal-800 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-sm"
               >
-                ➕ הוסף משרה חדשה
+                הוסף משרה חדשה
               </button>
             </div>
 
             {/* Add Job Form */}
             {showAddJob && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-3xl shadow-xl p-10 border-2 border-green-200">
-                <h3 className="text-2xl font-bold text-slate-900 mb-6">➕ משרה חדשה</h3>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 className="text-xl font-semibold text-slate-900 mb-6">משרה חדשה</h3>
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-slate-700 font-medium mb-2">שם המשרה *</label>
@@ -1783,7 +1761,7 @@ yossi@email.com
                       value={newJob.title}
                       onChange={e => setNewJob({...newJob, title: e.target.value})}
                       placeholder="לדוגמה: טלרן/ית"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-green-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                   <div>
@@ -1793,7 +1771,7 @@ yossi@email.com
                       value={newJob.location}
                       onChange={e => setNewJob({...newJob, location: e.target.value})}
                       placeholder="לדוגמה: תל אביב"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-green-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                   <div>
@@ -1801,7 +1779,7 @@ yossi@email.com
                     <select
                       value={newJob.employerId}
                       onChange={e => setNewJob({...newJob, employerId: e.target.value})}
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-green-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     >
                       <option value="">בחר מעסיק</option>
                       {employers.map(emp => (
@@ -1816,7 +1794,7 @@ yossi@email.com
                       value={newJob.salary}
                       onChange={e => setNewJob({...newJob, salary: e.target.value})}
                       placeholder="לדוגמה: 8,000-10,000 ₪"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-green-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                 </div>
@@ -1826,7 +1804,7 @@ yossi@email.com
                     value={newJob.requirements}
                     onChange={e => setNewJob({...newJob, requirements: e.target.value})}
                     placeholder="פרט את דרישות המשרה..."
-                    className="w-full h-24 px-5 py-4 border-2 border-slate-200 rounded-xl text-lg resize-none focus:border-green-500"
+                    className="w-full h-24 px-5 py-4 border border-slate-200 rounded-xl text-base resize-none focus:border-teal-500"
                   />
                 </div>
                 <div className="mb-6">
@@ -1835,7 +1813,7 @@ yossi@email.com
                     value={newJob.notes}
                     onChange={e => setNewJob({...newJob, notes: e.target.value})}
                     placeholder="הערות נוספות..."
-                    className="w-full h-20 px-5 py-4 border-2 border-slate-200 rounded-xl text-lg resize-none focus:border-green-500"
+                    className="w-full h-20 px-5 py-4 border border-slate-200 rounded-xl text-base resize-none focus:border-teal-500"
                   />
                 </div>
                 <div className="flex gap-4">
@@ -1862,13 +1840,13 @@ yossi@email.com
                       setShowAddJob(false);
                       showToast(`✓ המשרה "${job.title}" נוספה בהצלחה`);
                     }}
-                    className="bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-xl font-bold text-lg"
+                    className="bg-teal-700 hover:bg-teal-800 text-white px-10 py-4 rounded-xl font-bold text-base"
                   >
-                    💾 שמור משרה
+                    שמור משרה
                   </button>
                   <button
                     onClick={() => setShowAddJob(false)}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-4 rounded-xl font-bold text-lg"
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-4 rounded-xl font-bold text-base"
                   >
                     ביטול
                   </button>
@@ -1879,40 +1857,40 @@ yossi@email.com
             {/* Custom Jobs */}
             {customJobs.length > 0 && (
               <div>
-                <h3 className="text-2xl font-bold text-slate-700 mb-6">📌 משרות שהוספת ({customJobs.length})</h3>
-                <div className="grid grid-cols-3 gap-8 mb-10">
+                <h3 className="text-xl font-semibold text-slate-700 mb-6">משרות שהוספת ({customJobs.length})</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 mb-10">
                   {customJobs.map(job => (
-                    <div key={job.id} className="bg-white rounded-2xl shadow-xl p-8 border-2 border-green-200 hover:shadow-2xl transition-all">
+                    <div key={job.id} className="bg-white rounded-2xl shadow-sm p-6 border border-emerald-200 transition-colors">
                       <div className="flex justify-between items-start mb-4">
-                        <span className="bg-green-100 text-green-700 text-sm px-4 py-2 rounded-full font-bold">חדש</span>
+                        <span className="bg-emerald-100 text-emerald-800 text-sm px-3 py-1 rounded-full font-semibold">חדש</span>
                         <button
                           onClick={() => setCustomJobs(customJobs.filter(j => j.id !== job.id))}
-                          className="text-red-500 hover:text-red-700 text-xl"
+                          className="text-red-500 hover:text-red-700 text-lg"
                         >
-                          🗑️
+                          מחק
                         </button>
                       </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-3">{job.title}</h3>
-                      <p className="text-slate-600 mb-2">🏢 {job.employer.company}</p>
-                      <p className="text-slate-500 mb-4">👤 {job.employer.name}</p>
+                      <h3 className="text-xl font-semibold text-slate-900 mb-3">{job.title}</h3>
+                      <p className="text-slate-600 mb-2">{job.employer.company}</p>
+                      <p className="text-slate-500 mb-4">{job.employer.name}</p>
                       <div className="flex flex-wrap gap-3 mb-4">
-                        <span className="bg-slate-100 px-4 py-2 rounded-lg text-slate-700">📍 {job.location}</span>
-                        {job.salary && <span className="bg-green-100 text-green-700 px-4 py-2 rounded-lg">💰 {job.salary}</span>}
+                        <span className="bg-slate-100 px-4 py-2 rounded-lg text-slate-700">{job.location}</span>
+                        {job.salary && <span className="bg-green-100 text-green-700 px-4 py-2 rounded-lg">{job.salary}</span>}
                       </div>
                       <div className="flex gap-2 mt-4">
                         <a
                           href={getWhatsAppLink(job.employer.phone, `שלום ${job.employer.name}, בקשר למשרה "${job.title}"`)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 bg-green-500 text-white text-center py-3 rounded-lg font-bold hover:bg-green-600"
+                          className="flex-1 bg-emerald-600 text-white text-center py-3 rounded-lg font-bold hover:bg-emerald-700"
                         >
-                          💬 וואטסאפ
+                          וואטסאפ
                         </a>
                         <a
                           href={getEmailLink(job.employer.email, `בנוגע למשרה: ${job.title}`)}
-                          className="flex-1 bg-teal-500 text-white text-center py-3 rounded-lg font-bold hover:bg-teal-600"
+                          className="flex-1 bg-teal-700 text-white text-center py-3 rounded-lg font-bold hover:bg-teal-800"
                         >
-                          📧 מייל
+                          מייל
                         </a>
                       </div>
                     </div>
@@ -1922,22 +1900,22 @@ yossi@email.com
             )}
 
             {/* Search & Filter */}
-            <div className="bg-white rounded-3xl shadow-xl p-10">
-              <div className="flex items-center gap-8">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="flex items-center gap-4 flex-wrap">
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="🔍 חיפוש לפי תפקיד או מיקום..."
-                  className="flex-1 px-8 py-6 border-2 border-slate-200 rounded-2xl text-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
+                  placeholder="חיפוש לפי תפקיד או מיקום..."
+                  className="flex-1 min-w-[220px] px-4 py-3 border border-slate-200 rounded-xl text-base focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                 />
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-2">
                   {regions.map(r => (
                     <button
                       key={r.id}
                       onClick={() => setRegion(r.id)}
-                      className={`px-6 py-4 rounded-xl font-bold text-lg transition-all ${
-                        region === r.id ? 'bg-teal-600 text-white shadow-lg' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      className={`px-4 py-2 min-h-10 rounded-xl font-semibold text-sm transition-colors ${
+                        region === r.id ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                     >
                       {r.name}
@@ -1947,32 +1925,32 @@ yossi@email.com
               </div>
             </div>
 
-            <div className="text-slate-600 font-bold text-xl">נמצאו {filteredJobs.length} משרות קיימות</div>
+            <div className="text-slate-600 font-bold text-lg">נמצאו {filteredJobs.length} משרות קיימות</div>
 
-            <div className="grid grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
               {filteredJobs.map(job => (
-                <div key={job.id} className={`bg-white rounded-2xl shadow-xl p-8 border-2 transition-all hover:shadow-2xl ${
-                  job.status === 'urgent' ? 'border-red-300 bg-red-50' : 'border-transparent'
+                <div key={job.id} className={`bg-white rounded-2xl shadow-sm p-6 border transition-colors ${
+                  job.status === 'urgent' ? 'border-red-300 bg-red-50' : 'border-slate-200'
                 }`}>
                   {job.status === 'urgent' && (
-                    <span className="inline-block bg-red-600 text-white text-lg px-5 py-2 rounded-full font-bold mb-4">
-                      🔥 דחוף
+                    <span className="inline-block bg-red-600 text-white text-base px-5 py-2 rounded-full font-bold mb-4">
+                      דחוף
                     </span>
                   )}
-                  <h3 className="text-2xl font-bold text-slate-900 mb-3">{job.title}</h3>
-                  <p className="text-slate-500 text-lg mb-4">{job.client}</p>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-3">{job.title}</h3>
+                  <p className="text-slate-500 text-base mb-4">{job.client}</p>
                   <div className="flex flex-wrap gap-3 mb-5">
-                    <span className="bg-slate-100 px-5 py-3 rounded-xl text-slate-700 text-lg">📍 {job.location}</span>
-                    {job.jobCode && <span className="bg-teal-100 text-teal-700 px-5 py-3 rounded-xl text-lg">{job.jobCode}</span>}
+                    <span className="bg-slate-100 px-5 py-3 rounded-xl text-slate-700 text-base">{job.location}</span>
+                    {job.jobCode && <span className="bg-teal-100 text-teal-700 px-5 py-3 rounded-xl text-base">{job.jobCode}</span>}
                     {job.branchType && (
-                      <span className={`px-5 py-3 rounded-xl text-lg ${job.branchType === 'continuous' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
+                      <span className={`px-5 py-3 rounded-xl text-base ${job.branchType === 'continuous' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
                         {job.branchType === 'continuous' ? 'רצוף' : 'מפוצל'}
                       </span>
                     )}
                   </div>
                   {job.salaryDetails?.monthly && (
-                    <div className="bg-green-50 border-2 border-green-200 p-5 rounded-xl">
-                      <span className="font-bold text-green-700 text-xl">💰 {job.salaryDetails.monthly}</span>
+                    <div className="bg-green-50 border border-green-200 p-5 rounded-xl">
+                      <span className="font-bold text-green-700 text-lg">{job.salaryDetails.monthly}</span>
                     </div>
                   )}
                 </div>
@@ -1986,19 +1964,19 @@ yossi@email.com
           <div className="space-y-10">
             {/* Header */}
             <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-black text-slate-900">🏢 ניהול מעסיקים</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">ניהול מעסיקים</h2>
               <button
                 onClick={() => setShowAddEmployer(!showAddEmployer)}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-bold text-xl transition-all shadow-lg"
+                className="bg-teal-700 hover:bg-teal-800 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-sm"
               >
-                ➕ הוסף מעסיק חדש
+                הוסף מעסיק חדש
               </button>
             </div>
 
             {/* Add Employer Form */}
             {showAddEmployer && (
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl shadow-xl p-10 border-2 border-purple-200">
-                <h3 className="text-2xl font-bold text-slate-900 mb-6">➕ מעסיק חדש</h3>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 className="text-xl font-semibold text-slate-900 mb-6">מעסיק חדש</h3>
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-slate-700 font-medium mb-2">שם איש קשר *</label>
@@ -2007,7 +1985,7 @@ yossi@email.com
                       value={newEmployer.name}
                       onChange={e => setNewEmployer({...newEmployer, name: e.target.value})}
                       placeholder="לדוגמה: ישראל ישראלי"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-purple-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                   <div>
@@ -2017,7 +1995,7 @@ yossi@email.com
                       value={newEmployer.company}
                       onChange={e => setNewEmployer({...newEmployer, company: e.target.value})}
                       placeholder="לדוגמה: חברת ABC"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-purple-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                   <div>
@@ -2027,7 +2005,7 @@ yossi@email.com
                       value={newEmployer.email}
                       onChange={e => setNewEmployer({...newEmployer, email: e.target.value})}
                       placeholder="example@company.com"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-purple-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                   <div>
@@ -2037,7 +2015,7 @@ yossi@email.com
                       value={newEmployer.phone}
                       onChange={e => setNewEmployer({...newEmployer, phone: e.target.value})}
                       placeholder="050-1234567"
-                      className="w-full px-5 py-4 border-2 border-slate-200 rounded-xl text-lg focus:border-purple-500"
+                      className="w-full px-5 py-4 border border-slate-200 rounded-xl text-base focus:border-teal-500"
                     />
                   </div>
                 </div>
@@ -2047,7 +2025,7 @@ yossi@email.com
                     value={newEmployer.notes}
                     onChange={e => setNewEmployer({...newEmployer, notes: e.target.value})}
                     placeholder="הערות על המעסיק..."
-                    className="w-full h-20 px-5 py-4 border-2 border-slate-200 rounded-xl text-lg resize-none focus:border-purple-500"
+                    className="w-full h-20 px-5 py-4 border border-slate-200 rounded-xl text-base resize-none focus:border-teal-500"
                   />
                 </div>
                 <div className="flex gap-4">
@@ -2087,19 +2065,19 @@ yossi@email.com
                           showToast(`✓ המעסיק "${employer.company}" נשמר במערכת בהצלחה`);
                         } else {
                           const error = await res.json();
-                          showToast(`❌ שגיאה: ${error.error || 'לא ניתן לשמור'}`);
+                          showToast(`שגיאה: ${error.error || 'לא ניתן לשמור'}`);
                         }
                       } catch (e) {
-                        showToast('❌ שגיאה בשמירת המעסיק');
+                        showToast('שגיאה בשמירת המעסיק');
                       }
                     }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-10 py-4 rounded-xl font-bold text-lg"
+                    className="bg-teal-700 hover:bg-teal-800 text-white px-10 py-4 rounded-xl font-bold text-base"
                   >
-                    💾 שמור מעסיק
+                    שמור מעסיק
                   </button>
                   <button
                     onClick={() => setShowAddEmployer(false)}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-4 rounded-xl font-bold text-lg"
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-4 rounded-xl font-bold text-base"
                   >
                     ביטול
                   </button>
@@ -2108,27 +2086,27 @@ yossi@email.com
             )}
 
             {/* Employers List */}
-            <div className="grid grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
               {employers.map(emp => (
-                <div key={emp.id} className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-purple-200 transition-all hover:shadow-2xl">
+                <div key={emp.id} className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 hover:border-teal-300 transition-colors">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                    <div className="w-12 h-12 bg-teal-700 rounded-xl flex items-center justify-center text-white text-lg font-semibold">
                       {emp.company.charAt(0)}
                     </div>
                     {emp.id !== 'mizrahi' && (
                       <button
                         onClick={() => setEmployers(employers.filter(e => e.id !== emp.id))}
-                        className="text-red-500 hover:text-red-700 text-xl"
+                        className="text-red-500 hover:text-red-700 text-lg"
                       >
-                        🗑️
+                        מחק
                       </button>
                     )}
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{emp.company}</h3>
-                  <p className="text-slate-600 text-lg mb-4">👤 {emp.name}</p>
+                  <h3 className="text-base font-semibold text-slate-900 mb-2 line-clamp-2" title={emp.company}>{emp.company}</h3>
+                  <p className="text-slate-600 text-base mb-4">{emp.name}</p>
                   <div className="space-y-2 mb-6">
-                    <p className="text-slate-500">📧 {emp.email}</p>
-                    <p className="text-slate-500">📱 {emp.phone}</p>
+                    <p className="text-slate-500">{emp.email}</p>
+                    <p className="text-slate-500">{emp.phone}</p>
                   </div>
                   {emp.notes && (
                     <p className="text-slate-400 text-sm mb-4 bg-slate-50 p-3 rounded-lg">{emp.notes}</p>
@@ -2138,15 +2116,15 @@ yossi@email.com
                       href={getWhatsAppLink(emp.phone, `שלום ${emp.name}, `)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 bg-green-500 text-white text-center py-3 rounded-xl font-bold hover:bg-green-600 transition-all"
+                      className="flex-1 bg-emerald-600 text-white text-center py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all"
                     >
-                      💬 וואטסאפ
+                      וואטסאפ
                     </a>
                     <a
                       href={getEmailLink(emp.email)}
-                      className="flex-1 bg-teal-500 text-white text-center py-3 rounded-xl font-bold hover:bg-teal-600 transition-all"
+                      className="flex-1 bg-teal-700 text-white text-center py-3 rounded-xl font-bold hover:bg-teal-800 transition-all"
                     >
-                      📧 מייל
+                      מייל
                     </a>
                   </div>
                 </div>
@@ -2154,10 +2132,9 @@ yossi@email.com
             </div>
 
             {employers.length === 0 && (
-              <div className="bg-white rounded-3xl shadow-xl p-20 text-center">
-                <div className="text-9xl mb-10">🏢</div>
-                <h3 className="text-4xl font-black text-slate-900 mb-5">אין מעסיקים עדיין</h3>
-                <p className="text-slate-500 text-2xl">הוסף מעסיק חדש כדי להתחיל</p>
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <h3 className="text-2xl font-semibold text-slate-900 mb-5">אין מעסיקים עדיין</h3>
+                <p className="text-slate-500 text-xl">הוסף מעסיק חדש כדי להתחיל</p>
               </div>
             )}
           </div>
@@ -2166,86 +2143,86 @@ yossi@email.com
         {/* ========== INFO TAB ========== */}
         {tab === 'info' && (
           <div className="space-y-10">
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-10">
-              <h2 className="text-3xl font-black text-amber-800 mb-8">⚠️ דגשים חשובים</h2>
+            <div className="bg-amber-50 border border-amber-300 rounded-2xl p-6">
+              <h2 className="text-2xl font-semibold text-amber-800 mb-8">דגשים חשובים</h2>
               <div className="grid grid-cols-2 gap-6">
                 {IMPORTANT_NOTES.map((note, i) => (
                   <div key={i} className="bg-white p-6 rounded-2xl flex items-start gap-4">
-                    <span className="text-amber-600 text-2xl">✓</span>
-                    <span className="text-slate-700 text-lg">{note}</span>
+                    <span className="text-amber-600 text-xl">✓</span>
+                    <span className="text-slate-700 text-base">{note}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-xl p-10">
-              <h2 className="text-3xl font-black text-slate-900 mb-8">{BANKING_GENERAL_REQUIREMENTS.teller.title}</h2>
-              <div className="grid grid-cols-2 gap-12">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-8">{BANKING_GENERAL_REQUIREMENTS.teller.title}</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="font-bold text-slate-700 mb-6 text-xl">דרישות:</h3>
+                  <h3 className="font-bold text-slate-700 mb-6 text-lg">דרישות:</h3>
                   <div className="space-y-4">
                     {BANKING_GENERAL_REQUIREMENTS.teller.requirements.map((r, i) => (
                       <div key={i} className="bg-slate-50 p-5 rounded-xl flex items-center gap-4">
-                        <span className="text-teal-600 text-xl">✓</span> <span className="text-lg">{r}</span>
+                        <span className="text-teal-600 text-lg">✓</span> <span className="text-base">{r}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-700 mb-6 text-xl">שכר:</h3>
+                  <h3 className="font-bold text-slate-700 mb-6 text-lg">שכר:</h3>
                   <div className="space-y-6">
-                    <div className="bg-green-50 border-2 border-green-200 p-8 rounded-2xl">
-                      <div className="text-slate-600 mb-2 text-lg">סניף רצוף</div>
-                      <div className="text-4xl font-black text-green-700">{BANKING_GENERAL_REQUIREMENTS.teller.salary.continuous.monthly}</div>
+                    <div className="bg-green-50 border border-green-200 p-8 rounded-2xl">
+                      <div className="text-slate-600 mb-2 text-base">סניף רצוף</div>
+                      <div className="text-2xl font-semibold text-green-700">{BANKING_GENERAL_REQUIREMENTS.teller.salary.continuous.monthly}</div>
                     </div>
-                    <div className="bg-purple-50 border-2 border-purple-200 p-8 rounded-2xl">
-                      <div className="text-slate-600 mb-2 text-lg">סניף מפוצל</div>
-                      <div className="text-4xl font-black text-purple-700">{BANKING_GENERAL_REQUIREMENTS.teller.salary.split.monthly}</div>
+                    <div className="bg-purple-50 border border-purple-200 p-8 rounded-2xl">
+                      <div className="text-slate-600 mb-2 text-base">סניף מפוצל</div>
+                      <div className="text-2xl font-semibold text-purple-700">{BANKING_GENERAL_REQUIREMENTS.teller.salary.split.monthly}</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-xl p-10">
-              <h2 className="text-3xl font-black text-slate-900 mb-8">{BANKING_GENERAL_REQUIREMENTS.banker.title}</h2>
-              <div className="grid grid-cols-2 gap-12">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-8">{BANKING_GENERAL_REQUIREMENTS.banker.title}</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="font-bold text-slate-700 mb-6 text-xl">דרישות:</h3>
+                  <h3 className="font-bold text-slate-700 mb-6 text-lg">דרישות:</h3>
                   <div className="space-y-4">
                     {BANKING_GENERAL_REQUIREMENTS.banker.requirements.map((r, i) => (
                       <div key={i} className="bg-slate-50 p-5 rounded-xl flex items-center gap-4">
-                        <span className="text-teal-600 text-xl">✓</span> <span className="text-lg">{r}</span>
+                        <span className="text-teal-600 text-lg">✓</span> <span className="text-base">{r}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-700 mb-6 text-xl">שכר:</h3>
+                  <h3 className="font-bold text-slate-700 mb-6 text-lg">שכר:</h3>
                   <div className="space-y-6">
-                    <div className="bg-green-50 border-2 border-green-200 p-8 rounded-2xl">
-                      <div className="text-slate-600 mb-2 text-lg">סניף רצוף</div>
-                      <div className="text-4xl font-black text-green-700">{BANKING_GENERAL_REQUIREMENTS.banker.salary.continuous.monthly}</div>
+                    <div className="bg-green-50 border border-green-200 p-8 rounded-2xl">
+                      <div className="text-slate-600 mb-2 text-base">סניף רצוף</div>
+                      <div className="text-2xl font-semibold text-green-700">{BANKING_GENERAL_REQUIREMENTS.banker.salary.continuous.monthly}</div>
                     </div>
-                    <div className="bg-purple-50 border-2 border-purple-200 p-8 rounded-2xl">
-                      <div className="text-slate-600 mb-2 text-lg">סניף מפוצל</div>
-                      <div className="text-4xl font-black text-purple-700">{BANKING_GENERAL_REQUIREMENTS.banker.salary.split.monthly}</div>
+                    <div className="bg-purple-50 border border-purple-200 p-8 rounded-2xl">
+                      <div className="text-slate-600 mb-2 text-base">סניף מפוצל</div>
+                      <div className="text-2xl font-semibold text-purple-700">{BANKING_GENERAL_REQUIREMENTS.banker.salary.split.monthly}</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-900 rounded-3xl p-10 text-white">
-              <h2 className="text-3xl font-black mb-8">📧 פרטי שליחה</h2>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-8">פרטי שליחה</h2>
               <div className="grid grid-cols-2 gap-8">
-                <div className="bg-white/10 p-8 rounded-2xl">
-                  <div className="text-slate-400 mb-3 text-lg">קו"ח לסמדר:</div>
-                  <div className="text-2xl font-mono text-teal-400">orpazsm@gmail.com</div>
+                <div className="bg-slate-50 p-6 rounded-2xl">
+                  <div className="text-slate-400 mb-3 text-base">קו"ח לסמדר:</div>
+                  <div className="text-xl font-mono text-teal-700">orpazsm@gmail.com</div>
                 </div>
-                <div className="bg-white/10 p-8 rounded-2xl">
-                  <div className="text-slate-400 mb-3 text-lg">מערכת הגיוס:</div>
-                  <div className="text-2xl font-mono text-teal-400">umtb-hr@cvwebmail.com</div>
+                <div className="bg-slate-50 p-6 rounded-2xl">
+                  <div className="text-slate-400 mb-3 text-base">מערכת הגיוס:</div>
+                  <div className="text-xl font-mono text-teal-700">umtb-hr@cvwebmail.com</div>
                 </div>
               </div>
             </div>
@@ -2256,43 +2233,43 @@ yossi@email.com
       {/* ========== JOB DETAILS MODAL - פרטי משרה מלאים ========== */}
       {selectedJob && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 overflow-y-auto"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6 overflow-y-auto"
           onClick={() => setSelectedJob(null)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-sm max-w-4xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-cyan-600 text-white p-8 rounded-t-3xl flex justify-between items-start z-10">
+            <div className="sticky top-0 bg-white border-b border-slate-200 text-slate-900 p-6 rounded-t-2xl flex justify-between items-start z-10">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
                   {selectedJob.status === 'urgent' && (
-                    <span className="bg-red-500 text-white px-4 py-1 rounded-full text-sm font-bold animate-pulse">🔥 דחוף</span>
+                    <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold">דחוף</span>
                   )}
                   {selectedJob.status === 'open' && (
-                    <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">✅ פתוח</span>
+                    <span className="bg-emerald-700 text-white px-3 py-1 rounded-full text-sm font-semibold">פתוח</span>
                   )}
                   {selectedJob.status === 'closed' && (
                     <span className="bg-slate-500 text-white px-4 py-1 rounded-full text-sm font-bold">סגור</span>
                   )}
                   {selectedJob.jobCode && (
-                    <span className="bg-white/20 text-white px-4 py-1 rounded-full text-sm font-mono">קוד: {selectedJob.jobCode}</span>
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-mono">קוד: {selectedJob.jobCode}</span>
                   )}
                   {selectedJob.category && (
-                    <span className="bg-white/20 text-white px-4 py-1 rounded-full text-sm">{selectedJob.category}</span>
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm">{selectedJob.category}</span>
                   )}
                 </div>
-                <h2 className="text-4xl font-black mb-2">{selectedJob.title}</h2>
-                <div className="text-xl text-teal-50 flex items-center gap-4 flex-wrap">
-                  <span>🏢 {selectedJob.client}</span>
-                  <span>📍 {selectedJob.location}</span>
-                  {selectedJob.region && <span>🗺️ {selectedJob.region}</span>}
+                <h2 className="text-2xl font-semibold text-slate-900 mb-1">{selectedJob.title}</h2>
+                <div className="text-lg text-slate-600 flex items-center gap-4 flex-wrap">
+                  <span>{selectedJob.client}</span>
+                  <span>{selectedJob.location}</span>
+                  {selectedJob.region && <span>{selectedJob.region}</span>}
                 </div>
               </div>
               <button
                 onClick={() => setSelectedJob(null)}
-                className="text-white/80 hover:text-white text-4xl leading-none mr-2"
+                className="text-slate-400 hover:text-slate-700 text-2xl leading-none ms-2"
                 aria-label="סגור"
                 title="סגור"
               >
@@ -2305,14 +2282,14 @@ yossi@email.com
               {selectedJob.address && (
                 <div className="bg-slate-50 p-5 rounded-2xl">
                   <div className="text-sm text-slate-500 mb-1">כתובת מלאה</div>
-                  <div className="text-lg font-bold text-slate-800">{selectedJob.address}</div>
+                  <div className="text-base font-bold text-slate-800">{selectedJob.address}</div>
                 </div>
               )}
 
               {selectedJob.description && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">📝 תיאור המשרה</h3>
-                  <p className="text-slate-700 text-lg leading-relaxed whitespace-pre-line bg-slate-50 p-5 rounded-2xl">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">תיאור המשרה</h3>
+                  <p className="text-slate-700 text-base leading-relaxed whitespace-pre-line bg-slate-50 p-5 rounded-2xl">
                     {selectedJob.description}
                   </p>
                 </div>
@@ -2320,10 +2297,10 @@ yossi@email.com
 
               {selectedJob.requirements && selectedJob.requirements.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">✅ דרישות התפקיד</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">דרישות התפקיד</h3>
                   <ul className="space-y-2">
                     {selectedJob.requirements.map((r, i) => (
-                      <li key={i} className="bg-teal-50 border-r-4 border-teal-400 p-4 rounded-xl text-slate-700 text-lg flex gap-3">
+                      <li key={i} className="bg-teal-50 border-r-4 border-teal-400 p-4 rounded-xl text-slate-700 text-base flex gap-3">
                         <span className="text-teal-600 font-bold">✓</span>
                         <span>{r}</span>
                       </li>
@@ -2334,8 +2311,8 @@ yossi@email.com
 
               {selectedJob.conditions && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">💼 תנאי העסקה</h3>
-                  <p className="text-slate-700 text-lg leading-relaxed whitespace-pre-line bg-amber-50 border-r-4 border-amber-400 p-5 rounded-2xl">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">תנאי העסקה</h3>
+                  <p className="text-slate-700 text-base leading-relaxed whitespace-pre-line bg-amber-50 border-r-4 border-amber-400 p-5 rounded-2xl">
                     {selectedJob.conditions}
                   </p>
                 </div>
@@ -2343,9 +2320,9 @@ yossi@email.com
 
               {(selectedJob.salary || selectedJob.salaryDetails) && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">💰 שכר</h3>
-                  <div className="bg-green-50 border-2 border-green-200 p-5 rounded-2xl">
-                    {selectedJob.salary && <div className="text-2xl font-black text-green-700 mb-2">{selectedJob.salary}</div>}
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">שכר</h3>
+                  <div className="bg-green-50 border border-green-200 p-5 rounded-2xl">
+                    {selectedJob.salary && <div className="text-xl font-semibold text-green-700 mb-2">{selectedJob.salary}</div>}
                     {selectedJob.salaryDetails?.monthly && (
                       <div className="text-slate-700"><span className="font-bold">חודשי:</span> {selectedJob.salaryDetails.monthly}</div>
                     )}
@@ -2364,14 +2341,14 @@ yossi@email.com
 
               {selectedJob.workHours && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">🕐 שעות עבודה</h3>
-                  <p className="text-slate-700 text-lg bg-slate-50 p-5 rounded-2xl whitespace-pre-line">{selectedJob.workHours}</p>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">שעות עבודה</h3>
+                  <p className="text-slate-700 text-base bg-slate-50 p-5 rounded-2xl whitespace-pre-line">{selectedJob.workHours}</p>
                 </div>
               )}
 
               {selectedJob.benefits && selectedJob.benefits.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">🎁 הטבות</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">הטבות</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedJob.benefits.map((b, i) => (
                       <span key={i} className="bg-purple-100 text-purple-700 px-4 py-2 rounded-xl font-medium">
@@ -2384,13 +2361,13 @@ yossi@email.com
 
               {(selectedJob.clientEmail || selectedJob.clientPhone) && (
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">📞 פרטי קשר</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3">פרטי קשר</h3>
                   <div className="bg-slate-50 p-5 rounded-2xl space-y-2">
                     {selectedJob.clientEmail && (
-                      <div className="text-lg"><span className="font-bold">📧 מייל:</span> <span className="font-mono text-teal-700">{selectedJob.clientEmail}</span></div>
+                      <div className="text-base"><span className="font-bold">מייל:</span> <span className="font-mono text-teal-700">{selectedJob.clientEmail}</span></div>
                     )}
                     {selectedJob.clientPhone && (
-                      <div className="text-lg"><span className="font-bold">📱 טלפון:</span> <span className="font-mono text-teal-700">{selectedJob.clientPhone}</span></div>
+                      <div className="text-base"><span className="font-bold">טלפון:</span> <span className="font-mono text-teal-700">{selectedJob.clientPhone}</span></div>
                     )}
                   </div>
                 </div>
@@ -2413,10 +2390,10 @@ yossi@email.com
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 p-6 rounded-b-3xl flex justify-end gap-3">
+            <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 p-6 rounded-b-2xl flex justify-end gap-3">
               <button
                 onClick={() => setSelectedJob(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-xl font-bold text-lg transition-all"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-xl font-bold text-base transition-all"
               >
                 סגור
               </button>

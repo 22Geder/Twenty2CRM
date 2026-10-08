@@ -14,7 +14,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
@@ -378,7 +377,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
     return (
       <div className="p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF8C00] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"></div>
           <p className="text-muted-foreground">טוען פרטי לקוח...</p>
         </div>
       </div>
@@ -417,48 +416,35 @@ export default function EmployerDetailPage({ params }: PageProps) {
   ).sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen">
+    <div className="p-6 md:p-8 max-w-[1600px] mx-auto min-h-screen">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-700 mb-8">
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="empDetailGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FF8C00" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#empDetailGrid)" />
-          </svg>
-        </div>
-        
-        <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-br from-[#FF8C00]/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-gradient-to-br from-[#00A8A8]/30 to-transparent rounded-full blur-2xl"></div>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
 
         <div className="relative">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-slate-400 mb-4">
-            <Link href="/dashboard/employers" className="hover:text-[#FF8C00] transition-colors">
+          <div className="flex items-center gap-2 text-slate-500 mb-4">
+            <Link href="/dashboard/employers" className="hover:text-teal-700 transition-colors">
               לקוחות
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-white">{employer.name}</span>
+            <span className="text-slate-900">{employer.name}</span>
           </div>
 
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <EmployerLogo name={employer.name} logo={employer.logo} size="xl" className="shadow-lg" />
+              <EmployerLogo name={employer.name} logo={employer.logo} size="xl" className="shadow-sm" />
               <div>
-                <h1 className="text-4xl font-bold text-white">{employer.name}</h1>
+                <h1 className="text-3xl font-semibold text-slate-900">{employer.name}</h1>
                 <div className="flex items-center gap-4 mt-2">
                   {employer.email && (
-                    <span className="flex items-center gap-1 text-slate-300">
-                      <Mail className="h-4 w-4 text-[#00A8A8]" />
+                    <span className="flex items-center gap-1 text-slate-600">
+                      <Mail className="h-4 w-4 text-teal-700" />
                       {employer.email}
                     </span>
                   )}
                   {employer.phone && (
-                    <span className="flex items-center gap-1 text-slate-300">
-                      <Phone className="h-4 w-4 text-[#7CB342]" />
+                    <span className="flex items-center gap-1 text-slate-600">
+                      <Phone className="h-4 w-4 text-emerald-600" />
                       {employer.phone}
                     </span>
                   )}
@@ -466,13 +452,11 @@ export default function EmployerDetailPage({ params }: PageProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button className="bg-teal-700 hover:bg-teal-800 text-white" onClick={() => setEditDialogOpen(true)}>
+                <Pencil className="ml-2 h-4 w-4" />
+                עריכת פרטים
+              </Button>
               <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-[#FF8C00] hover:bg-[#E65100] text-white">
-                    <Pencil className="ml-2 h-4 w-4" />
-                    עריכת פרטים
-                  </Button>
-                </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <div dir="rtl">
                   <DialogHeader>
@@ -542,7 +526,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                     <Button
                       onClick={handleSaveEmployer}
                       disabled={saving}
-                      className="bg-[#FF8C00] hover:bg-[#E65100]"
+                      className="bg-teal-700 hover:bg-teal-800"
                     >
                       {saving ? (
                         <>
@@ -564,7 +548,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                 </DialogContent>
               </Dialog>
               <Link href="/dashboard/employers">
-                <Button variant="outline" className="border-slate-500 text-slate-300 hover:bg-slate-700">
+                <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
                   <ArrowRight className="ml-2 h-4 w-4" />
                   חזור ללקוחות
                 </Button>
@@ -573,70 +557,66 @@ export default function EmployerDetailPage({ params }: PageProps) {
           </div>
 
           {employer.description && (
-            <p className="text-slate-400 mt-4 max-w-2xl">{employer.description}</p>
+            <p className="text-slate-600 mt-4 max-w-2xl">{employer.description}</p>
           )}
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <Card className="p-6 border-0 bg-gradient-to-br from-[#00A8A8] to-[#00D4D4] text-white shadow-xl overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="p-5 border border-slate-200 bg-white shadow-sm">
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium opacity-90">סה״כ משרות</p>
-              <p className="text-4xl font-bold mt-1">{totalPositions}</p>
+              <p className="text-sm text-slate-500">סה״כ משרות</p>
+              <p className="text-3xl font-semibold text-slate-900 mt-1 tabular-nums">{totalPositions}</p>
             </div>
-            <Briefcase className="h-10 w-10 opacity-30" />
+            <Briefcase className="h-6 w-6 text-slate-400" />
           </div>
         </Card>
 
-        <Card className="p-6 border-0 bg-gradient-to-br from-[#7CB342] to-[#8BC34A] text-white shadow-xl overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+        <Card className="p-5 border border-slate-200 bg-white shadow-sm">
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium opacity-90">משרות פעילות</p>
-              <p className="text-4xl font-bold mt-1">{activePositions}</p>
+              <p className="text-sm text-slate-500">משרות פעילות</p>
+              <p className="text-3xl font-semibold text-slate-900 mt-1 tabular-nums">{activePositions}</p>
             </div>
-            <CheckCircle className="h-10 w-10 opacity-30" />
+            <CheckCircle className="h-6 w-6 text-slate-400" />
           </div>
         </Card>
 
-        <Card className="p-6 border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-xl overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+        <Card className="p-5 border border-slate-200 bg-white shadow-sm">
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium opacity-90">מועמדים שהגישו</p>
-              <p className="text-4xl font-bold mt-1">{totalCandidates}</p>
+              <p className="text-sm text-slate-500">מועמדים שהגישו</p>
+              <p className="text-3xl font-semibold text-slate-900 mt-1 tabular-nums">{totalCandidates}</p>
             </div>
-            <Users className="h-10 w-10 opacity-30" />
+            <Users className="h-6 w-6 text-slate-400" />
           </div>
         </Card>
 
-        <Card className="p-6 border-0 bg-gradient-to-br from-[#FF8C00] to-[#E65100] text-white shadow-xl overflow-hidden relative">
-          <div className="absolute top-2 right-2 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+        <Card className="p-5 border border-slate-200 bg-white shadow-sm">
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium opacity-90">התקבלו לעבודה</p>
-              <p className="text-4xl font-bold mt-1">{hiredCandidates}</p>
+              <p className="text-sm text-slate-500">התקבלו לעבודה</p>
+              <p className="text-3xl font-semibold text-slate-900 mt-1 tabular-nums">{hiredCandidates}</p>
             </div>
-            <CheckCircle className="h-10 w-10 opacity-30" />
+            <CheckCircle className="h-6 w-6 text-slate-400" />
           </div>
         </Card>
       </div>
 
-      <div className="grid grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Positions List */}
         <div className="col-span-1">
-          <Card className="border-0 shadow-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white">
+          <Card className="border border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 text-slate-900">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Briefcase className="h-5 w-5" />
                   משרות ({totalPositions})
                 </CardTitle>
                 <Link href={`/dashboard/positions/new?employerId=${employer.id}`}>
-                  <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                  <Button size="sm" variant="secondary" className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">
                     <Plus className="h-4 w-4 ml-1" />
                     חדשה
                   </Button>
@@ -655,13 +635,13 @@ export default function EmployerDetailPage({ params }: PageProps) {
                     <div 
                       key={position.id} 
                       className={`p-4 transition-colors cursor-pointer ${
-                        selectedPositionId === position.id ? 'bg-orange-50 border-r-4 border-[#FF8C00]' : 'hover:bg-slate-50'
+                        selectedPositionId === position.id ? 'bg-teal-50 border-r-4 border-teal-700' : 'hover:bg-slate-50'
                       }`}
                       onClick={() => fetchMatchingCandidates(position.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className={`font-semibold ${selectedPositionId === position.id ? 'text-[#FF8C00]' : 'text-slate-800'}`}>{position.title}</h3>
+                          <h3 className={`font-semibold ${selectedPositionId === position.id ? 'text-teal-700' : 'text-slate-800'}`}>{position.title}</h3>
                           {position.location && (
                             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                               <MapPin className="h-3 w-3" />
@@ -684,7 +664,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                         <Link 
                           href={`/dashboard/positions/${position.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-xs text-[#00A8A8] hover:underline flex items-center gap-1"
+                          className="text-xs text-teal-700 hover:underline flex items-center gap-1"
                         >
                           <ExternalLink className="h-3 w-3" />
                           פתח משרה
@@ -712,7 +692,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
               variant={rightPanelView === 'applications' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setRightPanelView('applications')}
-              className={rightPanelView === 'applications' ? 'bg-[#00A8A8] hover:bg-[#008888]' : ''}
+              className={rightPanelView === 'applications' ? 'bg-teal-700 hover:bg-teal-800' : ''}
             >
               <Users className="h-4 w-4 ml-2" />
               מועמדים שהגישו ({totalCandidates})
@@ -727,7 +707,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                   fetchMatchingCandidates(employer.positions[0].id)
                 }
               }}
-              className={rightPanelView === 'matches' ? 'bg-[#FF8C00] hover:bg-[#E65100]' : ''}
+              className={rightPanelView === 'matches' ? 'bg-teal-700 hover:bg-teal-800' : ''}
             >
               <TrendingUp className="h-4 w-4 ml-2" />
               מועמדים מתאימים {matchingCandidates.length > 0 && `(${matchingCandidates.length})`}
@@ -736,8 +716,8 @@ export default function EmployerDetailPage({ params }: PageProps) {
 
           {/* Matching Candidates View */}
           {rightPanelView === 'matches' && (
-            <Card className="border-0 shadow-xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-[#FF8C00] to-[#E65100] text-white">
+            <Card className="border border-slate-200 shadow-sm overflow-hidden">
+              <CardHeader className="bg-slate-50 border-b border-slate-200 text-slate-900">
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5" />
@@ -748,7 +728,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                     )}
                   </div>
                   {matchingCandidates.length > 0 && (
-                    <Badge className="bg-white/20 text-white border-0 text-base px-3">
+                    <Badge className="bg-white text-slate-700 border border-slate-200 text-base px-3">
                       {matchingCandidates.length}
                     </Badge>
                   )}
@@ -762,7 +742,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                   </div>
                 ) : loadingMatches ? (
                   <div className="p-8 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#FF8C00] mx-auto mb-3" />
+                    <Loader2 className="h-8 w-8 animate-spin text-teal-700 mx-auto mb-3" />
                     <p className="text-muted-foreground">מחפש מועמדים מתאימים עם AI...</p>
                     <p className="text-xs text-gray-400 mt-1">50% מיקום | 25% תגיות | 25% AI Gemini</p>
                   </div>
@@ -819,7 +799,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                                     e.stopPropagation()
                                     logWhatsAppSend(candidate.id, candidate.name, candidate.phone!, selectedPositionId || undefined, selectedPosition.title)
                                   }}
-                                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md transition-all text-sm font-semibold whitespace-nowrap"
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-all text-sm font-semibold whitespace-nowrap"
                                 >
                                   <MessageCircle className="h-4 w-4" />
                                   <span>וואטסאפ</span>
@@ -843,7 +823,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
 
                         {/* Expanded CV Summary */}
                         {expandedCandidate === candidate.id && (
-                          <div className="px-4 pb-4 bg-gradient-to-b from-orange-50 to-white border-t border-orange-200">
+                          <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
                             <div className="grid grid-cols-2 gap-4 pt-4">
                               {/* Left: Contact + AI Info */}
                               <div className="space-y-3">
@@ -918,7 +898,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                               <div className="space-y-3">
                                 {/* Why Suitable */}
                                 {candidate.whySuitable && candidate.whySuitable.length > 0 && (
-                                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
+                                  <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
                                     <h5 className="font-semibold text-sm text-green-800 mb-2">💡 למה מתאים למשרה:</h5>
                                     <ul className="space-y-1">
                                       {(Array.isArray(candidate.whySuitable) ? candidate.whySuitable : [candidate.whySuitable]).map((reason: string, idx: number) => (
@@ -968,7 +948,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                             {/* Action Buttons */}
                             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-orange-200">
                               <Link href={`/dashboard/candidates/${candidate.id}`} onClick={(e) => e.stopPropagation()}>
-                                <Button size="sm" variant="outline" className="border-[#FF8C00] text-[#FF8C00] hover:bg-[#FF8C00]/10">
+                                <Button size="sm" variant="outline" className="border-teal-700 text-teal-700 hover:bg-teal-50">
                                   <ExternalLink className="h-3.5 w-3.5 ml-1" />
                                   צפה במועמד
                                 </Button>
@@ -1015,8 +995,8 @@ export default function EmployerDetailPage({ params }: PageProps) {
 
           {/* Applications View */}
           {rightPanelView === 'applications' && (
-          <Card className="border-0 shadow-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] text-white">
+          <Card className="border border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 text-slate-900">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 מועמדים שהגישו ({totalCandidates})
@@ -1046,13 +1026,13 @@ export default function EmployerDetailPage({ params }: PageProps) {
                         <tr key={app.id} className="hover:bg-slate-50 transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center">
+                              <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
                                 <User className="h-5 w-5 text-slate-600" />
                               </div>
                               <div>
                                 <p className="font-medium text-slate-800">{app.candidate.name}</p>
                                 {app.candidate.currentTitle && (
-                                  <p className="text-sm font-medium text-[#FF8C00]">{app.candidate.currentTitle}</p>
+                                  <p className="text-sm font-medium text-teal-700">{app.candidate.currentTitle}</p>
                                 )}
                               </div>
                             </div>
@@ -1060,7 +1040,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                           <td className="p-4">
                             <Link 
                               href={`/dashboard/positions/${app.positionId}`}
-                              className="text-[#00A8A8] hover:underline font-medium"
+                              className="text-teal-700 hover:underline font-medium"
                             >
                               {app.positionTitle}
                             </Link>
@@ -1076,7 +1056,7 @@ export default function EmployerDetailPage({ params }: PageProps) {
                               <div className="flex items-center gap-2">
                                 <div className="w-16 bg-slate-200 rounded-full h-2">
                                   <div 
-                                    className="bg-gradient-to-r from-[#00A8A8] to-[#00D4D4] rounded-full h-2"
+                                    className="bg-teal-600 rounded-full h-2"
                                     style={{ width: `${Math.min(app.matchScore, 100)}%` }}
                                   />
                                 </div>
@@ -1088,13 +1068,13 @@ export default function EmployerDetailPage({ params }: PageProps) {
                           </td>
                           <td className="p-4">
                             <span className="text-sm font-medium text-slate-700 flex items-center gap-1">
-                              <Calendar className="h-3 w-3 text-[#FF8C00]" />
+                              <Calendar className="h-3 w-3 text-teal-700" />
                               {new Date(app.appliedAt).toLocaleDateString('he-IL')}
                             </span>
                           </td>
                           <td className="p-4">
                             <Link href={`/dashboard/candidates/${app.candidate.id}`}>
-                              <Button variant="outline" size="sm" className="border-[#FF8C00] text-[#FF8C00] hover:bg-[#FF8C00]/10">
+                              <Button variant="outline" size="sm" className="border-teal-700 text-teal-700 hover:bg-teal-50">
                                 צפה
                               </Button>
                             </Link>

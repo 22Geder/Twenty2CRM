@@ -166,9 +166,9 @@ export default function EmployersModernPage() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#06B6D4] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
           <p className="text-muted-foreground">טוען לקוחות...</p>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function EmployersModernPage() {
         {/* New clients */}
         <div className="t22-card-soft p-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16,185,129,0.10)' }}>
-            <Plus className="h-6 w-6" style={{ color: '#059669' }} />
+            <Plus className="h-6 w-6 text-emerald-600" />
           </div>
           <div>
             <p className="t22-num text-3xl font-bold text-slate-900">
@@ -326,7 +326,7 @@ export default function EmployersModernPage() {
                   variant="ghost"
                   size="sm"
                   onClick={(e) => openEdit(e, employer)}
-                  className="hover:bg-orange-50 hover:text-[#E65100] flex-shrink-0"
+                  className="hover:bg-teal-50 hover:text-teal-800 flex-shrink-0"
                   title="עריכת מעסיק"
                 >
                   <Pencil className="h-4 w-4" />
@@ -395,7 +395,7 @@ export default function EmployersModernPage() {
             </p>
             <Button 
               onClick={openCreate}
-              className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600"
+              className="mt-6 bg-teal-700 hover:bg-teal-800"
               size="lg"
             >
               <Plus className="ml-2 h-5 w-5" />
@@ -410,7 +410,7 @@ export default function EmployersModernPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <Card className="p-8 max-w-2xl w-full mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-semibold text-slate-900">
                 {editingId ? "עריכת מעסיק" : "הוסף לקוח חדש"}
               </h2>
               <Button 
@@ -499,7 +499,7 @@ export default function EmployersModernPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-14 text-lg"
+                  className="flex-1 bg-teal-700 hover:bg-teal-800 h-12 text-base"
                 >
                   {saving ? (
                     <Loader2 className="ml-2 h-5 w-5 animate-spin" />

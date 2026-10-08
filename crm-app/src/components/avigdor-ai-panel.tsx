@@ -167,7 +167,7 @@ export function AvigdorAiPanel() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="t22-avigdor hidden xl:flex flex-col w-[min(325px,22vw)] h-full flex-shrink-0 relative overflow-hidden ml-[min(2cm,3.5vw)]
+      className="t22-avigdor hidden xl:flex flex-col w-[min(260px,17.6vw)] h-full flex-shrink-0 relative overflow-hidden ml-[min(1.6cm,2.8vw)]
         border-r border-[var(--sb-border)]"
       style={{ background: 'var(--sb-bg)' }}
     >

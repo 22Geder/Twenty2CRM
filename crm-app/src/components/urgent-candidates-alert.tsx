@@ -102,7 +102,7 @@ export function UrgentCandidatesAlert({ candidates }: { candidates: UntreatedCan
           </button>
           <Link 
             href="/dashboard/monthly-status?filter=in-process"
-            className="hidden sm:inline-flex text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors font-medium flex-shrink-0"
+            className="hidden sm:inline-flex text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors font-medium flex-shrink-0"
           >
             סטטוס חודשי
           </Link>

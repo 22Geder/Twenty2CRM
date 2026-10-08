@@ -247,6 +247,7 @@ async function getUntreatedInProcessCandidates() {
   return await prisma.candidate.findMany({
     where: {
       inProcessPositionId: { not: null },
+      hiredAt: null,
       inProcessAt: { lt: cutoff },
       employmentStatus: { notIn: ['EMPLOYED', 'REJECTED'] },
     },
@@ -443,7 +444,7 @@ export default async function CiviDashboardPage() {
 
           overviewContent={
             <div className="space-y-4 md:space-y-5">
-              <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label={`מדדי ${monthLabel}`}>
+              <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label={`מדדי ${monthLabel}`}>
                 {kpiMetrics.map((m) => {
                   const Icon = m.icon
                   return (
@@ -526,14 +527,8 @@ export default async function CiviDashboardPage() {
                       </div>
                       <div className="mt-3 pt-3 border-t border-slate-100">
                         <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-[#4F46E5] inline-block" />משרות חדשות לפי חודש
-                          </span>
-                          <div className="flex gap-1 flex-wrap justify-end">
-                            {stats.monthlyData.slice(-6).map((m, i) => (
-                              <span key={i} className="font-semibold text-[#4F46E5]">{m.positions}</span>
-                            ))}
-                          </div>
+                          <span>משרות חדשות החודש</span>
+                          <span className="font-semibold tabular-nums text-slate-900">{currentMonth?.positions ?? 0}</span>
                         </div>
                       </div>
                     </div>
@@ -1175,7 +1170,6 @@ export default async function CiviDashboardPage() {
                       <div className="mt-2 text-[10px] sm:text-xs text-center leading-tight"
                         style={{ color: isCurrentMonth ? '#1E293B' : '#94A3B8', fontWeight: isCurrentMonth ? 700 : 400 }}>
                         {m.month}
-                        {total > 0 && <span className="block text-[9px] text-slate-400 font-normal">סה"כ {total}</span>}
                       </div>
                     </div>
                   )
@@ -1183,6 +1177,7 @@ export default async function CiviDashboardPage() {
               </div>
             )
           })()}
+          <p className="mt-4 text-xs text-slate-400">החודשים נספרים כמו בסטטוס חודשי. מועמד שעלה בחודש אחד והתקבל באחר מופיע בשניהם, לכן סכום החודשים יכול להיות גבוה מהסיכום השנתי שמתחת.</p>
         </div>
 
         <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 md:p-8">

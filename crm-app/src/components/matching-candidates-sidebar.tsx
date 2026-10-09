@@ -285,6 +285,7 @@ export function MatchingCandidatesSidebar({
         body: JSON.stringify({
           candidateId,
           positionId,
+          approved: true,
         }),
       })
 
@@ -542,6 +543,7 @@ export function MatchingCandidatesSidebar({
           subject: `הזדמנות תעסוקה: ${positionTitle || 'משרה חדשה'}`,
           message: `שלום {name},\n\nמצאנו משרה שעשויה להתאים במיוחד לכישורים ולניסיון שלך.\n\nמשרה: ${positionTitle || 'המשרה'}\n\nנשמח לשמוע ממך ולקבוע שיחה.\n\nבברכה,\nצוות הגיוס`,
           positionTitle: positionTitle || 'המשרה',
+          approved: true,
         }),
       })
 

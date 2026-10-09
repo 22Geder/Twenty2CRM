@@ -79,6 +79,7 @@ export default function ScheduleInterviewModal({
     positionId:    prePosition?.id || "",
     applicationId: preApplication?.id || "",
   })
+  const [sendInvite, setSendInvite] = useState(false)
 
   // Load positions and calendar status on mount
   useEffect(() => {
@@ -174,6 +175,7 @@ export default function ScheduleInterviewModal({
           applicationId: form.applicationId,
           candidateId:   candidate.id,
           schedulerId:   "__current_user__",  // server will override with session user
+          sendInviteToCandidate: sendInvite && !!candidate.email,
         }),
       })
 
@@ -228,7 +230,7 @@ export default function ScheduleInterviewModal({
                 <span>
                   מחובר ל-Google Calendar
                   {calendarEmail && <span className="font-medium"> ({calendarEmail})</span>}
-                  — זימון יישלח אוטומטית
+                  — הזימון למועמד יישלח רק באישורך
                 </span>
               </>
             ) : (
@@ -253,7 +255,9 @@ export default function ScheduleInterviewModal({
             <CheckCircle className="h-14 w-14 text-green-500" />
             <h3 className="text-xl font-bold text-slate-800">הראיון נקבע בהצלחה!</h3>
             {calendarConnected && (
-              <p className="text-slate-500">זימון יומן נשלח למועמד ולמגייס</p>
+              <p className="text-slate-500">
+                {sendInvite && candidate.email ? "זימון יומן נשלח למועמד ולמגייס" : "הראיון נשמר ביומן. לא נשלח מייל למועמד"}
+              </p>
             )}
           </div>
         ) : (
@@ -270,6 +274,17 @@ export default function ScheduleInterviewModal({
                 )}
               </div>
             </div>
+
+            {candidate.email && (
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={sendInvite}
+                  onChange={e => setSendInvite(e.target.checked)}
+                />
+                שלח זימון למועמד במייל (באישורי)
+              </label>
+            )}
 
             {/* Title */}
             <div className="space-y-1">

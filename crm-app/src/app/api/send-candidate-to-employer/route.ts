@@ -366,8 +366,16 @@ export async function POST(request: NextRequest) {
       targetEmail,      // 📧 המייל שאליו לשלוח (אופציונלי) - יחיד
       targetName,       // 📧 שם איש הקשר (אופציונלי)
       targetEmails,     // 🆕 מערך מיילים: [{email: "...", name: "..."}]
-      saveEmailToPosition  // 📧 האם לשמור את המייל למשרה
+      saveEmailToPosition,  // 📧 האם לשמור את המייל למשרה
+      approved          // אישור מפורש של המשתמש לשליחה
     } = await request.json()
+
+    if (approved !== true) {
+      return NextResponse.json(
+        { error: "Sending requires explicit approval", code: "APPROVAL_REQUIRED" },
+        { status: 400 }
+      )
+    }
 
     if (!candidateId || !positionId) {
       return NextResponse.json(

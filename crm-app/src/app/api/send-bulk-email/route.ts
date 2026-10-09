@@ -14,7 +14,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { recipients, subject, message, positionId, positionTitle } = await request.json()
+    const { recipients, subject, message, positionId, positionTitle, approved } = await request.json()
+
+    if (approved !== true) {
+      return NextResponse.json(
+        { error: "Sending requires explicit approval", code: "APPROVAL_REQUIRED" },
+        { status: 400 }
+      )
+    }
 
     // בדיקות
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {

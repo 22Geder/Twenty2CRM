@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
       candidateId,
       schedulerId,
       status,
+      sendInviteToCandidate,
     } = body
 
     // Validation
@@ -213,7 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     // היומן והזימון רצים אחרי שהראיון כבר נשמר, כדי שהמסך לא יחכה ל-Google/SMTP.
-    runAfterResponse(() => syncInterviewExternally(interview, resolvedSchedulerId, scheduledAt).catch((calendarError) => {
+    runAfterResponse(() => syncInterviewExternally(interview, resolvedSchedulerId, scheduledAt, sendInviteToCandidate === true).catch((calendarError) => {
       console.error("Interview calendar sync failed:", calendarError)
     }))
 
@@ -240,7 +241,8 @@ async function syncInterviewExternally(
     position: { title: string } | null
   },
   schedulerId: string,
-  scheduledAt: string
+  scheduledAt: string,
+  inviteCandidateApproved: boolean
 ) {
     try {
       const scheduler = await prisma.user.findUnique({
@@ -251,7 +253,7 @@ async function syncInterviewExternally(
       if (scheduler?.googleCalendarRefreshToken) {
         const attendeeEmails = [
           scheduler.email,
-          interview.candidate?.email,
+          inviteCandidateApproved ? interview.candidate?.email : null,
         ].filter((e): e is string => Boolean(e))
 
         const eventId = await createCalendarEvent(scheduler.googleCalendarRefreshToken, {
@@ -276,7 +278,7 @@ async function syncInterviewExternally(
         })
 
         // Also send .ics for Outlook compatibility if candidate has email
-        if (interview.candidate?.email && process.env.SMTP_HOST) {
+        if (inviteCandidateApproved && interview.candidate?.email && process.env.SMTP_HOST) {
           const icsContent = generateICalString({
             uid: interview.id,
             title: interview.title,

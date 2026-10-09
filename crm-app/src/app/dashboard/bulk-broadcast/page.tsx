@@ -156,6 +156,10 @@ export default function BulkBroadcastPage() {
       return
     }
 
+    if (mode === 'email' && !confirm(`לשלוח מייל ל-${selectedCandidates.size} מועמדים?`)) {
+      return
+    }
+
     setSending(true)
     setError(null)
     setResults(null)
@@ -183,6 +187,7 @@ export default function BulkBroadcastPage() {
       
       if (mode === 'email') {
         body.subject = subject
+        body.approved = true
       }
 
       const res = await fetch(endpoint, {

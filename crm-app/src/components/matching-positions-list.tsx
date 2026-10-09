@@ -460,6 +460,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
           targetEmail: finalEmail,               // המייל שנבחר
           targetName: finalName,                 // השם שנבחר
           saveEmailToPosition: saveEmailToPosition && (customEmail || selectedEmail !== emailPreview.position.contactEmail),
+          approved: true,
         }),
       })
 

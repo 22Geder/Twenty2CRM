@@ -203,6 +203,7 @@ export default function SendCandidatePage() {
           customMatchingPoints: editedPoints,
           targetEmails: selectedEmails,  // 🆕 שליחת מערך מיילים
           saveEmailToPosition,
+          approved: true,
         }),
       })
 

@@ -343,6 +343,50 @@ model GmailScanLog {
   @@index([mailboxId, createdAt])
 }
 
+// הצעת מועמד חדש מקובץ קורות חיים במייל - נוצר מועמד רק אחרי אישור
+model GmailCandidateImport {
+  id               String    @id @default(uuid())
+  mailboxId        String
+  sourceMessageId  String
+  attachmentId     String
+  fileName         String
+  mimeType         String?
+  sourceSender     String?
+  sourceSubject    String?
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED, FAILED
+  parsedCandidate  String    @default("{}")      // JSON: name, email, phone, city, title, skills, summary
+  extractedChars   Int?
+  errorMessage     String?
+  candidateId      String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@unique([mailboxId, sourceMessageId, attachmentId])
+  @@index([status, createdAt])
+}
+
+// הצעת ראיון שזוהתה בשרשור מייל עם מועמד - הראיון נוצר רק אחרי אישור
+model GmailInterviewProposal {
+  id               String    @id @default(uuid())
+  mailboxId        String
+  sourceMessageId  String
+  candidateId      String
+  positionId       String?
+  proposedAt       DateTime
+  location         String?
+  snippet          String?
+  sourceSender     String?
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  interviewId      String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@unique([mailboxId, sourceMessageId, candidateId])
+  @@index([status, createdAt])
+}
+
 model CandidateUpdate {
   id               String         @id @default(uuid())
   type             String

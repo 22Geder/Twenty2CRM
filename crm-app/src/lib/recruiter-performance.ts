@@ -1,4 +1,5 @@
 import { toYear, toYearMonth } from '@/lib/candidate-hired-dates'
+import { calcWorkedMinutes } from '@/lib/attendance'
 
 export const UPLOAD_TARGET = 450
 export const HIRE_TARGET = 10
@@ -56,6 +57,31 @@ export function bucketRecruiterActivity(
   }
 
   return { uploads, hires }
+}
+
+export function bucketRecruiterAttendance(
+  rows: Array<{
+    date: Date | string
+    clockIn: Date | string | null
+    clockOut: Date | string | null
+    breakMinutes: number
+  }>,
+) {
+  const workedMinutes = new Map<string, number>()
+  const completedShifts = new Map<string, number>()
+
+  for (const row of rows) {
+    const month = toYearMonth(row.date)
+    if (!month) continue
+
+    const minutes = calcWorkedMinutes(row.clockIn, row.clockOut, row.breakMinutes)
+    if (minutes <= 0) continue
+
+    workedMinutes.set(month, (workedMinutes.get(month) || 0) + minutes)
+    completedShifts.set(month, (completedShifts.get(month) || 0) + 1)
+  }
+
+  return { workedMinutes, completedShifts }
 }
 
 export function yearMonths(year: string): string[] {

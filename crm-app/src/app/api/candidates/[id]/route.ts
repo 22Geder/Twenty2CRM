@@ -7,6 +7,13 @@ import { sendProcessEntryEmail, sendCandidateStatusChangeEmail } from "@/lib/pro
 import { syncInProcessCandidateToTeamCalendars } from "@/lib/in-process-candidate-calendar"
 import { syncCandidateInterviewToTeamCalendars } from "@/lib/candidate-interview-calendar"
 import { syncCandidateStatusToTeamCalendars } from "@/lib/candidate-status-calendar"
+import { z } from "zod"
+import type { Prisma } from "@prisma/client"
+
+const explicitStatusSchema = z.object({
+  statusPositionId: z.string().trim().min(1).max(200),
+  employmentStatus: z.enum(['EMPLOYED', 'IN_PROCESS']),
+})
 
 // GET /api/candidates/[id] - קבלת מועמד ספציפי
 export async function GET(
@@ -104,6 +111,14 @@ export async function PUT(
     const { id } = await params
 
     const body = await request.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+    }
+    const explicitStatus = 'statusPositionId' in body ? explicitStatusSchema.safeParse(body) : null
+    if (explicitStatus && !explicitStatus.success) {
+      return NextResponse.json({ error: "יש לבחור משרה וסטטוס קבלה או בתהליך" }, { status: 400 })
+    }
+    const statusPositionId = explicitStatus?.success ? explicitStatus.data.statusPositionId : null
     const {
       name,
       email,
@@ -135,7 +150,17 @@ export async function PUT(
       inProcessAt,  // 🆕 מתי נכנס לתהליך
       interviewDate,  // 🆕 תאריך ראיון מתוכנן
       manualSummary,  // 🆕 תקציר ידני של המשתמש
+      placementFeePaid,
     } = body
+
+    if ('placementFeePaid' in body) {
+      if (session.user.role !== 'ADMIN') {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      if (placementFeePaid !== null && typeof placementFeePaid !== 'boolean') {
+        return NextResponse.json({ error: "Invalid payment status" }, { status: 400 })
+      }
+    }
 
     // Check if candidate exists
     const existingCandidate = await prisma.candidate.findUnique({
@@ -163,7 +188,7 @@ export async function PUT(
       }
     }
 
-    const candidate = await prisma.candidate.update({
+    const updateCandidate = (db: Prisma.TransactionClient, position?: { id: string; employerId: string }) => db.candidate.update({
       where: { id },
       data: {
         // 🔧 עדכון רק שדות שנשלחו במפורש
@@ -213,20 +238,56 @@ export async function PUT(
             ? new Date()
             : existingCandidate.manualSummaryUpdatedAt,
         }),
+        ...('placementFeePaid' in body && {
+          placementFeePaid,
+          placementFeePaidAt: placementFeePaid === null ? null : new Date(),
+        }),
+        // בחירה מפורשת גוברת על שדות לקוח סותרים; המעסיק נגזר מהמשרה בלבד.
+        ...(position && (employmentStatus === 'EMPLOYED' ? {
+          hiredToEmployerId: position.employerId,
+          hiredAt: existingCandidate.hiredAt || new Date(),
+          inProcessPositionId: null,
+          inProcessAt: null,
+        } : {
+          hiredToEmployerId: null,
+          hiredAt: null,
+          inProcessPositionId: position.id,
+          inProcessAt: existingCandidate.inProcessAt || new Date(),
+        })),
       },
       include: {
         applications: {
           include: {
-            position: true,
+            position: { include: { employer: true } },
           },
         },
         interviews: true,
+        hiredToEmployer: true,
+        inProcessPosition: { include: { employer: true } },
       },
     })
 
+    // הפנייה המדויקת והמועמד נשמרים יחד, לפני התשובה; כשל מבטל את שניהם.
+    const candidate = statusPositionId
+      ? await prisma.$transaction(async tx => {
+        const position = await tx.position.findFirst({ where: { id: statusPositionId, active: true } })
+        if (!position) return null
+        const applicationStatus = employmentStatus === 'EMPLOYED' ? 'HIRED' : 'IN_PROCESS'
+        await tx.application.upsert({
+          where: { candidateId_positionId: { candidateId: id, positionId: position.id } },
+          create: { candidateId: id, positionId: position.id, status: applicationStatus, stage: applicationStatus, source: 'MANUAL' },
+          update: { status: applicationStatus, stage: applicationStatus },
+        })
+        return updateCandidate(tx, position)
+      })
+      : await updateCandidate(prisma)
+    if (!candidate) {
+      return NextResponse.json({ error: "המשרה אינה קיימת או אינה פעילה" }, { status: 400 })
+    }
+
     // הסטטוס כבר נשמר. סנכרון הפניות והמייל רצים אחרי התשובה
     // כדי שסימון בסטטוס חודשי/שנתי יתעדכן מיד ולא יחכה ל-SMTP.
-    if ('employmentStatus' in body && employmentStatus !== existingCandidate.employmentStatus) {
+    if ('employmentStatus' in body && (statusPositionId || employmentStatus !== existingCandidate.employmentStatus)) {
       const statusContext = {
         candidateId: id,
         candidateName: candidate.name,
@@ -234,7 +295,8 @@ export async function PUT(
         employmentStatus: employmentStatus as string | null,
         previousStatus: existingCandidate.employmentStatus,
         previousPositionId: existingCandidate.inProcessPositionId,
-        positionId: (inProcessPositionId as string | undefined) || candidate.inProcessPositionId,
+        positionId: statusPositionId || (inProcessPositionId as string | undefined) || candidate.inProcessPositionId,
+        explicitPosition: Boolean(statusPositionId),
         inProcessAt: candidate.inProcessAt,
         hiredAt: candidate.hiredAt,
         interviewDate: candidate.interviewDate,
@@ -247,7 +309,7 @@ export async function PUT(
 
     return NextResponse.json(candidate)
   } catch (error) {
-    console.error("Error updating candidate:", error instanceof Error ? error.stack : error)
+    console.error("Error updating candidate:", error instanceof Error ? error.name : "UnknownError")
     return NextResponse.json(
       { error: "Failed to update candidate" },
       { status: 500 }
@@ -267,6 +329,7 @@ async function syncEmploymentStatusSideEffects(input: {
   hiredAt: Date | null
   interviewDate: Date | null
   recruiterName: string | null
+  explicitPosition?: boolean
 }) {
   const {
     candidateId,
@@ -284,7 +347,7 @@ async function syncEmploymentStatusSideEffects(input: {
   const activeStatuses = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER']
 
   try {
-    if (employmentStatus === 'EMPLOYED') {
+    if (!input.explicitPosition && employmentStatus === 'EMPLOYED') {
       await prisma.application.updateMany({
         where: { candidateId, status: { in: activeStatuses } },
         data: { status: 'HIRED' },
@@ -294,7 +357,7 @@ async function syncEmploymentStatusSideEffects(input: {
         where: { candidateId, status: { in: activeStatuses } },
         data: { status: 'REJECTED' },
       })
-    } else if (employmentStatus === 'IN_PROCESS') {
+    } else if (!input.explicitPosition && employmentStatus === 'IN_PROCESS') {
       const latestNewApp = await prisma.application.findFirst({
         where: { candidateId, status: 'NEW' },
         orderBy: { appliedAt: 'desc' },
@@ -307,7 +370,7 @@ async function syncEmploymentStatusSideEffects(input: {
       }
     }
 
-    const emailPositionId = employmentStatus === 'IN_PROCESS'
+    const emailPositionId = input.explicitPosition || employmentStatus === 'IN_PROCESS'
       ? positionId
       : previousPositionId || positionId
     let positionTitle: string | null = null
@@ -349,7 +412,7 @@ async function syncEmploymentStatusSideEffects(input: {
       })
     }
 
-    if (employmentStatus === 'IN_PROCESS' && previousStatus !== 'IN_PROCESS') {
+    if (employmentStatus === 'IN_PROCESS' && (input.explicitPosition || previousStatus !== 'IN_PROCESS')) {
       await sendProcessEntryEmail({
         candidateName,
         positionTitle,

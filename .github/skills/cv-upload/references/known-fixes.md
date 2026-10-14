@@ -273,6 +273,25 @@ const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "ge
 
 ## Patterns to Watch For
 
+## Fix #11 — Resilient Office and Legacy Word Extraction (October 2026)
+
+**Symptom**: Valid resumes in PDF, DOCX, DOC, RTF, and ODT formats frequently returned "לא הצלחנו לקרוא", even when the file was readable in Word or a PDF viewer.
+
+**Root cause**:
+- The upload route relied on one primary parser per office format.
+- Legacy `.doc` files had only a fragile binary-string fallback.
+- Complex PDFs, DOCX files with unusual layout, RTF, and ODT had no dedicated general-purpose parser fallback before Gemini.
+
+**Fix**:
+1. Installed `officeparser` for a structured, Node 22-compatible fallback for PDF, DOCX, RTF, and ODT.
+2. Installed `word-extractor` for native Unicode extraction from legacy `.doc` files, including Hebrew.
+3. The extraction order is now: format-specific parser → dedicated fallback parser → Gemini fallback/OCR only if no readable text was recovered.
+4. Marked both parser packages as `serverExternalPackages` in Next.js so Railway runs their server-side dependencies correctly.
+
+**Status**: ✅ Fixed October 2026
+
+---
+
 When a new upload bug is reported, check these in order:
 1. **Did the AI suddenly stop reading names across the board?** → Deprecated model → Fix #9 (test the model name first!)
 2. **Is pdf-parse being called correctly?** (not class-based) → Fix #1

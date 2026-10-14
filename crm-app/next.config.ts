@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['pdf-parse'],
+  serverExternalPackages: ['officeparser', 'pdf-parse', 'word-extractor'],
   
   // 🔒 Security Headers
   async headers() {

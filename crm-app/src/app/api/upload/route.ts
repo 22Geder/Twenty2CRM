@@ -6,11 +6,21 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import mammoth from 'mammoth';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { OfficeParser } from 'officeparser';
 import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTag } from '@/lib/recruitment-tags';
 import { sendCandidateUploadEmail } from '@/lib/process-notifications';
 import { createCandidateUpdate } from '@/lib/candidate-updates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const WordExtractor = require('word-extractor') as new () => {
+  extract(buffer: Buffer): Promise<{
+    getBody(): string;
+    getHeaders(): string;
+    getFootnotes(): string;
+    getEndnotes(): string;
+    getTextboxes(): string;
+  }>;
+};
 
 // 🆕 Retry helper for Gemini API calls - handles 429 rate limiting
 async function withGeminiRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
@@ -132,6 +142,41 @@ function detectGibberish(text: string): { isGibberish: boolean; readableRatio: n
   return { isGibberish: readableRatio < 0.4, readableRatio };
 }
 
+type OfficeDocumentType = 'pdf' | 'docx' | 'rtf' | 'odt';
+
+async function extractTextWithOfficeParser(
+  buffer: Buffer,
+  fileType: OfficeDocumentType,
+): Promise<string> {
+  try {
+    const ast = await Promise.race([
+      OfficeParser.parseOffice(buffer, {
+        fileType,
+        pdfParserConfig: fileType === 'pdf'
+          ? { maxTimeMs: 15000, separateProcess: true }
+          : undefined,
+      }),
+      new Promise<never>((_, reject) => setTimeout(
+        () => reject(new Error(`officeparser ${fileType} timeout`)),
+        20000,
+      )),
+    ]);
+    const result = await ast.to('text');
+    const text = result.value.trim();
+
+    if (text.length >= 10 && !detectGibberish(text).isGibberish) {
+      console.log(`📄 officeparser extracted ${fileType}:`, text.length, 'chars');
+      return text;
+    }
+
+    console.log(`⚠️ officeparser returned too little or unreadable ${fileType} text`);
+  } catch (error: any) {
+    console.log(`⚠️ officeparser failed for ${fileType}:`, error?.message || error);
+  }
+
+  return '';
+}
+
 // Helper to extract text from PDF - נסה כמה שיטות
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   let pdfParseText = '';
@@ -160,7 +205,13 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     console.log('⚠️ pdf-parse failed:', error.message);
   }
   
-  // 2. אם pdf-parse נכשל, הטקסט קצר, או ג'יבריש - נסה Gemini Vision
+  // 2. Fallback parser handles complex layouts and malformed PDF text layers.
+  const officeParserText = await extractTextWithOfficeParser(buffer, 'pdf');
+  if (officeParserText) {
+    return officeParserText;
+  }
+
+  // 3. אם pdf-parse נכשל, הטקסט קצר, או ג'יבריש - נסה Gemini Vision
   try {
     console.log('📄 Trying Gemini Vision OCR for PDF...');
     const geminiText = await extractTextFromPDFWithGemini(buffer);
@@ -173,7 +224,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     console.log('⚠️ Gemini Vision failed:', error.message);
   }
   
-  // 3. אם הכל נכשל - החזר מה שיש מ-pdf-parse (גם אם חשוד כג'יבריש, עדיף מכלום) או טקסט ריק
+  // 4. אם הכל נכשל - החזר מה שיש מ-pdf-parse (גם אם חשוד כג'יבריש, עדיף מכלום) או טקסט ריק
   return pdfParseText || '';
 }
 
@@ -189,12 +240,32 @@ async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
   } catch (error) {
     console.error('Error parsing DOCX with mammoth:', error);
   }
-  return '';
+  return extractTextWithOfficeParser(buffer, 'docx');
 }
 
 // Helper to extract text from old DOC format (binary)
 async function extractTextFromDOC(buffer: Buffer): Promise<string> {
-  // 1. נסה קודם עם mammoth (לפעמים עובד גם עם .doc)
+  // 1. Dedicated legacy Word parser preserves Unicode, including Hebrew.
+  try {
+    const extractor = new WordExtractor();
+    const document = await extractor.extract(buffer);
+    const text = [
+      document.getBody(),
+      document.getTextboxes(),
+      document.getHeaders(),
+      document.getFootnotes(),
+      document.getEndnotes(),
+    ].filter(Boolean).join('\n').trim();
+
+    if (text.length >= 10 && !detectGibberish(text).isGibberish) {
+      console.log('📄 word-extractor extracted DOC:', text.length, 'chars');
+      return text;
+    }
+  } catch (error: any) {
+    console.log('⚠️ word-extractor failed for DOC:', error?.message || error);
+  }
+
+  // 2. נסה עם mammoth (לפעמים עובד גם עם .doc)
   try {
     const result = await mammoth.extractRawText({ buffer });
     if (result.value && result.value.trim().length > 50) {
@@ -205,7 +276,7 @@ async function extractTextFromDOC(buffer: Buffer): Promise<string> {
     console.log('⚠️ mammoth failed for DOC:', err.message);
   }
   
-  // 2. חילוץ טקסט ישירות מהבינארי של .doc
+  // 3. חילוץ טקסט ישירות מהבינארי של .doc
   try {
     // Old .doc files store text as readable strings embedded in binary
     const rawText = buffer.toString('latin1');
@@ -239,18 +310,6 @@ async function extractTextFromDOC(buffer: Buffer): Promise<string> {
     }
   } catch (err: any) {
     console.log('⚠️ DOC binary extraction failed:', err.message);
-  }
-  
-  // 3. שלח ל-Gemini Vision כ-fallback
-  try {
-    console.log('📄 Trying Gemini Vision for DOC file...');
-    const geminiText = await extractTextFromPDFWithGemini(buffer);
-    if (geminiText && geminiText.length > 50) {
-      console.log('✅ Gemini extracted DOC text:', geminiText.length, 'chars');
-      return geminiText;
-    }
-  } catch (err: any) {
-    console.log('⚠️ Gemini DOC extraction failed:', err.message);
   }
   
   return '';
@@ -338,16 +397,7 @@ async function extractTextFromRTF(buffer: Buffer): Promise<string> {
     console.log('⚠️ RTF parsing failed:', err.message);
   }
   
-  // Fallback: try Gemini
-  try {
-    console.log('📄 Trying Gemini for RTF file...');
-    const geminiText = await extractTextFromPDFWithGemini(buffer);
-    if (geminiText && geminiText.length > 50) {
-      return geminiText;
-    }
-  } catch {}
-  
-  return '';
+  return extractTextWithOfficeParser(buffer, 'rtf');
 }
 
 // 🆕 Universal fallback: try to extract text with Gemini from any document
@@ -1004,6 +1054,11 @@ export async function POST(request: NextRequest) {
     } else if (fileExtension === 'rtf') {
       console.log('📄 Processing RTF:', file.name, 'Size:', buffer.length);
       text = await extractTextFromRTF(buffer);
+
+      if (!text || text.length < 10) {
+        console.log('⚠️ RTF extraction failed, trying Gemini fallback...');
+        text = await extractTextWithGeminiFallback(buffer, file.name, 'application/rtf');
+      }
       
       if (!text || text.length < 10) {
         return NextResponse.json(
@@ -1012,9 +1067,13 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (fileExtension === 'odt') {
-      // OpenDocument format - try Gemini
       console.log('📄 Processing ODT:', file.name, 'Size:', buffer.length);
-      text = await extractTextWithGeminiFallback(buffer, file.name, 'application/vnd.oasis.opendocument.text');
+      text = await extractTextWithOfficeParser(buffer, 'odt');
+
+      if (!text || text.length < 10) {
+        console.log('⚠️ ODT extraction failed, trying Gemini fallback...');
+        text = await extractTextWithGeminiFallback(buffer, file.name, 'application/vnd.oasis.opendocument.text');
+      }
       
       if (!text || text.length < 10) {
         return NextResponse.json(
@@ -1727,5 +1786,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

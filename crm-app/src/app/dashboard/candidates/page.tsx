@@ -58,6 +58,7 @@ import {
 import { AdvancedCandidateFilters } from '@/components/advanced-filters'
 import { AICandidateSearch } from '@/components/ai-candidate-search'
 import CandidateManualSummary from '@/components/candidate-manual-summary'
+import { MatchingEvidenceDetails, MatchingStatusLabel } from '@/components/matching-evidence-details'
 import { getCandidateCanonicalStatus } from '@/lib/candidate-status'
 import { useTheme } from '@/lib/use-theme'
 
@@ -1382,187 +1383,220 @@ export default function CandidatesPageModern() {
 
       {/* 🆕 מודל התאמות טובות ביותר */}
       {showBestMatches && bestMatchesData && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-foreground/20 z-50 flex items-center justify-center p-4" dir="rtl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="best-matches-title"
+            aria-describedby="best-matches-description"
+            className="bg-background text-foreground rounded-3xl border border-border shadow-[var(--shadow-soft-lg)] max-w-6xl w-full max-h-[90dvh] overflow-hidden flex flex-col"
+          >
             {/* Header */}
-            <div className="bg-slate-900 p-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-                  <Target className="h-6 w-6" />
+            <div className="bg-card border-b border-border p-4 sm:p-6 flex items-start justify-between gap-4 shrink-0">
+              <div className="min-w-0">
+                <h2 id="best-matches-title" className="text-xl sm:text-2xl font-semibold text-foreground flex items-center gap-2">
+                  <Target className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   התאמות טובות ביותר
                 </h2>
-                <p className="text-white/80 mt-1">
-                  {bestMatchesData.positionsWithMatches} משרות | 
-                  {bestMatchesData.totalCandidatesNotInProcess} מועמדים פנויים |
-                  {bestMatchesData.processingTime}ms
+                <p className="text-sm text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  <span><span className="tabular-nums">{bestMatchesData.positionsWithMatches}</span> משרות עם התאמות</span>
+                  <span><span className="tabular-nums">{bestMatchesData.totalCandidatesNotInProcess}</span> מועמדים לאחר סינון סטטוס</span>
+                  <span>זמן עיבוד: <span className="tabular-nums" dir="ltr">{bestMatchesData.processingTime} ms</span></span>
                 </p>
-                <p className="text-xs text-white/60 mt-1">
-                  תגיות 40 | ניסיון 15 | דירוג 10 | תפקיד 10 | חלקי 10 | מיקום 5 | עדכניות 5 | +5 נוסף
+                <p id="best-matches-description" className="text-xs leading-relaxed text-muted-foreground mt-2">
+                  {bestMatchesData.algorithm}
+                </p>
+                <p className="text-xs leading-relaxed text-muted-foreground mt-1">
+                  ציון עזר מתוך 100, לא הסתברות קבלה.
                 </p>
               </div>
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowBestMatches(false)}
-                className="text-white hover:bg-white/20 rounded-full"
+                aria-label="סגור התאמות טובות ביותר"
+                className="h-11 w-11 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:transform-none"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+                <p>ספירת המועמדים אינה כוללת מועסקים או מועמדים בתהליך לפי הרישום במערכת; היא אינה הוכחה לזמינות לעבודה.</p>
+                <p>לכל משרה מוצגות עד 20 ההתאמות הראשונות בדירוג מתוך כלל ההתאמות שנמצאו בבדיקה המקומית.</p>
+              </div>
               {bestMatchesData.positions.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <Target className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-lg">לא נמצאו התאמות</p>
-                  <p className="text-sm">אין מועמדים פנויים או משרות פעילות</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <Target className="h-8 w-8 mx-auto mb-4" aria-hidden="true" />
+                  <p className="text-lg font-semibold text-foreground">לא נמצאו ראיות מספיקות להצעת התאמות</p>
+                  <p className="text-sm mt-2">אפשר לבדוק את המידע המקצועי ודרישות המשרות לפני בדיקה נוספת.</p>
                 </div>
               ) : (
                 bestMatchesData.positions.map((item: any) => (
-                  <Card key={item.position.id} className="border border-slate-200 shadow-none overflow-hidden">
+                  <Card key={item.position.id} className="rounded-2xl border border-border bg-card shadow-none hover:shadow-none transition-none overflow-hidden">
                     {/* Position Header */}
-                    <div 
-                      className="bg-slate-900 p-4 cursor-pointer hover:bg-slate-800 transition-colors"
+                    <button
+                      type="button"
+                      className="block w-full min-h-11 bg-card p-4 text-start hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                       onClick={() => togglePositionExpand(item.position.id)}
+                      aria-expanded={expandedPositions.has(item.position.id)}
+                      aria-controls={`best-matches-position-${item.position.id}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                            <Briefcase className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-white">{item.position.title}</h3>
-                            <div className="flex items-center gap-3 text-slate-300 text-sm">
+                      <span className="flex flex-wrap items-start justify-between gap-4">
+                        <span className="flex min-w-0 flex-1 items-start gap-3">
+                          <Briefcase className="h-5 w-5 mt-1 shrink-0 text-muted-foreground" aria-hidden="true" />
+                          <span className="min-w-0">
+                            <span className="block text-lg font-semibold text-foreground break-words">{item.position.title}</span>
+                            <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-1">
                               <span className="flex items-center gap-1">
-                                <Building2 className="h-4 w-4" />
+                                <Building2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                                 {item.position.employer.name}
                               </span>
                               {item.position.location && (
                                 <span className="flex items-center gap-1">
-                                  <MapPin className="h-4 w-4" />
+                                  <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
                                   {item.position.location}
                                 </span>
                               )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-semibold text-white tabular-nums">{item.candidates.length}</div>
-                            <div className="text-xs text-slate-400">מועמדים מתאימים</div>
-                          </div>
+                            </span>
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span>
+                            מוצגות <span className="font-semibold text-foreground tabular-nums">{item.candidates.length}</span>
+                            {' מתוך '}<span className="font-semibold text-foreground tabular-nums">{item.totalMatches}</span> התאמות
+                          </span>
                           {expandedPositions.has(item.position.id) ? (
-                            <ChevronUp className="h-6 w-6 text-slate-400" />
+                            <ChevronUp className="h-5 w-5 shrink-0" aria-hidden="true" />
                           ) : (
-                            <ChevronDown className="h-6 w-6 text-slate-400" />
+                            <ChevronDown className="h-5 w-5 shrink-0" aria-hidden="true" />
                           )}
-                        </div>
-                      </div>
+                        </span>
+                      </span>
                       {/* Position Tags */}
                       {item.position.tags && item.position.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-3">
+                        <span className="flex flex-wrap gap-1 mt-3">
                           {item.position.tags.slice(0, 6).map((tag: any) => (
-                            <Badge key={tag.id} variant="outline" className="bg-white/10 text-white border-white/20 text-xs">
+                            <Badge key={tag.id} variant="outline" className="rounded-lg bg-muted text-muted-foreground border-border text-xs">
                               {tag.name}
                             </Badge>
                           ))}
-                        </div>
+                        </span>
                       )}
-                    </div>
+                    </button>
 
                     {/* Candidates List */}
                     {expandedPositions.has(item.position.id) && (
-                      <div className="p-4 bg-slate-50 space-y-2">
+                      <div id={`best-matches-position-${item.position.id}`} className="p-4 bg-muted space-y-3">
                         {item.candidates.map((candidate: any, index: number) => (
                           <div 
                             key={candidate.id}
-                            className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                            className="bg-card rounded-xl p-4 border border-border"
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                              <div className="flex min-w-0 items-start gap-3">
                                 {/* Rank Badge */}
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm
-                                  ${index < 3 ? 'bg-slate-900' : 'bg-slate-400'}`}>
+                                <div className="w-8 h-8 shrink-0 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-semibold text-sm tabular-nums" aria-label={`מקום ${index + 1} בדירוג`}>
                                   {index + 1}
                                 </div>
                                 
                                 {/* Candidate Info */}
-                                <div>
+                                <div className="min-w-0">
                                   <Link 
                                     href={`/dashboard/candidates/${candidate.id}`}
-                                    className="font-semibold text-slate-800 hover:text-[#06B6D4] transition-colors"
+                                    className="inline-flex min-h-11 min-w-11 max-w-full items-center rounded-lg font-semibold text-foreground break-words hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   >
                                     {candidate.name}
                                   </Link>
-                                  <div className="flex items-center gap-3 text-sm text-slate-500">
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground break-words">
                                     {candidate.currentTitle && <span>{candidate.currentTitle}</span>}
                                     {candidate.city && (
-                                      <span className={`flex items-center gap-1 ${candidate.locationMatch ? 'text-green-600 font-medium' : ''}`}>
-                                        <MapPin className="h-3 w-3" />
+                                      <span className="flex flex-wrap items-center gap-1">
+                                        <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
                                         {candidate.city}
-                                        {candidate.locationMatch && <CheckCircle className="h-3 w-3" />}
+                                        {candidate.locationMatch && (
+                                          <span className="inline-flex items-center gap-1 text-xs">
+                                            <CheckCircle className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                            התאמת מיקום
+                                          </span>
+                                        )}
                                       </span>
                                     )}
                                   </div>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    <MatchingStatusLabel status={candidate.matchStatus} />
+                                  </p>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-4">
+                              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                                 {/* Matching Tags */}
                                 {candidate.matchingTags && candidate.matchingTags.length > 0 && (
                                   <div className="flex flex-wrap gap-1 max-w-[200px]">
                                     {candidate.matchingTags.slice(0, 3).map((tag: any) => (
-                                      <Badge key={tag.id} variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                      <Badge key={tag.id} variant="outline" className="rounded-lg bg-muted text-muted-foreground border-border text-xs">
                                         {tag.name}
                                       </Badge>
                                     ))}
                                   </div>
                                 )}
 
-                                {/* Score with Breakdown - אותו אלגוריתם כמו matching-positions */}
-                                <div className="flex items-center gap-2">
-                                  {/* פירוט ציון מקוצר */}
-                                  {candidate.scoreBreakdown && (
-                                    <div className="text-[9px] text-slate-500 flex gap-1" title={`תגיות:${candidate.scoreBreakdown.tags}/40 | חלקי:${candidate.scoreBreakdown.partial}/10 | ניסיון:${candidate.scoreBreakdown.experience}/15 | דירוג:${candidate.scoreBreakdown.rating}/10 | מיקום:${candidate.scoreBreakdown.location}/5 | תפקיד:${candidate.scoreBreakdown.title}/10`}>
-                                      <span>תגיות {candidate.scoreBreakdown.tags}</span>
-                                      <span>ניסיון {candidate.scoreBreakdown.experience}</span>
-                                      <span>מיקום {candidate.scoreBreakdown.location}</span>
-                                    </div>
+                                {/* ציון עזר מקומי — ללא ספי צבע או פרשנות כהסתברות */}
+                                <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+                                  <span className="text-xs text-muted-foreground">ציון עזר</span>
+                                  {Number.isFinite(candidate.score) ? (
+                                    <span className="font-semibold text-foreground tabular-nums" dir="ltr">{candidate.score} / 100</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">לא זמין</span>
                                   )}
-                                  {/* ציון כולל */}
-                                  <div className={`px-3 py-1 rounded-full text-sm font-bold
-                                    ${candidate.score >= 70 ? 'bg-green-100 text-green-700' :
-                                      candidate.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                      candidate.score >= 30 ? 'bg-orange-100 text-orange-700' :
-                                      'bg-slate-100 text-slate-600'}`}>
-                                    {candidate.score}%
-                                  </div>
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2">
                                   {candidate.phone && (
                                     <a
                                       href={`https://wa.me/972${candidate.phone.replace(/^0/, '').replace(/[-\s]/g, '')}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="p-2 hover:bg-green-100 rounded-lg transition-colors"
+                                      className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 rounded-xl text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                       title="וואטסאפ"
+                                      aria-label={`וואטסאפ עם ${candidate.name}`}
                                     >
-                                      <MessageCircle className="h-4 w-4 text-green-600" />
+                                      <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                                      וואטסאפ
                                     </a>
                                   )}
                                   <Link
                                     href={`/dashboard/send-candidate?candidateId=${candidate.id}&positionId=${item.position.id}`}
-                                    className="p-2 hover:bg-[#06B6D4]/10 rounded-lg transition-colors"
+                                    className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 rounded-xl text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                     title="שלח למעסיק"
+                                    aria-label={`שלח את ${candidate.name} למעסיק`}
                                   >
-                                    <Send className="h-4 w-4 text-[#06B6D4]" />
+                                    <Send className="h-4 w-4" aria-hidden="true" />
+                                    שלח למעסיק
                                   </Link>
                                 </div>
                               </div>
                             </div>
+                            <details className="mt-3 border-t border-border pt-2">
+                              <summary className="min-h-11 cursor-pointer rounded-lg px-2 py-3 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+                                ראיות ופירוט התאמה
+                                <span className="sr-only"> עבור {candidate.name} למשרת {item.position.title}</span>
+                              </summary>
+                              <div className="mt-2">
+                                {candidate.engineVersion ? (
+                                  <div className="space-y-2">
+                                    <p className="text-xs text-muted-foreground break-words">גרסת מנוע: <bdi dir="ltr">{candidate.engineVersion}</bdi></p>
+                                    <MatchingEvidenceDetails match={candidate} />
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">פירוט ראיות אינו זמין לתוצאה זו. לא נמסרה גרסת מנוע; אין להסיק רכיבי ציון שלא נמסרו.</p>
+                                )}
+                              </div>
+                            </details>
                           </div>
                         ))}
                       </div>
@@ -1573,14 +1607,15 @@ export default function CandidatesPageModern() {
             </div>
 
             {/* Footer */}
-            <div className="border-t bg-slate-50 p-4 flex justify-between items-center">
-              <div className="text-sm text-slate-500">
-                <Sparkles className="h-4 w-4 inline me-1 text-slate-400" />
-                אותו אלגוריתם כמו כשפותחים מועמד - עד 100 נקודות
+            <div className="border-t border-border bg-card p-4 flex flex-wrap justify-between items-center gap-3 shrink-0">
+              <div className="text-xs leading-relaxed text-muted-foreground">
+                בדיקה מקומית בלבד, ללא ניתוח סמנטי משלים. נדרשת בדיקת מגייס לפני הפניה.
               </div>
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setShowBestMatches(false)}
+                className="min-h-11 min-w-11 rounded-xl border-border bg-background text-foreground shadow-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:transform-none"
               >
                 סגור
               </Button>

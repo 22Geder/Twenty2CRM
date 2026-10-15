@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { MatchingEvidenceDetails, MatchingStatusLabel, type MatchingEvidenceView } from '@/components/matching-evidence-details'
 import { 
   Briefcase,
   Building2,
@@ -21,14 +22,12 @@ import {
   MessageCircle,
   X,
   Eye,
-  Edit3,
   Mail,
   History,
   Clock,
   Copy,
   ChevronDown,
-  SortAsc,
-  Calendar
+  SortAsc
 } from "lucide-react"
 
 // 🔧 Safe encoder that handles malformed characters
@@ -52,7 +51,7 @@ const safeEncodeURIComponent = (str: string): string => {
       }
     }
     return encodeURIComponent(sanitized)
-  } catch (e) {
+  } catch {
     return encodeURIComponent(String(str || '').replace(/[^\x00-\uFFFF]/g, ''))
   }
 }
@@ -99,7 +98,7 @@ interface PreviousEmail {
   sentAt: string
 }
 
-interface MatchingPosition {
+interface MatchingPosition extends MatchingEvidenceView {
   id: string
   title: string
   location: string | null
@@ -141,23 +140,6 @@ interface MatchingPosition {
   locationMatch?: boolean
   distanceKm?: number | null
   shouldProceed?: boolean
-  scoreBreakdown?: {
-    tags: number
-    partial: number
-    experience: number
-    rating: number
-    location: number
-    title: number
-    freshness: number
-    contact: number
-    resume: number
-    linkedin: number
-    // 🆕 שדות אלגוריתם מאוחד 50/25/25
-    locationMaxPossible?: number
-    tagsMaxPossible?: number
-    geminiAI?: number
-    geminiMaxPossible?: number
-  }
 }
 
 interface MatchingPositionsListProps {
@@ -166,26 +148,45 @@ interface MatchingPositionsListProps {
   candidatePhone?: string
 }
 
+type MatchingPositionsResponse = {
+  matches?: Array<Omit<MatchingPosition, 'id' | 'title' | 'matchScore'> & { positionId: string; positionTitle: string; score: number; strengths: string[]; weaknesses: string[]; recommendation: string }>
+  totalScanned?: number
+  semanticCoverage?: { requested: number; reviewed: number; status: 'complete' | 'partial' | 'unavailable' } | null
+}
+
+type MatchAnalysis = MatchingEvidenceView & {
+  positionId: string
+  strengths: string[]
+  weaknesses: string[]
+  recommendation: string
+  aiInsights: string
+  workedAtCompanyBefore: boolean
+}
+
 export function MatchingPositionsList({ candidateId, candidateName, candidatePhone }: MatchingPositionsListProps) {
   const [positions, setPositions] = useState<MatchingPosition[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [totalCount, setTotalCount] = useState(0)
+  const [semanticLoading, setSemanticLoading] = useState(false)
+  const [semanticNotice, setSemanticNotice] = useState('')
+  const matchingRequest = useRef<AbortController | null>(null)
+  const analysisRequest = useRef<AbortController | null>(null)
   const [sending, setSending] = useState<string | null>(null)
   const [showScoreDetails, setShowScoreDetails] = useState<string | null>(null)
-  const [aiAnalysis, setAiAnalysis] = useState<any>(null)
+  const [aiAnalysis, setAiAnalysis] = useState<MatchAnalysis | null>(null)
+  const [analysisError, setAnalysisError] = useState<{ positionId: string; message: string } | null>(null)
   const [analyzingPosition, setAnalyzingPosition] = useState<string | null>(null)
   
   // 🆕 מיון והצגה
   const [sortBy, setSortBy] = useState<'score' | 'location' | 'date'>('score')
-  const [displayCount, setDisplayCount] = useState(500) // הצג הכל (לא מוגבל)
+  const [displayCount, setDisplayCount] = useState(50)
 
   // 📧 State לתצוגה מקדימה של מייל
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [editedSubject, setEditedSubject] = useState("")
   const [editedPoints, setEditedPoints] = useState<string[]>([])
-  const [loadingPreview, setLoadingPreview] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [previousEmails, setPreviousEmails] = useState<PreviousEmail[]>([])
   const [showPreviousEmails, setShowPreviousEmails] = useState(false)
@@ -289,79 +290,81 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
   }
 
-  useEffect(() => {
-    if (candidateId) {
-      fetchMatchingPositions()
+  const fetchMatchingPositions = useCallback(async () => {
+    matchingRequest.current?.abort()
+    analysisRequest.current?.abort()
+    const controller = new AbortController()
+    matchingRequest.current = controller
+    const showResults = (data: MatchingPositionsResponse) => {
+      if (controller.signal.aborted) return
+      const formattedPositions = (data.matches ?? []).map(match => ({
+        ...match, id: match.positionId, title: match.positionTitle, matchScore: match.score,
+        aiStrengths: match.strengths ?? [], aiWeaknesses: match.weaknesses ?? [], aiRecommendation: match.recommendation ?? '',
+        tags: match.tags ?? [], matchingTags: match.matchingTags ?? [],
+      }))
+      setPositions(formattedPositions)
+      setTotalCount(data.totalScanned ?? formattedPositions.length)
+    }
+    const scan = async (semantic: boolean): Promise<MatchingPositionsResponse> => {
+      const response = await fetch('/api/ai-match-v3', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+        body: JSON.stringify({ candidateId, semantic }),
+      })
+      if (!response.ok) throw new Error('לא ניתן לטעון התאמות כרגע. יש לנסות שוב.')
+      return response.json()
+    }
+    try {
+      setLoading(true)
+      setError('')
+      setDisplayCount(50)
+      setAiAnalysis(null)
+      setAnalysisError(null)
+      setAnalyzingPosition(null)
+      setShowScoreDetails(null)
+      setSemanticNotice('')
+      // תוצאות מקומיות מוצגות מיד; קריאת המשמעות אינה חוסמת את הרשימה.
+      showResults(await scan(false))
+      if (controller.signal.aborted) return
+      setLoading(false)
+      setSemanticLoading(true)
+      setSemanticNotice('מתבצעת קריאה סמנטית משלימה של קורות החיים והמשרות. התוצאות המקומיות זמינות.')
+      try {
+        const data = await scan(true)
+        if (controller.signal.aborted) return
+        showResults(data)
+        const coverage = data.semanticCoverage
+        setSemanticNotice(coverage
+          ? coverage.requested === 0
+            ? 'לא נדרשה קריאה סמנטית למשרות שעברו את בדיקות הסף. מוצגות התוצאות המקומיות.'
+            : `קריאה סמנטית: ${coverage.reviewed} מתוך ${coverage.requested} משרות שנכללו בשלב המשמעות. ${coverage.status === 'complete' ? 'הקישורים דורשים בדיקת מגייס.' : 'הקריאה חלקית או לא זמינה; כל המשרות נסרקו מקומית.'}`
+          : 'הקריאה הסמנטית לא זמינה; מוצגות התוצאות המקומיות.')
+      } catch {
+        if (!controller.signal.aborted) setSemanticNotice('הקריאה הסמנטית לא הושלמה; התוצאות המקומיות נשמרו. ניתן לנסות ניתוח משרה בנפרד.')
+      }
+    } catch {
+      if (!controller.signal.aborted) setError('לא ניתן לטעון התאמות כרגע. יש לנסות שוב.')
+    } finally {
+      if (!controller.signal.aborted) { setLoading(false); setSemanticLoading(false) }
     }
   }, [candidateId])
 
-  const fetchMatchingPositions = async () => {
-    try {
-      setLoading(true)
-      // שימוש ב-V3 API עם Gemini AI
-      const response = await fetch('/api/ai-match-v3', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId })
-      })
-      if (!response.ok) {
-        throw new Error("Failed to fetch matching positions")
-      }
-      const data = await response.json()
-      
-      // המרת התוצאות לפורמט של הקומפוננטה
-      const formattedPositions = (data.matches || []).map((match: any) => ({
-        id: match.positionId,
-        title: match.positionTitle,
-        location: match.location,
-        salaryRange: match.salaryRange || null,
-        employmentType: match.employmentType || null,
-        description: match.description || null,
-        requirements: match.requirements || null,
-        active: true,
-        createdAt: new Date().toISOString(),
-        employer: {
-          id: '',
-          name: match.employerName,
-          email: null
-        },
-        tags: [],
-        matchingTags: [],
-        matchScore: match.score,
-        hasApplied: false,
-        isBlocked: false,
-        blockedByPreviousEmployer: false,
-        blockedByApplication: false,
-        aiStrengths: match.strengths || [],
-        aiWeaknesses: match.weaknesses || [],
-        aiRecommendation: match.recommendation || '',
-        locationMatch: match.locationMatch || false,
-        shouldProceed: match.shouldProceed || false,
-        scoreBreakdown: {
-          // 🔥 אלגוריתם מאוחד: 50% מיקום | 25% תגיות | 25% AI
-          location: match.locationMatch ? 50 : (match.isFieldSales ? 50 : 0),
-          locationMaxPossible: 50,
-          tags: 0, // יחושב מהתגיות התואמות
-          tagsMaxPossible: 25,
-          geminiAI: Math.round(match.score * 0.25) || 0,
-          geminiMaxPossible: 25,
-        },
-      }))
-      
-      setPositions(formattedPositions)
-      setTotalCount(data.totalScanned || formattedPositions.length)
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    setShowEmailModal(false)
+    setEmailPreview(null)
+    if (candidateId) void fetchMatchingPositions()
+    return () => { matchingRequest.current?.abort(); analysisRequest.current?.abort() }
+  }, [candidateId, fetchMatchingPositions])
 
   const analyzeMatch = async (positionId: string) => {
+    analysisRequest.current?.abort()
+    const controller = new AbortController()
+    analysisRequest.current = controller
     try {
       setAnalyzingPosition(positionId)
+      setAnalysisError(null)
       const response = await fetch(`/api/candidates/${candidateId}/ai-analysis`, {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
         },
@@ -369,27 +372,26 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       })
 
       if (!response.ok) {
-        throw new Error("Failed to analyze match")
+        throw new Error('Analysis unavailable')
       }
 
-      const data = await response.json()
-      setAiAnalysis({ positionId, ...data })
-    } catch (err: any) {
-      alert(`שגיאה בניתוח: ${err.message}`)
+      const data: MatchAnalysis = await response.json()
+      if (!controller.signal.aborted) setAiAnalysis({ ...data, positionId })
+    } catch {
+      if (!controller.signal.aborted) setAnalysisError({ positionId, message: 'הניתוח המעמיק לא זמין כרגע. הראיות המקומיות נשמרו; אפשר לנסות שוב.' })
     } finally {
-      setAnalyzingPosition(null)
+      if (!controller.signal.aborted) setAnalyzingPosition(null)
     }
   }
 
   // 📧 פתיחת תצוגה מקדימה של המייל לפני שליחה
   const openEmailPreview = async (position: MatchingPosition) => {
     if (position.isBlocked) {
-      alert(`לא ניתן לשלוח - ${candidateName || 'המועמד/ת'} כבר עבד/ה ב-${position.employer.name}`)
+      alert(position.blockedByPreviousEmployer ? 'ההפניה חסומה בשל מעסיק קודם.' : 'כבר קיימת מועמדות אצל המעסיק.')
       return
     }
 
     try {
-      setLoadingPreview(true)
       setSending(position.id)
       
       // שליפת תצוגה מקדימה מהשרת
@@ -425,10 +427,10 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       setShowPreviousEmails(false)
       
       setShowEmailModal(true)
-    } catch (err: any) {
-      alert(`שגיאה בטעינת התצוגה המקדימה: ${err.message}`)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'לא ניתן לטעון תצוגה מקדימה'
+      alert(`שגיאה בטעינת התצוגה המקדימה: ${message}`)
     } finally {
-      setLoadingPreview(false)
       setSending(null)
     }
   }
@@ -478,8 +480,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       setShowEmailModal(false)
       setEmailPreview(null)
       await fetchMatchingPositions()
-    } catch (err: any) {
-      alert(`שגיאה בשליחה: ${err.message}`)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'לא ניתן לשלוח כעת'
+      alert(`שגיאה בשליחה: ${message}`)
     } finally {
       setSendingEmail(false)
     }
@@ -550,24 +553,14 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
     setEditedPoints(newPoints)
   }
 
-  const getMatchScoreColor = (score: number) => {
-    if (score >= 80) return "bg-green-500 text-white"
-    if (score >= 60) return "bg-teal-500 text-white"
-    if (score >= 40) return "bg-orange-400 text-white"
-    return "bg-gray-500 text-white"
-  }
-
-  const getMatchScoreLabel = (score: number) => {
-    if (score >= 80) return "התאמה מצוינת"
-    if (score >= 60) return "התאמה טובה"
-    if (score >= 40) return "התאמה סבירה"
-    return "התאמה חלשה"
-  }
-
   // 🆕 מיון המשרות
   const sortedPositions = [...positions].sort((a, b) => {
     switch (sortBy) {
       case 'score':
+        if (a.matchStatus !== b.matchStatus) {
+          if (a.matchStatus === 'matched') return -1
+          if (b.matchStatus === 'matched') return 1
+        }
         return b.matchScore - a.matchScore
       case 'location':
         // מיקום תואם קודם, אחר כך לפי ציון
@@ -587,9 +580,9 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-teal-500 mb-3" />
-            <p className="text-sm text-gray-600 font-medium">סריקה מהירה במקביל...</p>
-            <p className="text-xs text-gray-400 mt-1">בודק 5 משרות במקביל</p>
+            <Loader2 className="h-8 w-8 animate-spin motion-reduce:animate-none text-teal-700 mb-3" />
+            <p className="text-sm text-muted-foreground font-semibold">קורא את המידע המקצועי ודרישות המשרות...</p>
+            <p className="text-xs text-muted-foreground mt-1">סריקה מלאה, כולל משרות ארציות ודרישות לאימות</p>
           </div>
         </CardContent>
       </Card>
@@ -601,15 +594,16 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
       <Card className="border-red-200">
         <CardContent className="pt-6">
           <p className="text-red-600 text-center">{error}</p>
+          <Button variant="outline" className="mt-3 min-h-11" onClick={fetchMatchingPositions}>נסה שוב</Button>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm min-w-0" dir="rtl">
       <CardHeader className="border-b bg-slate-50">
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-teal-600" />
             <span>משרות מתאימות</span>
@@ -620,7 +614,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
         </CardTitle>
         
         {/* 🆕 אפשרויות מיון */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-200">
           <div className="flex items-center gap-2">
             <SortAsc className="h-4 w-4 text-gray-500" />
             <span className="text-xs text-gray-600">מיון:</span>
@@ -629,7 +623,8 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 variant={sortBy === 'score' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSortBy('score')}
-                className={`h-7 text-xs ${sortBy === 'score' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                className="min-h-11 text-xs"
+                aria-pressed={sortBy === 'score'}
               >
                 ציון
               </Button>
@@ -637,7 +632,8 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 variant={sortBy === 'location' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSortBy('location')}
-                className={`h-7 text-xs ${sortBy === 'location' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                className="min-h-11 text-xs"
+                aria-pressed={sortBy === 'location'}
               >
                 מיקום
               </Button>
@@ -645,21 +641,23 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 variant={sortBy === 'date' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSortBy('date')}
-                className={`h-7 text-xs ${sortBy === 'date' ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                className="min-h-11 text-xs"
+                aria-pressed={sortBy === 'date'}
               >
                 תאריך
               </Button>
             </div>
           </div>
           <Badge className="bg-teal-100 text-teal-700">
-            {positions.length} משרות מתאימות
+            {positions.length} הצעות לבדיקה
           </Badge>
         </div>
         
         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
-          סריקת Gemini AI - האלגוריתם: 50% מיקום | 25% תגיות | 25% AI
+          התאמה מבוססת ראיות · תפקיד 35 / כישורים 25 / דרישות 25 / מיקום 15
         </p>
+        {semanticNotice && <p className="text-xs text-slate-600" role="status" aria-live="polite" aria-busy={semanticLoading}>{semanticNotice}</p>}
       </CardHeader>
 
       <CardContent className="p-0">
@@ -667,24 +665,24 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
           <div className="text-center py-12 px-4">
             <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 font-medium">לא נמצאו משרות מתאימות</p>
-            <p className="text-sm text-gray-400 mt-1">נסה לעדכן את התגיות או המיומנויות</p>
+            <p className="text-sm text-muted-foreground mt-1">לא נמצאה עדות מספקת במשרות שנבדקו. אפשר להשלים קורות חיים, תפקיד או עיר.</p>
           </div>
         ) : (
           <div className="max-h-[600px] overflow-y-auto">
             {sortedPositions.slice(0, displayCount).map(position => (
               <div
                 key={position.id}
-                className={`p-4 border-b hover:bg-gray-50 transition-colors ${
-                  position.isBlocked ? 'bg-red-50 opacity-60' : ''
+                className={`p-4 border-b hover:bg-gray-50 transition-colors motion-reduce:transition-none ${
+                  position.isBlocked ? 'bg-muted' : ''
                 }`}
               >
                 {/* Header with Score */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <Link
                         href={`/dashboard/positions/${position.id}`}
-                        className="font-semibold text-lg hover:text-blue-600 flex items-center gap-1"
+                        className="min-h-11 font-semibold text-lg hover:text-blue-600 flex items-center gap-1 break-words"
                       >
                         {position.title}
                         <ExternalLink className="h-4 w-4" />
@@ -696,11 +694,11 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                       )}
                       {position.isBlocked && (
                         <Badge variant="destructive" className="text-xs">
-                          עבד/ה כאן בעבר
+                          {position.blockedByPreviousEmployer ? 'מעסיק קודם' : 'כבר קיימת מועמדות אצל המעסיק'}
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Building2 className="h-3.5 w-3.5" />
                         {position.employer.name}
@@ -718,45 +716,36 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                   <div className="flex items-center gap-2">
                     {/* כפתור וואטסאפ מהיר - תמיד גלוי */}
                     {candidatePhone ? (
-                      <a
-                        href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button
-                          size="sm"
-                          className="bg-emerald-600 hover:bg-emerald-700"
-                        >
-                          <MessageCircle className="h-4 w-4 ml-1" />
+                      <Button size="sm" asChild className="min-h-11 bg-emerald-700 hover:bg-emerald-800">
+                        <a href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))} target="_blank" rel="noopener noreferrer">
+                          <MessageCircle className="h-4 w-4 me-1" />
                           וואטסאפ
-                        </Button>
-                      </a>
+                        </a>
+                      </Button>
                     ) : (
                       <Badge variant="outline" className="text-gray-400 text-xs">
                         אין טלפון
                       </Badge>
                     )}
                     <div className="text-center">
-                      <div
-                        className={`text-3xl font-bold px-4 py-2 rounded-lg ${getMatchScoreColor(
-                          position.matchScore
-                        )}`}
-                      >
-                        {position.matchScore}%
+                      <div className="text-2xl font-semibold px-3 py-2 rounded-lg bg-slate-100 text-slate-800">
+                        <span dir="ltr" className="tabular-nums">{position.matchScore}/100</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        {getMatchScoreLabel(position.matchScore)}
+                        <MatchingStatusLabel status={position.matchStatus} />
                       </p>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`פירוט התאמה למשרת ${position.title}`}
+                      aria-expanded={showScoreDetails === position.id}
                       onClick={() =>
                         setShowScoreDetails(
                           showScoreDetails === position.id ? null : position.id
                         )
                       }
-                      className="h-8 w-8 p-0"
+                      className="h-11 w-11 p-0"
                     >
                       <Info className="h-4 w-4" />
                     </Button>
@@ -765,79 +754,12 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
 
                 {/* Score Breakdown */}
                 {showScoreDetails === position.id && (
-                  <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-teal-200">
-                    {/* 🆕 פירוט ציון ויזואלי 50/25/25 */}
-                    <p className="text-xs font-bold mb-3 text-teal-900 flex items-center gap-1">
-                      פירוט ציון - אלגוריתם מאוחד
-                    </p>
-                    
-                    <div className="space-y-2 mb-3">
-                      {/* מיקום - 50 נקודות */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-medium flex items-center gap-1">
-                            מיקום {position.distanceKm != null && position.distanceKm > 0 && (
-                              <span className="text-gray-500 font-normal">({position.distanceKm} ק"מ)</span>
-                            )}
-                          </span>
-                          <span className={`font-bold ${(position.scoreBreakdown?.location || 0) >= 35 ? 'text-green-600' : (position.scoreBreakdown?.location || 0) >= 20 ? 'text-yellow-600' : 'text-gray-500'}`}>
-                            {position.scoreBreakdown?.location || 0} / 50
-                          </span>
-                        </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all ${(position.scoreBreakdown?.location || 0) >= 35 ? 'bg-green-500' : (position.scoreBreakdown?.location || 0) >= 20 ? 'bg-yellow-500' : 'bg-gray-400'}`}
-                            style={{ width: `${((position.scoreBreakdown?.location || 0) / 50) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* תגיות - 25 נקודות */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-medium flex items-center gap-1">
-                            תגיות תואמות
-                          </span>
-                          <span className="font-bold text-blue-600">
-                            {(position.scoreBreakdown?.tags || 0) + (position.scoreBreakdown?.partial || 0)} / 25
-                          </span>
-                        </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 transition-all"
-                            style={{ width: `${(((position.scoreBreakdown?.tags || 0) + (position.scoreBreakdown?.partial || 0)) / 25) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* AI/פרופיל - 25 נקודות */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-medium flex items-center gap-1">
-                            AI / פרופיל
-                          </span>
-                          <span className="font-bold text-teal-600">
-                            {position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)} / 25
-                          </span>
-                        </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-teal-500 transition-all"
-                            style={{ width: `${((position.scoreBreakdown?.geminiAI || Math.round(position.matchScore * 0.25)) / 25) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* הסבר */}
-                    <div className="text-xs text-gray-600 bg-white/50 p-2 rounded border border-gray-200">
-                      <span className="font-semibold">סה"כ:</span> {position.matchScore}% מתוך 100 אפשרי
-                    </div>
-                    
-                    {/* AI המלצה */}
+                  <div className="mb-3 p-3 bg-muted rounded-lg border border-border">
+                    {position.engineVersion ? <MatchingEvidenceDetails match={position} /> : <p className="text-xs text-muted-foreground">פירוט ראיות לא זמין בתוצאה זו. אין להסיק רכיבי ציון שלא נמסרו.</p>}
+                    {/* המלצה מבוססת נתונים */}
                     {position.aiRecommendation && (
                       <p className="text-xs font-semibold mt-2 text-blue-900">
-                        המלצת AI: {position.aiRecommendation}
+                        המלצה: {position.aiRecommendation}
                       </p>
                     )}
                     
@@ -857,7 +779,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     {position.aiWeaknesses && position.aiWeaknesses.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs font-semibold text-orange-700 flex items-center gap-1 mb-1">
-                          <AlertCircle className="h-3 w-3" /> חסרונות:
+                          <AlertCircle className="h-3 w-3" /> דרישות ופערי מידע:
                         </p>
                         <ul className="text-xs space-y-0.5 mr-4">
                           {position.aiWeaknesses.map((w: string, i: number) => (
@@ -868,7 +790,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     )}
                     
                     {position.locationMatch && (
-                      <p className="text-xs text-green-600 font-medium mt-2">מיקום המועמד תואם למשרה!</p>
+                      <p className="text-xs text-muted-foreground mt-2">{position.locationDetails?.reason || 'המיקום מתאים'}</p>
                     )}
                   </div>
                 )}
@@ -876,7 +798,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 {/* Location Match Badge */}
                 {position.locationMatch && !showScoreDetails && (
                   <div className="mb-2">
-                    <Badge className="bg-blue-100 text-blue-700 text-xs">מיקום קרוב</Badge>
+                    <Badge className="bg-blue-100 text-blue-700 text-xs">{position.locationDetails?.isNationwide ? 'משרה ארצית' : position.locationDetails?.matchType === 'remote' ? 'עבודה מרחוק' : 'המיקום מתאים'}</Badge>
                   </div>
                 )}
 
@@ -900,16 +822,19 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 )}
 
                 {/* AI Analysis */}
+                {analysisError?.positionId === position.id && <p className="mb-3 text-sm text-destructive" role="alert">{analysisError.message}</p>}
                 {aiAnalysis && aiAnalysis.positionId === position.id && (
                   <div className="mb-3 p-4 bg-slate-50 rounded-lg border border-teal-200">
-                    <p className="font-bold text-sm mb-3 text-teal-900">
-                      ניתוח AI מלא - {aiAnalysis.recommendation}
+                    <p className="font-semibold text-sm mb-3 text-slate-800">
+                      ניתוח ראיות ומשמעות — {aiAnalysis.recommendation}
                     </p>
+                    <p className="text-xs text-slate-600 mb-3">{aiAnalysis.aiInsights}</p>
+                    <MatchingEvidenceDetails match={aiAnalysis} />
                     
                     <div className="mb-3">
                       <p className="text-xs font-semibold mb-2 text-green-700 flex items-center gap-1">
                         <CheckCircle className="h-4 w-4" />
-                        5 נקודות חזקות:
+                        ראיות להתאמה:
                       </p>
                       <ul className="text-xs space-y-1">
                         {aiAnalysis.strengths.map((strength: string, idx: number) => (
@@ -921,7 +846,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                     <div>
                       <p className="text-xs font-semibold mb-2 text-orange-700 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" />
-                        5 נקודות לשיפור:
+                        דרישות ופערי מידע:
                       </p>
                       <ul className="text-xs space-y-1">
                         {aiAnalysis.weaknesses.map((weakness: string, idx: number) => (
@@ -942,43 +867,36 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 [&_button]:min-h-11 [&_a]:min-h-11">
                   <Button
                     onClick={() => analyzeMatch(position.id)}
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    disabled={analyzingPosition === position.id}
+                    disabled={semanticLoading || analyzingPosition !== null}
+                    title={semanticLoading ? 'ממתין לסיום הקריאה הסמנטית של הרשימה' : 'בדיקת ראיות ומשמעות למשרה זו'}
                   >
                     {analyzingPosition === position.id ? (
                       <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 me-2 animate-spin motion-reduce:animate-none" />
                         מנתח...
                       </>
                     ) : (
                       <>
                         <Info className="h-4 w-4 ml-2" />
-                        ניתוח AI מלא
+                        ניתוח מעמיק
                       </>
                     )}
                   </Button>
 
                   {/* WhatsApp Button */}
                   {candidatePhone && (
-                    <a
-                      href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <Button
-                        className="w-full bg-emerald-600 hover:bg-emerald-700"
-                        size="sm"
-                      >
-                        <MessageCircle className="h-4 w-4 ml-2" />
+                    <Button asChild className="flex-1 bg-emerald-700 hover:bg-emerald-800" size="sm">
+                      <a href={getWhatsAppLink(candidatePhone, generateWhatsAppMessage(position))} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="h-4 w-4 me-2" />
                         וואטסאפ למועמד
-                      </Button>
-                    </a>
+                      </a>
+                    </Button>
                   )}
 
                   <Button
@@ -1007,7 +925,11 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               </div>
             ))}
             
-            {/* הכל מוצג - אין הגבלה */}
+            {displayCount < sortedPositions.length && <div className="p-4">
+              <Button variant="outline" className="min-h-11 w-full" onClick={() => setDisplayCount(count => count + 50)}>
+                הצג עוד משרות ({sortedPositions.length - displayCount} נוספות)
+              </Button>
+            </div>}
           </div>
         )}
       </CardContent>
@@ -1234,7 +1156,7 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
                           <div className="space-y-1">
                             {email.matchingPoints.slice(0, 2).map((point, idx) => (
                               <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded flex items-start justify-between gap-2">
-                                <span className="flex-1">"{point.substring(0, 80)}..."</span>
+                                <span className="flex-1">&quot;{point.substring(0, 80)}...&quot;</span>
                                 <button
                                   onClick={() => copyPointFromPrevious(point, idx)}
                                   className="text-blue-500 hover:text-blue-700 shrink-0"
@@ -1261,11 +1183,11 @@ export function MatchingPositionsList({ candidateId, candidateName, candidatePho
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    5 משפטי ההתאמה (ערוך לפי הצורך):
+                    חמשת משפטי ההתאמה (ערוך לפי הצורך):
                   </label>
                   {generatedByAI && (
                     <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      נוצר ע"י Gemini AI
+                      נוצר על ידי Gemini AI
                     </span>
                   )}
                 </div>

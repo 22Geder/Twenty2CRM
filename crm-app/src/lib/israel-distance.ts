@@ -5,7 +5,7 @@
  * עבור ישובים שאין להם קואורדינטות - fallback לקבוצות קרבה
  */
 
-import { areLocationsProximate, normalizeLocalityComplete } from './israel-locations-complete'
+import { areLocationsProximate, EXTENDED_ALIASES, normalizeLocalityComplete } from './israel-locations-complete'
 
 // קואורדינטות GPS של ישובים מרכזיים בישראל (lat, lng)
 const CITY_COORDS: Record<string, [number, number]> = {
@@ -191,36 +191,38 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * c
 }
 
-/**
- * מציאת קואורדינטות של ישוב - עם fuzzy matching
- */
+// נרמול כתיב בלבד: אין חיפוש תת־מחרוזת ואין בחירת עיר מתוך כתובת.
+function coordinateKey(name: string): string {
+  return name.normalize('NFKC').toLowerCase()
+    .replace(/[\u0591-\u05bd\u05bf-\u05c7\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+    .replace(/["'״׳`’‘“”]/g, '')
+    .replace(/[-‐‑–—־]/g, ' ')
+    .replace(/\s+/g, ' ').trim()
+    .replace(/(^| )קרית(?= |$)/g, '$1קריית')
+    .replace(/(^| )תקוה(?= |$)/g, '$1תקווה')
+}
+
+// המפות נבנות פעם אחת. שמות מלאים גוברים על כינויים; "קריות" הוא אזור, לא עיר.
+const COORDS_BY_NAME = new Map(
+  Object.entries(CITY_COORDS).map(([name, coords]) => [coordinateKey(name), coords])
+)
+for (const [alias, city] of Object.entries(EXTENDED_ALIASES)) {
+  if (alias === 'קריות') continue
+  const aliasKey = coordinateKey(alias)
+  const cityKey = coordinateKey(city)
+  const coords = COORDS_BY_NAME.get(cityKey) ?? COORDS_BY_NAME.get(aliasKey)
+  if (!coords) continue
+  if (!COORDS_BY_NAME.has(aliasKey)) COORDS_BY_NAME.set(aliasKey, coords)
+  if (!COORDS_BY_NAME.has(cityKey)) COORDS_BY_NAME.set(cityKey, coords)
+}
+
 function findCoords(cityName: string): [number, number] | null {
-  if (!cityName) return null
-  const normalized = cityName.trim().toLowerCase()
-  
-  // חיפוש ישיר
-  for (const [city, coords] of Object.entries(CITY_COORDS)) {
-    if (city.toLowerCase() === normalized || 
-        normalized.includes(city.toLowerCase()) || 
-        city.toLowerCase().includes(normalized)) {
-      return coords
-    }
-  }
-  
-  // חיפוש מנורמל
-  const norm = normalizeLocalityComplete(cityName)
-  for (const [city, coords] of Object.entries(CITY_COORDS)) {
-    const cityNorm = normalizeLocalityComplete(city)
-    if (cityNorm === norm || norm.includes(cityNorm) || cityNorm.includes(norm)) {
-      return coords
-    }
-  }
-  
-  return null
+  return COORDS_BY_NAME.get(coordinateKey(cityName)) ?? null
 }
 
 /**
  * 📍 חישוב מרחק בק"מ בין שני ישובים
+ * מרחק אווירי משוער בין נקודות היישובים, לא מרחק כביש או זמן נסיעה.
  * מחזיר null אם אחד הישובים לא נמצא במאגר
  */
 export function getDistanceKm(city1: string, city2: string): number | null {

@@ -26,6 +26,30 @@ describe('getDistanceKm', () => {
   it('מחזיר null עבור עיר לא מוכרת', () => {
     expect(getDistanceKm('עיר-דמיונית-xyz', 'תל אביב')).toBeNull()
   })
+
+  it('מעדיף גן יבנה המלאה על יבנה הכלולה בשם', () => {
+    expect(getDistanceKm('גן יבנה', 'יבנה')).toBeGreaterThan(0)
+    expect(getDistanceKm('גן יבנה', 'אשדוד')).not.toBe(getDistanceKm('יבנה', 'אשדוד'))
+  })
+
+  it.each(['', '   ', 'אביב', 'מודיעין עילית', 'השרון', 'קריות', 'חיפה, אילת'])('לא משלים קואורדינטות לשם חסר או עמום: %s', city => {
+    expect(getDistanceKm(city, 'תל אביב')).toBeNull()
+  })
+
+  it.each([
+    ['ת״א', 'תל אביב'], ['י-ם', 'ירושלים'], ['ב״ש', 'באר שבע'],
+    ['ק״מ', 'קריית מוצקין'], ['קרית ים', 'קריית ים'],
+    ['פתח תקוה', 'פתח תקווה'], ['Tel Aviv', 'תל אביב'],
+    ['Beer Sheva', 'באר שבע'], ['פרדס חנה', 'פרדס חנה כרכור'],
+  ])('משווה כינוי מלא %s לשם הקנוני %s', (alias, city) => {
+    expect(getDistanceKm(alias, city)).toBe(0)
+  })
+
+  it('לא מנרמל בטעות סיומות ים, ולא ממזג נצרת ונוף הגליל', () => {
+    expect(getDistanceKm('גבעתיים', 'ירושלים')).toBeGreaterThan(40)
+    expect(getDistanceKm('קריית ים', 'ירושלים')).toBeGreaterThan(100)
+    expect(getDistanceKm('נצרת עילית', 'נצרת')).toBeGreaterThan(0)
+  })
 })
 
 describe('calculateLocationScore', () => {

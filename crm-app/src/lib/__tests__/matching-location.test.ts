@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { getDistanceKm } from '../israel-distance'
-import { evaluateMatchingLocation, extractCandidateCity } from '../matching-location'
+import { evaluateMatchingLocation, extractCandidateCity, extractMentionedCities, DEFAULT_RADIUS_KM } from '../matching-location'
 import type { MatchingLocationInput, MatchingLocationResult } from '../matching-location'
 
 describe('evaluateMatchingLocation — חוזה ושמות ערים', () => {
@@ -64,7 +64,15 @@ describe('evaluateMatchingLocation — חוזה ושמות ערים', () => {
 })
 
 describe('מרחק אווירי, רדיוס וריבוי ערים', () => {
-  it('מזהה עיר קרובה ברדיוס ברירת מחדל של 30 ק״מ', () => {
+  it('ברירת המחדל היא קו אחיד של 12 ק״מ אווירי לכל המשרות', () => {
+    expect(DEFAULT_RADIUS_KM).toBe(12)
+    expect(evaluateMatchingLocation({ candidateCity: 'תל אביב', positionLocation: 'חולון' })).toMatchObject({ matchType: 'nearby', eligible: true })
+    expect(evaluateMatchingLocation({ candidateCity: 'תל אביב', positionLocation: 'ראשון לציון' })).toMatchObject({ matchType: 'far', eligible: false })
+    expect(evaluateMatchingLocation({ candidateCity: 'חדרה', positionLocation: 'אור עקיבא' })).toMatchObject({ matchType: 'nearby', eligible: true })
+    expect(evaluateMatchingLocation({ candidateCity: 'חדרה', positionLocation: 'נתניה', maxDistanceKm: 14 })).toMatchObject({ matchType: 'nearby', eligible: true })
+  })
+
+  it('מזהה עיר קרובה ברדיוס ברירת המחדל', () => {
     const result = evaluateMatchingLocation({ candidateCity: 'תל אביב', positionLocation: 'הרצליה' })
     expect(result).toMatchObject({ matchType: 'nearby', eligible: true, isExactCity: false })
     expect(result.distanceKm).toBe(getDistanceKm('תל אביב', 'הרצליה'))
@@ -96,6 +104,12 @@ describe('מרחק אווירי, רדיוס וריבוי ערים', () => {
 
   it('מאפשר רדיוס מפורש גדול יותר', () => {
     expect(evaluateMatchingLocation({ candidateCity: 'חיפה', positionLocation: 'תל אביב', maxDistanceKm: 150 })).toMatchObject({ matchType: 'nearby', eligible: true })
+  })
+
+  it('מחלץ ערים משאילתת חיפוש חופשית בלי להמציא עיר ממילה כללית', () => {
+    expect(extractMentionedCities('מחסנאי בחדרה או בנתניה')).toEqual(['חדרה', 'נתניה'])
+    expect(extractMentionedCities('נציג שירות עם אנגלית')).toEqual([])
+    expect(extractMentionedCities('עבודה במרכז')).toEqual([])
   })
 
   it.each(['אילת, באר שבע / חיפה', 'באילת ובחיפה', 'חיפה | אילת', 'Haifa; Eilat'])('בוחר התאמה מלאה מתוך %s', positionLocation => {

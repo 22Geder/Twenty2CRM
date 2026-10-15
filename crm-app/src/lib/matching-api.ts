@@ -4,6 +4,7 @@ import { prisma } from './prisma'
 import { requireApiUser } from './api-authorization'
 import { compareEvidenceMatches, evaluatePreparedMatch, isSuggestedMatch, prepareMatchingCandidate, prepareMatchingPosition, MATCHING_ENGINE_VERSION, MATCHING_WEIGHTS, type EvidenceMatch, type MatchTag, type MatchingPosition } from './matching-engine'
 import { normalizeMatchingText } from './matching-text'
+import { DEFAULT_RADIUS_KM } from './matching-location'
 import { applySemanticReview, reviewMatchingSemantics } from './matching-semantic'
 
 export const matchingIdSchema = z.string().trim().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)
@@ -142,7 +143,25 @@ export async function enrichCandidateMatchScan(scan: CandidateMatchScan, userId:
   return { requested: semantic.requested, reviewed: semantic.reviewed, verifiedLinks: semantic.verifiedLinks, status: semantic.status, reason: semantic.reason }
 }
 
-export async function scanMatchingCandidates(position: MatchingPosition, positionId: string, offset = 0, limit = 100) {
+export type CandidateScanFilter = {
+  minExperience?: number
+  maxExperience?: number
+  tagNames?: readonly string[]
+}
+
+function passesScanFilter(candidate: { yearsOfExperience: number | null; tags: readonly MatchTag[] }, filter: CandidateScanFilter): boolean {
+  const years = candidate.yearsOfExperience
+  if (filter.minExperience !== undefined && (years === null || years < filter.minExperience)) return false
+  if (filter.maxExperience !== undefined && (years === null || years > filter.maxExperience)) return false
+  if (filter.tagNames?.length) {
+    const wanted = new Set(filter.tagNames.map(normalizeMatchingText))
+    if (!candidate.tags.some(tag => wanted.has(normalizeMatchingText(tag.name)))) return false
+  }
+  return true
+}
+
+/** positionId ריק = חיפוש חופשי: אותו מנוע ראיות, בלי מצב הגשה למשרה. */
+export async function scanMatchingCandidates(position: MatchingPosition, positionId: string, offset = 0, limit = 100, filter: CandidateScanFilter = {}) {
   const job = prepareMatchingPosition(position)
   const ranked: Array<{ match: EvidenceMatch; candidate: Awaited<ReturnType<typeof readCandidatePage>>[number] }> = []
   let totalScanned = 0
@@ -152,6 +171,7 @@ export async function scanMatchingCandidates(position: MatchingPosition, positio
     const page = await readCandidatePage(positionId, cursor)
     if (!page.length) break
     for (const candidate of page) {
+      if (!passesScanFilter(candidate, filter)) continue
       totalScanned++
       const match = evaluatePreparedMatch(prepareMatchingCandidate(candidate), job)
       if (isSuggestedMatch(match)) { totalSuggested++; ranked.push({ candidate, match }) }
@@ -178,14 +198,18 @@ export async function scanMatchingCandidates(position: MatchingPosition, positio
     totalCount: totalSuggested, totalSearched: totalScanned, totalScanned,
     offset, limit, hasMore: offset + limit < totalSuggested,
     scanComplete: true, daysBack: null, aiPowered: false, geminiAnalyzed: 0,
-    engineVersion: MATCHING_ENGINE_VERSION,
-    algorithm: 'תפקיד 35 / כישורים 25 / דרישות 25 / מיקום 15; ציון עזר ולא הסתברות',
+    engineVersion: MATCHING_ENGINE_VERSION, radiusKm: DEFAULT_RADIUS_KM,
+    algorithm: `תפקיד 35 / כישורים 25 / דרישות 25 / מיקום 15 (עד ${DEFAULT_RADIUS_KM} ק"מ אווירי); ציון עזר ולא הסתברות`,
   }
 }
 
 async function readCandidatePage(positionId: string, cursor?: string) {
   return prisma.candidate.findMany({
     take: 50, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), orderBy: { id: 'asc' },
-    select: { ...matchingCandidateSelect, applications: { where: { positionId }, select: { id: true, status: true } } },
+    select: {
+      ...matchingCandidateSelect, hiredAt: true,
+      _count: { select: { applications: true, interviews: true } },
+      applications: { where: { positionId: positionId || '__none__' }, select: { id: true, status: true } },
+    },
   })
 }

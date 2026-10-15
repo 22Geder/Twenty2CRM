@@ -41,6 +41,7 @@ vi.mock('@/lib/api-authorization', () => ({ requireApiUser: mocks.requireApiUser
 vi.mock('@/lib/prisma', () => ({ prisma: mocks.prisma }))
 
 import { POST as postAiMatch } from '@/app/api/ai-match-v3/route'
+import { POST as postCandidateSearch } from '@/app/api/ai-candidate-search/route'
 import { GET as getCandidatePositions } from '@/app/api/candidates/[id]/matching-positions/route'
 import { GET as getPositionCandidates } from '@/app/api/positions/[id]/matching-candidates/route'
 import { GET as getBestMatches } from '@/app/api/best-matches/route'
@@ -77,6 +78,7 @@ function candidate(id = 'candidate-1', overrides: Row = {}) {
     rating: 3, createdAt: fixedDate, resumeUrl: '/synthetic-resume.pdf',
     tags: [{ id: 'tag-priority', name: 'Priority', color: '#123456' }, { id: 'tag-unproven', name: 'SAP', color: null }],
     applications: [], hiredAt: null, employmentStatus: null, inProcessPositionId: null,
+    _count: { applications: 0, interviews: 0 },
     internalNotes: 'SYNTHETIC_UNSELECTED_FIELD', ...overrides,
   }
 }
@@ -143,6 +145,12 @@ function requestBody(body: unknown) {
   return new Request('http://matching.test/api/ai-match-v3', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   })
+}
+
+function searchRequest(body: unknown) {
+  return postCandidateSearch(new NextRequest('http://matching.test/api/ai-candidate-search', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }))
 }
 
 function candidateRequest(id = 'candidate-1', query = '') {
@@ -227,6 +235,7 @@ const routes = [
   { name: 'matching-positions', run: () => candidateRequest(), firstRead: mocks.candidateFindUnique, log: '[matching-positions] Matching failed' },
   { name: 'matching-candidates', run: () => positionRequest(), firstRead: mocks.positionFindUnique, log: '[matching-candidates] Matching failed' },
   { name: 'best-matches', run: () => getBestMatches(), firstRead: mocks.positionFindMany, log: '[best-matches] Matching failed' },
+  { name: 'ai-candidate-search', run: () => searchRequest({ query: 'מחסנאי בתל אביב' }), firstRead: mocks.candidateFindMany, log: '[ai-candidate-search] Search failed' },
 ] as const
 
 beforeEach(() => {
@@ -518,9 +527,55 @@ describe('selector-backed compatibility fields and real shared scores', () => {
     expect(reverse.candidates[0].whySuitable.every((value: unknown) => typeof value === 'string')).toBe(true)
     expect(best.positions[0].candidates[0]).not.toHaveProperty('applications')
     expect(forwardGet).toMatchObject({ offset: 0, limit: 20 })
-    expect(reverse).toMatchObject({ offset: 0, limit: 100, aiPowered: false, geminiAnalyzed: 0 })
+    expect(reverse).toMatchObject({ offset: 0, limit: 100, aiPowered: false, geminiAnalyzed: 0, radiusKm: 12 })
   })
 })
+
+describe('candidate search on the shared evidence engine', () => {
+  it('free-text search reads the city from the query and returns real engine evidence', async () => {
+    const expected = evaluateCandidatePosition(candidate(), { title: 'מחסנאי בתל אביב', location: 'תל אביב', requirements: null, keywords: [], active: true, closedAt: null })
+    const body = await json(await searchRequest({ query: 'מחסנאי בתל אביב' }))
+    expectNoPositionReads()
+    expect(body).toMatchObject({ total: 1, found: 1, parsedCity: 'תל אביב', parsedCities: ['תל אביב'], radiusKm: 12, engineVersion: MATCHING_ENGINE_VERSION })
+    expect(body.results[0]).toMatchObject({
+      id: 'candidate-1', score: expected.score, matchStatus: expected.status, cityProximity: 'exact', cityMatch: true,
+      matchReason: expected.recommendation, highlights: expected.strengths, weaknesses: expected.weaknesses,
+      scoreBreakdown: { ...expected.breakdown, roleMaxPossible: 35, skillsMaxPossible: 25, requirementsMaxPossible: 25, locationMaxPossible: 15 },
+    })
+    expect(body.results[0]).not.toHaveProperty('resume')
+    expect(body.results[0]).not.toHaveProperty('internalNotes')
+    expect(JSON.stringify(body)).not.toContain('ai":')
+  })
+
+  it('position search uses the stored job and the selected city, and tag/experience filters narrow the scan', async () => {
+    candidates = [candidate(), candidate('candidate-2', { yearsOfExperience: 1, tags: [] })]
+    const byPosition = await json(await searchRequest({ query: 'מחסנאי', positionId: 'position-1' }))
+    expect(mocks.positionFindUnique).toHaveBeenCalledTimes(1)
+    expect(byPosition.results.map((row: { id: string }) => row.id)).toEqual(['candidate-1', 'candidate-2'])
+    expect(byPosition.results[0].hasApplied).toBe(false)
+
+    const filtered = await json(await searchRequest({ query: 'מחסנאי', positionId: 'position-1', tags: ['Priority'], minExperience: 2 }))
+    expect(filtered).toMatchObject({ total: 1, found: 1 })
+    expect(filtered.results.map((row: { id: string }) => row.id)).toEqual(['candidate-1'])
+
+    const relocated = await json(await searchRequest({ query: 'מחסנאי', positionId: 'position-1', cities: ['אילת'] }))
+    expect(relocated).toMatchObject({ found: 0, parsedCities: ['אילת'] })
+  })
+
+  it('rejects short or malformed search bodies and a missing position before scanning candidates', async () => {
+    for (const raw of ['{', '', '{"query":"ab"}', '{"query":42}', JSON.stringify({ query: 'מחסנאי', positionId: '../x' })]) {
+      const response = await postCandidateSearch(new NextRequest('http://matching.test/api/ai-candidate-search', { method: 'POST', body: raw }))
+      await json(response, 400)
+    }
+    await json(await searchRequest({ query: 'מחסנאי', positionId: 'position-missing' }), 404)
+    expect(mocks.candidateFindMany).not.toHaveBeenCalled()
+  })
+})
+
+function expectNoPositionReads() {
+  expect(mocks.positionFindUnique).not.toHaveBeenCalled()
+  expect(mocks.positionFindMany).not.toHaveBeenCalled()
+}
 
 describe('reverse cursor scans beyond 500 candidates', () => {
   it.each([
@@ -641,7 +696,7 @@ describe('shared in-memory request limit', () => {
     clock.mockReturnValue(startedAt + 60_000)
     await json(await candidateRequest())
     expect(mocks.candidateFindUnique).toHaveBeenCalledTimes(1)
-    expect(mocks.requireApiUser).toHaveBeenCalledTimes(36)
+    expect(mocks.requireApiUser).toHaveBeenCalledTimes(30 + routes.length + 2)
   })
 
   it('does not share one authenticated user quota with another user or bypass a later denial', async () => {

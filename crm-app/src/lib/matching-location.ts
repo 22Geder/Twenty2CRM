@@ -37,7 +37,8 @@ export type MatchingLocationResult = {
  * ניקוד חדש (ללא שינוי בניקוד הישן): 15 מדויק/ארצי/מרחוק, 8–14 קרוב,
  * 12 הסעה מפורשת, 6 אזור משותף, 0 רחוק/לא ידוע.
  */
-const DEFAULT_RADIUS_KM = 30
+// החלטה עסקית: קו מרחק אווירי אחיד לכל המשרות, לא זמן נסיעה.
+export const DEFAULT_RADIUS_KM = 12
 
 function normalizeText(text: string): string {
   return text.normalize('NFKC').toLowerCase()
@@ -255,6 +256,11 @@ export function extractCandidateCity(resume: string): string | null {
 
 function clauses(text?: string | null): string[] {
   return (text ?? '').split(/[\n\r.!?;|]+/).map(normalizeText).filter(Boolean)
+}
+
+/** ערים שהוזכרו בחיוב בטקסט חופשי (למשל שאילתת חיפוש); אזורים אינם ערים. */
+export function extractMentionedCities(text: string): string[] {
+  return geography(text).cities
 }
 
 const NATIONWIDE = /(?:^|[^a-zא-ת])((?:ב|מ|ל)?כל הארץ|(?:ב|מ)?רחבי (?:הארץ|ישראל)|(?:ב)?פריסה ארצית|ארצי(?:ת)?|across israel|throughout israel|all (?:of |over )?israel|israel wide|nationwide|countrywide)(?=$|[^a-zא-ת])/g

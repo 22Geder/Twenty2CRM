@@ -42,11 +42,18 @@ interface SearchResult {
   tags: Tag[]
   _count: { applications: number; interviews: number }
   score: number
+  matchStatus?: 'matched' | 'review' | 'insufficient_evidence' | 'ineligible'
   matchReason: string
   highlights: string[]
+  weaknesses?: string[]
   cityMatch: boolean
-  cityProximity?: 'exact' | 'nearby' | 'none'
-  scoreBreakdown?: { location: number; tags: number; ai: number }
+  cityProximity?: 'exact' | 'nearby' | 'unknown' | 'none'
+  distanceKm?: number | null
+  isNationwide?: boolean
+  scoreBreakdown?: {
+    role: number; skills: number; requirements: number; location: number
+    roleMaxPossible: number; skillsMaxPossible: number; requirementsMaxPossible: number; locationMaxPossible: number
+  }
 }
 
 export function AICandidateSearch() {
@@ -84,7 +91,7 @@ export function AICandidateSearch() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [meta, setMeta] = useState<{
-    total: number; found: number; searchTimeMs: number; parsedCity: string | null; parsedCities: string[]
+    total: number; found: number; searchTimeMs: number; parsedCity: string | null; parsedCities: string[]; radiusKm: number | null
   } | null>(null)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [whatsappModal, setWhatsappModal] = useState<{
@@ -222,6 +229,7 @@ export function AICandidateSearch() {
           searchTimeMs: data.searchTimeMs,
           parsedCity: data.parsedCity,
           parsedCities: data.parsedCities || (data.parsedCity ? [data.parsedCity] : []),
+          radiusKm: typeof data.radiusKm === 'number' ? data.radiusKm : null,
         })
       } else {
         alert('❌ שגיאה בחיפוש')
@@ -254,7 +262,8 @@ export function AICandidateSearch() {
     return 'text-gray-500 bg-gray-50 border-gray-200'
   }
 
-  const getScoreLabel = (score: number) => {
+  const getScoreLabel = (score: number, status?: SearchResult['matchStatus']) => {
+    if (status === 'review') return 'לבדיקת מגייס'
     if (score >= 75) return 'התאמה גבוהה'
     if (score >= 50) return 'התאמה טובה'
     if (score >= 30) return 'התאמה חלקית'
@@ -710,8 +719,8 @@ export function AICandidateSearch() {
               <Brain className="absolute inset-0 m-auto h-7 w-7 text-purple-500" />
             </div>
             <div>
-              <p className="font-semibold text-gray-800 text-lg">AI סורק את כל המועמדים...</p>
-              <p className="text-gray-500 text-sm mt-1">זה עשוי לקחת 10-20 שניות</p>
+              <p className="font-semibold text-gray-800 text-lg">סורק את כל המועמדים לפי ראיות מקורות החיים...</p>
+              <p className="text-gray-500 text-sm mt-1">קריאה מלאה של הטקסט, ללא קיצורים</p>
             </div>
           </CardContent>
         </Card>
@@ -756,6 +765,7 @@ export function AICandidateSearch() {
             const prevProximity = idx > 0 ? results[idx - 1].cityProximity : null
             const showExactHeader = !!meta?.parsedCity && r.cityProximity === 'exact' && prevProximity !== 'exact'
             const showNearbyHeader = !!meta?.parsedCity && r.cityProximity === 'nearby' && prevProximity !== 'nearby'
+            const showUnknownHeader = !!meta?.parsedCity && r.cityProximity === 'unknown' && prevProximity !== 'unknown'
             const showOthersHeader = !!meta?.parsedCity && (!r.cityProximity || r.cityProximity === 'none') && !!prevProximity && prevProximity !== 'none'
             return (
               <React.Fragment key={r.id}>
@@ -767,7 +777,12 @@ export function AICandidateSearch() {
                 )}
                 {showNearbyHeader && (
                   <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 px-1 py-1 mt-2">
-                    🔄 עד 20 ק&quot;מ מ{meta!.parsedCities.join('/')} ({results.filter(x => x.cityProximity === 'nearby').length} מועמדים)
+                    🔄 עד {meta!.radiusKm ?? '—'} ק&quot;מ אווירי מ{meta!.parsedCities.join('/')} או הסעה/ארצי ({results.filter(x => x.cityProximity === 'nearby').length} מועמדים)
+                  </div>
+                )}
+                {showUnknownHeader && (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 px-1 py-1 mt-2">
+                    עיר מגורים לא זוהתה בוודאות ({results.filter(x => x.cityProximity === 'unknown').length} מועמדים)
                   </div>
                 )}
                 {showOthersHeader && (
@@ -787,26 +802,32 @@ export function AICandidateSearch() {
                           {r.score}
                         </div>
                         <span className={`text-xs font-medium ${getScoreColor(r.score).split(' ')[0]}`}>
-                          {getScoreLabel(r.score)}
+                          {getScoreLabel(r.score, r.matchStatus)}
                         </span>
                         {r.scoreBreakdown && (
-                          <div className="mt-1 space-y-0.5 w-full text-xs text-gray-500">
-                            <div className="flex justify-between">
-                              <span>📍</span>
-                              <span className={r.scoreBreakdown.location >= 50 ? 'text-green-600 font-semibold' : 'text-gray-400'}>
-                                {r.scoreBreakdown.location}/50
+                          <div className="mt-1 space-y-0.5 w-full text-xs text-gray-500" dir="rtl">
+                            <div className="flex justify-between gap-2">
+                              <span>תפקיד</span>
+                              <span className={r.scoreBreakdown.role > 0 ? 'text-purple-600 font-semibold' : 'text-gray-400'}>
+                                {r.scoreBreakdown.role}/{r.scoreBreakdown.roleMaxPossible}
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>🏷️</span>
-                              <span className={r.scoreBreakdown.tags > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400'}>
-                                {r.scoreBreakdown.tags}/25
+                            <div className="flex justify-between gap-2">
+                              <span>כישורים</span>
+                              <span className={r.scoreBreakdown.skills > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400'}>
+                                {r.scoreBreakdown.skills}/{r.scoreBreakdown.skillsMaxPossible}
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>🤖</span>
-                              <span className={r.scoreBreakdown.ai > 15 ? 'text-purple-600 font-semibold' : 'text-gray-400'}>
-                                {r.scoreBreakdown.ai}/25
+                            <div className="flex justify-between gap-2">
+                              <span>דרישות</span>
+                              <span className={r.scoreBreakdown.requirements > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400'}>
+                                {r.scoreBreakdown.requirements}/{r.scoreBreakdown.requirementsMaxPossible}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span>מיקום</span>
+                              <span className={r.scoreBreakdown.location > 0 ? 'text-green-600 font-semibold' : 'text-gray-400'}>
+                                {r.scoreBreakdown.location}/{r.scoreBreakdown.locationMaxPossible}
                               </span>
                             </div>
                           </div>
@@ -828,7 +849,9 @@ export function AICandidateSearch() {
                                 <Badge className="bg-green-100 text-green-700 text-xs px-2">📍 בעיר</Badge>
                               )}
                               {r.cityProximity === 'nearby' && (
-                                <Badge className="bg-blue-100 text-blue-700 text-xs px-2">🔄 קרוב</Badge>
+                                <Badge className="bg-blue-100 text-blue-700 text-xs px-2">
+                                  {r.isNationwide ? 'ארצי' : typeof r.distanceKm === 'number' ? `${r.distanceKm} ק"מ אווירי` : 'קרוב'}
+                                </Badge>
                               )}
                               {r.hiredAt && (
                                 <Badge className="bg-yellow-100 text-yellow-700 text-xs px-2">✅ הועסק</Badge>
@@ -908,7 +931,7 @@ export function AICandidateSearch() {
                         {/* סיבת התאמה */}
                         {r.matchReason && (
                           <p className="text-sm text-gray-600 mt-2 bg-purple-50 rounded-lg px-3 py-1.5 border border-purple-100">
-                            🤖 {r.matchReason}
+                            {r.matchReason}
                           </p>
                         )}
                       </div>
@@ -919,12 +942,25 @@ export function AICandidateSearch() {
                       <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 space-y-3">
                         {r.highlights.length > 0 && (
                           <div>
-                            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">נקודות חוזק</p>
+                            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">ראיות להתאמה</p>
                             <ul className="space-y-1">
                               {r.highlights.map((h, i) => (
                                 <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
                                   <span className="text-green-500 mt-0.5">✓</span>
                                   {h}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {!!r.weaknesses?.length && (
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">לבירור לפני פנייה</p>
+                            <ul className="space-y-1">
+                              {r.weaknesses.map((w, i) => (
+                                <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                                  <span className="text-amber-500 mt-0.5">!</span>
+                                  {w}
                                 </li>
                               ))}
                             </ul>

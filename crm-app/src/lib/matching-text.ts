@@ -21,11 +21,22 @@ export type MatchingConcept = {
 
 // משפחה משותפת מעידה על קרבה בלבד. היא אינה הופכת תפקיד, תואר או רישיון לנרדף.
 export const MATCHING_CONCEPTS: readonly MatchingConcept[] = [
-  { id: 'warehouse', label: 'מחסנאות', kind: 'role', family: 'logistics', aliases: ['מחסנאי', 'מחסנאית', 'מחסנאים', 'מחסנאות', 'עובד מחסן', 'עובדת מחסן', 'warehouse worker', 'warehouse operative', 'storekeeper'] },
-  { id: 'picking', label: 'ליקוט', kind: 'role', family: 'logistics', aliases: ['מלקט', 'מלקטת', 'מלקטים', 'ליקוט', 'לקט', 'לקטת', 'order picker', 'picking orders', 'order picking'] },
-  { id: 'warehouse_manager', label: 'ניהול מחסן', kind: 'role', family: 'logistics', aliases: ['מנהל מחסן', 'מנהלת מחסן', 'ניהול מחסן', 'warehouse manager'] },
+  { id: 'warehouse', label: 'מחסנאות', kind: 'role', family: 'logistics', aliases: ['מחסנאי', 'מחסנאית', 'מחסנאים', 'מחסנאות', 'עובד מחסן', 'עובדת מחסן', 'עוזר מחסנאי', 'עוזרת מחסנאי', 'עובד דלפק', 'עובדת דלפק', 'עובד חצר', 'עובדת חצר', 'מחסנאי חלפים', 'מחסנאית חלפים', 'warehouse worker', 'warehouse operative', 'storekeeper'] },
+  { id: 'picking', label: 'ליקוט', kind: 'role', family: 'logistics', aliases: ['מלקט', 'מלקטת', 'מלקטים', 'ליקוט', 'לקט', 'לקטת', 'מלקט גובה', 'order picker', 'picking orders', 'order picking'] },
+  { id: 'online_orders', label: 'הזמנות אונליין', kind: 'role', family: 'retail', aliases: ['עובד אינטרנט', 'עובדת אינטרנט', 'נציג און ליין', 'נציגת און ליין', 'נציג אונליין', 'נציגת אונליין', 'אחראי און ליין', 'אחראית און ליין', 'הזמנות אונליין', 'הזמנות און ליין', 'online orders'] },
+  { id: 'goods_receiving', label: 'קליטת סחורה', kind: 'role', family: 'logistics', aliases: ['קולט סחורה', 'קולטת סחורה', 'קליטת סחורה', 'קבלת סחורה', 'קבלת ספקים', 'goods receiving', 'receiving clerk'] },
+  { id: 'inventory_controller', label: 'בקרת מלאי וסחורה', kind: 'role', family: 'logistics', aliases: ['בקר', 'בקרית', 'בקרים', 'בקר מלאי', 'בקרית מלאי', 'בקר סחורה', 'בקרית סחורה', 'stock controller', 'inventory controller'] },
+  { id: 'dispatcher', label: 'סדרנות הפצה', kind: 'role', family: 'logistics', aliases: ['סדרן', 'סדרנית', 'סדרנים', 'סדרן הפצה', 'סדרנית הפצה', 'סדרן עבודה', 'סדרנית עבודה', 'dispatcher'] },
+  { id: 'logistics_coordinator', label: 'ריכוז לוגיסטיקה והזמנות', kind: 'role', family: 'logistics', aliases: ['רכז הזמנות', 'רכזת הזמנות', 'רכז לוגיסטיקה', 'רכזת לוגיסטיקה', 'רכז מלאי', 'רכזת מלאי', 'רפרנט שטח', 'רפרנטית שטח', 'רפרנט לקוח', 'רפרנטית לקוח', 'רפרנט תפעול', 'רפרנטית תפעול', 'logistics coordinator'] },
+  { id: 'warehouse_manager', label: 'ניהול מחסן', kind: 'role', family: 'logistics', aliases: ['מנהל מחסן', 'מנהלת מחסן', 'ניהול מחסן', 'אחראי מחסן', 'אחראית מחסן', 'warehouse manager'] },
   { id: 'forklift_operation', label: 'הפעלת מלגזה', kind: 'role', family: 'logistics', aliases: ['מלגזן', 'מלגזנית', 'מלגזנים', 'הפעלת מלגזה', 'forklift operator'] },
+  { id: 'wms_operator', label: 'הפעלת מערכת WMS', kind: 'role', family: 'logistics', aliases: ['מפעיל מערכת wms', 'מפעילת מערכת wms', 'מפעיל wms', 'מפעילת wms', 'wms operator'] },
+  { id: 'port_work', label: 'עבודת נמל', kind: 'role', family: 'port', aliases: ['סוור', 'סוורת', 'סוורים', 'לאשינג', 'לשינג', 'אתת', 'עובד עגינה', 'עובדת עגינה', 'טלימן', 'טלימאן', 'עבודה בנמל', 'stevedore', 'lashing', 'tallyman'] },
   { id: 'reach_truck', label: 'מלגזת היגש', kind: 'skill', aliases: ['היגש', 'מלגזת היגש', 'ג׳ירפה', 'reach truck', 'reach-truck'] },
+  { id: 'turret_truck', label: 'מלגזת צריח', kind: 'skill', aliases: ['צריח', 'מלגזת צריח', 'מלגזן צריח', 'turret truck', 'vna'] },
+  { id: 'clamp_truck', label: 'מלגזת חבק', kind: 'skill', aliases: ['חבק', 'מלגזת חבק', 'מלגזן חבק', 'clamp truck'] },
+  { id: 'rf_scanner', label: 'מסופון', kind: 'skill', aliases: ['מסופון', 'מסופונים', 'rf scanner', 'handheld scanner'] },
+  { id: 'pallet_jack', label: 'ג׳ק חשמלי', kind: 'skill', aliases: ['ג׳ק חשמלי', 'גק חשמלי', 'ג׳ק אדם רוכב', 'גק אדם רוכב', 'pallet jack'] },
   { id: 'inventory', label: 'בקרת מלאי', kind: 'skill', aliases: ['בקרת מלאי', 'ניהול מלאי', 'ספירות מלאי', 'inventory control', 'inventory management'] },
   { id: 'wms', label: 'WMS', kind: 'skill', aliases: ['wms', 'מערכת ניהול מחסן'] },
   { id: 'priority', label: 'Priority', kind: 'skill', aliases: ['priority', 'פריוריטי', 'פריורתי'] },
@@ -33,12 +44,35 @@ export const MATCHING_CONCEPTS: readonly MatchingConcept[] = [
   { id: 'excel', label: 'Excel', kind: 'skill', aliases: ['excel', 'אקסל', 'microsoft excel'] },
   { id: 'office', label: 'Microsoft Office', kind: 'skill', aliases: ['microsoft office', 'ms office', 'אופיס', 'יישומי אופיס'] },
   { id: 'crm', label: 'CRM', kind: 'skill', aliases: ['crm', 'מערכת ניהול לקוחות'] },
-  { id: 'customer_service', label: 'שירות לקוחות', kind: 'role', family: 'customer_service', aliases: ['שירות לקוחות', 'שרות לקוחות', 'נציג שירות', 'נציגת שירות', 'נציג שירות לקוחות', 'נציגת שירות לקוחות', 'customer service', 'customer support', 'customer service representative'] },
-  { id: 'auto_service_advisor', label: 'ייעוץ שירות במוסך', kind: 'role', family: 'automotive_service', aliases: ['יועץ שירות במוסך', 'יועצת שירות במוסך', 'יועץ שירות מוסך', 'יועצת שירות מוסך', 'יועץ שירות לרכב', 'יועצת שירות לרכב', 'automotive service advisor', 'service advisor'] },
-  { id: 'sales', label: 'מכירות', kind: 'role', family: 'sales', aliases: ['מכירות', 'נציג מכירות', 'נציגת מכירות', 'sales representative', 'sales associate', 'salesperson'] },
+  { id: 'customer_service', label: 'שירות לקוחות', kind: 'role', family: 'customer_service', aliases: ['שירות לקוחות', 'שרות לקוחות', 'נציג שירות', 'נציגת שירות', 'נציג שירות לקוחות', 'נציגת שירות לקוחות', 'מוקדן', 'מוקדנית', 'מוקדנים', 'נציג מוקד', 'נציגת מוקד', 'מוקד שירות', 'שירות טלפוני', 'נציג פניות הציבור', 'נציגת פניות הציבור', 'פניות הציבור', 'נציג שירות דיגיטלי', 'נציגת שירות דיגיטלי', 'customer service', 'customer support', 'customer service representative', 'call center'] },
+  { id: 'rental_agent', label: 'שירות והשכרה', kind: 'role', family: 'customer_service', aliases: ['נציג שירות והשכרה', 'נציגת שירות והשכרה', 'נציג שירות השכרה', 'נציג השכרה', 'נציגת השכרה', 'דייל השכרה', 'דיילת השכרה', 'דיילי השכרה', 'השכרת רכב', 'rental agent', 'car rental'] },
+  { id: 'technical_support', label: 'תמיכה טכנית', kind: 'role', family: 'customer_service', aliases: ['נציג תמיכה טכנית', 'נציגת תמיכה טכנית', 'תמיכה טכנית', 'מוקד טכני', 'technical support'] },
+  { id: 'service_coordinator', label: 'תיאום שירות', kind: 'role', family: 'customer_service', aliases: ['מתאם שירות', 'מתאמת שירות', 'מתאם מסירות', 'מתאמת מסירות', 'service coordinator'] },
+  { id: 'auto_service_advisor', label: 'ייעוץ שירות במוסך', kind: 'role', family: 'automotive_service', aliases: ['יועץ שירות במוסך', 'יועצת שירות במוסך', 'יועץ שירות מוסך', 'יועצת שירות מוסך', 'יועץ שירות לרכב', 'יועצת שירות לרכב', 'יועץ שירות', 'יועצת שירות', 'יועץ מוסך', 'יועצת מוסך', 'automotive service advisor', 'service advisor'] },
+  { id: 'auto_diagnostics', label: 'אבחון רכב', kind: 'role', family: 'automotive_service', aliases: ['מאבחן רכב', 'מאבחנת רכב', 'דיאגנוסטיקה', 'דיאגנוסטיקת רכב', 'דיאגנוזה', 'איש דיאגנוזה', 'אשת דיאגנוזה', 'בוחן רכב', 'בוחנת רכב', 'vehicle diagnostics', 'vehicle inspector'] },
+  { id: 'auto_electrician', label: 'חשמלאות רכב', kind: 'role', family: 'automotive_service', aliases: ['חשמלאי רכב', 'חשמלאית רכב', 'חשמלאות רכב', 'auto electrician'] },
+  { id: 'tire_technician', label: 'צמיגאות', kind: 'role', family: 'automotive_service', aliases: ['צמיגאי', 'צמיגאית', 'עוזר צמיגאי', 'עוזרת צמיגאי', 'פנצ׳רייה', 'פנצרייה', 'tire technician'] },
+  { id: 'auto_installer', label: 'התקנת אביזרים', kind: 'role', aliases: ['מתקין', 'מתקינה', 'מתקינים', 'טכנאי התקנות', 'טכנאית התקנות', 'installer'] },
+  { id: 'body_shop', label: 'פחחות רכב', kind: 'role', family: 'automotive_service', aliases: ['פחח', 'פחחית', 'פחחות', 'פחח רכב', 'auto body', 'panel beater'] },
+  { id: 'vehicle_delivery', label: 'מסירת רכבים', kind: 'role', family: 'sales', aliases: ['נציג מסירות', 'נציגת מסירות', 'איש מסירות', 'אשת מסירות', 'מוסר רכבים', 'מוסרת רכבים', 'מסירת רכבים', 'מסירות רכב', 'vehicle delivery'] },
+  { id: 'product_specialist', label: 'מומחיות מוצר', kind: 'role', family: 'sales', aliases: ['מומחה מוצר', 'מומחית מוצר', 'מומחה עסקה', 'מומחית עסקה', 'product specialist'] },
+  { id: 'showroom_host', label: 'דיילות אולם תצוגה', kind: 'role', family: 'sales', aliases: ['דייל', 'דיילת', 'דיילים', 'דיילות', 'דייל אולם תצוגה', 'דיילת אולם תצוגה', 'showroom host'] },
+  { id: 'sales', label: 'מכירות', kind: 'role', family: 'sales', aliases: ['מכירות', 'נציג מכירות', 'נציגת מכירות', 'איש מכירות', 'אשת מכירות', 'אנשי מכירות', 'תומך מכירה', 'תומכת מכירה', 'תומכי מכירה', 'אולם תצוגה', 'sales representative', 'sales associate', 'salesperson', 'sales support'] },
+  { id: 'sales_clerk', label: 'מכירה בחנות', kind: 'role', family: 'retail', aliases: ['מוכרן', 'מוכרנית', 'מוכרנים', 'מוכר בחנות', 'מוכרת בחנות', 'קמעונאות', 'sales clerk', 'shop assistant', 'retail sales'] },
+  { id: 'store_manager', label: 'ניהול סניף', kind: 'role', family: 'retail', aliases: ['מנהל סניף', 'מנהלת סניף', 'ניהול סניף', 'מנהל חנות', 'מנהלת חנות', 'store manager', 'branch manager'] },
+  { id: 'deputy_store_manager', label: 'סגנות ניהול סניף', kind: 'role', family: 'retail', aliases: ['סגן מנהל', 'סגנית מנהל', 'סגן מנהלת', 'סגנית מנהלת', 'סגן מנהל סניף', 'סגנית מנהל סניף', 'סגן מנהל חנות', 'סגנית מנהל חנות', 'assistant store manager', 'deputy manager'] },
+  { id: 'cashier_supervisor', label: 'אחריות קו קופות', kind: 'role', family: 'retail', aliases: ['אחראי קו קופות', 'אחראית קו קופות', 'אחראי קופות', 'אחראית קופות', 'head cashier'] },
+  { id: 'team_leader', label: 'ראשות צוות ומשמרת', kind: 'role', family: 'management', aliases: ['ראש צוות', 'ראשת צוות', 'ראשי צוותים', 'אחמש', 'אחמשית', 'אחראי משמרת', 'אחראית משמרת', 'מנהל משמרת', 'מנהלת משמרת', 'team leader', 'team lead', 'shift manager'] },
+  { id: 'account_manager', label: 'ניהול תיקי לקוחות', kind: 'role', family: 'sales', aliases: ['אחראי תיק לקוח', 'אחראית תיק לקוח', 'מנהל תיק לקוח', 'מנהלת תיק לקוח', 'מנהל תיקי לקוחות', 'מנהלת תיקי לקוחות', 'מנהל לקוחות', 'מנהלת לקוחות', 'account manager'] },
+  { id: 'trade_coordinator', label: 'תיאום סחר ומכירות', kind: 'role', family: 'administration', aliases: ['מתאם סחר', 'מתאמת סחר', 'רכז סחר', 'רכזת סחר', 'רכזות סחר', 'מתאם לקוחות', 'מתאמת לקוחות', 'מתאם מכירות', 'מתאמת מכירות', 'sales coordinator', 'trade coordinator'] },
+  { id: 'back_office', label: 'בק אופיס', kind: 'role', family: 'administration', aliases: ['בק אופיס', 'נציג בק אופיס', 'נציגת בק אופיס', 'רכז בק אופיס', 'רכזת בק אופיס', 'back office'] },
+  { id: 'operations', label: 'תפקידי תפעול', kind: 'role', family: 'operations', aliases: ['איש תפעול', 'אשת תפעול', 'עובד תפעול', 'עובדת תפעול', 'רכז תפעול', 'רכזת תפעול', 'נציג תפעול', 'נציגת תפעול', 'מנהל תפעול', 'מנהלת תפעול', 'מנהל מתחם', 'מנהלת מתחם', 'תפעול ושירות', 'operations'] },
+  { id: 'procurement', label: 'רכש וקניינות', kind: 'role', family: 'procurement', aliases: ['פקיד רכש', 'פקידת רכש', 'עובד רכש', 'עובדת רכש', 'מנהל רכש', 'מנהלת רכש', 'קניין', 'קניינית', 'תפעול ורכש', 'procurement', 'purchasing', 'buyer'] },
+  { id: 'insurance_agent', label: 'סוכנות ביטוח', kind: 'role', family: 'insurance', aliases: ['סוכן ביטוח', 'סוכנת ביטוח', 'סוכן ביטוח פנסיוני', 'סוכנת ביטוח פנסיונית', 'יועץ פנסיוני', 'יועצת פנסיונית', 'מכירות ביטוח', 'insurance agent'] },
+  { id: 'insurance_claims', label: 'תביעות ביטוח', kind: 'role', family: 'insurance', aliases: ['מיישב תביעות', 'מיישבת תביעות', 'רכז תביעות', 'רכזת תביעות', 'תביעות ביטוח', 'מתחקר תאונות', 'מתחקרת תאונות', 'claims adjuster', 'claims handler'] },
   { id: 'field_sales', label: 'מכירות שטח', kind: 'role', family: 'sales', aliases: ['מכירות שטח', 'סוכן שטח', 'סוכנת שטח', 'field sales', 'outside sales'] },
   { id: 'telesales', label: 'מכירות טלפוניות', kind: 'role', family: 'sales', aliases: ['מכירות טלפוניות', 'טלסיילס', 'טלמרקטינג', 'telesales', 'telemarketing', 'inside sales'] },
-  { id: 'auto_sales', label: 'מכירת רכב', kind: 'role', family: 'sales', aliases: ['מכירת רכב', 'מכירות רכב', 'יועץ מכירות רכב', 'יועצת מכירות רכב', 'car sales', 'automotive sales'] },
+  { id: 'auto_sales', label: 'מכירת רכב', kind: 'role', family: 'sales', aliases: ['מכירת רכב', 'מכירות רכב', 'מכירות רכבים', 'מכירת רכבים', 'איש מכירות רכבים', 'אשת מכירות רכבים', 'יועץ מכירות רכב', 'יועצת מכירות רכב', 'נציג מגרש', 'נציגת מגרש', 'מנהל מגרש', 'מנהלת מגרש', 'מגרש מכירות', 'car sales', 'automotive sales'] },
   { id: 'sales_manager', label: 'ניהול מכירות', kind: 'role', family: 'sales', aliases: ['מנהל מכירות', 'מנהלת מכירות', 'ניהול מכירות', 'sales manager'] },
   { id: 'banker', label: 'בנקאות', kind: 'role', family: 'banking', aliases: ['בנקאי', 'בנקאית', 'בנקאות', 'banker', 'personal banker'] },
   { id: 'teller', label: 'טלר', kind: 'role', family: 'banking', aliases: ['טלר', 'טלרית', 'טלרים', 'teller', 'bank teller', 'קופאי בנק', 'קופאית בנק'] },
@@ -47,9 +81,9 @@ export const MATCHING_CONCEPTS: readonly MatchingConcept[] = [
   { id: 'bookkeeper', label: 'הנהלת חשבונות', kind: 'role', family: 'finance', aliases: ['מנהל חשבונות', 'מנהלת חשבונות', 'הנהלת חשבונות', 'הנהח', 'bookkeeper', 'bookkeeping'] },
   { id: 'accountant', label: 'ראיית חשבון', kind: 'role', family: 'finance', aliases: ['רואה חשבון', 'רואת חשבון', 'ראיית חשבון', 'רו״ח', 'accountant'] },
   { id: 'payroll', label: 'חשבות שכר', kind: 'role', family: 'finance', aliases: ['חשב שכר', 'חשבת שכר', 'חשבות שכר', 'payroll specialist', 'payroll accountant'] },
-  { id: 'administration', label: 'אדמיניסטרציה', kind: 'role', family: 'administration', aliases: ['אדמיניסטרציה', 'אדמיניסטרטור', 'אדמיניסטרטורית', 'מזכיר', 'מזכירה', 'office administrator', 'administrative assistant', 'secretary'] },
+  { id: 'administration', label: 'אדמיניסטרציה', kind: 'role', family: 'administration', aliases: ['אדמיניסטרציה', 'אדמיניסטרטור', 'אדמיניסטרטורית', 'מזכיר', 'מזכירה', 'פקיד', 'פקידה', 'פקידים', 'פקיד משרד', 'פקידת משרד', 'מנהל משרד', 'מנהלת משרד', 'office administrator', 'administrative assistant', 'secretary', 'office manager'] },
   { id: 'reception', label: 'קבלה', kind: 'role', family: 'administration', aliases: ['פקיד קבלה', 'פקידת קבלה', 'נציג קבלה', 'נציגת קבלה', 'receptionist', 'front desk'] },
-  { id: 'recruiter', label: 'גיוס עובדים', kind: 'role', family: 'human_resources', aliases: ['רכז גיוס', 'רכזת גיוס', 'גיוס עובדים', 'recruiter', 'talent acquisition'] },
+  { id: 'recruiter', label: 'גיוס עובדים', kind: 'role', family: 'human_resources', aliases: ['רכז גיוס', 'רכזת גיוס', 'גיוס עובדים', 'גיוס מועמדים', 'איש גיוס', 'אשת גיוס', 'מגייס', 'מגייסת', 'recruiter', 'talent acquisition'] },
   { id: 'hr', label: 'משאבי אנוש', kind: 'role', family: 'human_resources', aliases: ['משאבי אנוש', 'human resources', 'hr specialist'] },
   { id: 'software_developer', label: 'פיתוח תוכנה', kind: 'role', family: 'software', aliases: ['מפתח תוכנה', 'מפתחת תוכנה', 'מתכנת', 'מתכנתת', 'פיתוח תוכנה', 'software developer', 'software engineer', 'programmer', 'developer'] },
   { id: 'frontend', label: 'פיתוח Frontend', kind: 'role', family: 'software', aliases: ['frontend developer', 'front end developer', 'מפתח פרונטאנד', 'מפתחת פרונטאנד', 'frontend', 'front-end'] },
@@ -66,20 +100,28 @@ export const MATCHING_CONCEPTS: readonly MatchingConcept[] = [
     ['docker', 'Docker'], ['kubernetes', 'Kubernetes'], ['aws', 'AWS'], ['azure', 'Azure'],
     ['autocad', 'AutoCAD'], ['solidworks', 'SolidWorks'], ['cnc', 'CNC'],
   ].map(([id, label]): MatchingConcept => ({ id, label, kind: 'skill', aliases: id === 'node.js' ? [id, 'nodejs'] : [id] })),
-  { id: 'maintenance', label: 'אחזקה', kind: 'role', family: 'maintenance', aliases: ['איש אחזקה', 'אשת אחזקה', 'טכנאי אחזקה', 'טכנאית אחזקה', 'אחזקה', 'תחזוקה', 'maintenance technician'] },
+  { id: 'maintenance', label: 'אחזקה', kind: 'role', family: 'maintenance', aliases: ['איש אחזקה', 'אשת אחזקה', 'טכנאי אחזקה', 'טכנאית אחזקה', 'אחזקה', 'תחזוקה', 'איש טכני', 'אשת טכנית', 'טכנאי אחזקת חשמל', 'טכנאי בקרים', 'מנהל אחזקה', 'מנהלת אחזקה', 'מנהל אחזקת מכונות', 'maintenance technician', 'maintenance manager'] },
   { id: 'electrician', label: 'חשמלאות', kind: 'role', family: 'electrical', aliases: ['חשמלאי', 'חשמלאית', 'חשמלאות', 'electrician'] },
   { id: 'electrical_engineer', label: 'הנדסת חשמל', kind: 'role', family: 'electrical', aliases: ['מהנדס חשמל', 'מהנדסת חשמל', 'electrical engineer'] },
   { id: 'practical_electrical', label: 'הנדסאות חשמל', kind: 'role', family: 'electrical', aliases: ['הנדסאי חשמל', 'הנדסאית חשמל', 'practical electrical engineer'] },
-  { id: 'mechanic', label: 'מכונאות רכב', kind: 'role', family: 'automotive_service', aliases: ['מכונאי רכב', 'מכונאית רכב', 'מכונאות רכב', 'auto mechanic', 'automotive mechanic'] },
-  { id: 'production', label: 'עבודת ייצור', kind: 'role', family: 'production', aliases: ['עובד ייצור', 'עובדת ייצור', 'עובד יצור', 'עובדת יצור', 'production worker', 'manufacturing operator'] },
-  { id: 'machine_operator', label: 'הפעלת מכונות', kind: 'role', family: 'production', aliases: ['מפעיל מכונה', 'מפעילת מכונה', 'מפעיל מכונות', 'מפעילת מכונות', 'machine operator'] },
-  { id: 'driver', label: 'נהיגה מקצועית', kind: 'role', family: 'transport', aliases: ['נהג', 'נהגת', 'נהגים', 'נהיגת משאית', 'נהג חלוקה', 'נהגת חלוקה', 'truck driver', 'delivery driver', 'professional driver'] },
+  { id: 'mechanic', label: 'מכונאות רכב', kind: 'role', family: 'automotive_service', aliases: ['מכונאי רכב', 'מכונאית רכב', 'מכונאות רכב', 'מכונאי', 'מכונאית', 'מכונאים', 'מכונאי צמ״ה', 'מכונאי ניידת', 'מכונאי משאיות', 'auto mechanic', 'automotive mechanic', 'mechanic', 'heavy equipment mechanic'] },
+  { id: 'metalwork', label: 'מסגרות וריתוך', kind: 'role', family: 'metalwork', aliases: ['מסגר', 'מסגרים', 'רתך', 'רתכת', 'רתכים', 'עבודות מסגרות', 'welder', 'metalworker'] },
+  { id: 'production', label: 'עבודת ייצור', kind: 'role', family: 'production', aliases: ['עובד ייצור', 'עובדת ייצור', 'עובד יצור', 'עובדת יצור', 'עובדי ייצור', 'עובד הכנה לצבע', 'עובדת הכנה לצבע', 'עובד הדבקה', 'עובדת הדבקה', 'למינציה', 'עובד כללי', 'עובדת כללית', 'production worker', 'manufacturing operator', 'general worker'] },
+  { id: 'assembler', label: 'הרכבה מכנית', kind: 'role', family: 'production', aliases: ['עובד הרכבה', 'עובדת הרכבה', 'מרכיב', 'מרכיבה', 'מרכיב מכני', 'מרכיבה מכנית', 'assembler', 'assembly worker'] },
+  { id: 'packer', label: 'אריזת מוצרים', kind: 'role', family: 'production', aliases: ['עובד אריזה', 'עובדת אריזה', 'אורזת', 'אורזים', 'packer'] },
+  { id: 'lab_worker', label: 'עבודת מעבדה', kind: 'role', family: 'production', aliases: ['עובד מעבדה', 'עובדת מעבדה', 'לבורנט', 'לבורנטית', 'lab technician', 'laboratory technician'] },
+  { id: 'quality_control', label: 'בקרת איכות', kind: 'role', family: 'production', aliases: ['מבקר איכות', 'מבקרת איכות', 'בקר איכות', 'בקרת איכות', 'בקרית איכות', 'quality control', 'quality inspector', 'qc inspector'] },
+  { id: 'practical_engineer_role', label: 'הנדסאות', kind: 'role', family: 'engineering', aliases: ['הנדסאי', 'הנדסאית', 'הנדסאים', 'הנדסאי מכונות', 'הנדסאית מכונות', 'הנדסאי ציוד', 'הנדסאי תעשייה וניהול', 'practical engineer'] },
+  { id: 'machine_operator', label: 'הפעלת מכונות', kind: 'role', family: 'production', aliases: ['מפעיל מכונה', 'מפעילת מכונה', 'מפעיל מכונות', 'מפעילת מכונות', 'מפעיל מתקן', 'מפעילת מתקן', 'מפעיל מתקן כימי', 'מפעיל חדר בקרה', 'מפעילת חדר בקרה', 'חדר בקרה', 'machine operator', 'plant operator', 'control room operator'] },
+  { id: 'cnc_operator', label: 'הפעלת CNC', kind: 'role', family: 'production', aliases: ['מפעיל מכונות cnc', 'מפעילת מכונות cnc', 'מפעיל cnc', 'מפעילת cnc', 'cnc operator', 'cnc machinist'] },
+  { id: 'driver', label: 'נהיגה מקצועית', kind: 'role', family: 'transport', aliases: ['נהג', 'נהגת', 'נהגים', 'נהיגת משאית', 'נהג חלוקה', 'נהגת חלוקה', 'נהג משאית', 'נהגת משאית', 'נהג סמיטריילר', 'נהג שינוע', 'נהגת שינוע', 'נהג תפעולי', 'נהגת תפעולית', 'נהג צמוד', 'נהג מכולות', 'עוזר נהג', 'עוזרת נהג', 'truck driver', 'delivery driver', 'professional driver'] },
   { id: 'security', label: 'אבטחה', kind: 'role', family: 'security', aliases: ['מאבטח', 'מאבטחת', 'מאבטחים', 'שומר', 'שומרת', 'security guard'] },
   { id: 'occupational_safety', label: 'בטיחות בעבודה', kind: 'role', family: 'occupational_safety', aliases: ['ממונה בטיחות', 'ממונת בטיחות', 'בטיחות בעבודה', 'safety officer', 'occupational safety'] },
   { id: 'cleaning', label: 'ניקיון', kind: 'role', family: 'cleaning', aliases: ['עובד ניקיון', 'עובדת ניקיון', 'ניקיון', 'cleaner', 'cleaning worker'] },
   { id: 'cook', label: 'טבחות', kind: 'role', family: 'hospitality', aliases: ['טבח', 'טבחית', 'טבחים', 'טבחות', 'cook', 'chef'] },
   { id: 'waiter', label: 'מלצרות', kind: 'role', family: 'hospitality', aliases: ['מלצר', 'מלצרית', 'מלצרות', 'waiter', 'waitress'] },
-  { id: 'import_export', label: 'יבוא ויצוא', kind: 'role', family: 'logistics', aliases: ['מתאם יבוא', 'מתאמת יבוא', 'מתאם יצוא', 'מתאמת יצוא', 'יבוא ויצוא', 'import coordinator', 'export coordinator'] },
+  { id: 'import_export', label: 'יבוא ויצוא', kind: 'role', family: 'logistics', aliases: ['מתאם יבוא', 'מתאמת יבוא', 'מתאם ייבוא', 'מתאמת ייבוא', 'מתאם יצוא', 'מתאמת יצוא', 'מתאם ייצוא', 'מתאמת ייצוא', 'יבוא ויצוא', 'ייבוא וייצוא', 'שילוח בינלאומי', 'import coordinator', 'export coordinator', 'freight forwarding'] },
+  { id: 'erp_implementer', label: 'יישום ERP', kind: 'role', family: 'software', aliases: ['מיישם', 'מיישמת', 'מיישם פריוריטי', 'מיישמת פריוריטי', 'מיישם erp', 'מיישמת erp', 'erp implementer', 'priority implementer'] },
   { id: 'forklift_license', label: 'רישיון מלגזה', kind: 'credential', aliases: ['רישיון מלגזה', 'רשיון מלגזה', 'רישיון למלגזה', 'רשיון למלגזה', 'היתר מלגזה', 'היתר נהיגת מלגזה', 'forklift license', 'forklift licence', 'forklift certification'] },
   { id: 'license_b', label: 'רישיון B', kind: 'credential', aliases: ['רישיון b', 'רשיון b', 'רישיון נהיגה b', 'רישיון נהיגה מסוג b', 'b license', 'b licence'] },
   { id: 'license_c1', label: 'רישיון C1', kind: 'credential', aliases: ['רישיון c1', 'רשיון c1', 'רישיון נהיגה c1', 'רישיון נהיגה מסוג c1', 'c1 license', 'c1 licence'] },
@@ -102,9 +144,13 @@ const EXACT_ALIASES = new Map<string, string>()
 const FINALS: Record<string, string> = { ך: 'כ', ם: 'מ', ן: 'נ', ף: 'פ', ץ: 'צ' }
 
 function tokenKey(text: string): string {
-  return text.normalize('NFKC').toLowerCase()
+  const key = text.normalize('NFKC').toLowerCase()
     .replace(/[\u0591-\u05bd\u05bf-\u05c7\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
     .replace(/["'״׳’`]/g, '').replace(/[ךםןףץ]/g, char => FINALS[char])
+  // "נציג.ת", "נציגי.ות": סיומת מגדר אינה מילה נפרדת ואינה משנה את המקצוע.
+  const gendered = key.match(/^([א-ת]{2,})\.(ת|ית|ות|יות|ימ)$/)
+  if (!gendered) return key
+  return gendered[2] === 'ות' && gendered[1].endsWith('י') ? gendered[1].slice(0, -1) : gendered[1]
 }
 
 function tokenize(text: string): Token[] {
@@ -116,8 +162,9 @@ function tokenize(text: string): Token[] {
     const end = start + match[0].length
     const key = tokenKey(match[0])
     const previous = tokens[tokens.length - 1]
-    if (previous && /^[תיתמונ]+$/.test(key) && ['ת', 'ית', 'ימ', 'ות'].includes(key) && text.slice(previous.end, start) === '/') {
+    if (previous && ['ת', 'ית', 'ימ', 'ות', 'יות'].includes(key) && text.slice(previous.end, start) === '/') {
       previous.end = end
+      if (key === 'ות' && previous.key.endsWith('י') && previous.key.length > 3) previous.key = previous.key.slice(0, -1)
     } else tokens.push({ key, start, end })
   }
   return tokens

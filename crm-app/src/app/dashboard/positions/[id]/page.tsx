@@ -15,7 +15,9 @@ import {
   Trash2,
   Calendar,
   DollarSign,
-  Tag
+  Tag,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react"
 import Link from "next/link"
 import { MatchingCandidatesSidebar } from "@/components/matching-candidates-sidebar"
@@ -198,6 +200,48 @@ export default function PositionDetailsPage() {
         {error && (
           <Card className="mb-6 border-red-500">
             <CardContent className="pt-6 text-red-600">{error}</CardContent>
+          </Card>
+        )}
+
+        {position.matchingReadiness && (
+          <Card className={`mb-6 ${position.matchingReadiness.ready ? "border-emerald-200 bg-emerald-50/40" : "border-amber-200 bg-amber-50/40"}`} dir="rtl">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    {position.matchingReadiness.ready
+                      ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      : <AlertTriangle className="h-4 w-4 text-amber-600" />}
+                    מוכנות להתאמת מועמדים
+                  </p>
+                  <ul className="text-sm text-slate-700 space-y-1">
+                    <li className="flex items-center gap-2">
+                      <span className={position.matchingReadiness.roleRecognized ? "text-emerald-600" : "text-amber-600"}>{position.matchingReadiness.roleRecognized ? "✓" : "!"}</span>
+                      מקצוע בכותרת: {position.matchingReadiness.roleRecognized ? position.matchingReadiness.roleLabels.join(", ") : "לא זוהה"}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className={position.matchingReadiness.geography.ok ? "text-emerald-600" : "text-amber-600"}>{position.matchingReadiness.geography.ok ? "✓" : "!"}</span>
+                      מיקום למרחק אווירי ({position.matchingReadiness.geography.radiusKm} ק״מ): {position.matchingReadiness.geography.nationwide ? "ארצי" : position.matchingReadiness.geography.remote ? "מרחוק" : position.matchingReadiness.geography.measurableCities.join(", ") || "לא מדיד"}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className={position.matchingReadiness.requirementsMarked > 0 ? "text-emerald-600" : "text-amber-600"}>{position.matchingReadiness.requirementsMarked > 0 ? "✓" : "!"}</span>
+                      דרישות עם חובה/יתרון: {position.matchingReadiness.requirementsMarked} מתוך {position.matchingReadiness.requirementsTotal}
+                      {position.matchingReadiness.skillTerms.length > 0 && <span className="text-slate-500"> • כישורים מתויגים: {position.matchingReadiness.skillTerms.join(", ")}</span>}
+                    </li>
+                  </ul>
+                  {position.matchingReadiness.issues.length > 0 && (
+                    <ul className="text-xs text-amber-800 space-y-0.5 pt-1">
+                      {position.matchingReadiness.issues.map((issue: string) => <li key={issue}>• {issue}</li>)}
+                    </ul>
+                  )}
+                </div>
+                {!position.matchingReadiness.ready && (
+                  <Link href={`/dashboard/positions/${positionId}/edit`}>
+                    <Button size="sm" variant="outline" className="border-amber-300 text-amber-800 hover:bg-amber-100">תקן בעריכה</Button>
+                  </Link>
+                )}
+              </div>
+            </CardContent>
           </Card>
         )}
 

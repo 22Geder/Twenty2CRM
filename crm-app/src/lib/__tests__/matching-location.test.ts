@@ -112,6 +112,18 @@ describe('מרחק אווירי, רדיוס וריבוי ערים', () => {
     expect(extractMentionedCities('עבודה במרכז')).toEqual([])
   })
 
+  it.each([
+    ['בילו – צומת בילו', 'בילו', 'רחובות'], ['פארק ראם, בני עי"ש', 'פארק ראם', 'קריית מלאכי'],
+    ['בני דרום - שמעון גרינבוים 1', 'בני דרום', 'אשדוד'], ['נתב״ג', 'נתב"ג', 'לוד'], ['אירפורט סיטי', 'נתב"ג', 'לוד'],
+    ['רמלוד (רמלה)', 'רמלה', 'לוד'], ['שפיים', 'שפיים', 'הרצליה'], ['עמק חפר', 'עמק חפר', 'נתניה'],
+    ['כפר קאסם', 'כפר קאסם', 'ראש העין'], ['אלון הגליל', 'אלון הגליל', 'נצרת'], ['גלילות - מרכז', 'גלילות', 'הרצליה'],
+  ])('אתר תעסוקה %s מזוהה כ-%s ונמדד מול %s בתוך הרדיוס', (positionLocation, city, candidateCity) => {
+    const result = evaluateMatchingLocation({ candidateCity, positionLocation })
+    expect(result.matchedCity).toBe(city)
+    expect(result.matchType).toBe('nearby')
+    expect(result.distanceKm).toBeLessThanOrEqual(DEFAULT_RADIUS_KM)
+  })
+
   it.each(['אילת, באר שבע / חיפה', 'באילת ובחיפה', 'חיפה | אילת', 'Haifa; Eilat'])('בוחר התאמה מלאה מתוך %s', positionLocation => {
     expect(evaluateMatchingLocation({ candidateCity: 'חיפה', positionLocation })).toMatchObject({ matchType: 'exact', matchedCity: 'חיפה', eligible: true })
   })

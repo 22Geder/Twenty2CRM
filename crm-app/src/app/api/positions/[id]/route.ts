@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 import { syncPositionToWebsite, deactivatePositionOnWebsite } from "@/lib/twenty2jobs-sync"
+import { assessMatchingReadiness } from "@/lib/matching-engine"
 
 function generatePositionKeywords(input: string, maxKeywords = 30): string[] {
   const stopwords = new Set([
@@ -83,7 +84,10 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(position)
+    // מוכנות להתאמה מחושבת בכל קריאה; לא נשמרת ולא משנה את המשרה.
+    let matchingReadiness = null
+    try { matchingReadiness = assessMatchingReadiness(position) } catch { console.error("[positions] readiness failed") }
+    return NextResponse.json({ ...position, matchingReadiness })
   } catch (error) {
     console.error("Error fetching position:", error)
     return NextResponse.json(

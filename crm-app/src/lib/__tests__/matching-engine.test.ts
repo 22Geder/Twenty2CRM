@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  compareEvidenceMatches, evaluateCandidatePosition, evaluatePreparedMatch, isSuggestedMatch,
+  assessMatchingReadiness, compareEvidenceMatches, curatedSkillTerms, evaluateCandidatePosition, evaluatePreparedMatch, isSuggestedMatch,
   prepareMatchingCandidate, prepareMatchingPosition, type MatchingCandidate, type MatchingPosition,
 } from '../matching-engine'
 
@@ -187,5 +187,55 @@ describe('בטיחות, כיסוי וביצועים', () => {
       expect(result.score).toBeGreaterThanOrEqual(0)
       expect(result.score).toBeLessThanOrEqual(100)
     }
+  })
+})
+
+describe('מילות מפתח שתויגו במשרה הופכות לראיות כישור', () => {
+  const tagged: MatchingPosition = {
+    ...job, keywords: ['מסופון', 'ניהול צוות', 'קמעונאות', 'משרה מלאה', 'יחסי אנוש', 'EMG', 'UMI_AVIS_2026_09_17', 'תל אביב', '40 ₪', 'ועד עובדים', 'ספירות מלאי', 'Office'],
+    tags: [{ name: 'שרינקים' }, { name: 'תודעת שירות' }],
+  }
+
+  it('מסנן תנאים, מעסיקים, ערים ומזהים ושומר כישורים אמיתיים בלבד', () => {
+    expect(curatedSkillTerms(tagged)).toEqual(['ניהול צוות', 'שרינקים'])
+  })
+
+  it('כישור מתויג שנמצא במקור מעלה את ציון הכישורים ומופיע כראיה', () => {
+    const withTags = evaluateCandidatePosition({ ...candidate, resume: `${candidate.resume}\nעבודה עם שרינקים וניהול צוות של 4 עובדים` }, tagged)
+    const missing = evaluateCandidatePosition(candidate, tagged)
+    expect(withTags.breakdown.skills).toBeGreaterThan(missing.breakdown.skills)
+    expect(withTags.matchingTerms).toEqual(expect.arrayContaining(['שרינקים', 'ניהול צוות', 'בקרת מלאי']))
+    expect(withTags.evidence.some(item => item.quote === 'שרינקים' && item.source === 'resume')).toBe(true)
+  })
+
+  it('כישור מתויג שנשלל במקור אינו נספר', () => {
+    const result = evaluateCandidatePosition({ ...candidate, resume: `${candidate.resume}\nללא ניסיון בניהול צוות` }, { ...job, keywords: ['ניהול צוות'] })
+    expect(result.matchingTerms).not.toContain('ניהול צוות')
+  })
+})
+
+describe('מוכנות משרה להתאמה (בעת העלאה/עריכה)', () => {
+  it('משרה מלאה מוכנה: מקצוע, עיר מדידה ודרישות מסומנות', () => {
+    const readiness = assessMatchingReadiness({ ...job, keywords: ['שרינקים', 'משרה מלאה'] })
+    expect(readiness).toMatchObject({ ready: true, roleRecognized: true, roleLabels: ['מחסנאות'], requirementsTotal: 2, requirementsMarked: 2, skillTerms: ['שרינקים'], issues: [] })
+    expect(readiness.geography).toMatchObject({ ok: true, measurableCities: ['תל אביב'], nationwide: false, radiusKm: 12 })
+  })
+
+  it('מדווח בדיוק מה חסר בלי לפסול את המשרה', () => {
+    const readiness = assessMatchingReadiness({ title: 'סג/נית אחראי', location: 'מרכז שירות (אזור – לפרט בתיאום)', requirements: 'ניסיון בתחום\nיחסי אנוש טובים' })
+    expect(readiness.ready).toBe(false)
+    expect(readiness.roleRecognized).toBe(false)
+    expect(readiness.geography.ok).toBe(false)
+    expect(readiness.requirementsMarked).toBe(0)
+    expect(readiness.issues).toHaveLength(3)
+    expect(readiness.issues.join(' ')).toMatch(/מקצוע/)
+    expect(readiness.issues.join(' ')).toMatch(/עיר/)
+    expect(readiness.issues.join(' ')).toMatch(/חובה\/יתרון/)
+  })
+
+  it('משרה ארצית או מרחוק נחשבת מדידה גם בלי עיר', () => {
+    expect(assessMatchingReadiness({ ...job, location: 'פריסה ארצית' }).geography).toMatchObject({ ok: true, nationwide: true })
+    expect(assessMatchingReadiness({ ...job, location: 'עבודה מהבית' }).geography).toMatchObject({ ok: true, remote: true })
+    expect(assessMatchingReadiness({ ...job, location: 'בני דרום - שמעון גרינבוים 1' }).geography).toMatchObject({ ok: true, measurableCities: ['בני דרום'] })
   })
 })

@@ -10,6 +10,7 @@ import { OfficeParser } from 'officeparser';
 import { findMatchingTags, getUniqueCategories, RECRUITMENT_TAGS, type MatchedTag } from '@/lib/recruitment-tags';
 import { sendCandidateUploadEmail } from '@/lib/process-notifications';
 import { createCandidateUpdate } from '@/lib/candidate-updates';
+import { extractCandidateCity } from '@/lib/matching-location';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const WordExtractor = require('word-extractor') as new () => {
@@ -1333,7 +1334,8 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = isLikelyEmail(candidateData?.email) ? (candidateData.email as string) : null;
     const phone = normalizeMaybeValue(candidateData?.phone);
     const name = normalizeMaybeValue(candidateData?.name) || 'מועמד מהעלאה';
-    const city = normalizeMaybeValue(candidateData?.city);
+    // אותו מחלץ עיר כמו במנוע ההתאמה: רק מעדות מגורים/קשר, לעולם לא מעיר מעסיק.
+    const city = normalizeMaybeValue(candidateData?.city) ?? extractCandidateCity(text);
     const currentTitle = normalizeMaybeValue(candidateData?.currentTitle);
     const yearsOfExperience = parseYearsOfExperience(candidateData?.experience);
     const skills = Array.isArray(candidateData?.skills)

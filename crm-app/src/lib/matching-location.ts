@@ -64,6 +64,11 @@ const CANONICAL_NAMES: Record<string, string> = {
   'נצרת עילית נוף הגליל': 'נוף הגליל',
   'פרדס חנה': 'פרדס חנה כרכור',
   'ראש פנה': 'ראש פינה',
+  'צומת בילו': 'בילו',
+  'מרכז בילו': 'בילו',
+  'רמלוד': 'רמלה',
+  'קרית שדה התעופה': 'נתב"ג',
+  'אירפורט סיטי': 'נתב"ג',
 }
 
 function canonicalCity(name: string): string {
@@ -117,6 +122,8 @@ const LOCALITIES = new Set([
   ...Object.values(ISRAELI_CITIES).flat(), ...Object.values(KIBBUTZIM).flat(),
   ...Object.values(MOSHAVIM).flat(), ...Object.values(ARAB_LOCALITIES).flat(), ...DRUZE_LOCALITIES,
   'ראש פינה', 'קצרין', 'אפרת', 'אבו גוש', 'חשמונאים', 'באר טוביה', 'בנימינה',
+  // אתרי תעסוקה שמופיעים כמיקום משרה בפועל; יש להם קואורדינטות ב-israel-distance.
+  'בילו', 'צומת בילו', 'מרכז בילו', 'פארק ראם', 'בני עי"ש', 'נתב"ג', 'אירפורט סיטי', 'קרית שדה התעופה', 'עמק חפר', 'גלילות', 'אלון הגליל', 'סינרמה',
 ])
 for (const city of LOCALITIES) {
   if (city !== 'גולן') registerName(city, canonicalCity(city), 'city')
@@ -389,6 +396,23 @@ function result(
   distanceKm: number | null = null,
 ): MatchingLocationResult {
   return { score, eligible, matchType, distanceKm, isExactCity: matchType === 'exact', isNationwide: matchType === 'nationwide', candidateCity, matchedCity, reason }
+}
+
+export type PositionGeography = { cities: string[]; measurableCities: string[]; regions: string[]; nationwide: boolean; remote: boolean; unresolved: boolean }
+
+/** מה המנוע מבין ממיקום המשרה לבדה, לפני כל מועמד; משמש לבדיקת מוכנות בעת שמירה. */
+export function describePositionGeography(input: Pick<MatchingLocationInput, 'positionLocation' | 'positionTitle' | 'positionDescription' | 'workHours'>): PositionGeography {
+  const scope: ScopeText[] = [
+    { text: input.positionLocation ?? '', source: 'location' },
+    { text: input.positionTitle ?? '', source: 'title' },
+    { text: input.positionDescription ?? '', source: 'description' },
+    { text: input.workHours ?? '', source: 'hours' },
+  ]
+  const sites = worksite(input)
+  return {
+    cities: sites.cities, measurableCities: sites.cities.filter(city => getDistanceKm(city, city) !== null), regions: sites.regions,
+    nationwide: !sites.localOnly && nationwideScope(scope), remote: !sites.localOnly && remoteScope(scope), unresolved: sites.unresolved,
+  }
 }
 
 export function evaluateMatchingLocation(input: MatchingLocationInput): MatchingLocationResult {

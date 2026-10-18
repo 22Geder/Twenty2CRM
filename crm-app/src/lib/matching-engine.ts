@@ -1,4 +1,4 @@
-import { evaluateMatchingLocation, type MatchingLocationResult } from './matching-location'
+import { DEFAULT_RADIUS_KM, describePositionGeography, evaluateMatchingLocation, extractMentionedCities, type MatchingLocationResult, type PositionGeography } from './matching-location'
 import {
   createMatchingTextIndex, findIndexedTermEvidence, getMatchingConcept,
   matchingEvidenceContext, normalizeMatchingText,
@@ -85,6 +85,7 @@ export type PreparedMatchingPosition = {
   index: MatchingTextIndex
   titleIndex: MatchingTextIndex
   requirements: Requirement[]
+  skillTerms: string[]
   entryLevel: boolean
   locationCache: Map<string, MatchingLocationResult>
 }
@@ -172,7 +173,55 @@ export function prepareMatchingPosition(input: MatchingPosition): PreparedMatchi
     seen.add(key)
     return true
   })
-  return { input, text, index: createMatchingTextIndex(text), titleIndex: createMatchingTextIndex(input.title), requirements: checks, entryLevel: ENTRY_LEVEL.test(`${input.description ?? ''}\n${requirements}`), locationCache: new Map() }
+  return { input, text, index: createMatchingTextIndex(text), titleIndex: createMatchingTextIndex(input.title), requirements: checks,
+    skillTerms: curatedSkillTerms(input), entryLevel: ENTRY_LEVEL.test(`${input.description ?? ''}\n${requirements}`), locationCache: new Map() }
+}
+
+const MAX_CURATED_SKILL_TERMS = 8
+const GENERIC_KEYWORD = new Set(normalizeMatchingText([
+  'משרה מלאה', 'משרה חלקית', 'משרה', 'מלאה', 'חלקית', 'ניסיון', 'נסיון', 'יחסי אנוש', 'תודעת שירות', 'אחריות', 'עבודה בצוות', 'עבודת צוות',
+  'תנאים סוציאליים', 'תנאים', 'ניהול', 'ביטוח בריאות', 'שכר שעתי', 'שכר', 'סדר וארגון', 'גמישות', 'ראש גדול', 'קידום', 'עצמאות', 'ועד עובדים',
+  'מתנות לחגים', 'יוזמה', 'עמידה בלחץ', 'רכב', 'מנהל', 'נופשים', 'שירותיות', 'מרחב', 'תואר', 'עסקים', 'יכולת', 'נדרשת', 'נדרש', 'תחום',
+  'עדיפות', 'חברה', 'תקן', 'תעודת', 'גבוה', 'גבוהה', 'רשת חנויות', 'משמרות', 'משמרת', 'בוקר', 'ערב', 'לילה', 'בונוסים', 'עמלות', 'הכשרה', 'קליטה',
+  'דחוף', 'דיסקרטי', 'חובה', 'יתרון', 'מיידי', 'מיידית', 'דרוש', 'דרושה', 'דרושים', 'ארוחות', 'הסעות', 'הסעה', 'קרוב לבית', 'אווירה', 'סביבה', 'צעירה',
+  'דינמית', 'מוטיבציה', 'אמינות', 'חריצות', 'דייקנות', 'מסירות', 'שליטה', 'ידע', 'רמה', 'קבוצה', 'החברה', 'לתחום', 'ויכולת', 'עבודה פיזית',
+  'עבודה עצמאית', 'עבודה בישיבה', 'שימת לב לפרטים', 'ניידות', 'זמינות', 'נכונות', 'העסקה ישירה', 'קביעות', 'אפשרות קידום', 'סטודנטים',
+  'full time', 'part time', 'experience', 'team player', 'bonus', 'urgent', 'office',
+].join('\n')).split(' ').filter(Boolean))
+const GENERIC_PHRASES = new Set([
+  'משרה מלאה', 'משרה חלקית', 'יחסי אנוש', 'תודעת שירות', 'עבודה בצוות', 'עבודת צוות', 'תנאים סוציאליים', 'ביטוח בריאות',
+  'שכר שעתי', 'סדר וארגון', 'ראש גדול', 'ועד עובדים', 'מתנות לחגים', 'עמידה בלחץ', 'רשת חנויות', 'קרוב לבית', 'עבודה פיזית',
+  'עבודה עצמאית', 'עבודה בישיבה', 'שימת לב לפרטים', 'העסקה ישירה', 'אפשרות קידום', 'full time', 'part time', 'team player',
+].map(normalizeMatchingText))
+// מילה אחת מאלה בביטוי רב-מילים מסמנת תנאי העסקה או הטבה, לא כישור.
+const CONDITION_WORD = new Set(normalizeMatchingText([
+  'שכר', 'תנאים', 'בונוס', 'בונוסים', 'עמלות', 'משרה', 'אווירה', 'סביבה', 'ועד', 'מתנות', 'נופשים', 'ארוחות', 'הסעות', 'הסעה', 'קידום', 'אפשרויות', 'חגים',
+  'בריאות', 'סוציאליים', 'קרוב', 'לבית', 'דחוף', 'מיידי', 'מיידית', 'דיסקרטי', 'חובה', 'יתרון', 'דרוש', 'דרושה', 'דרושים', 'עדיפות', 'משמרות', 'משמרת',
+  'בוקר', 'ערב', 'לילה', 'מלאה', 'חלקית', 'גמישות', 'גמישה', 'קבועות', 'זמינות', 'נכונות', 'ניסיון', 'נסיון', 'שנים', 'שנות', 'קבוצת', 'חברת', 'רשת', 'גבוה', 'גבוהה',
+  'salary', 'bonus', 'urgent', 'shift', 'shifts',
+].join('\n')).split(' ').filter(Boolean))
+
+/**
+ * מילות מפתח ותגיות שהמגייס תייג במשרה ואינן במילון, כשהן כישור מקצועי ולא תנאי העסקה,
+ * שם מעסיק, עיר, מזהה ייבוא או תכונה אישית. הן נבדקות מול המועמד כמו כל כישור אחר: מילים שלמות, עם שלילה.
+ */
+export function curatedSkillTerms(input: Pick<MatchingPosition, 'keywords' | 'tags'>): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  const raw = [...textList(input.keywords).split('\n'), ...(input.tags ?? []).map(tag => tag.name)]
+  for (const candidate of raw) {
+    const term = candidate.trim()
+    const normalized = normalizeMatchingText(term)
+    const words = normalized.split(' ').filter(Boolean)
+    if (!words.length || words.length > 3 || seen.has(normalized)) continue
+    if (getMatchingConcept(term) || extractMentionedCities(term).length) continue
+    if (/[\d₪%@]|^[A-Z0-9_ .-]+$/.test(term) || GENERIC_PHRASES.has(normalized)) continue
+    if (words.length === 1 ? (words[0].length < 3 || GENERIC_KEYWORD.has(words[0])) : words.some(word => CONDITION_WORD.has(word))) continue
+    seen.add(normalized)
+    result.push(term)
+    if (result.length >= MAX_CURATED_SKILL_TERMS) break
+  }
+  return result
 }
 
 function candidateEvidence(candidate: PreparedMatchingCandidate, term: string, includeTags = false): SourcedEvidence[] {
@@ -310,7 +359,7 @@ export function evaluatePreparedMatch(candidate: PreparedMatchingCandidate, job:
   const role = roleMatch === 'direct' ? 35 : roleMatch === 'related' ? 17 : roleMatch === 'metadata' ? 8 : 0
   const skillConcepts = [...job.index.byConcept.keys()].filter(term => ['skill', 'language'].includes(getMatchingConcept(term)?.kind ?? '') &&
     job.index.byConcept.get(term)!.some(item => item.assertion === 'positive' && !NOT_REQUIRED.test(matchingEvidenceContext(job.text, item))))
-  const skillChecks = skillConcepts.map(term => ({ term, ...resolveEvidence(candidateEvidence(candidate, term)) }))
+  const skillChecks = [...skillConcepts, ...job.skillTerms].map(term => ({ term, ...resolveEvidence(candidateEvidence(candidate, term)) }))
   const matchedSkills = skillChecks.filter(item => item.status === 'met')
   const skills = skillChecks.length ? Math.round(25 * matchedSkills.length / skillChecks.length) : 0
   const requirements = job.requirements.map(check => evaluateRequirement(candidate, job, check, options.asOf ?? new Date()))
@@ -371,6 +420,40 @@ export function evaluateCandidatePosition(candidate: MatchingCandidate, position
 
 export function isSuggestedMatch(match: EvidenceMatch): boolean {
   return match.status === 'matched' || match.status === 'review'
+}
+
+export type MatchingReadiness = {
+  ready: boolean
+  roleRecognized: boolean
+  roleLabels: string[]
+  geography: PositionGeography & { ok: boolean; radiusKm: number }
+  requirementsTotal: number
+  requirementsMarked: number
+  skillTerms: string[]
+  issues: string[]
+}
+
+/** בדיקת מוכנות של משרה להתאמה, ללא מועמדים וללא DB; מוצגת למגייס בעת יצירה/עריכה. */
+export function assessMatchingReadiness(input: MatchingPosition): MatchingReadiness {
+  const job = prepareMatchingPosition(input)
+  const roles = [...job.titleIndex.byConcept.keys()].filter(term => getMatchingConcept(term)?.kind === 'role')
+  const geography = describePositionGeography({ positionLocation: input.location, positionTitle: input.title, positionDescription: [input.description, textList(input.requirements)].filter(Boolean).join('\n'), workHours: input.workHours })
+  const geographyOk = geography.nationwide || geography.remote || geography.measurableCities.length > 0
+  const requirementsMarked = job.requirements.filter(check => check.importance !== 'unspecified').length
+  const issues: string[] = []
+  if (!roles.length) issues.push('הכותרת לא מכילה מקצוע שהמנוע מזהה; מועמדים לא יקבלו "תפקיד תואם" אלא התאמה חלקית בלבד. הוסיפו את שם המקצוע לכותרת.')
+  if (!geographyOk) {
+    issues.push(geography.cities.length
+      ? `ליישוב "${geography.cities[0]}" אין קואורדינטות במערכת; רדיוס ${DEFAULT_RADIUS_KM} ק"מ לא ייבדק והמיקום ייחשב "לא ידוע".`
+      : 'לא זוהתה עיר במיקום המשרה. כתבו שם עיר (או "כל הארץ" / "עבודה מרחוק") כדי שמרחק המועמדים ייבדק.')
+  }
+  if (!job.requirements.length) issues.push('אין דרישות מפורטות. כתבו שורה לכל דרישה עם "חובה" או "יתרון" כדי שהמנוע יוכל לאמת אותן מול קורות החיים.')
+  else if (!requirementsMarked) issues.push('הדרישות ללא סימון חובה/יתרון; כולן ייחשבו כדרישות שלא אומתו עד בירור ויקשו על סטטוס "התאמה".')
+  return {
+    ready: issues.length === 0, roleRecognized: roles.length > 0, roleLabels: roles.map(term => getMatchingConcept(term)?.label ?? term),
+    geography: { ...geography, ok: geographyOk, radiusKm: DEFAULT_RADIUS_KM },
+    requirementsTotal: job.requirements.length, requirementsMarked, skillTerms: job.skillTerms, issues,
+  }
 }
 
 export function compareEvidenceMatches(a: EvidenceMatch, b: EvidenceMatch): number {

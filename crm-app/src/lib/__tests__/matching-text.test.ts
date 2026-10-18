@@ -77,3 +77,50 @@ describe('ראיות, שלילה ושאיפות', () => {
     expect(findTermEvidence('אין ניסיון ב-Java, ניסיון ב-SQL', 'SQL')?.assertion).toBe('positive')
   })
 })
+
+describe('כותרות משרה אמיתיות: סיומות מגדר ומקצועות מהמערכת', () => {
+  it.each([
+    ['נציג.ת שירות והשכרה - אזור מרכז', 'rental_agent'], ['נציגי.ות מכירות אולם תצוגה', 'sales'],
+    ['דיילי.ות השכרה בכל הארץ', 'rental_agent'], ['תומכ.ת מכירה', 'sales'], ['מנהל.ת חשבונות', 'bookkeeper'],
+    ['איש.אשת אחזקה', 'maintenance'], ['מוקדנ.ית שירות טלפוני', 'customer_service'],
+    ['סגן/ת מנהל/ת – ACE אייס כפר סבא', 'deputy_store_manager'], ['מוכרן/ית – ACE אייס בילו', 'sales_clerk'],
+    ['בקר/ית - בית שמש', 'inventory_controller'], ['עוזר/ת צמיגאי – אוטודיפו', 'tire_technician'],
+    ['מפעיל/ת מערכת WMS – לוד', 'wms_operator'], ['יועץ שירות', 'auto_service_advisor'], ['יועצ.ת מוסך', 'auto_service_advisor'],
+    ['מנהל/ת סניף – Office Depot', 'store_manager'], ['מאבחן/ת רכב – מרכז שירות', 'auto_diagnostics'],
+    ['רפרנט/ית שטח - לוגיסטים', 'logistics_coordinator'], ['סדרן/ית הפצה – בית שמש', 'dispatcher'],
+    ['עובד/ת אינטרנט – מלקט/ת', 'online_orders'], ['נציג/ת און ליין – ACE', 'online_orders'],
+    ['מתאמ/ת סחר ולקוחות', 'trade_coordinator'], ['מתאם/ת ייבוא', 'import_export'], ['עובד/ת אריזה', 'packer'],
+    ['מיישם/ת פריוריטי – מחלקת מערכות מידע', 'erp_implementer'], ['לאשינג - דוברי/ות רוסית', 'port_work'],
+    ['סוור/ת - עבודת פריקה וטעינה', 'port_work'], ['איש/אשת תפעול', 'operations'], ['פקיד/ת רכש', 'procurement'],
+    ['קולט/ת סחורה - בני דרום', 'goods_receiving'], ['עובד/ת מעבדה', 'lab_worker'], ['עובד/ת הרכבה', 'assembler'],
+    ['מבקר איכות - תדיראן', 'quality_control'], ['מפעיל/ת מכונות CNC', 'cnc_operator'], ['הנדסאי ציוד', 'practical_engineer_role'],
+    ['נהג/ת סמיטריילר', 'driver'], ['מכונאי ניידת צמ"ה', 'mechanic'], ['חשמלאי רכב מקצועי', 'auto_electrician'],
+    ['פחח', 'body_shop'], ['מסגר', 'metalwork'], ['ראש/ת צוות מוקד', 'team_leader'], ['אחמש/ית מוקד', 'team_leader'],
+    ['מומחה/ית מוצר XPENG', 'product_specialist'], ['איש מסירות רכב חדש', 'vehicle_delivery'], ['נציג.ת מגרש לפארק ראם', 'auto_sales'],
+    ['אחראי/ת תיק לקוח עסקי', 'account_manager'], ['סוכן/ת ביטוח פנסיוני/ת', 'insurance_agent'], ['מיישב.ת תביעות', 'insurance_claims'],
+    ['נציג.ת בק אופיס למוקד הטכני', 'back_office'], ['נציג/ת תמיכה טכנית', 'technical_support'], ['איש גיוס מועמדים', 'recruiter'],
+    ['פקיד/ה - אשדוד', 'administration'], ['עובד/ת כללי/ת', 'production'], ['מחסנאי/ת עובד/ת דלפק', 'warehouse'],
+  ])('%s → מקצוע %s', (title, concept) => {
+    const roles = extractMatchingConcepts(title).filter(item => item.assertion === 'positive')
+    expect(roles.map(item => item.concept)).toContain(concept)
+  })
+
+  it('סיומת מגדר עם נקודה אינה משנה את המילה ואינה יוצרת מילה חדשה', () => {
+    expect(normalizeMatchingText('נציג.ת נציגי.ות דיילי.ות תומכ.ת')).toBe('נציג נציג דייל תומכ')
+    expect(normalizeMatchingText('נציג/ת נציגי/ות')).toBe('נציג נציג')
+    expect(normalizeMatchingText('Node.js v18.2')).toBe('node.js v18.2')
+  })
+
+  it('כישורי מחסן חדשים מזוהים וללא ערבוב עם רישיון', () => {
+    expect(extractMatchingConcepts('עבודה עם מסופון, מלגזת צריח, ג׳ק חשמלי').map(item => item.concept).sort()).toEqual(['pallet_jack', 'rf_scanner', 'turret_truck'])
+    expect(matchingTermsEquivalent('מלגזן צריח', 'רישיון מלגזה')).toBe(false)
+  })
+
+  it.each([
+    ['בישול אורז לבן', 'packer'], ['בוחן נהיגה', 'auto_diagnostics'], ['מאבחן דידקטי', 'auto_diagnostics'],
+    ['במסגרת התפקיד', 'metalwork'], ['רכש ניסיון רב', 'procurement'], ['מרכיבי השכר', 'assembler'],
+    ['אריזה של מתנות', 'packer'], ['התקנות תוכנה', 'auto_installer'], ['תפעול שוטף של המשרד', 'operations'], ['הרכבה של רהיטים בבית', 'assembler'],
+  ])('%s לא הופך למקצוע %s', (text, concept) => {
+    expect(extractMatchingConcepts(text).map(item => item.concept)).not.toContain(concept)
+  })
+})

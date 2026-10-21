@@ -1,5 +1,5 @@
 ---
-applyTo: "crm-app/src/lib/matching-*.ts,crm-app/src/lib/israel-distance.ts,crm-app/src/app/api/positions/**,crm-app/src/app/api/candidates/**,crm-app/src/app/api/upload/**,crm-app/src/app/api/ai-match-v3/**,crm-app/src/app/api/ai-candidate-search/**,crm-app/src/app/api/best-matches/**,crm-app/src/components/matching-*.tsx,crm-app/src/components/ai-candidate-search.tsx,crm-app/src/app/dashboard/positions/**,crm-app/src/app/dashboard/candidates/**"
+applyTo: "crm-app/src/lib/matching-*.ts,crm-app/src/lib/israel-distance.ts,crm-app/src/app/api/positions/**,crm-app/src/app/api/candidates/**,crm-app/src/app/api/upload/**,crm-app/src/app/api/ai-match-v3/**,crm-app/src/app/api/ai-candidate-search/**,crm-app/src/app/api/best-matches/**,crm-app/src/app/api/job-imports/**,crm-app/src/components/matching-*.tsx,crm-app/src/components/ai-candidate-search.tsx,crm-app/src/app/dashboard/positions/**,crm-app/src/app/dashboard/candidates/**,crm-app/prisma/add-*.js,crm-app/prisma/seed-*.js,crm-app/prisma/update-*.js,crm-app/prisma/fix-*.js,crm-app/src/lib/job-position-save.ts,crm-app/src/lib/job-import-parser.ts"
 description: "חוזה סנכרון קבוע בין משרות לקורות חיים ב-TWENTY2CRM: מנוע ראיות אחד, רדיוס אחד, מוכנות משרה בעת שמירה, עיר מועמד בעת העלאה. חל אוטומטית על כל עבודה במשרות, מועמדים, העלאות והתאמה."
 ---
 
@@ -15,13 +15,16 @@ description: "חוזה סנכרון קבוע בין משרות לקורות חי
 - מסלולי legacy (`smart-matching`, `advanced-matching`, `dual-matching`, Avigdor, recruitment-board) אינם המנוע. אין להרחיב אותם; תיקון = הפניה למנוע המשותף.
 
 ## כשמשרה נכנסת (יצירה, bulk-upload, ייבוא ממייל, עריכה)
-1. השמירה נשארת דרך `saveParsedJob` / `PUT /api/positions/[id]`. אין לקצר טקסט, אין לסכם דרישות, אין למחוק שדות.
+**פרוטוקול חובה:** כשהמשתמש מבקש להוסיף/לעדכן משרות או לקוח חדש עם משרות — אם לא הפעיל במפורש את [`/add-jobs`](../prompts/add-jobs.prompt.md), שאל שאלה אחת לפני כל פעולה: *"להפעיל את פרוטוקול המשרות (מקצוע/עיר 12 ק״מ/חובה-יתרון/כישורים + דוח מוכנות)?"*. אישור = עבוד לפי הפרוטוקול במלואו. הוספת משרות ומעסיקים **מותרת** במסגרתו; מחיקה לא.
+
+1. השמירה נשארת דרך `saveParsedJob` / `PUT /api/positions/[id]` / סקריפט Prisma ייעודי. אין לקצר טקסט, אין לסכם דרישות, אין למחוק שדות.
 2. `GET /api/positions/[id]` מחזיר `matchingReadiness` מ-`assessMatchingReadiness` — חישוב טהור, ללא כתיבה. דף המשרה מציג אותו. שלושת המדדים:
    - **מקצוע בכותרת** מזוהה במילון (`MATCHING_CONCEPTS`, kind `role`). אם לא — המועמד לא יקבל "תפקיד תואם". הפתרון הנכון: להוסיף מושג/כינוי למילון עם בדיקה, לא לשנות את הכותרת של הלקוח.
    - **עיר מדידה** (יש קואורדינטות ב-[israel-distance.ts](../../crm-app/src/lib/israel-distance.ts) ושם ב-`LOCALITIES`). יישוב חדש = להוסיף קואורדינטות + שם + בדיקה ב-`matching-location.test.ts`.
    - **דרישות עם חובה/יתרון** — שורה לכל דרישה. בלי סימון הכל `unknown`.
 3. מילות מפתח/תגיות שהמגייס תייג נכנסות אוטומטית לציון הכישורים דרך `curatedSkillTerms` (עד 8, אחרי סינון תנאים/מעסיק/עיר/מזהים). כדי שמילת מפתח תיספר היא חייבת להיות כישור שמופיע מילה במילה בקו״ח; תנאים והטבות לא נספרים גם אם יתווספו.
 4. המועמדים המתאימים זמינים מיד ב-`GET /api/positions/[id]/matching-candidates` (סיידבר דף המשרה) — סריקה של **כל** המועמדים, לא top-N.
+5. אימות אחרי שמירה (קריאה בלבד): `READINESS_EMPLOYER="שם"` או `READINESS_IDS="id,id"` ואז `npx vitest run src/lib/__tests__/position-readiness.report.test.ts --reporter=verbose`. כל משרה חייבת `READY`; `FIX:` מתקנים בשדות המשרה, לא במנוע.
 
 ## כשקו״ח נכנסים (upload, Gmail, WhatsApp, share-target)
 1. הטקסט המלא נשמר ב-`resume`; המנוע קורא אותו במלואו. אין קיצוץ ל-2,000 תווים ואין "תקציר" במקום המקור.

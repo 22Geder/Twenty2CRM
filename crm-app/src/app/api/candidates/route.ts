@@ -106,6 +106,9 @@ export async function GET(request: NextRequest) {
     // 🆕 מצב קליל לרשימת המועמדים - מדלג על relations כבדים (position/employer)
     // כדי שטעינת ~1700 מועמדים תהיה מהירה. opt-in בלבד, תאימות מלאה לאחור.
     const light = searchParams.get("light") === "1"
+    // 🆕 opt-in בלבד: מועמדים שהתקבלו (בכל תקופה) ועדיין לא סומן עבורם תשלום —
+    // כדי שסטטוס חודשי לא "יאבד" אישורי תשלום ממתינים כשהחודש הנבחר מתחלף.
+    const hiredUnpaid = searchParams.get("hiredUnpaid") === "1"
 
     const periodRange = getStatusPeriodRange(period)
     const searchFilter = search
@@ -126,9 +129,19 @@ export async function GET(request: NextRequest) {
           ],
         }
       : null
-    const where = searchFilter && periodFilter
-      ? { AND: [searchFilter, periodFilter] }
-      : searchFilter || periodFilter || {}
+    const hiredUnpaidFilter = hiredUnpaid
+      ? {
+          AND: [
+            { OR: [{ hiredAt: { not: null } }, { employmentStatus: "EMPLOYED" }] },
+            { OR: [{ placementFeePaid: null }, { placementFeePaid: false }] },
+          ],
+        }
+      : null
+    const where = hiredUnpaidFilter
+      ? (searchFilter ? { AND: [searchFilter, hiredUnpaidFilter] } : hiredUnpaidFilter)
+      : searchFilter && periodFilter
+        ? { AND: [searchFilter, periodFilter] }
+        : searchFilter || periodFilter || {}
 
     // 🆕 include קליל - רק מה שהרשימה באמת מציגה/מסננת לפיו
     const lightInclude = {

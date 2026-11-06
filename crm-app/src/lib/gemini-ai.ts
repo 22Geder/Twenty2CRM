@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { normalizeForGrounding } from "./job-text-extractors"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
@@ -664,6 +665,75 @@ ${availableTags.join(', ')}
       currentTitle: 'לא צוין',
       yearsExperience: 0
     }
+  }
+}
+
+// זיהוי פרטי קשר/מספרים (טלפון, מייל, סכום כספי) בתוך טקסט - לבדיקת grounding.
+const PHONE_PATTERN = /(?:\+972[-\s]?|0)(?:[2-489]|5[0-9])(?:[-\s]?\d){7}/g
+const EMAIL_PATTERN = /[\w.-]+@[\w.-]+\.\w+/g
+const MONEY_PATTERN = /(?:₪|\$)\s?\d[\d,.]*|\d[\d,.]*\s?(?:₪|שקל|שקלים|\$)/g
+
+// בודק שכל פרט קשר/סכום שמופיע בטקסט המשודרג מופיע גם (מנורמל) במקור.
+// אם Gemini "המציא" טלפון/מייל/שכר שלא היה במקור - זו חריגה מ-grounding ודוחים את השדרוג.
+function hasUngroundedContactOrMoney(enhanced: string, original: string): boolean {
+  const normalizedOriginal = normalizeForGrounding(original)
+  const extracted = [
+    ...(enhanced.match(PHONE_PATTERN) || []),
+    ...(enhanced.match(EMAIL_PATTERN) || []),
+    ...(enhanced.match(MONEY_PATTERN) || []),
+  ]
+  return extracted.some((fact) => !normalizedOriginal.includes(normalizeForGrounding(fact)))
+}
+
+/**
+ * שדרוג ניסוח פוסט לפרסום בקבוצות פייסבוק בעזרת Gemini.
+ * אסור ל-AI להוסיף פרטי קשר/מספרים שלא היו בטקסט המקורי (grounding) - אם זה קורה, חוזרים למקור.
+ * כשל Gemini כלשהו (רשת/parse) → fallback שקט למקור, לא חוסם את זרימת הפרסום.
+ */
+export async function enhanceFacebookPostWithGemini(
+  originalContent: string,
+  tone?: "פורמלי" | "קליל" | "נמרץ"
+): Promise<{ enhancedContent: string; addedStructure: boolean }> {
+  const fallback = { enhancedContent: originalContent, addedStructure: false }
+  if (!originalContent || !originalContent.trim()) return fallback
+
+  try {
+    const model = genAI.getGenerativeModel({ model: (process.env.GEMINI_MODEL || "gemini-2.5-flash") })
+
+    const prompt = `שדרג את הפוסט הבא לפרסום בקבוצות פייסבוק, בעברית${tone ? ` בטון ${tone}` : ""}.
+הפוך את הניסוח לשיווקי ומזמין יותר, אפשר להוסיף אייקונים/אימוג'ים שמדגישים נקודות מרכזיות, ולשפר מבנה (שורות/בולטים).
+
+חוקים מחייבים:
+- אסור בהחלט להוסיף מספר טלפון, כתובת מייל, או סכום כספי (שכר) שלא מופיעים כבר בטקסט המקורי.
+- אסור להמציא פרטים עובדתיים חדשים שלא נמצאים במקור.
+- החזר רק את הטקסט המשודרג עצמו, בפורמט JSON תקין בלבד.
+
+טקסט מקורי:
+${originalContent}
+
+החזר JSON בלבד:
+{
+  "enhancedContent": "הטקסט המשודרג המלא"
+}`
+
+    const result = await rateLimitedCall(() => model.generateContent(prompt))
+    const text = result.response.text()
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return fallback
+
+    const parsed = JSON.parse(jsonMatch[0])
+    const enhancedContent = typeof parsed.enhancedContent === "string" ? parsed.enhancedContent.trim() : ""
+    if (!enhancedContent) return fallback
+
+    if (hasUngroundedContactOrMoney(enhancedContent, originalContent)) {
+      console.error("[gemini-ai] enhanceFacebookPostWithGemini: ungrounded contact/money detected, falling back to original")
+      return fallback
+    }
+
+    return { enhancedContent, addedStructure: true }
+  } catch (error) {
+    console.error("Error enhancing Facebook post with Gemini:", error instanceof Error ? error.message : error)
+    return fallback
   }
 }
 

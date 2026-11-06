@@ -46,6 +46,10 @@ model User {
   updatesAsUploader CandidateUpdate[] @relation("CandidateUpdateUploader")
   updatesAsRecruiter CandidateUpdate[] @relation("CandidateUpdateRecruiter")
   updatesAsReviewer CandidateUpdate[] @relation("CandidateUpdateReviewer")
+  facebookAccounts  FacebookAccount[]      @relation("FacebookAccountConnector")
+  facebookGroupTemplatesCreated FacebookGroupTemplate[]
+  facebookPostTemplatesCreated  FacebookPostTemplate[]
+  facebookPostsCreated          FacebookPost[]
 }
 
 // ≡ƒזץ ╫⌐╫ó╫ץ╫ƒ ╫á╫ץ╫¢╫ק╫ץ╫¬ - ╫¿╫ש╫⌐╫ץ╫¥ ╫ש╫ץ╫₧╫ש
@@ -547,4 +551,147 @@ model EmployerEmailHistory {
   
   @@index([positionId])
   @@index([employerId])
+}
+
+// ===== פרסום בקבוצות פייסבוק =====
+// חשבון פייסבוק מחובר (שורה יחידה בפועל - נאכף ברמת לוגיקת אפליקציה, לא DB constraint).
+// encryptedSession לעולם לא מוחזר ב-API response (ראה facebook-session-crypto.ts).
+model FacebookAccount {
+  id                 String    @id @default(uuid())
+  encryptedSession   String    // תוצאת encryptFacebookSession() - AES-256-GCM
+  status             String    @default("CONNECTED") // CONNECTED, EXPIRED, SUSPECTED_BLOCKED, DISCONNECTED
+  isPublishing       Boolean   @default(false) // concurrency lock בזמן ריצת הקרון
+  publishingLockedAt DateTime?
+  publishesToday     Int       @default(0)
+  publishCounterDate DateTime? // תאריך שאליו שייך publishesToday - לאיפוס יומי
+  connectedById      String?
+  connectedBy        User?     @relation("FacebookAccountConnector", fields: [connectedById], references: [id], onDelete: SetNull)
+  groups             FacebookGroup[]
+  lastConnectedAt    DateTime  @default(now())
+  lastUsedAt         DateTime?
+  lastSyncedGroupsAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model FacebookGroup {
+  id              String                @id @default(uuid())
+  accountId       String
+  account         FacebookAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  facebookGroupId String                // מזהה חיצוני מתוך ה-URL של הקבוצה בפייסבוק
+  name            String
+  url             String
+  memberCount     Int?
+  active          Boolean               @default(true) // false לאחר missedSyncCount >= 2
+  missedSyncCount Int                   @default(0)
+  lastSeenAt      DateTime              @default(now())
+  lastSyncedAt    DateTime              @default(now())
+  groupTemplates  FacebookGroupTemplate[]
+  publishLogs     FacebookPublishLog[]
+  createdAt       DateTime              @default(now())
+
+  @@unique([accountId, facebookGroupId])
+  @@index([accountId, active])
+}
+
+model FacebookGroupTemplate {
+  id              String          @id @default(uuid())
+  name            String
+  description     String?
+  groups          FacebookGroup[]
+  createdById     String
+  createdBy       User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  schedules       FacebookSchedule[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([createdById, name])
+}
+
+model FacebookPostTemplate {
+  id                String    @id @default(uuid())
+  name              String
+  originalContent   String
+  enhancedContent   String?
+  mediaUrls         String?   // JSON array של כתובות מדיה (תואם למוסכמת Position.keywords)
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  posts             FacebookPost[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([createdById, name])
+}
+
+model FacebookPost {
+  id                String    @id @default(uuid())
+  label             String?   // שם לזיהוי הפוסט בתוך המערכת
+  originalContent   String
+  enhancedContent   String?   // תוצאת שדרוג AI (Gemini) - אופציונלי
+  useEnhanced       Boolean   @default(false)
+  mediaUrls         String?   // JSON array
+  status            String    @default("DRAFT") // DRAFT, SCHEDULED, PUBLISHING, COMPLETED, FAILED, PARTIALLY_COMPLETED
+  sourceTemplateId  String?
+  sourceTemplate    FacebookPostTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  schedules         FacebookSchedule[]
+  publishLogs       FacebookPublishLog[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model FacebookSchedule {
+  id                String    @id @default(uuid())
+  postId            String
+  post              FacebookPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  groupIds          String    // JSON array - snapshot של מזהי הקבוצות בזמן יצירת התזמון
+  groupTemplateId   String?   // מקור, אם נבחר מתבנית (למעקב בלבד - groupIds הוא מקור האמת לפרסום)
+  groupTemplate     FacebookGroupTemplate? @relation(fields: [groupTemplateId], references: [id], onDelete: SetNull)
+  type              String    // ONCE, RECURRING
+  scheduledAt       DateTime? // ל-ONCE
+  recurrenceRule    String?   // JSON: {frequency, time, daysOfWeek?, timezone} ל-RECURRING
+  nextRunAt         DateTime  // נבדק ע"י הקרון - @@index למטה
+  active             Boolean  @default(true) // pause ידני או השבתה אוטומטית (למשל SUSPECTED_BLOCKED)
+  blockedReason     String?   // SESSION_EXPIRED, SUSPECTED_BLOCK
+  status            String    @default("PENDING") // PENDING, RUNNING, COMPLETED, PAUSED, FAILED
+  publishLogs       FacebookPublishLog[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([active, nextRunAt])
+}
+
+// לוג פרסום פר פוסט×קבוצה×ריצת-קרון (runId) - errorMessage לעולם ללא PII/credentials.
+model FacebookPublishLog {
+  id            String    @id @default(uuid())
+  postId        String
+  post          FacebookPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  groupId       String
+  group         FacebookGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  scheduleId    String?
+  schedule      FacebookSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  runId         String
+  status        String    @default("PENDING") // PENDING, SUCCESS, FAILED, SKIPPED
+  attemptedAt   DateTime?
+  completedAt   DateTime?
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+
+  @@index([postId, groupId, runId])
+  @@index([status, createdAt])
+}
+
+// הגדרות גלובליות של המודול - שורה יחידה (נוצרת עם ברירות מחדל בפניה הראשונה אם חסרה).
+model FacebookModuleSettings {
+  id                    String   @id @default(uuid())
+  active                Boolean  @default(true) // מתג חירום גלובלי - הקרון בודק זאת ראשון
+  dailyPublishLimit     Int      @default(45)
+  delayMinSeconds       Int      @default(45)
+  delayMaxSeconds       Int      @default(180)
+  maxGroupsPerRun       Int      @default(15)
+  maxRunDurationMinutes Int      @default(20)
+  updatedAt             DateTime @updatedAt
 }

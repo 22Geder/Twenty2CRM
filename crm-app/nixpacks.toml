@@ -1,5 +1,9 @@
+[variables]
+# מונע מ-Playwright לנסות להוריד Chromium משלו ב-build - משתמשים בחבילת ה-Nix (יציב יותר תחת Nixpacks)
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+
 [phases.setup]
-nixPkgs = ["nodejs_22", "openssl"]
+nixPkgs = ["nodejs_22", "openssl", "chromium"]
 
 [phases.install]
 cmds = ["npm install --legacy-peer-deps"]

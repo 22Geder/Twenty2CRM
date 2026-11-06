@@ -49,3 +49,9 @@ service-account-key.json
 send-test-email.js
 test-*.js
 !test-email.js
+
+# Facebook Page publish state-tracking (not credentials, but local run state only)
+.facebook-state-*.json
+
+# Facebook Groups module - local session output (sensitive, never commit)
+facebook-storage-state.json

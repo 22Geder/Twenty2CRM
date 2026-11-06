@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react"
 import {
   LayoutDashboard, Users, Briefcase, Building2, Calendar, Settings, FileText,
   Upload, Sparkles, TrendingUp, Clock, UserCheck, Send,
-  RefreshCw, Inbox, Mail, MessageSquare, Database, CalendarClock, UserPlus,
+  RefreshCw, Inbox, Mail, MessageSquare, Database, CalendarClock, UserPlus, Facebook,
 } from "lucide-react"
 
 export type DashboardNavItem = {
@@ -48,10 +48,15 @@ export const dashboardNavGroups: DashboardNavGroup[] = [
     ],
   },
   {
+    label: "שיווק",
+    items: [
+      { name: "פרסום בקבוצות פייסבוק", href: "/dashboard/facebook-groups", icon: Facebook, badge: "NEW", color: "#1877F2", commandGroup: "ניווט" },
+    ],
+  },
+  {
     label: "מייל ויומן",
     items: [
       { name: "עדכונים לבדיקה", href: "/dashboard/candidate-updates", icon: Inbox, badge: "NEW", color: "#0891B2", commandGroup: "ניווט" },
-      { name: "הצעות מהמייל", href: "/dashboard/email-proposals", icon: UserPlus, badge: "NEW", color: "#14B8A6", commandGroup: "ניווט" },
       { name: "סורק מיילים", href: "/dashboard/email-auto-scanner", icon: RefreshCw, color: "#0EA5E9", commandGroup: "ניווט" },
       { name: "קליטת Gmail", href: "/dashboard/gmail-auto", icon: Inbox, color: "#2563EB", commandGroup: "ניווט" },
       { name: "הגדרת Gmail", href: "/dashboard/gmail-setup", icon: Settings, color: "#64748B", commandGroup: "ניווט" },

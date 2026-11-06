@@ -20,6 +20,7 @@ describe("dashboardNavItems", () => {
       "/dashboard/share-agent",
       "/dashboard/attendance",
       "/dashboard/system-registry",
+      "/dashboard/facebook-groups",
       "/dashboard/email-auto-scanner",
       "/dashboard/gmail-auto",
       "/dashboard/gmail-setup",
@@ -55,6 +56,7 @@ describe("dashboardNavItems", () => {
     expect(dashboardNavGroups.map((group) => group.label)).toEqual([
       "ניהול",
       "כלים",
+      "שיווק",
       "מייל ויומן",
       "מערכת",
     ])

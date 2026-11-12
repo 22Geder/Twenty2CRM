@@ -2,7 +2,7 @@
 // =====================================
 // עודכן: יולי 2026 - ניקוי cache ישן שגרם ל-Application error בדפי משרות
 
-const CACHE_NAME = 'twenty2-crm-v8-fix-search'
+const CACHE_NAME = 'twenty2-crm-v9-lion-icons'
 const STATIC_ASSETS = [
   '/',
   '/upload-cv',
@@ -12,7 +12,8 @@ const STATIC_ASSETS = [
   '/dashboard/positions',
   '/dashboard/employers',
   '/manifest.json',
-  '/logo.jpeg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 ]
 
 // התקנה - שמירת קבצים סטטיים בקאש

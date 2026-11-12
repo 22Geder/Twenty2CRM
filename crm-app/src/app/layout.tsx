@@ -59,12 +59,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/avigdor-lion.png', type: 'image/png' },
-      { url: '/avigdor-lion.png', sizes: '192x192', type: 'image/png' },
-      { url: '/avigdor-lion.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/avigdor-lion.png', sizes: '180x180' },
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
   other: {

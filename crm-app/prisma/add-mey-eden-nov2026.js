@@ -1,10 +1,23 @@
-// לקוח חדש "מי עדן" + 16 משרות (פרופילים רב-סניפיים פוצלו למשרה לכל סניף לפי אזורי הגיוס של הלקוח).
+// לקוח חדש "מי עדן" + 17 משרות (פרופילים רב-סניפיים פוצלו למשרה לכל סניף לפי אזורי הגיוס של הלקוח).
 // הוספה/עדכון בלבד — אין מחיקה. כפילות = employerId + title + location → update.
 // שימוש: node --env-file=.env prisma/add-mey-eden-nov2026.js [--apply]
+const CONTACT_EMAILS = [
+  { email: 'jobs@meyeden.co.il', name: 'מי עדן – גיוס' },
+  { email: 'dana.samuel@meyeden.co.il', name: 'דנה סמואל' },
+  { email: 'gal.babani@meyeden.co.il', name: 'גל בבני' },
+  { email: 'sapir.shifman@meyeden.co.il', name: 'ספיר שיפמן' },
+];
+const PLACEHOLDER_EMAIL = 'mey-eden@jobs.twenty2.local';
+
+const SUBMISSION = `הגשת מועמדות למי עדן:
+יש לשלוח קורות חיים ל: dana.samuel@meyeden.co.il, gal.babani@meyeden.co.il, sapir.shifman@meyeden.co.il, jobs@meyeden.co.il
+בנושא המייל יש לציין: שם + טלפון + ת.ז המועמד + שם המשרה.
+יש לצרף רישיון נהיגה משני הצדדים וקורות חיים בפורמט Word בלבד.`;
+
 const EMPLOYER = {
   name: 'מי עדן',
-  email: 'mey-eden@jobs.twenty2.local',
-  description: 'מי עדן – ברי מים, כדי מים, מים מינרליים וקפה (פאוזה). מטה: אודם 4, פתח תקווה. סניפי הפצה: מבוא כרמל (רימון 4, א.ת. מבוא כרמל), אבן יהודה (המשביר לחקלאי, הדסים), מודיעין (שדרות הרכס 58 – מרלו״ג), קרית גת (תמוז 16), אילת (השרברב 10).',
+  email: 'jobs@meyeden.co.il',
+  description: `מי עדן – ברי מים, כדי מים, מים מינרליים וקפה (פאוזה). מטה: אודם 4, פתח תקווה. סניפי הפצה: מבוא כרמל (רימון 4, א.ת. מבוא כרמל), אבן יהודה (המשביר לחקלאי, הדסים), מודיעין (שדרות הרכס 58 – מרלו״ג), קרית גת (תמוז 16), אילת (השרברב 10).\n${SUBMISSION}`,
 };
 
 const OFFICE_BENEFITS = 'סיבוס 150 ₪ לחודש\nביטוח בריאות קבוצתי לעובד ובני משפחתו בעלות מסובסדת\nמגוון אפשרויות קידום ועתודה ניהולית במחלקת השירות בפרט ובחברה בכלל\nרכישת מוצרי מי עדן ופאוזה במחירים מוזלים\nפעילויות גיבוש, רווחה, אירועי חברה ועוד שלל הטבות נוספות';
@@ -301,6 +314,24 @@ const RESERVE = ['אבן יהודה', 'מודיעין'].map((branch) => ({
   tags: ['נהג חלוקה', 'נהג הפצה', 'רישיון ג', 'משאית', 'ניהול קו הפצה', 'חלוקת כדי מים', 'מוצרי צריכה', 'מכירות', 'גיוס לקוחות', 'שירות לקוחות'],
 }));
 
+// ---------- קורס בית ספר למפיצים – מודיעין (עדכון לקוח 17/11/2026) ----------
+const DIST_COURSE_MODIIN = {
+  title: 'נהג/ת הפצה רישיון ג׳ – קורס בית ספר למפיצים, סניף מודיעין',
+  location: DIST_BRANCHES['מודיעין'].location,
+  employmentType: 'משרה מלאה',
+  workHours: DIST_HOURS,
+  salaryRange: 'שכר 12,000 ₪ + מענק בסך 20,000 ₪ בשנה הראשונה',
+  benefits: `מענק 20,000 ₪ בשנה הראשונה\n${DIST_BENEFITS}`,
+  description: `תזכורת מהלקוח: קורס בית ספר למפיצים – סניף מודיעין מתחיל ב-18/11/2026!
+מועמדים בעלי רישיון ג' ומהמרכז!
+מענק על סך 20K בשנה הראשונה!
+שכר - 12K.
+
+${distDescription('מודיעין')}`,
+  requirements: "רישיון נהיגה ג' בתוקף - חובה\nמגורים באזור המרכז - חובה\nזמינות להתחלת הקורס ב-18/11/2026 - חובה\nנכונות לעבודה פיזית מאומצת (כדי מים 19 ליטר) - חובה\nעברית ברמה גבוהה כולל קריאה וכתיבה - חובה\nנכונות לעבודה בימי שישי לסירוגין - חובה",
+  tags: ['נהג חלוקה', 'נהג הפצה', 'רישיון ג', 'משאית', 'חלוקת כדי מים', 'הפצה', 'מכירות', 'גיוס לקוחות', 'עבודה פיזית', 'שירות לקוחות'],
+};
+
 // ---------- טכנאי מעבדה ----------
 const LAB_TECH = {
   title: 'טכנאי/ת ברי מים – מעבדת תיקונים, מרלו״ג מודיעין',
@@ -365,7 +396,8 @@ const WAREHOUSE = {
   tags: ['מחסנאות', 'מלגזן', 'רישיון מלגזה', 'קליטת סחורה', 'ניהול מלאי', 'FIFO', 'ספירת מלאי', 'ליקוט', 'קליטת ספקים', 'סידור מחסן'],
 };
 
-const POSITIONS = [COLLECTIONS, LEGAL_COLLECTIONS, ...TECHNICIANS, RAMP_DRIVER, ...DISTRIBUTION, ...RESERVE, LAB_TECH, WAREHOUSE];
+const POSITIONS = [COLLECTIONS, LEGAL_COLLECTIONS, ...TECHNICIANS, RAMP_DRIVER, ...DISTRIBUTION, DIST_COURSE_MODIIN, ...RESERVE, LAB_TECH, WAREHOUSE]
+  .map((p) => ({ ...p, description: `${p.description}\n\n${SUBMISSION}` }));
 
 module.exports = { EMPLOYER, POSITIONS };
 
@@ -376,10 +408,16 @@ async function main() {
   try {
     console.log(`מצב: ${APPLY ? 'APPLY' : 'DRY-RUN'} | ${POSITIONS.length} משרות`);
     let employer = await prisma.employer.findFirst({
-      where: { OR: [{ name: EMPLOYER.name }, { email: EMPLOYER.email }] },
+      where: { OR: [{ name: EMPLOYER.name }, { email: EMPLOYER.email }, { email: PLACEHOLDER_EMAIL }] },
     });
-    console.log(employer ? `מעסיק קיים: ${employer.id} (${employer.name})` : `+ מעסיק חדש: ${EMPLOYER.name}`);
-    if (APPLY && !employer) employer = await prisma.employer.create({ data: EMPLOYER });
+    const emailOwner = await prisma.employer.findUnique({ where: { email: EMPLOYER.email }, select: { id: true, name: true } });
+    if (emailOwner && emailOwner.id !== employer?.id) throw new Error(`המייל ${EMPLOYER.email} כבר שייך למעסיק אחר: ${emailOwner.name}`);
+    console.log(employer ? `מעסיק קיים: ${employer.id} (${employer.name}, ${employer.email}) → יעודכן מייל ותיאור` : `+ מעסיק חדש: ${EMPLOYER.name}`);
+    if (APPLY) {
+      employer = employer
+        ? await prisma.employer.update({ where: { id: employer.id }, data: { email: EMPLOYER.email, description: EMPLOYER.description } })
+        : await prisma.employer.create({ data: EMPLOYER });
+    }
 
     for (const p of POSITIONS) {
       const existing = employer
@@ -405,6 +443,9 @@ async function main() {
         salaryRange: p.salaryRange,
         benefits: p.benefits,
         transportation: p.transportation ?? null,
+        contactName: 'מי עדן – צוות גיוס',
+        contactEmail: CONTACT_EMAILS[0].email,
+        contactEmails: JSON.stringify(CONTACT_EMAILS),
         keywords: JSON.stringify([...new Set(p.tags)]),
         active: true,
       };

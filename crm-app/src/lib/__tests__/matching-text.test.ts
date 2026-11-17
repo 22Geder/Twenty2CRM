@@ -100,6 +100,9 @@ describe('כותרות משרה אמיתיות: סיומות מגדר ומקצו
     ['אחראי/ת תיק לקוח עסקי', 'account_manager'], ['סוכן/ת ביטוח פנסיוני/ת', 'insurance_agent'], ['מיישב.ת תביעות', 'insurance_claims'],
     ['נציג.ת בק אופיס למוקד הטכני', 'back_office'], ['נציג/ת תמיכה טכנית', 'technical_support'], ['איש גיוס מועמדים', 'recruiter'],
     ['פקיד/ה - אשדוד', 'administration'], ['עובד/ת כללי/ת', 'production'], ['מחסנאי/ת עובד/ת דלפק', 'warehouse'],
+    ['נציג/ת גבייה', 'collections'], ['אחראי/ת גבייה משפטי/ת', 'collections'], ['ניסיון בגבייה טלפונית', 'collections'],
+    ['טכנאי/ת שטח ברי מים – סניף מודיעין', 'field_technician'], ['טכנאי/ת ברי מים – מעבדת תיקונים', 'field_technician'],
+    ['טכנאי מיזוג אוויר', 'field_technician'],
   ])('%s → מקצוע %s', (title, concept) => {
     const roles = extractMatchingConcepts(title).filter(item => item.assertion === 'positive')
     expect(roles.map(item => item.concept)).toContain(concept)
@@ -120,6 +123,8 @@ describe('כותרות משרה אמיתיות: סיומות מגדר ומקצו
     ['בישול אורז לבן', 'packer'], ['בוחן נהיגה', 'auto_diagnostics'], ['מאבחן דידקטי', 'auto_diagnostics'],
     ['במסגרת התפקיד', 'metalwork'], ['רכש ניסיון רב', 'procurement'], ['מרכיבי השכר', 'assembler'],
     ['אריזה של מתנות', 'packer'], ['התקנות תוכנה', 'auto_installer'], ['תפעול שוטף של המשרד', 'operations'], ['הרכבה של רהיטים בבית', 'assembler'],
+    ['גובה 1.80 מטר', 'collections'], ['גבי כהן, מנהל צוות', 'collections'], ['רפרנט שטח לוגיסטי', 'field_technician'],
+    ['מכירות שטח', 'field_technician'], ['נציג שירות לקוחות', 'field_technician'], ['טכנאי מחשבים', 'field_technician'],
   ])('%s לא הופך למקצוע %s', (text, concept) => {
     expect(extractMatchingConcepts(text).map(item => item.concept)).not.toContain(concept)
   })

@@ -79,6 +79,8 @@ export const MATCHING_CONCEPTS: readonly MatchingConcept[] = [
   { id: 'mortgages', label: 'משכנתאות', kind: 'skill', aliases: ['משכנתאות', 'משכנתא', 'mortgage', 'mortgages'] },
   { id: 'cashier', label: 'קופאות', kind: 'role', family: 'retail', aliases: ['קופאי', 'קופאית', 'קופאים', 'קופאות', 'cashier'] },
   { id: 'bookkeeper', label: 'הנהלת חשבונות', kind: 'role', family: 'finance', aliases: ['מנהל חשבונות', 'מנהלת חשבונות', 'הנהלת חשבונות', 'הנהח', 'bookkeeper', 'bookkeeping'] },
+  // "גובה" לא נכלל בכוונה: דו-משמעי (גובה = height).
+  { id: 'collections', label: 'גביית חובות', kind: 'role', family: 'finance', aliases: ['גבייה', 'גביה', 'גביית חובות', 'נציג גבייה', 'נציגת גבייה', 'אחראי גבייה', 'אחראית גבייה', 'מנהל גבייה', 'מנהלת גבייה', 'רכז גבייה', 'רכזת גבייה', 'גבייה משפטית', 'debt collection', 'collections specialist', 'collection agent'] },
   { id: 'accountant', label: 'ראיית חשבון', kind: 'role', family: 'finance', aliases: ['רואה חשבון', 'רואת חשבון', 'ראיית חשבון', 'רו״ח', 'accountant'] },
   { id: 'payroll', label: 'חשבות שכר', kind: 'role', family: 'finance', aliases: ['חשב שכר', 'חשבת שכר', 'חשבות שכר', 'payroll specialist', 'payroll accountant'] },
   { id: 'administration', label: 'אדמיניסטרציה', kind: 'role', family: 'administration', aliases: ['אדמיניסטרציה', 'אדמיניסטרטור', 'אדמיניסטרטורית', 'מזכיר', 'מזכירה', 'פקיד', 'פקידה', 'פקידים', 'פקיד משרד', 'פקידת משרד', 'מנהל משרד', 'מנהלת משרד', 'office administrator', 'administrative assistant', 'secretary', 'office manager'] },
@@ -101,6 +103,7 @@ export const MATCHING_CONCEPTS: readonly MatchingConcept[] = [
     ['autocad', 'AutoCAD'], ['solidworks', 'SolidWorks'], ['cnc', 'CNC'],
   ].map(([id, label]): MatchingConcept => ({ id, label, kind: 'skill', aliases: id === 'node.js' ? [id, 'nodejs'] : [id] })),
   { id: 'maintenance', label: 'אחזקה', kind: 'role', family: 'maintenance', aliases: ['איש אחזקה', 'אשת אחזקה', 'טכנאי אחזקה', 'טכנאית אחזקה', 'אחזקה', 'תחזוקה', 'איש טכני', 'אשת טכנית', 'טכנאי אחזקת חשמל', 'טכנאי בקרים', 'מנהל אחזקה', 'מנהלת אחזקה', 'מנהל אחזקת מכונות', 'maintenance technician', 'maintenance manager'] },
+  { id: 'field_technician', label: 'טכנאי שטח ושירות', kind: 'role', family: 'maintenance', aliases: ['טכנאי שטח', 'טכנאית שטח', 'טכנאי שירות', 'טכנאית שירות', 'טכנאי ברי מים', 'טכנאית ברי מים', 'טכנאי מיזוג', 'טכנאי מיזוג אוויר', 'טכנאי מזגנים', 'טכנאי קירור', 'טכנאי מוצרים לבנים', 'טכנאי מכשירי חשמל', 'field technician', 'field service technician', 'service technician'] },
   { id: 'electrician', label: 'חשמלאות', kind: 'role', family: 'electrical', aliases: ['חשמלאי', 'חשמלאית', 'חשמלאות', 'electrician'] },
   { id: 'electrical_engineer', label: 'הנדסת חשמל', kind: 'role', family: 'electrical', aliases: ['מהנדס חשמל', 'מהנדסת חשמל', 'electrical engineer'] },
   { id: 'practical_electrical', label: 'הנדסאות חשמל', kind: 'role', family: 'electrical', aliases: ['הנדסאי חשמל', 'הנדסאית חשמל', 'practical electrical engineer'] },

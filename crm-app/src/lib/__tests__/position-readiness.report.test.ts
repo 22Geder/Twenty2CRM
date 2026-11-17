@@ -29,7 +29,7 @@ describe.skipIf(!enabled)('דוח מוכנות משרות (DB אמיתי, קרי
         const geo = readiness.geography.nationwide ? 'ארצי' : readiness.geography.remote ? 'מרחוק' : readiness.geography.measurableCities.join(', ') || '✗ לא מדיד'
         lines.push(
           `${readiness.ready ? 'READY' : 'FIX: '} | ${row.title} | ${row.employer.name} | ${row.active && !row.closedAt ? 'פעילה' : 'לא פעילה'}`,
-          `       מקצוע: ${readiness.roleRecognized ? readiness.roleLabels.join(', ') : '✗ לא זוהה'} | עיר (${readiness.geography.radiusKm} ק"מ): ${geo} | דרישות מסומנות: ${readiness.requirementsMarked}/${readiness.requirementsTotal} | כישורים מתויגים: ${readiness.skillTerms.join(', ') || '—'}`,
+          `       מקצוע: ${readiness.roleRecognized ? readiness.roleLabels.join(', ') : '✗ לא זוהה'} | עיר (${readiness.geography.radiusKm} ק"מ): ${geo}${readiness.geography.shuttleCities.length ? ` | הסעות (כמיקום משרה): ${readiness.geography.shuttleCities.join(', ')}` : ''} | דרישות מסומנות: ${readiness.requirementsMarked}/${readiness.requirementsTotal} | כישורים מתויגים: ${readiness.skillTerms.join(', ') || '—'}`,
           ...readiness.issues.map(issue => `       → ${issue}`),
         )
       }

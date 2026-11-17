@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { getDistanceKm } from '../israel-distance'
-import { evaluateMatchingLocation, extractCandidateCity, extractMentionedCities, DEFAULT_RADIUS_KM } from '../matching-location'
+import { describePositionGeography, evaluateMatchingLocation, extractCandidateCity, extractMentionedCities, DEFAULT_RADIUS_KM } from '../matching-location'
 import type { MatchingLocationInput, MatchingLocationResult } from '../matching-location'
 
 describe('evaluateMatchingLocation — חוזה ושמות ערים', () => {
@@ -239,9 +239,29 @@ describe('אזורים וחוסר ודאות', () => {
   })
 })
 
-describe('הסעות: מקור עירוני מלא ומפורש בלבד', () => {
-  it.each(['יש הסעות מחיפה', 'הסעות מסודרות מחיפה', 'Shuttle from Haifa', 'הסעות: חיפה', 'הסעות מחיפה, באר שבע', 'הסעות מחיפה לאילת'])('מאשר מקור מדויק: %s', transportation => {
-    expect(evaluateMatchingLocation({ candidateCity: 'חיפה', positionLocation: 'אילת', transportation })).toMatchObject({ matchType: 'transport', eligible: true, score: 12, isExactCity: false, isNationwide: false, matchedCity: 'אילת' })
+describe('הסעות: עיר הסעה מפורשת נחשבת כמיקום המשרה', () => {
+  it.each(['יש הסעות מחיפה', 'הסעות מסודרות מחיפה', 'Shuttle from Haifa', 'הסעות: חיפה', 'הסעות מחיפה, באר שבע', 'הסעות מחיפה לאילת', 'הסעות לעובדי החברה מחיפה', 'הסעות מ: חיפה, באר שבע', '🚌 הסעות מ: חיפה'])('מאשר מקור מדויק: %s', transportation => {
+    expect(evaluateMatchingLocation({ candidateCity: 'חיפה', positionLocation: 'אילת', transportation })).toMatchObject({ matchType: 'transport', eligible: true, score: 15, isExactCity: false, isNationwide: false, matchedCity: 'חיפה', distanceKm: 0 })
+  })
+
+  it('רדיוס המשרה חל גם סביב עיר ההסעה', () => {
+    const result = evaluateMatchingLocation({ candidateCity: 'ראשון לציון', positionLocation: 'מודיעין', transportation: 'הסעות לעובדי החברה מחולון, בת ים ורמלה' })
+    expect(result).toMatchObject({ matchType: 'transport', eligible: true })
+    expect(['חולון', 'בת ים', 'רמלה']).toContain(result.matchedCity)
+    expect(result.distanceKm!).toBeGreaterThan(0)
+    expect(result.distanceKm!).toBeLessThanOrEqual(12)
+    expect(result.score).toBeLessThan(15)
+  })
+
+  it('עיר רחוקה גם מהמשרה וגם מההסעות נשארת רחוקה', () => {
+    expect(evaluateMatchingLocation({ candidateCity: 'באר שבע', positionLocation: 'מודיעין', transportation: 'הסעות מחולון, בת ים ורמלה' })).toMatchObject({ matchType: 'far', eligible: false })
+  })
+
+  it('מתאר את ערי ההסעה במוכנות המשרה', () => {
+    expect(describePositionGeography({ positionLocation: 'קריית עקרון', transportation: 'הסעות מ: לוד, רחובות, ראשון לציון מרכז, אשדוד' }).shuttleCities.sort()).toEqual(['אשדוד', 'לוד', 'ראשון לציון', 'רחובות'].sort())
+    expect(describePositionGeography({ positionLocation: 'מודיעין', transportation: 'הסעות מהמרכז' }).shuttleCities).toEqual([])
+    expect(describePositionGeography({ positionLocation: 'מודיעין', transportation: 'הסעות לעובדי החברה מחולון, בת ים ורמלה' }).shuttleCities.sort()).toEqual(['בת ים', 'חולון', 'רמלה'].sort())
+    expect(describePositionGeography({ positionLocation: 'מודיעין', transportation: 'הסעות מאזור חולון' }).shuttleCities).toEqual([])
   })
 
   it('מכבד שמות מלאים גם ברשימת מקורות עם ו/מ וקיצורים', () => {
@@ -259,8 +279,11 @@ describe('הסעות: מקור עירוני מלא ומפורש בלבד', () =>
     expect(evaluateMatchingLocation({ candidateCity: 'חיפה', positionLocation: 'אילת', transportation })).toMatchObject({ matchType: 'far', eligible: false })
   })
 
-  it('הסעות מגן יבנה אינן הסעות מיבנה', () => {
-    expect(evaluateMatchingLocation({ candidateCity: 'יבנה', positionLocation: 'חיפה', transportation: 'הסעות מגן יבנה' })).toMatchObject({ matchType: 'far', eligible: false })
+  it('הסעות מגן יבנה אינן הסעות מיבנה (רק קרבה ברדיוס, לא עיר זהה)', () => {
+    const result = evaluateMatchingLocation({ candidateCity: 'יבנה', positionLocation: 'חיפה', transportation: 'הסעות מגן יבנה' })
+    expect(result.matchedCity).toBe('גן יבנה')
+    expect(result.distanceKm!).toBeGreaterThan(0)
+    expect(result.score).toBeLessThan(15)
   })
 
   it('שלילה מפורשת גוברת על טקסט הסעות סותר', () => {
@@ -268,8 +291,8 @@ describe('הסעות: מקור עירוני מלא ומפורש בלבד', () =>
     expect(evaluateMatchingLocation({ candidateCity: 'חיפה', positionLocation: 'אילת', transportation: 'אין הסעות', positionDescription: 'הסעות מחיפה' })).toMatchObject({ matchType: 'far', eligible: false })
   })
 
-  it('לא הופך את ערי ההסעה למיקומי משרה', () => {
-    expect(evaluateMatchingLocation({ candidateCity: 'אשדוד', positionLocation: 'חיפה, הסעות מבאר שבע, אשדוד' })).toMatchObject({ matchType: 'transport', eligible: true, matchedCity: 'חיפה', isExactCity: false })
+  it('עיר הסעה שנכתבה בשדה המיקום נחשבת כמיקום משרה, אך לא כעיר העבודה עצמה', () => {
+    expect(evaluateMatchingLocation({ candidateCity: 'אשדוד', positionLocation: 'חיפה, הסעות מבאר שבע, אשדוד' })).toMatchObject({ matchType: 'transport', eligible: true, score: 15, matchedCity: 'אשדוד', isExactCity: false })
   })
 
   it('הסעה ללא מיקום עבודה או ללא עיר מועמד נשארת לא ידועה', () => {

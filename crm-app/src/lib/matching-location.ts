@@ -351,18 +351,22 @@ function worksite(input: MatchingLocationInput): { cities: string[]; regions: st
   }
 }
 
-const SHUTTLE_ORIGIN = /(?:^|\s)(?:הסעות|הסעה|שאטל|shuttles?)\s*(?:(?:קבועות|מאורגנות|מסודרות|לעובדים|חינם)\s+)*(?:מ(?:העיר\s+)?|from\s+|[:]\s*)/gi
+const SHUTTLE_ORIGIN = /(?:^|\s)(?:הסעות|הסעה|שאטל|shuttles?)\s*(?:(?:קבועות|מאורגנות|מסודרות|לעובדים|לעובדי|ה?חברה|חינם)\s+)*(?:מ\s*:\s*|מ(?:העיר\s+)?|from\s*:?\s+|[:]\s*)/gi
 const UNCERTAIN_SHUTTLE = /(?:^|[^a-zא-ת])(?:מ?אזור|מ?סביבת|מ?סביבה|אפשרות|ייתכן|יתכן|בתיאום|בכפוף|תלוי|מותנה|חלק|בלבד|רק|ב?בוקר|ב?ערב|ב?לילה|ל?משמרת|ל?משמרות|maybe|possible|conditional|depending|area|vicinity|only|shifts?|morning|night|evening)(?=$|[^a-zא-ת])|\?/i
 
-function hasTransportation(input: MatchingLocationInput, candidateCity: string, siteCities: string[]): boolean {
-  let positive = false
+/** ערי איסוף מפורשות וודאיות. כל עיר כזו נחשבת אתר משרה לצורך עיר זהה ורדיוס. */
+function shuttleOrigins(input: Pick<MatchingLocationInput, 'transportation' | 'positionDescription' | 'positionLocation'>, siteCities: string[]): string[] {
+  if (!siteCities.length) return []
+  const origins = new Set<string>()
+  const blocked = new Set<string>()
   for (const text of [input.transportation, input.positionDescription, input.positionLocation]) {
     for (const raw of (text ?? '').split(/[\n\r.!;|]+/)) {
       const clause = normalizeText(raw)
       const service = clause.match(SHUTTLE_WORD)
       if (service && isNegated(clause, service.index!, service.index! + service[0].length)) {
         const route = geography(clause.slice(service.index! + service[0].length))
-        if (route.cities.includes(candidateCity) || route.excludedCities.includes(candidateCity) || !route.cities.length) return false
+        if (!route.cities.length) return []
+        for (const city of [...route.cities, ...route.excludedCities]) blocked.add(city)
       }
       for (const match of clause.matchAll(SHUTTLE_ORIGIN)) {
         // רק מקור מפורש. "לחיפה" הוא יעד, ו"מאזור חיפה" אינו איסוף מחיפה.
@@ -371,19 +375,21 @@ function hasTransportation(input: MatchingLocationInput, candidateCity: string, 
         const destination = route.mentions.find(mention => mention.prefix === 'ל' || mention.prefix === 'ול')
         const destinationMarker = routeText.match(/\s+(?:אל|לכיוון|to|towards)\s+|\s+ל(?:מפעל|עבודה|משרד|אתר|תחנה)/)
         const end = Math.min(destination?.start ?? routeText.length, destinationMarker?.index ?? routeText.length)
-        const originText = routeText.slice(0, end)
-        const origins = geography(originText)
-        if (origins.excludedCities.includes(candidateCity)) return false
-        if (!origins.cities.includes(candidateCity) || origins.regions.length) continue
-        if (isNegated(clause, match.index!, match.index! + match[0].length)) return false
+        const found = geography(routeText.slice(0, end))
+        for (const city of found.excludedCities) blocked.add(city)
+        // אזור כללי ("מהמרכז") לא נספר; ערים מפורשות באותה רשימה כן.
+        if (isNegated(clause, match.index!, match.index! + match[0].length)) {
+          for (const city of found.cities) blocked.add(city)
+          continue
+        }
         if (UNCERTAIN_SHUTTLE.test(clause)) continue
         const destinations = geography(routeText.slice(end))
         if (destinations.cities.length && !destinations.cities.some(city => siteCities.includes(city))) continue
-        positive = true
+        for (const city of found.cities) origins.add(city)
       }
     }
   }
-  return positive
+  return [...origins].filter(city => !blocked.has(city) && !siteCities.includes(city))
 }
 
 function result(
@@ -398,10 +404,10 @@ function result(
   return { score, eligible, matchType, distanceKm, isExactCity: matchType === 'exact', isNationwide: matchType === 'nationwide', candidateCity, matchedCity, reason }
 }
 
-export type PositionGeography = { cities: string[]; measurableCities: string[]; regions: string[]; nationwide: boolean; remote: boolean; unresolved: boolean }
+export type PositionGeography = { cities: string[]; measurableCities: string[]; shuttleCities: string[]; regions: string[]; nationwide: boolean; remote: boolean; unresolved: boolean }
 
 /** מה המנוע מבין ממיקום המשרה לבדה, לפני כל מועמד; משמש לבדיקת מוכנות בעת שמירה. */
-export function describePositionGeography(input: Pick<MatchingLocationInput, 'positionLocation' | 'positionTitle' | 'positionDescription' | 'workHours'>): PositionGeography {
+export function describePositionGeography(input: Pick<MatchingLocationInput, 'positionLocation' | 'positionTitle' | 'positionDescription' | 'workHours' | 'transportation'>): PositionGeography {
   const scope: ScopeText[] = [
     { text: input.positionLocation ?? '', source: 'location' },
     { text: input.positionTitle ?? '', source: 'title' },
@@ -410,7 +416,7 @@ export function describePositionGeography(input: Pick<MatchingLocationInput, 'po
   ]
   const sites = worksite(input)
   return {
-    cities: sites.cities, measurableCities: sites.cities.filter(city => getDistanceKm(city, city) !== null), regions: sites.regions,
+    cities: sites.cities, measurableCities: sites.cities.filter(city => getDistanceKm(city, city) !== null), shuttleCities: shuttleOrigins(input, sites.cities), regions: sites.regions,
     nationwide: !sites.localOnly && nationwideScope(scope), remote: !sites.localOnly && remoteScope(scope), unresolved: sites.unresolved,
   }
 }
@@ -437,6 +443,10 @@ export function evaluateMatchingLocation(input: MatchingLocationInput): Matching
   if (sites.cities.includes(candidateCity)) {
     return result(candidateCity, 'exact', 15, true, 'עיר המגורים זהה לאחד ממיקומי המשרה.', candidateCity, 0)
   }
+  const shuttles = shuttleOrigins(input, sites.cities)
+  if (shuttles.includes(candidateCity)) {
+    return result(candidateCity, 'transport', 15, true, `יש הסעה מפורשת מ${candidateCity}; עיר ההסעה נחשבת כמיקום המשרה.`, candidateCity, 0)
+  }
 
   const radius = typeof input.maxDistanceKm === 'number' && Number.isFinite(input.maxDistanceKm) && input.maxDistanceKm >= 0
     ? input.maxDistanceKm : DEFAULT_RADIUS_KM
@@ -444,12 +454,15 @@ export function evaluateMatchingLocation(input: MatchingLocationInput): Matching
   const measured = distances.filter((item): item is { city: string; km: number } => item.km !== null)
     .sort((a, b) => a.km - b.km || a.city.localeCompare(b.city))
   const nearest = measured[0]
-  if (nearest && nearest.km <= radius) {
-    const score = Math.round(14 - 6 * (radius > 0 ? nearest.km / radius : 0))
-    return result(candidateCity, 'nearby', score, true, `מרחק אווירי משוער ${nearest.km} ק"מ, בתוך רדיוס ${radius} ק"מ; לא זמן נסיעה.`, nearest.city, nearest.km)
+  const nearestShuttle = shuttles.map(city => ({ city, km: getDistanceKm(candidateCity, city) }))
+    .filter((item): item is { city: string; km: number } => item.km !== null)
+    .sort((a, b) => a.km - b.km || a.city.localeCompare(b.city))[0]
+  const proximity = (km: number) => Math.round(14 - 6 * (radius > 0 ? km / radius : 0))
+  if (nearestShuttle && nearestShuttle.km <= radius && (!nearest || nearestShuttle.km < nearest.km)) {
+    return result(candidateCity, 'transport', proximity(nearestShuttle.km), true, `מרחק אווירי משוער ${nearestShuttle.km} ק"מ מנקודת ההסעה ב${nearestShuttle.city}, בתוך רדיוס ${radius} ק"מ; לא זמן נסיעה.`, nearestShuttle.city, nearestShuttle.km)
   }
-  if (sites.cities.length && hasTransportation(input, candidateCity, sites.cities)) {
-    return result(candidateCity, 'transport', 12, true, 'צוינה הסעה מפורשת מעיר המגורים; זמני הנסיעה לא חושבו.', nearest?.city ?? sites.cities[0], nearest?.km ?? null)
+  if (nearest && nearest.km <= radius) {
+    return result(candidateCity, 'nearby', proximity(nearest.km), true, `מרחק אווירי משוער ${nearest.km} ק"מ, בתוך רדיוס ${radius} ק"מ; לא זמן נסיעה.`, nearest.city, nearest.km)
   }
   const memberships = CITY_REGIONS.get(candidateCity)
   const sharedRegion = sites.regions.find(region => memberships?.has(region))

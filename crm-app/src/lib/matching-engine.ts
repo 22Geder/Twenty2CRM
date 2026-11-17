@@ -437,7 +437,7 @@ export type MatchingReadiness = {
 export function assessMatchingReadiness(input: MatchingPosition): MatchingReadiness {
   const job = prepareMatchingPosition(input)
   const roles = [...job.titleIndex.byConcept.keys()].filter(term => getMatchingConcept(term)?.kind === 'role')
-  const geography = describePositionGeography({ positionLocation: input.location, positionTitle: input.title, positionDescription: [input.description, textList(input.requirements)].filter(Boolean).join('\n'), workHours: input.workHours })
+  const geography = describePositionGeography({ positionLocation: input.location, positionTitle: input.title, positionDescription: [input.description, textList(input.requirements)].filter(Boolean).join('\n'), workHours: input.workHours, transportation: input.transportation })
   const geographyOk = geography.nationwide || geography.remote || geography.measurableCities.length > 0
   const requirementsMarked = job.requirements.filter(check => check.importance !== 'unspecified').length
   const issues: string[] = []
